@@ -42,7 +42,7 @@ MqttConnectivityService::MqttConnectivityService(std::shared_ptr<MqttClient> mqt
     for (const std::string& actuatorReference : m_device.getActuatorReferences())
     {
         std::stringstream topic("");
-        topic << "actuators/commands/" << m_device.getDeviceKey() << "/" << actuatorReference;
+        topic << TOPIC_ROOT_ACTUATION_REQUEST << m_device.getDeviceKey() << "/" << actuatorReference;
         m_subscriptionList.emplace_back(topic.str());
     }
 
@@ -66,7 +66,7 @@ MqttConnectivityService::MqttConnectivityService(std::shared_ptr<MqttClient> mqt
 
 bool MqttConnectivityService::connect()
 {
-    m_mqttClient->setLastWill("lastwill/" + m_device.getDeviceKey(), "Gone offline");
+    m_mqttClient->setLastWill(TOPIC_ROOT_LAST_WILL + m_device.getDeviceKey(), "Gone offline");
     return m_mqttClient->connect(m_device.getDeviceKey(), m_device.getDevicePassword(), TRUST_STORE, m_host,
                                  m_device.getDeviceKey());
 }
@@ -92,7 +92,7 @@ bool MqttConnectivityService::publish(std::shared_ptr<Reading> reading)
 
 void MqttConnectivityService::ReadingPublisherVisitor::visit(SensorReading& sensorReading)
 {
-    std::string topic = "readings/" + m_device.getDeviceKey() + "/" + sensorReading.getReference();
+    std::string topic = TOPIC_ROOT_SENSOR_READING + m_device.getDeviceKey() + "/" + sensorReading.getReference();
     std::string messagePayload = JsonParser::toJson(sensorReading);
 
     m_isPublished = m_mqttClient.publish(topic, messagePayload);
@@ -100,7 +100,7 @@ void MqttConnectivityService::ReadingPublisherVisitor::visit(SensorReading& sens
 
 void MqttConnectivityService::ReadingPublisherVisitor::visit(ActuatorStatus& actuatorStatus)
 {
-    std::string topic = "actuators/status/" + m_device.getDeviceKey() + "/" + actuatorStatus.getReference();
+    std::string topic = TOPIC_ROOT_ACTUATOR_STATUS + m_device.getDeviceKey() + "/" + actuatorStatus.getReference();
     std::string messagePayload = JsonParser::toJson(actuatorStatus);
 
     m_isPublished = m_mqttClient.publish(topic, messagePayload);
@@ -108,7 +108,7 @@ void MqttConnectivityService::ReadingPublisherVisitor::visit(ActuatorStatus& act
 
 void MqttConnectivityService::ReadingPublisherVisitor::visit(Alarm& event)
 {
-    std::string topic = "events/" + m_device.getDeviceKey() + "/" + event.getReference();
+    std::string topic = TOPIC_ROOT_ALARM + m_device.getDeviceKey() + "/" + event.getReference();
     std::string messagePayload = JsonParser::toJson(event);
 
     m_isPublished = m_mqttClient.publish(topic, messagePayload);

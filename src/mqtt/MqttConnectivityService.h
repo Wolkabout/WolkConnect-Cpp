@@ -73,6 +73,12 @@ private:
 
     std::shared_ptr<MqttClient> m_mqttClient;
 
+    static const constexpr char* TOPIC_ROOT_LAST_WILL = "lastwill/";
+    static const constexpr char* TOPIC_ROOT_SENSOR_READING = "readings/";
+    static const constexpr char* TOPIC_ROOT_ACTUATION_REQUEST = "actuators/commands/";
+    static const constexpr char* TOPIC_ROOT_ACTUATOR_STATUS = "actuators/status/";
+    static const constexpr char* TOPIC_ROOT_ALARM = "events/";
+
     static const constexpr char* TRUST_STORE = "ca.crt";
 };
 }
