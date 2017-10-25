@@ -17,10 +17,12 @@
 #include "WolkBuilder.h"
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
-#include "Device.h"
 #include "Wolk.h"
-#include "mqtt/MqttConnectivityService.h"
-#include "mqtt/PahoMqttClient.h"
+#include "model/Device.h"
+#include "service/connectivity/mqtt/MqttConnectivityService.h"
+#include "service/connectivity/mqtt/PahoMqttClient.h"
+#include "service/persist/PersistService.h"
+#include "service/persist/json/JsonPersistService.h"
 
 #include <functional>
 #include <string>
@@ -30,12 +32,6 @@ namespace wolkabout
 WolkBuilder& WolkBuilder::host(const std::string& host)
 {
     m_host = host;
-    return *this;
-}
-
-WolkBuilder& WolkBuilder::device(const Device& device)
-{
-    m_device = device;
     return *this;
 }
 
@@ -68,12 +64,21 @@ WolkBuilder& WolkBuilder::actuatorStatusProvider(std::weak_ptr<ActuatorStatusPro
     return *this;
 }
 
-std::unique_ptr<Wolk> WolkBuilder::build()
+WolkBuilder& WolkBuilder::withDataPersistence(std::shared_ptr<PersistService> persistService)
+{
+    m_persistService = persistService;
+    return *this;
+}
+
+std::unique_ptr<Wolk> WolkBuilder::build() const
 {
     auto mqttClient = std::make_shared<PahoMqttClient>();
     auto connectivityService = std::make_shared<MqttConnectivityService>(mqttClient, m_device, m_host);
 
-    auto wolk = std::unique_ptr<Wolk>(new Wolk(connectivityService, m_device));
+    auto publishService =
+      std::make_shared<PublishService>(connectivityService, m_persistService, std::chrono::milliseconds(50));
+
+    auto wolk = std::unique_ptr<Wolk>(new Wolk(publishService, m_device));
 
     wolk->m_actuationHandlerLambda = m_actuationHandlerLambda;
     wolk->m_actuationHandler = m_actuationHandler;
@@ -81,13 +86,18 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     wolk->m_actuatorStatusProviderLambda = m_actuatorStatusProviderLambda;
     wolk->m_actuatorStatusProvider = m_actuatorStatusProvider;
 
+    connectivityService->setListener(
+      [&](const ActuatorCommand& actuatorCommand) -> void { wolk->handleActuatorCommand(actuatorCommand); });
+
     return wolk;
 }
 
-WolkBuilder::WolkBuilder() : m_host(WOLK_DEMO_HOST), m_device("", "", {}) {}
-
-WolkBuilder Wolk::newBuilder()
+wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>() const
 {
-    return WolkBuilder();
+    return build();
+}
+
+WolkBuilder::WolkBuilder(Device device) : m_host(WOLK_DEMO_HOST), m_device(std::move(device)), m_persistService(nullptr)
+{
 }
 }
