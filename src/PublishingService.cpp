@@ -29,10 +29,10 @@
 
 namespace wolkabout
 {
-PublishingService::PublishingService(std::shared_ptr<ConnectivityService> publisher,
+PublishingService::PublishingService(std::shared_ptr<ConnectivityService> connectivityService,
                                      std::shared_ptr<ReadingBuffer> readingBuffer,
                                      std::chrono::milliseconds publishInterval)
-: m_publisher(publisher)
+: m_connectivityService(connectivityService)
 , m_readingBuffer(readingBuffer)
 , m_publishInterval(std::move(publishInterval))
 , m_isRunning(false)
@@ -60,9 +60,9 @@ void PublishingService::run()
 {
     while (m_isRunning)
     {
-        if (!m_publisher->isConnected())
+        if (!m_connectivityService->isConnected())
         {
-            m_publisher->connect();
+            m_connectivityService->connect();
         }
 
         publishReadings();
@@ -85,7 +85,7 @@ void PublishingService::publishReadings()
 
 void PublishingService::publishReading(std::shared_ptr<Reading> reading)
 {
-    m_publisher->publish(reading);
+    m_connectivityService->publish(reading);
 }
 
 void PublishingService::sleepUntilNextPublishCycle()

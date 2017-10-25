@@ -107,11 +107,11 @@ void Wolk::disconnect()
     }
 }
 
-Wolk::Wolk(std::shared_ptr<ConnectivityService> publisher, Device device)
+Wolk::Wolk(std::shared_ptr<ConnectivityService> connectivityService, Device device)
 : m_device(std::move(device))
 , m_actuationHandlerLambda(nullptr)
 , m_actuatorStatusProviderLambda(nullptr)
-, m_connectivityService(publisher)
+, m_connectivityService(connectivityService)
 , m_ConnectivityServiceListener(
     std::shared_ptr<ConnectivityServiceListenerImpl>(new ConnectivityServiceListenerImpl(*this)))
 , m_publishingService(nullptr)

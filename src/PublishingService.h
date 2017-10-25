@@ -35,7 +35,7 @@ namespace wolkabout
 class PublishingService
 {
 public:
-    PublishingService(std::shared_ptr<ConnectivityService> publisher, std::shared_ptr<ReadingBuffer> readingBuffer,
+    PublishingService(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<ReadingBuffer> readingBuffer,
                       std::chrono::milliseconds publishInterval = std::chrono::milliseconds(200));
 
     virtual ~PublishingService() = default;
@@ -53,7 +53,7 @@ private:
 
     void sleepUntilNextPublishCycle();
 
-    std::shared_ptr<ConnectivityService> m_publisher;
+    std::shared_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<ReadingBuffer> m_readingBuffer;
 
     std::chrono::milliseconds m_publishInterval;

@@ -105,7 +105,7 @@ private:
         Wolk& m_wolk;
     };
 
-    Wolk(std::shared_ptr<ConnectivityService> publisher, Device device);
+    Wolk(std::shared_ptr<ConnectivityService> connectivityService, Device device);
 
     void addActuatorStatus(const std::string& reference, const ActuatorStatus& actuatorStatus);
 
