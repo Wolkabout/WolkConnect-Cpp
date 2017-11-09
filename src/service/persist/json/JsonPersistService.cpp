@@ -110,21 +110,22 @@ std::string JsonPersistService::generateFileName(std::shared_ptr<Reading> readin
 {
     struct ReadingPostfixGeneratorVisitor final : public ReadingVisitor
     {
-        ReadingPostfixGeneratorVisitor(Reading& rreading) : m_reading(rreading), m_postfix("") {}
+        ReadingPostfixGeneratorVisitor(JsonPersistService& jjsonPersistService, Reading& rreading) : jsonPersistService(jjsonPersistService), reading(rreading), filename("") {}
         ~ReadingPostfixGeneratorVisitor() = default;
 
-        void visit(ActuatorStatus&) override { m_postfix = ACTUATOR_STATUS_SUFFIX; }
+        void visit(ActuatorStatus& actuatorStatus) override { filename = actuatorStatus.getReference() + ACTUATOR_STATUS_SUFFIX; }
 
-        void visit(Alarm&) override { m_postfix = ALARM_SUFFIX; }
+        void visit(Alarm&) override { filename = std::to_string(jsonPersistService.getLastPersistedReadingNumber() + 1) + ALARM_SUFFIX; }
 
-        void visit(SensorReading&) override { m_postfix = SENSOR_READING_SUFFIX; }
+        void visit(SensorReading&) override { filename = std::to_string(jsonPersistService.getLastPersistedReadingNumber() + 1) + SENSOR_READING_SUFFIX; }
 
-        Reading& m_reading;
-        std::string m_postfix;
-    } readingPostfixGeneratorVisitor = {*reading};
+        JsonPersistService& jsonPersistService;
+        Reading& reading;
+        std::string filename;
+    } readingPostfixGeneratorVisitor = {*this, *reading};
     reading->acceptVisit(readingPostfixGeneratorVisitor);
 
-    return std::to_string(getLastPersistedReadingNumber() + 1) + readingPostfixGeneratorVisitor.m_postfix;
+    return readingPostfixGeneratorVisitor.filename;
 }
 
 unsigned long long int JsonPersistService::getLastPersistedReadingNumber()
