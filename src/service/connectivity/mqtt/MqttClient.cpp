@@ -16,10 +16,12 @@
 
 #include "MqttClient.h"
 
+#include <utility>
+
 namespace wolkabout
 {
 void MqttClient::onMessageReceived(MqttClient::OnMessageReceivedCallback onMessageReceived)
 {
-    m_onMessageReceived = onMessageReceived;
+    m_onMessageReceived = std::move(onMessageReceived);
 }
 }

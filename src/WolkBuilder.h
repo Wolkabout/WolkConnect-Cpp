@@ -55,7 +55,7 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& actuationHandler(
-      std::function<void(const std::string& reference, const std::string& value)> actuationHandler);
+      const std::function<void(const std::string& reference, const std::string& value)>& actuationHandler);
 
     /**
      * @brief Sets actuation handler
@@ -70,7 +70,7 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& actuatorStatusProvider(
-      std::function<ActuatorStatus(const std::string& reference)> actuatorStatusProvider);
+      const std::function<ActuatorStatus(const std::string& reference)>& actuatorStatusProvider);
 
     /**
      * @brief Sets actuation status provider

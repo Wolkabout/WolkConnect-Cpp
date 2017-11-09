@@ -102,18 +102,18 @@ std::vector<std::string> FileSystemUtils::listFiles(std::string directoryPath)
 {
     std::vector<std::string> result;
 
-    DIR* dp = NULL;
-    struct dirent* dirp = NULL;
-    if ((dp = opendir(directoryPath.c_str())) == NULL)
+    DIR* dp = nullptr;
+    struct dirent* dirp = nullptr;
+    if ((dp = opendir(directoryPath.c_str())) == nullptr)
     {
         return result;
     }
 
-    while ((dirp = readdir(dp)) != NULL)
+    while ((dirp = readdir(dp)) != nullptr)
     {
         if (dirp->d_type == DT_REG)
         {
-            result.push_back(std::string(dirp->d_name));
+            result.emplace_back(dirp->d_name);
         }
     }
 

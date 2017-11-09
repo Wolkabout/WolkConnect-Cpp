@@ -29,9 +29,9 @@ namespace wolkabout
 {
 class JsonPersistServiceParser
 {
+public:
     JsonPersistServiceParser() = delete;
 
-public:
     static std::string toJson(const ActuatorStatus& actuatorStatus);
     static bool fromJson(const std::string& jsonString, ActuatorStatus& actuatorStatus);
 

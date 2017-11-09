@@ -28,9 +28,9 @@ namespace wolkabout
 {
 class JsonDtoParser
 {
+public:
     JsonDtoParser() = delete;
 
-public:
     static std::string toJson(ActuatorCommandDto& actutorCommandDto);
     static bool fromJson(const std::string& jsonString, ActuatorCommandDto& actuatorCommandDto);
 

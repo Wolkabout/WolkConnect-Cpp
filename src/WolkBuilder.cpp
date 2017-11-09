@@ -35,7 +35,8 @@ WolkBuilder& WolkBuilder::host(const std::string& host)
     return *this;
 }
 
-WolkBuilder& WolkBuilder::actuationHandler(std::function<void(const std::string&, const std::string&)> actuationHandler)
+WolkBuilder& WolkBuilder::actuationHandler(
+  const std::function<void(const std::string&, const std::string&)>& actuationHandler)
 {
     m_actuationHandlerLambda = actuationHandler;
     m_actuationHandler.reset();
@@ -50,7 +51,7 @@ WolkBuilder& WolkBuilder::actuationHandler(std::weak_ptr<ActuationHandler> actua
 }
 
 WolkBuilder& WolkBuilder::actuatorStatusProvider(
-  std::function<ActuatorStatus(const std::string&)> actuatorStatusProvider)
+  const std::function<ActuatorStatus(const std::string&)>& actuatorStatusProvider)
 {
     m_actuatorStatusProviderLambda = actuatorStatusProvider;
     m_actuatorStatusProvider.reset();

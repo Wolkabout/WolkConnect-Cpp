@@ -46,8 +46,7 @@ void from_json(const json& j, ActuatorCommandDto& p)
         }
     }();
 
-    p =
-      ActuatorCommandDto(type.compare("SET") == 0 ? ActuatorCommand::Type::SET : ActuatorCommand::Type::STATUS, value);
+    p = ActuatorCommandDto(type == "SET" ? ActuatorCommand::Type::SET : ActuatorCommand::Type::STATUS, value);
 }
 
 std::string JsonDtoParser::toJson(ActuatorCommandDto& actutorCommandDto)
@@ -101,15 +100,15 @@ void from_json(const json& j, ActuatorStatusDto& p)
     std::string value = j.at("value").get<std::string>();
 
     const ActuatorStatus::State state = [&]() -> ActuatorStatus::State {
-        if (st.compare("READY") == 0)
+        if (st == "READY")
         {
             return ActuatorStatus::State::READY;
         }
-        else if (st.compare("BUSY") == 0)
+        else if (st == "BUSY")
         {
             return ActuatorStatus::State::BUSY;
         }
-        else if (st.compare("ERROR") == 0)
+        else if (st == "ERROR")
         {
             return ActuatorStatus::State::ERROR;
         }
@@ -157,7 +156,7 @@ void to_json(json& j, const AlarmDto& p)
 
 void from_json(const json& j, AlarmDto& p)
 {
-    unsigned long long int rtc = j.at("utc").get<unsigned long long int>();
+    auto rtc = j.at("utc").get<unsigned long long int>();
     std::string value = j.at("data").get<std::string>();
 
     p = AlarmDto(rtc, value);
@@ -200,7 +199,7 @@ void to_json(json& j, const SensorReadingDto& p)
 
 void from_json(const json& j, SensorReadingDto& p)
 {
-    unsigned long long int rtc = j.at("utc").get<unsigned long long int>();
+    auto rtc = j.at("utc").get<unsigned long long int>();
     std::string value = j.at("data").get<std::string>();
 
     p = SensorReadingDto(rtc, value);

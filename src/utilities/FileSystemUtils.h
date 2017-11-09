@@ -25,9 +25,9 @@ namespace wolkabout
 {
 class FileSystemUtils
 {
+public:
     FileSystemUtils() = delete;
 
-public:
     static bool isFilePresent(const std::string& filePath);
 
     static bool createFileWithContent(const std::string& filePath, const std::string& content);

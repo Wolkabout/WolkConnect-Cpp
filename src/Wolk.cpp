@@ -47,7 +47,7 @@ template <> void Wolk::addSensorReading(const std::string& reference, std::strin
         rtc = Wolk::currentRtc();
     }
 
-    std::unique_ptr<SensorReading> sensorReading(new SensorReading(value, reference, rtc));
+    std::unique_ptr<SensorReading> sensorReading(new SensorReading(std::move(value), reference, rtc));
     m_publishService->addReading(std::move(sensorReading));
 }
 

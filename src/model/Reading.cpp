@@ -19,7 +19,7 @@
 namespace wolkabout
 {
 Reading::Reading(std::string value, std::string reference, unsigned long long int rtc)
-: m_value(std::move(value)), m_reference(std::move(reference)), m_rtc(std::move(rtc))
+: m_value(std::move(value)), m_reference(std::move(reference)), m_rtc(rtc)
 {
 }
 

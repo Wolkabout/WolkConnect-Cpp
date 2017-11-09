@@ -24,9 +24,9 @@ namespace wolkabout
 {
 class StringUtils
 {
+public:
     StringUtils() = delete;
 
-public:
     static bool contains(const std::string& string, char c);
 
     static std::vector<std::string> tokenize(const std::string& string, const std::string& delimiters);

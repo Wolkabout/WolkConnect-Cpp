@@ -25,12 +25,12 @@ namespace wolkabout
 ActuatorStatus::ActuatorStatus() : Reading("", ""), m_state(ActuatorStatus::State::READY) {}
 
 ActuatorStatus::ActuatorStatus(std::string value, ActuatorStatus::State state)
-: Reading(std::move(value), ""), m_state(std::move(state))
+: Reading(std::move(value), ""), m_state(state)
 {
 }
 
 ActuatorStatus::ActuatorStatus(std::string value, std::string reference, ActuatorStatus::State state)
-: Reading(std::move(value), std::move(reference)), m_state(std::move(state))
+: Reading(std::move(value), std::move(reference)), m_state(state)
 {
 }
 

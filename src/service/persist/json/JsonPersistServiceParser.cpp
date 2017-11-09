@@ -56,15 +56,15 @@ void from_json(const json& j, ActuatorStatus& p)
     std::string st = j.at("state").get<std::string>();
 
     const ActuatorStatus::State state = [&]() -> ActuatorStatus::State {
-        if (st.compare("R") == 0)
+        if (st == "R")
         {
             return ActuatorStatus::State::READY;
         }
-        else if (st.compare("B") == 0)
+        else if (st == "B")
         {
             return ActuatorStatus::State::BUSY;
         }
-        else if (st.compare("E") == 0)
+        else if (st == "E")
         {
             return ActuatorStatus::State::ERROR;
         }
@@ -107,7 +107,7 @@ void to_json(json& j, const Alarm& p)
 
 void from_json(const json& j, Alarm& p)
 {
-    const unsigned long long int rtc = j.at("rtc").get<unsigned long long int>();
+    const auto rtc = j.at("rtc").get<unsigned long long int>();
     const std::string reference = j.at("ref").get<std::string>();
     const std::string value = j.at("val").get<std::string>();
 
@@ -146,7 +146,7 @@ void to_json(json& j, const SensorReading& p)
 
 void from_json(const json& j, SensorReading& p)
 {
-    const unsigned long long int rtc = j.at("rtc").get<unsigned long long int>();
+    const auto rtc = j.at("rtc").get<unsigned long long int>();
     const std::string reference = j.at("ref").get<std::string>();
     const std::string value = j.at("val").get<std::string>();
 
@@ -176,7 +176,7 @@ bool JsonPersistServiceParser::fromJson(const std::string& jsonString, SensorRea
 
 std::string JsonPersistServiceParser::toJson(Reading& reading)
 {
-    std::string result("");
+    std::string result;
     struct ReadingSerializerVisitor final : public ReadingVisitor
     {
         ReadingSerializerVisitor(std::string& result) : m_result(result) {}

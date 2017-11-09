@@ -27,7 +27,7 @@ ActuatorStatusDto::ActuatorStatusDto(ActuatorStatus actuatorStatus)
 }
 
 ActuatorStatusDto::ActuatorStatusDto(ActuatorStatus::State state, std::string value)
-: m_state(std::move(state)), m_value(std::move(value))
+: m_state(state), m_value(std::move(value))
 {
 }
 
