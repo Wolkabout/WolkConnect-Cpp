@@ -33,12 +33,12 @@ PersistService::PersistService(std::string persistPath, unsigned long long int m
     m_persistPath = persistPath;
 }
 
-unsigned long long PersistService::getMaximumNumberOfPersistedReadings()
+unsigned long long PersistService::getMaximumNumberOfPersistedReadings() const
 {
     return m_maximumNumberOfPersistedReadings;
 }
 
-bool PersistService::isCircular()
+bool PersistService::isCircular() const
 {
     return m_isCircular;
 }

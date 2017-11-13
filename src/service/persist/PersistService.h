@@ -74,14 +74,14 @@ public:
      * @brief getMaximumNumberOfPersistedReadings Returns maximum number of persisted readings
      * @return Maximum number of reading items
      */
-    unsigned long long int getMaximumNumberOfPersistedReadings();
+    unsigned long long int getMaximumNumberOfPersistedReadings() const;
 
     /**
      * @brief isCircular Returns whether persistence acts as circular
      * @return true if persistence acts as circular buffer, eg. overwrites oldest when maximumNumberOfPersistedItems is
      * reached
      */
-    bool isCircular();
+    bool isCircular() const;
 
     /**
      * @brief Returns path to directory used by persistence
