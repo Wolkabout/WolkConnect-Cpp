@@ -14,30 +14,21 @@
  * limitations under the License.
  */
 
-#include "service/connectivity/ConnectivityService.h"
+#include "CommandBuffer.h"
+
+#include <functional>
+#include <memory>
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+template <> void CommandBuffer<std::function<void()>>::processCommands()
 {
-    m_listener = listener;
-}
+    switchBuffers();
 
-void ConnectivityService::setListener(std::function<void(const ActuatorCommand&)> listener)
-{
-    m_listenerLambda = listener;
-}
-
-void ConnectivityService::invokeListener(const ActuatorCommand& actuatorCommand) const
-{
-    if (auto listener = m_listener.lock())
+    std::shared_ptr<std::function<void()>> command;
+    while ((command = popCommand()) != nullptr)
     {
-        listener->actuatorCommandReceived(actuatorCommand);
-    }
-
-    if (m_listenerLambda)
-    {
-        m_listenerLambda(actuatorCommand);
+        command->operator()();
     }
 }
 }

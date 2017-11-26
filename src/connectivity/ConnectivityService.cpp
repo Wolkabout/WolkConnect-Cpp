@@ -14,32 +14,30 @@
  * limitations under the License.
  */
 
-#ifndef READINGSBUFFER_H
-#define READINGSBUFFER_H
-
-#include "Buffer.h"
-#include "model/Reading.h"
-
-#include <memory>
-#include <vector>
+#include "connectivity/ConnectivityService.h"
 
 namespace wolkabout
 {
-class ReadingBuffer
+void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
 {
-public:
-    ReadingBuffer() = default;
-    virtual ~ReadingBuffer() = default;
-
-    void addReading(std::shared_ptr<Reading> reading);
-
-    std::vector<std::shared_ptr<Reading>> getReadings();
-
-    bool hasReadings();
-
-private:
-    Buffer<std::shared_ptr<Reading>> m_readings;
-};
+    m_listener = listener;
 }
 
-#endif
+void ConnectivityService::setListener(std::function<void(const ActuatorCommand&)> listener)
+{
+    m_listenerLambda = listener;
+}
+
+void ConnectivityService::invokeListener(const ActuatorCommand& actuatorCommand) const
+{
+    if (auto listener = m_listener.lock())
+    {
+        listener->actuatorCommandReceived(actuatorCommand);
+    }
+
+    if (m_listenerLambda)
+    {
+        m_listenerLambda(actuatorCommand);
+    }
+}
+}
