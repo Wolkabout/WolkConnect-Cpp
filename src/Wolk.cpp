@@ -140,9 +140,16 @@ void Wolk::disconnect()
 
 void Wolk::publish()
 {
-    addToCommandBuffer([=]() -> void { publishActuatorStatuses(); });
-    addToCommandBuffer([=]() -> void { publisAlarms(); });
-    addToCommandBuffer([=]() -> void { publishSensorReadings(); });
+    addToCommandBuffer([=]() -> void {
+        publishActuatorStatuses();
+        publisAlarms();
+        publishSensorReadings();
+
+        if (!m_persistence->isEmpty())
+        {
+            publish();
+        }
+    });
 }
 
 Wolk::Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
