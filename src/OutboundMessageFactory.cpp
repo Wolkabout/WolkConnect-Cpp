@@ -130,7 +130,7 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 {
     if (sensorReadings.size() == 0)
     {
-        throw new std::invalid_argument("Sensor readings vector is empty.");
+        return nullptr;
     }
 
     const json jPayload(sensorReadings);
@@ -145,7 +145,7 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(const std::string&
 {
     if (alarms.size() == 0)
     {
-        throw new std::invalid_argument("Alarms vector is empty.");
+        return nullptr;
     }
 
     const json jPayload(alarms);
@@ -160,7 +160,7 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 {
     if (actuatorStatuses.size() == 0)
     {
-        throw new std::invalid_argument("Actuator statuses vector is empty.");
+        return nullptr;
     }
 
     const json jPayload(actuatorStatuses.front());
