@@ -74,8 +74,11 @@ and publish actuator status.
 wolk->addAlarm("ALARM_REF", "ALARM_MESSAGE_FROM_CONNECTOR");
 ```
 
-Sensor readings, actuator statuses, and events are automatically pushed to WolkAbout IoT platform every 50 milliseconds,
-hence no action other than *addSensorReading*, *publishActuatorStatus*, or *addEvent* is required.
+Sensor readings, actuator statuses, and alarms are pushed to WolkAbout IoT platform on demand by calling
+```cpp
+wolk->publish();
+```
+
 
 **Disconnecting from the platform:**
 ```cpp
