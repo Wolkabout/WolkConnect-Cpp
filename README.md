@@ -36,9 +36,13 @@ wolkabout::Device device("DEVICE_KEY", "DEVICE_PASSWORD", {"ACTUATOR_REFERENCE_O
 std::unique_ptr<wolkabout::Wolk> wolk =
   wolkabout::Wolk::newBuilder(device)
     .actuationHandler([](const std::string& reference, const std::string& value) -> void {
+        // TODO Invoke your code which activates your actuator.
+
         std::cout << "Actuation request received - Reference: " << reference << " value: " << value << std::endl;
     })
     .actuatorStatusProvider([](const std::string& reference) -> wolkabout::ActuatorStatus {
+        // TODO Invoke code which reads the state of the actuator.
+
         if (reference == "ACTUATOR_REFERENCE_ONE") {
             return wolkabout::ActuatorStatus("65", wolkabout::ActuatorStatus::State::READY);
         } else if (reference == "ACTUATOR_REFERENCE_TWO") {
