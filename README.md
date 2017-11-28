@@ -1,8 +1,8 @@
 # WolkConnector C++
 WolkAbout C++ Connector library for connecting devices to WolkAbout IoT platform.
 
-WolkAbout C++ Connector library supports following protocol(s):
- * JSON_SINGLE
+Supported protocol(s):
+* JSON_SINGLE
 
 Prerequisite
 ------
@@ -74,11 +74,18 @@ and publish actuator status.
 wolk->addAlarm("ALARM_REF", "ALARM_MESSAGE_FROM_CONNECTOR");
 ```
 
-Sensor readings, actuator statuses, and alarms are pushed to WolkAbout IoT platform on demand by calling
+**Data publish strategy:**
+
+Sensor readings, and alarms are pushed to WolkAbout IoT platform on demand by calling
 ```cpp
 wolk->publish();
 ```
 
+Whereas actuator statuses are published automatically by calling:
+
+```cpp
+wolk->publishActuatorStatus("ACTUATOR_REFERENCE_ONE ");
+```
 
 **Disconnecting from the platform:**
 ```cpp
