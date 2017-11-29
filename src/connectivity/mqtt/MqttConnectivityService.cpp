@@ -44,7 +44,7 @@ MqttConnectivityService::MqttConnectivityService(std::shared_ptr<MqttClient> mqt
     for (const std::string& actuatorReference : m_device.getActuatorReferences())
     {
         std::stringstream topic("");
-        topic << TOPIC_ROOT_ACTUATION_REQUEST << m_device.getDeviceKey() << "/" << actuatorReference;
+        topic << ACTUATION_REQUEST_TOPIC_ROOT << m_device.getDeviceKey() << "/" << actuatorReference;
         m_subscriptionList.emplace_back(topic.str());
     }
 
@@ -69,7 +69,7 @@ MqttConnectivityService::MqttConnectivityService(std::shared_ptr<MqttClient> mqt
 
 bool MqttConnectivityService::connect()
 {
-    m_mqttClient->setLastWill(TOPIC_ROOT_LAST_WILL + m_device.getDeviceKey(), "Gone offline");
+    m_mqttClient->setLastWill(LAST_WILL_TOPIC_ROOT + m_device.getDeviceKey(), "Gone offline");
     bool isConnected = m_mqttClient->connect(m_device.getDeviceKey(), m_device.getDevicePassword(), TRUST_STORE, m_host,
                                              m_device.getDeviceKey());
     if (isConnected)

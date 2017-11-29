@@ -135,7 +135,7 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 
     const json jPayload(sensorReadings);
     const std::string payload = jPayload.dump();
-    const std::string topic = "readings/" + deviceKey + "/" + sensorReadings.front()->getReference();
+    const std::string topic = SENSOR_READINGS_TOPIC_ROOT + deviceKey + "/" + sensorReadings.front()->getReference();
 
     return std::make_shared<OutboundMessage>(payload, topic, sensorReadings.size());
 }
@@ -150,7 +150,7 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(const std::string&
 
     const json jPayload(alarms);
     const std::string payload = jPayload.dump();
-    const std::string topic = "events/" + deviceKey + "/" + alarms.front()->getReference();
+    const std::string topic = ALARMS_TOPIC_ROOT + deviceKey + "/" + alarms.front()->getReference();
 
     return std::make_shared<OutboundMessage>(payload, topic, alarms.size());
 }
@@ -165,8 +165,9 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 
     const json jPayload(actuatorStatuses.front());
     const std::string payload = jPayload.dump();
-    const std::string topic = "actuators/status/" + deviceKey + "/" + actuatorStatuses.front()->getReference();
+    const std::string topic = ACTUATOR_STATUS_TOPIC_TOOT + deviceKey + "/" + actuatorStatuses.front()->getReference();
 
+    /* Currently supported protocol (JSON_SINGLE) allows only 1 ActuatorStatus per OutboundMessage, hence 'magic' number 1 below */
     return std::make_shared<OutboundMessage>(payload, topic, 1);
 }
 }

@@ -52,11 +52,8 @@ private:
 
     std::atomic_bool m_connected;
 
-    static const constexpr char* TOPIC_ROOT_LAST_WILL = "lastwill/";
-    static const constexpr char* TOPIC_ROOT_SENSOR_READING = "readings/";
-    static const constexpr char* TOPIC_ROOT_ACTUATION_REQUEST = "actuators/commands/";
-    static const constexpr char* TOPIC_ROOT_ACTUATOR_STATUS = "actuators/status/";
-    static const constexpr char* TOPIC_ROOT_ALARM = "events/";
+    static const constexpr char* LAST_WILL_TOPIC_ROOT = "lastwill/";
+    static const constexpr char* ACTUATION_REQUEST_TOPIC_ROOT = "actuators/commands/";
 
     static const constexpr char* TRUST_STORE = "ca.crt";
 };

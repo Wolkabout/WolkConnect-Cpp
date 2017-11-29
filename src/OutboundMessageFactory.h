@@ -38,6 +38,11 @@ public:
                                                  std::vector<std::shared_ptr<Alarm>> alarms);
     static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
                                                  std::vector<std::shared_ptr<ActuatorStatus>> actuatorStatuses);
+
+private:
+    static const constexpr char* SENSOR_READINGS_TOPIC_ROOT = "readings/";
+    static const constexpr char* ALARMS_TOPIC_ROOT = "events/";
+    static const constexpr char* ACTUATOR_STATUS_TOPIC_TOOT = "actuators/status/";
 };
 }
 
