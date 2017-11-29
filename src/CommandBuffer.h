@@ -17,86 +17,49 @@
 #ifndef COMMAND_BUFFER_H
 #define COMMAND_BUFFER_H
 
-#include <chrono>
 #include <condition_variable>
-#include <memory>
 #include <mutex>
 #include <queue>
+#include <functional>
+#include <thread>
+#include <memory>
+#include <atomic>
 
 namespace wolkabout
 {
-template <class Command> class CommandBuffer
+class CommandBuffer
 {
 public:
-    CommandBuffer() = default;
-    virtual ~CommandBuffer() = default;
+    using Command = std::function<void()>;
+
+    CommandBuffer();
+    virtual ~CommandBuffer();
 
     void pushCommand(std::shared_ptr<Command> command);
 
+private:
     std::shared_ptr<Command> popCommand();
 
-    bool empty();
+    bool empty() const;
 
     void switchBuffers();
 
-    void processCommands();
-
     void notify();
 
-private:
+    void processCommands();
+
+    void run();
+
+    mutable std::mutex m_lock;
+
     std::queue<std::shared_ptr<Command>> m_pushCommandQueue;
     std::queue<std::shared_ptr<Command>> m_popCommandQueue;
 
-    std::mutex m_lock;
     std::condition_variable m_condition;
+
+    std::atomic_bool m_isRunning;
+    std::unique_ptr<std::thread> m_worker;
 };
-
-template <class Command> void CommandBuffer<Command>::pushCommand(std::shared_ptr<Command> command)
-{
-    std::unique_lock<std::mutex> unique_lock(m_lock);
-
-    m_pushCommandQueue.push(command);
-
-    m_condition.notify_one();
-}
-
-template <class Command> std::shared_ptr<Command> CommandBuffer<Command>::popCommand()
-{
-    if (m_popCommandQueue.empty())
-    {
-        return nullptr;
-    }
-
-    std::shared_ptr<Command> command = m_popCommandQueue.front();
-    m_popCommandQueue.pop();
-    return command;
-}
-
-template <class Command> void CommandBuffer<Command>::switchBuffers()
-{
-    std::unique_lock<std::mutex> unique_lock(m_lock);
-
-    if (m_pushCommandQueue.empty())
-    {
-        m_condition.wait(unique_lock);
-    }
-
-    std::swap(m_pushCommandQueue, m_popCommandQueue);
-}
-
-template <class Command> bool CommandBuffer<Command>::empty()
-{
-    std::unique_lock<std::mutex> unique_lock(m_lock);
-
-    return m_pushCommandQueue.empty();
-}
-
-template <class Command> void CommandBuffer<Command>::notify()
-{
-    std::unique_lock<std::mutex> unique_lock(m_lock);
-
-    m_condition.notify_one();
-}
 }
 
 #endif

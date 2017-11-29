@@ -160,13 +160,7 @@ Wolk::Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared
 , m_actuationHandlerLambda(nullptr)
 , m_actuatorStatusProviderLambda(nullptr)
 {
-    m_commandBuffer = std::unique_ptr<CommandBuffer<std::function<void()>>>(new CommandBuffer<std::function<void()>>());
-    m_commandBufferThread = std::thread([this]() -> void {
-        while (true)
-        {
-            m_commandBuffer->processCommands();
-        }
-    });
+    m_commandBuffer = std::unique_ptr<CommandBuffer>(new CommandBuffer());
 }
 
 void Wolk::addToCommandBuffer(std::function<void()> command)

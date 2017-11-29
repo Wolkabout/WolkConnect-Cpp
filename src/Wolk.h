@@ -29,7 +29,6 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <thread>
 
 namespace wolkabout
 {
@@ -131,8 +130,7 @@ private:
     std::function<ActuatorStatus(std::string)> m_actuatorStatusProviderLambda;
     std::weak_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;
 
-    std::unique_ptr<CommandBuffer<std::function<void()>>> m_commandBuffer;
-    std::thread m_commandBufferThread;
+    std::unique_ptr<CommandBuffer> m_commandBuffer;
 };
 }
 
