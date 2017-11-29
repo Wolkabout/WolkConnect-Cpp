@@ -112,7 +112,7 @@ private:
     static unsigned long long int currentRtc();
 
     void publishActuatorStatuses();
-    void publisAlarms();
+    void publishAlarms();
     void publishSensorReadings();
 
     void addActuatorStatus(std::shared_ptr<ActuatorStatus> actuatorStatus);

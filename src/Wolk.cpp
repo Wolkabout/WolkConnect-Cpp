@@ -142,7 +142,7 @@ void Wolk::publish()
 {
     addToCommandBuffer([=]() -> void {
         publishActuatorStatuses();
-        publisAlarms();
+        publishAlarms();
         publishSensorReadings();
 
         if (!m_persistence->isEmpty())
@@ -189,7 +189,7 @@ void Wolk::publishActuatorStatuses()
     }
 }
 
-void Wolk::publisAlarms()
+void Wolk::publishAlarms()
 {
     for (const std::string& key : m_persistence->getAlarmsKeys())
     {
