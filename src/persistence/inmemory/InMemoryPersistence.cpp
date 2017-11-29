@@ -74,6 +74,7 @@ std::vector<std::string> InMemoryPersistence::getSensorReadingsKeys()
 bool InMemoryPersistence::putAlarm(const std::string& key, std::shared_ptr<Alarm> alarm)
 {
     getOrCreateAlarmsByKey(key).push_back(alarm);
+    return true;
 }
 
 std::vector<std::shared_ptr<Alarm>> InMemoryPersistence::getAlarms(const std::string& key, uint_fast64_t count)
