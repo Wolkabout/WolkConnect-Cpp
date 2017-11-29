@@ -16,17 +16,18 @@
 
 #include "CommandBuffer.h"
 
+#include <atomic>
 #include <condition_variable>
+#include <functional>
+#include <memory>
 #include <mutex>
 #include <queue>
-#include <functional>
 #include <thread>
-#include <memory>
-#include <atomic>
 
 namespace wolkabout
 {
-CommandBuffer::CommandBuffer() : m_isRunning(true), m_worker(std::unique_ptr<std::thread>(new std::thread(&CommandBuffer::run, this)))
+CommandBuffer::CommandBuffer()
+: m_isRunning(true), m_worker(std::unique_ptr<std::thread>(new std::thread(&CommandBuffer::run, this)))
 {
 }
 

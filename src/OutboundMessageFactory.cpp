@@ -167,7 +167,8 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
     const std::string payload = jPayload.dump();
     const std::string topic = ACTUATOR_STATUS_TOPIC_TOOT + deviceKey + "/" + actuatorStatuses.front()->getReference();
 
-    /* Currently supported protocol (JSON_SINGLE) allows only 1 ActuatorStatus per OutboundMessage, hence 'magic' number 1 below */
+    /* Currently supported protocol (JSON_SINGLE) allows only 1 ActuatorStatus per OutboundMessage, hence 'magic' number
+     * 1 below */
     return std::make_shared<OutboundMessage>(payload, topic, 1);
 }
 }

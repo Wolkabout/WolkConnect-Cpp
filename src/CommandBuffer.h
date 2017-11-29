@@ -17,13 +17,13 @@
 #ifndef COMMAND_BUFFER_H
 #define COMMAND_BUFFER_H
 
+#include <atomic>
 #include <condition_variable>
+#include <functional>
+#include <memory>
 #include <mutex>
 #include <queue>
-#include <functional>
 #include <thread>
-#include <memory>
-#include <atomic>
 
 namespace wolkabout
 {
