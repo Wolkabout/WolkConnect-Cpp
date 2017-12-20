@@ -33,7 +33,17 @@ public:
 
     static std::vector<std::string> tokenize(const std::string& string, const std::string& delimiters);
 
+	static bool startsWith(const std::string& string, const std::string& prefix);
+
     static bool endsWith(const std::string& string, const std::string& suffix);
+
+	static bool isBase64(unsigned char c);
+
+	static std::string base64Encode(const char* bytesToEncode, unsigned int len);
+
+	static std::string base64Decode(const std::string& encodedString);
+
+	static std::string hashSHA256(const std::string& value);
 };
 }
 

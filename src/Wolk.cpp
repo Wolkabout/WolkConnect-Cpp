@@ -153,14 +153,22 @@ void Wolk::publish()
 }
 
 Wolk::Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-           Device device)
+		   std::shared_ptr<ServiceCommandHandler> serviceCommandHandler, std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
+		   Device device)
 : m_connectivityService(std::move(connectivityService))
 , m_persistence(persistence)
+, m_serviceCommandHandler(std::move(serviceCommandHandler))
+, m_inboundMessageHandler(std::move(inboundMessageHandler))
 , m_device(device)
 , m_actuationHandlerLambda(nullptr)
 , m_actuatorStatusProviderLambda(nullptr)
 {
     m_commandBuffer = std::unique_ptr<CommandBuffer>(new CommandBuffer());
+}
+
+void Wolk::addService(std::shared_ptr<CommandHandlingService> service)
+{
+	m_commandHandlingServices.push_back(std::move(service));
 }
 
 void Wolk::addToCommandBuffer(std::function<void()> command)

@@ -14,20 +14,31 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#ifndef OUTBOUNDDATASERVICE_H
+#define OUTBOUNDDATASERVICE_H
+
+#include "OutboundServiceDataHandler.h"
+#include "model/Device.h"
+#include <memory>
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+class ConnectivityService;
+
+class OutboundDataService: public OutboundServiceDataHandler
 {
-    m_listener = listener;
+public:
+	OutboundDataService(Device device, std::shared_ptr<ConnectivityService> connectivityService);
+
+	void addFirmwareUpdateResponse(const FirmwareUpdateResponse& response) override;
+	void addFileDownloadMqttResponse(const FileDownloadMqttResponse& response) override;
+
+private:
+	Device m_device;
+
+	std::shared_ptr<ConnectivityService> m_connectivityService;
+};
+
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
-{
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
-}
-}
+#endif // OUTBOUNDDATASERVICE_H

@@ -38,15 +38,15 @@ bool PahoMqttClient::connect(const std::string& username, const std::string& pas
     m_client->set_callback(*this);
 
     mqtt::connect_options connectOptions;
-    connectOptions.set_user_name(username);
-    connectOptions.set_password(password);
+	connectOptions.set_user_name(username);
+	connectOptions.set_password(password);
     connectOptions.set_clean_session(true);
     connectOptions.set_keep_alive_interval(MQTT_KEEP_ALIVE_SEC);
 
-    mqtt::ssl_options sslOptions;
-    sslOptions.set_enable_server_cert_auth(false);
-    sslOptions.set_trust_store(trustStore);
-    connectOptions.set_ssl(sslOptions);
+	mqtt::ssl_options sslOptions;
+	sslOptions.set_enable_server_cert_auth(false);
+	sslOptions.set_trust_store(trustStore);
+	connectOptions.set_ssl(sslOptions);
 
     if (!m_lastWillTopic.empty() && !m_lastWillMessage.empty())
     {
@@ -126,6 +126,8 @@ bool PahoMqttClient::publish(const std::string& topic, const std::string& messag
     {
         return false;
     }
+
+	std::lock_guard<std::mutex> guard(m_mutex);
 
     try
     {

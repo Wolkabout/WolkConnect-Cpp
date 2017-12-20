@@ -30,6 +30,9 @@
 namespace wolkabout
 {
 class Wolk;
+class UrlFileDownloader;
+class FirmwareInstaller;
+
 class WolkBuilder final
 {
 public:
@@ -88,6 +91,29 @@ public:
      */
     WolkBuilder& withPersistence(std::shared_ptr<Persistence> persistence);
 
+	/**
+	 * @brief Enables use of direct file download<br>
+	 *		  File is uploaded from Wolkabout platform
+	 * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+	 */
+	WolkBuilder& withDirectFileDownload();
+
+	/**
+	 * @brief Enables use of file download via provided url<br>
+	 *		  File url is uploaded from Wolkabout platform
+	 * @param downloader Instance of wolkabout::UrlFileDownloader used to download file
+	 * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+	 */
+	WolkBuilder& withUrlFileDownload(std::weak_ptr<UrlFileDownloader> downloader);
+
+	/**
+	 * @brief Enabled device firmware update
+	 *		  One of the file download methods must be enabled as well
+	 * @param installer Instance of wolkabout::FirmwareInstaller used to install firmware
+	 * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+	 */
+	WolkBuilder& withFirmwareUpdate(std::weak_ptr<FirmwareInstaller> installer);
+
     /**
      * @brief Builds Wolk instance
      * @return Wolk instance as std::unique_ptr<Wolk>
@@ -116,7 +142,11 @@ private:
 
     std::shared_ptr<Persistence> m_persistence;
 
-    static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
+	std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
+	bool m_directFileDownloadEnabled;
+	std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
+
+	static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
 };
 }
 

@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#ifndef URLFILEDOWNLOADER_H
+#define URLFILEDOWNLOADER_H
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+class UrlFileDownloader
 {
-    m_listener = listener;
+public:
+	virtual ~UrlFileDownloader() = default;
+};
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
-{
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
-}
-}
+#endif // URLFILEDOWNLOADER_H

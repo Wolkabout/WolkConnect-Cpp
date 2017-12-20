@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#ifndef FIRMWAREUPDATECOMMANDLISTENER_H
+#define FIRMWAREUPDATECOMMANDLISTENER_H
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+class FirmwareUpdateCommand;
+
+class FirmwareUpdateCommandListener
 {
-    m_listener = listener;
+public:
+	virtual ~FirmwareUpdateCommandListener() = default;
+
+	virtual void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) = 0;
+};
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
-{
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
-}
-}
+#endif // FIRMWAREUPDATECOMMANDLISTENER_H

@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#ifndef BINARYDATALISTENER_H
+#define BINARYDATALISTENER_H
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+class BinaryData;
+
+class BinaryDataListener
 {
-    m_listener = listener;
+public:
+	virtual ~BinaryDataListener() = default;
+	virtual void handleBinaryData(const BinaryData& binaryData) = 0;
+};
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
-{
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
-}
-}
+#endif // BINARYDATALISTENER_H

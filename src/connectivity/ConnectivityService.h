@@ -19,16 +19,19 @@
 
 #include <functional>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace wolkabout
 {
-class ActuatorCommand;
 class ConnectivityServiceListener
 {
 public:
     virtual ~ConnectivityServiceListener() = default;
 
-    virtual void actuatorCommandReceived(const ActuatorCommand& actuatorCommand) = 0;
+	virtual void messageReceived(const std::string& topic, const std::string& message) = 0;
+
+	virtual const std::vector<std::string>& getTopics() const = 0;
 };
 
 class OutboundMessage;
@@ -40,18 +43,16 @@ public:
     virtual bool connect() = 0;
     virtual void disconnect() = 0;
 
-    virtual bool isConnected() = 0;
+	virtual bool isConnected() = 0;
 
     virtual bool publish(std::shared_ptr<OutboundMessage> outboundMessage) = 0;
 
     void setListener(std::weak_ptr<ConnectivityServiceListener> listener);
-    void setListener(std::function<void(const ActuatorCommand&)> listener);
 
-    void invokeListener(const ActuatorCommand& actuatorCommand) const;
+	void invokeListener(const std::string& topic, const std::string& message) const;
 
 protected:
     std::weak_ptr<ConnectivityServiceListener> m_listener;
-    std::function<void(const ActuatorCommand&)> m_listenerLambda;
 };
 }
 

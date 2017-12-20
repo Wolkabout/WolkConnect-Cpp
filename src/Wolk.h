@@ -21,17 +21,22 @@
 #include "ActuatorStatusProvider.h"
 #include "CommandBuffer.h"
 #include "WolkBuilder.h"
-#include "connectivity/ConnectivityService.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Device.h"
+#include "CommandHandlingService.h"
 
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace wolkabout
 {
+class ConnectivityService;
+class ServiceCommandHandler;
+class InboundMessageHandler;
+
 class Wolk
 {
     friend class WolkBuilder;
@@ -105,7 +110,10 @@ private:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 
     Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-         Device device);
+		 std::shared_ptr<ServiceCommandHandler> serviceCommandHandler, std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
+		 Device device);
+
+	void addService(std::shared_ptr<CommandHandlingService> service);
 
     void addToCommandBuffer(std::function<void()> command);
 
@@ -122,6 +130,8 @@ private:
 
     std::shared_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
+	std::shared_ptr<ServiceCommandHandler> m_serviceCommandHandler;
+	std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
     Device m_device;
 
     std::function<void(std::string, std::string)> m_actuationHandlerLambda;
@@ -131,6 +141,8 @@ private:
     std::weak_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
+
+	std::vector<std::shared_ptr<CommandHandlingService>> m_commandHandlingServices;
 };
 }
 

@@ -60,6 +60,32 @@ bool FileSystemUtils::createFileWithContent(const std::string& filePath, const s
     }
 }
 
+bool FileSystemUtils::createBinaryFileWithContent(const std::string& filePath, const std::string& content)
+{
+	try
+	{
+		std::ofstream ofstream;
+		ofstream.open(filePath, std::ofstream::binary);
+		if (!ofstream.is_open())
+		{
+			return false;
+		}
+
+		ofstream << content;
+		if (!ofstream)
+		{
+			deleteFile(filePath);
+			return false;
+		}
+
+		return true;
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
 bool FileSystemUtils::deleteFile(const std::string& filePath)
 {
     return std::remove(filePath.c_str()) == 0;

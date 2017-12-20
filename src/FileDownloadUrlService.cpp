@@ -14,20 +14,18 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#include "FileDownloadUrlService.h"
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+FileDownloadUrlService::FileDownloadUrlService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
+											   std::weak_ptr<UrlFileDownloader> downloader) :
+	m_outboundDataHandler{std::move(outboundDataHandler)}, m_urlFileDownloader{downloader}
 {
-    m_listener = listener;
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
+void FileDownloadUrlService::setFileDownloadedCallback(std::function<void(const std::string&)> callback)
 {
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
+	m_fileDownloadedCallback = callback;
 }
 }

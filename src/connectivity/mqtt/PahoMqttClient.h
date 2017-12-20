@@ -22,6 +22,7 @@
 
 #include <atomic>
 #include <string>
+#include <mutex>
 
 namespace wolkabout
 {
@@ -49,6 +50,8 @@ private:
     std::string m_lastWillMessage;
 
     std::unique_ptr<mqtt::async_client> m_client;
+
+	std::mutex m_mutex;
 
     static const constexpr int MQTT_CONNECTION_COMPLETITION_TIMEOUT_SEC = 2;
     static const constexpr int MQTT_ACTION_COMPLETITION_TIMEOUT_SEC = 2;

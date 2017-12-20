@@ -14,20 +14,42 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#ifndef WOLKOPTIONAL_H
+#define WOLKOPTIONAL_H
+
+#include <type_traits>
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+
+template<typename T>
+class WolkOptional
 {
-    m_listener = listener;
+public:
+	WolkOptional() : m_value{}, m_null{true}
+    {
+        static_assert(std::is_default_constructible<T>::value, "Type doesn't have default constructor");
+    }
+
+    WolkOptional(T value) : m_value{value}, m_null{false} {}
+
+    WolkOptional<T>& operator=(T value)
+    {
+        m_value = value;
+        m_null = false;
+
+        return *this;
+    }
+
+    operator T() const { return m_value; }
+
+    bool null() const { return m_null; }
+
+private:
+    T m_value;
+    bool m_null;
+};
+
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
-{
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
-}
-}
+#endif // WOLKOPTIONAL_H

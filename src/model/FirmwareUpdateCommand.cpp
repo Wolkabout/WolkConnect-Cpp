@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#include "model/FirmwareUpdateCommand.h"
+
+#include <string>
+#include <utility>
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+FirmwareUpdateCommand::FirmwareUpdateCommand() : m_type{FirmwareUpdateCommand::Type::INIT}
 {
-    m_listener = listener;
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
+FirmwareUpdateCommand::FirmwareUpdateCommand(FirmwareUpdateCommand::Type type) : m_type{type}
 {
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
 }
+
+FirmwareUpdateCommand::Type FirmwareUpdateCommand::getType() const
+{
+	return m_type;
+}
+
 }

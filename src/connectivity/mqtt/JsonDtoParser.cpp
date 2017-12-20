@@ -21,6 +21,8 @@
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
 #include "model/SensorReading.h"
+#include "model/FirmwareUpdateCommand.h"
+#include "model/FileDownloadMqttCommand.h"
 
 #include <string>
 
@@ -66,4 +68,55 @@ bool JsonParser::fromJson(const std::string& jsonString, ActuatorCommand& actuat
     return true;
 }
 /*** ACTUATOR COMMAND ***/
+
+/*** FIRMWARE UPDATE COMMAND ***/
+void from_json(const json& j, FirmwareUpdateCommand& p)
+{
+	const std::string typeStr = j.at("command").get<std::string>();
+
+	FirmwareUpdateCommand::Type type = typeStr == "INSTALL" ? FirmwareUpdateCommand::Type::INSTALL : FirmwareUpdateCommand::Type::INIT;
+	p = FirmwareUpdateCommand(type);
+}
+
+bool JsonParser::fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommandDto)
+{
+	try
+	{
+		json j = json::parse(jsonString);
+		firmwareUpdateCommandDto = j;
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	return true;
+}
+/*** FIRMWARE UPDATE COMMAND ***/
+
+/*** FILE DOWNLOAD MQTT COMMAND ***/
+void from_json(const json& j, FileDownloadMqttCommand& p)
+{
+	const std::string typeStr = j.at("command").get<std::string>();
+
+	FileDownloadMqttCommand::Type type = typeStr == "END" ? FileDownloadMqttCommand::Type::END : FileDownloadMqttCommand::Type::INIT;
+	p = FileDownloadMqttCommand(type);
+}
+
+bool JsonParser::fromJson(const std::string& jsonString, FileDownloadMqttCommand& fileDownloadMqttCommandDto)
+{
+	try
+	{
+		json j = json::parse(jsonString);
+		fileDownloadMqttCommandDto = j;
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	return true;
+}
+/*** FILE DOWNLOAD MQTT COMMAND ***/
+
 }

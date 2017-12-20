@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#ifndef FIRMWAREINSTALLER_H
+#define FIRMWAREINSTALLER_H
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
+class FirmwareInstaller
 {
-    m_listener = listener;
+public:
+	virtual ~FirmwareInstaller() = default;
+};
 }
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
-{
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
-}
-}
+#endif // FIRMWAREINSTALLER_H

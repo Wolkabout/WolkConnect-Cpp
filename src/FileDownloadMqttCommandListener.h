@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-#include "connectivity/ConnectivityService.h"
+#ifndef FILEDOWNLOADMQTTCOMMANDLISTENER_H
+#define FILEDOWNLOADMQTTCOMMANDLISTENER_H
 
 namespace wolkabout
 {
-void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener> listener)
-{
-    m_listener = listener;
-}
+class FileDownloadMqttCommand;
 
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
+class FileDownloadMqttCommandListener
 {
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
+public:
+	virtual ~FileDownloadMqttCommandListener() = default;
+
+	virtual void handleFileDownloadMqttCommand(const FileDownloadMqttCommand& fileDownloadMqttCommand) = 0;
+};
 }
-}
+#endif // FILEDOWNLOADMQTTCOMMANDLISTENER_H

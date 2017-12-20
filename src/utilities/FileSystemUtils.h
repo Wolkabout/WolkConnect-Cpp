@@ -32,6 +32,8 @@ public:
 
     static bool createFileWithContent(const std::string& filePath, const std::string& content);
 
+	static bool createBinaryFileWithContent(const std::string& filePath, const std::string& content);
+
     static bool deleteFile(const std::string& filePath);
 
     static bool isDirectoryPresent(const std::string& dirPath);
