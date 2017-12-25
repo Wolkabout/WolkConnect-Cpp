@@ -17,12 +17,23 @@
 #ifndef URLFILEDOWNLOADER_H
 #define URLFILEDOWNLOADER_H
 
+#include <string>
+#include <functional>
+
 namespace wolkabout
 {
 class UrlFileDownloader
 {
 public:
 	virtual ~UrlFileDownloader() = default;
+
+	virtual void download(const std::string& url) = 0;
+
+	virtual void abort() = 0;
+
+	virtual void setOnSuccessCallback(std::function<void(const std::string&)> callback) = 0;
+
+	virtual void setOnErrorCallback(std::function<void()> callback) = 0;
 };
 }
 

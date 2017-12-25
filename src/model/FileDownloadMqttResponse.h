@@ -18,6 +18,7 @@
 #define FILEDOWNLOADMQTTRESPONSE_H
 
 #include "WolkOptional.h"
+#include "FileDownloadMqttCommand.h"
 
 namespace wolkabout
 {
@@ -34,7 +35,7 @@ public:
 	{
 		UNSPECIFIED_ERROR = 0,
 		FILE_UPLOAD_DISABLED,
-		PACKAGE_LENGTH_NOT_SUPPORTED,
+		FILE_LENGTH_NOT_SUPPORTED,
 		PACKAGE_HASH_INVALID,
 		PREVIOUS_PACKAGE_HASH_INVALID,
 		NOT_ALL_PACKAGES_RECEIVED,
@@ -45,21 +46,36 @@ public:
 	};
 
 	FileDownloadMqttResponse();
-	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status);
-	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttResponse::ErrorCode errorCode);
-	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, int packageNumber);
-	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttResponse::ErrorCode errorCode,
-							 int packageNumber);
+	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command);
+	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
+							 WolkOptional<FileDownloadMqttResponse::ErrorCode> errorCode);
+	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
+							 WolkOptional<int> packageNumber);
+	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
+							 WolkOptional<FileDownloadMqttResponse::ErrorCode> errorCode,
+							 WolkOptional<int> packageNumber);
+	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
+							 WolkOptional<int> packageSize, WolkOptional<int> packageCount);
+	FileDownloadMqttResponse(FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
+							 WolkOptional<FileDownloadMqttResponse::ErrorCode> errorCode,
+							 WolkOptional<int> packageNumber, WolkOptional<int> packageSize,
+							 WolkOptional<int> packageCount);
 
 	FileDownloadMqttResponse::Status getStatus() const;
+	FileDownloadMqttCommand::Type getCommand() const;
 
 	WolkOptional<FileDownloadMqttResponse::ErrorCode> getErrorCode() const;
 	WolkOptional<int> getPackageNumber() const;
+	WolkOptional<int> getPackageSize() const;
+	WolkOptional<int> getPackageCount() const;
 
 private:
 	FileDownloadMqttResponse::Status m_status;
+	FileDownloadMqttCommand::Type m_command;
 	WolkOptional<FileDownloadMqttResponse::ErrorCode> m_errorCode;
 	WolkOptional<int> m_packageNumber;
+	WolkOptional<int> m_packageSize;
+	WolkOptional<int> m_packageCount;
 };
 }
 

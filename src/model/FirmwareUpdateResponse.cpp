@@ -19,25 +19,33 @@
 namespace wolkabout
 {
 
-FirmwareUpdateResponse::FirmwareUpdateResponse() : m_status{FirmwareUpdateResponse::Status::OK},
-	m_errorCode{}
+FirmwareUpdateResponse::FirmwareUpdateResponse() :
+	FirmwareUpdateResponse(FirmwareUpdateResponse::Status::OK, FirmwareUpdateCommand::Type::ABORT,
+						   WolkOptional<FirmwareUpdateResponse::ErrorCode>{})
 {
 }
 
-FirmwareUpdateResponse::FirmwareUpdateResponse(FirmwareUpdateResponse::Status status) : m_status{status},
-	m_errorCode{}
+FirmwareUpdateResponse::FirmwareUpdateResponse(
+		FirmwareUpdateResponse::Status status, FirmwareUpdateCommand::Type command) :
+	FirmwareUpdateResponse(status, command, WolkOptional<FirmwareUpdateResponse::ErrorCode>{})
 {
 }
 
-FirmwareUpdateResponse::FirmwareUpdateResponse(FirmwareUpdateResponse::Status status,
-											   FirmwareUpdateResponse::ErrorCode errorCode) :
-	m_status{status}, m_errorCode{errorCode}
+FirmwareUpdateResponse::FirmwareUpdateResponse(
+		FirmwareUpdateResponse::Status status, FirmwareUpdateCommand::Type command,
+		FirmwareUpdateResponse::ErrorCode errorCode) :
+	m_status{status}, m_command{command}, m_errorCode{errorCode}
 {
 }
 
 FirmwareUpdateResponse::Status FirmwareUpdateResponse::getStatus() const
 {
 	return m_status;
+}
+
+FirmwareUpdateCommand::Type FirmwareUpdateResponse::getCommand() const
+{
+	return m_command;
 }
 
 WolkOptional<FirmwareUpdateResponse::ErrorCode> FirmwareUpdateResponse::getErrorCode() const

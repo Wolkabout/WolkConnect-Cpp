@@ -18,6 +18,7 @@
 #define FILEDOWNLOADURLSERVICE_H
 
 #include "CommandHandlingService.h"
+#include "FileDownloadUrlCommandListener.h"
 #include <functional>
 #include <memory>
 
@@ -26,18 +27,33 @@ namespace wolkabout
 class OutboundServiceDataHandler;
 class UrlFileDownloader;
 
-class FileDownloadUrlService: public CommandHandlingService
+class FileDownloadUrlService: public CommandHandlingService, public FileDownloadUrlCommandListener
 {
 public:
 	FileDownloadUrlService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
 						   std::weak_ptr<UrlFileDownloader> downloader);
 
+	void handleFileDownloadUrlCommand(const FileDownloadUrlCommand& fileDownloadUrlCommand) override;
+
 	void setFileDownloadedCallback(std::function<void(const std::string&)> callback);
 
+	void abortDownload();
+
 private:
+	enum class State
+	{
+		IDLE,
+		DOWNLOAD,
+		COMPLETED,
+		ERROR
+	};
+
 	std::shared_ptr<OutboundServiceDataHandler> m_outboundDataHandler;
 	std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
 	std::function<void(const std::string&)> m_fileDownloadedCallback;
+
+	FileDownloadUrlService::State m_currentState;
+	std::string m_file;
 };
 }
 

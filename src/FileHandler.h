@@ -31,21 +31,21 @@ public:
 	enum class StatusCode
 	{
 		OK = 0,
-		PACKAGE_SIZE_NOT_SUPPORTED,
 		PACKAGE_HASH_NOT_VALID,
 		PREVIOUS_PACKAGE_HASH_NOT_VALID,
 		TRANSFER_NOT_INITIATED,
 		TRANSFER_NOT_COMPLETED,
 		FILE_HASH_NOT_VALID,
-		FILE_HANDLING_ERROR
+		FILE_HANDLING_ERROR,
+		FILE_SIZE_NOT_SUPPORTED
 	};
 
-	FileHandler(const std::string& path, int maxPackageSize);
+	FileHandler(const std::string& path, int maxFileSize, int maxPackageSize);
 
 	virtual ~FileHandler() = default;
 
-	FileHandler::StatusCode prepare(const std::string& fileName, int packageSize, int packageCount,
-									const std::string& fileHash);
+	FileHandler::StatusCode prepare(const std::string& fileName, int fileSize, const std::string& fileHash,
+									int& packageSize, int& packageCount);
 
 	void clear();
 
@@ -57,6 +57,7 @@ public:
 
 private:
 	const std::string m_path;
+	const int m_maxFileSize;
 	const int m_maxPackageSize;
 
 	std::string m_currentFileName;

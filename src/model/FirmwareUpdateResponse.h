@@ -18,6 +18,7 @@
 #define FIRMWAREUPDATERESPONSE_H
 
 #include "WolkOptional.h"
+#include "FirmwareUpdateCommand.h"
 
 namespace wolkabout
 {
@@ -38,18 +39,19 @@ public:
 	};
 
 	FirmwareUpdateResponse();
-	explicit FirmwareUpdateResponse(FirmwareUpdateResponse::Status status);
-	explicit FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateResponse::ErrorCode errorCode);
+	FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateCommand::Type command);
+	FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateCommand::Type command,
+						   FirmwareUpdateResponse::ErrorCode errorCode);
 
 	virtual ~FirmwareUpdateResponse() = default;
 
 	FirmwareUpdateResponse::Status getStatus() const;
-
+	FirmwareUpdateCommand::Type getCommand() const;
 	WolkOptional<FirmwareUpdateResponse::ErrorCode> getErrorCode() const;
 
 private:
 	FirmwareUpdateResponse::Status m_status;
-
+	FirmwareUpdateCommand::Type m_command;
 	WolkOptional<FirmwareUpdateResponse::ErrorCode> m_errorCode;
 };
 }

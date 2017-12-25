@@ -20,13 +20,14 @@
 #include "CommandHandlingService.h"
 #include "BinaryDataListener.h"
 #include "FileDownloadMqttCommandListener.h"
+#include "FileHandler.h"
+#include "model/FileDownloadMqttResponse.h"
 #include <memory>
 #include <functional>
 
 namespace wolkabout
 {
 class OutboundServiceDataHandler;
-class FileHandler;
 
 class FileDownloadMqttService: public CommandHandlingService, public FileDownloadMqttCommandListener, public BinaryDataListener
 {
@@ -39,7 +40,11 @@ public:
 
 	void setFileDownloadedCallback(std::function<void(const std::string&)> callback);
 
+	void abortDownload();
+
 private:
+	void sendResponse(const FileDownloadMqttResponse& response);
+
 	enum class State
 	{
 		IDLE = 0,
@@ -50,6 +55,8 @@ private:
 	std::shared_ptr<OutboundServiceDataHandler> m_outboundDataHandler;
 	std::unique_ptr<FileHandler> m_fileHandler;
 	std::string m_fileName;
+
+	FileDownloadMqttResponse m_lastResponse;
 
 	std::function<void(const std::string&)> m_fileDownloadedCallback;
 };

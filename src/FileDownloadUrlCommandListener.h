@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef JSONDTOPARSER_H
-#define JSONDTOPARSER_H
-
-#include <string>
+#ifndef FILEDOWNLOADURLCOMMANDLISTENER_H
+#define FILEDOWNLOADURLCOMMANDLISTENER_H
 
 namespace wolkabout
 {
-class SensorReading;
-class Alarm;
-class ActuatorStatus;
-class ActuatorCommand;
-class FirmwareUpdateCommand;
-class FileDownloadMqttCommand;
 class FileDownloadUrlCommand;
 
-class JsonParser
+class FileDownloadUrlCommandListener
 {
 public:
-    JsonParser() = delete;
+	virtual ~FileDownloadUrlCommandListener() = default;
 
-    static bool fromJson(const std::string& jsonString, ActuatorCommand& actuatorCommand);
-	static bool fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommand);
-	static bool fromJson(const std::string& jsonString, FileDownloadMqttCommand& fileDownloadMqttCommand);
-	static bool fromJson(const std::string& jsonString, FileDownloadUrlCommand& fileDownloadUrlCommand);
+	virtual void handleFileDownloadUrlCommand(const FileDownloadUrlCommand& fileDownloadUrlCommand) = 0;
 };
 }
 
-#endif
+#endif // FILEDOWNLOADURLCOMMANDLISTENER_H

@@ -18,46 +18,60 @@
 #include "BinaryDataListener.h"
 #include "FirmwareUpdateCommandListener.h"
 #include "FileDownloadMqttCommandListener.h"
+#include "FileDownloadUrlCommandListener.h"
 
 namespace wolkabout
 {
 void ServiceCommandHandler::handleBinaryData(const BinaryData& binaryData)
 {
-	if(auto handler = m_binaryDataHandler.lock())
-	{
-		handler->handleBinaryData(binaryData);
-	}
+    if(auto handler = m_binaryDataHandler.lock())
+    {
+        handler->handleBinaryData(binaryData);
+    }
 }
 
 void ServiceCommandHandler::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
 {
-	if(auto handler = m_firmwareUpdateCommandHandler.lock())
-	{
-		handler->handleFirmwareUpdateCommand(firmwareUpdateCommand);
-	}
+    if(auto handler = m_firmwareUpdateCommandHandler.lock())
+    {
+        handler->handleFirmwareUpdateCommand(firmwareUpdateCommand);
+    }
 }
 
 void ServiceCommandHandler::handleFileDownloadMqttCommand(const FileDownloadMqttCommand& fileDownloadMqttCommand)
 {
-	if(auto handler = m_fileDownloadMqttCommandHandler.lock())
-	{
-		handler->handleFileDownloadMqttCommand(fileDownloadMqttCommand);
-	}
+    if(auto handler = m_fileDownloadMqttCommandHandler.lock())
+    {
+        handler->handleFileDownloadMqttCommand(fileDownloadMqttCommand);
+    }
+}
+
+void ServiceCommandHandler::handleFileDownloadUrlCommand(const FileDownloadUrlCommand& fileDownloadUrlCommand)
+{
+    if(auto handler = m_fileDownloadUrlCommandHandler.lock())
+    {
+        handler->handleFileDownloadUrlCommand(fileDownloadUrlCommand);
+    }
 }
 
 void ServiceCommandHandler::setBinaryDataHandler(std::weak_ptr<BinaryDataListener> handler)
 {
-	m_binaryDataHandler = handler;
-}
-
-void ServiceCommandHandler::setFileDownloadMqttCommandHandler(std::weak_ptr<FileDownloadMqttCommandListener> handler)
-{
-	m_fileDownloadMqttCommandHandler = handler;
+    m_binaryDataHandler = handler;
 }
 
 void ServiceCommandHandler::setFirmwareUpdateCommandHandler(std::weak_ptr<FirmwareUpdateCommandListener> handler)
 {
-	m_firmwareUpdateCommandHandler = handler;
+    m_firmwareUpdateCommandHandler = handler;
+}
+
+void ServiceCommandHandler::setFileDownloadMqttCommandHandler(std::weak_ptr<FileDownloadMqttCommandListener> handler)
+{
+    m_fileDownloadMqttCommandHandler = handler;
+}
+
+void ServiceCommandHandler::setFileDownloadUrlCommandHandler(std::weak_ptr<FileDownloadUrlCommandListener> handler)
+{
+    m_fileDownloadUrlCommandHandler = handler;
 }
 
 }

@@ -28,19 +28,21 @@ class FileDownloadMqttCommand
 public:
 	enum class Type
 	{
-		INIT,
-		END
+		INIT = 0,
+		STATUS,
+		END,
+		UPLOAD
 	};
 
 	FileDownloadMqttCommand();
 	FileDownloadMqttCommand(FileDownloadMqttCommand::Type type);
-    FileDownloadMqttCommand(FileDownloadMqttCommand::Type type, std::string name, int size, int count, std::string hash);
+	FileDownloadMqttCommand(FileDownloadMqttCommand::Type type, WolkOptional<std::string> name,
+							WolkOptional<int> size, WolkOptional<std::string> hash);
 
 	FileDownloadMqttCommand::Type getType() const;
 
     WolkOptional<std::string> getName() const;
     WolkOptional<int> getSize() const;
-    WolkOptional<int> getCount() const;
     WolkOptional<std::string> getHash() const;
 
 private:
@@ -48,7 +50,6 @@ private:
 
     WolkOptional<std::string> m_name;
     WolkOptional<int> m_size;
-    WolkOptional<int> m_count;
     WolkOptional<std::string> m_hash;
 };
 

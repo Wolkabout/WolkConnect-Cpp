@@ -26,9 +26,11 @@ FileDownloadMqttCommand::FileDownloadMqttCommand(FileDownloadMqttCommand::Type t
 {
 }
 
-FileDownloadMqttCommand::FileDownloadMqttCommand(FileDownloadMqttCommand::Type type, std::string name,
-                                                 int size, int count, std::string hash) :
-    m_type{type}, m_name{name}, m_size{size}, m_count{count}, m_hash{hash}
+FileDownloadMqttCommand::FileDownloadMqttCommand(FileDownloadMqttCommand::Type type,
+												 WolkOptional<std::string> name,
+												 WolkOptional<int> size,
+												 WolkOptional<std::string> hash) :
+	m_type{type}, m_name{name}, m_size{size}, m_hash{hash}
 {
 }
 
@@ -45,11 +47,6 @@ WolkOptional<std::string> FileDownloadMqttCommand::getName() const
 WolkOptional<int> FileDownloadMqttCommand::getSize() const
 {
     return m_size;
-}
-
-WolkOptional<int> FileDownloadMqttCommand::getCount() const
-{
-    return m_count;
 }
 
 WolkOptional<std::string> FileDownloadMqttCommand::getHash() const

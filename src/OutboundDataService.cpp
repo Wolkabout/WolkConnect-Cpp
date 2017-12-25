@@ -31,7 +31,6 @@ OutboundDataService::OutboundDataService(Device device, std::shared_ptr<Connecti
 
 void OutboundDataService::addFirmwareUpdateResponse(const FirmwareUpdateResponse& response)
 {
-	// TODO presist?
 	const std::shared_ptr<OutboundMessage> outboundMessage =
 			OutboundMessageFactory::make(m_device.getDeviceKey(), response);
 
@@ -43,7 +42,17 @@ void OutboundDataService::addFirmwareUpdateResponse(const FirmwareUpdateResponse
 
 void OutboundDataService::addFileDownloadMqttResponse(const FileDownloadMqttResponse& response)
 {
-	// TODO presist?
+	const std::shared_ptr<OutboundMessage> outboundMessage =
+			OutboundMessageFactory::make(m_device.getDeviceKey(), response);
+
+	if (outboundMessage && m_connectivityService->publish(outboundMessage))
+	{
+		std::cout << "Message sent " << outboundMessage->getContent();
+	}
+}
+
+void OutboundDataService::addFileDownloadUrlResponse(const FileDownloadUrlResponse& response)
+{
 	const std::shared_ptr<OutboundMessage> outboundMessage =
 			OutboundMessageFactory::make(m_device.getDeviceKey(), response);
 

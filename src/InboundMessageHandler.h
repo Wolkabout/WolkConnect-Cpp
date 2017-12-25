@@ -23,6 +23,7 @@
 #include "model/BinaryData.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "model/FileDownloadMqttCommand.h"
+#include "CommandBuffer.h"
 
 #include <string>
 #include <vector>
@@ -47,7 +48,11 @@ public:
 	void setFileDownloadMqttCommandHandler(std::function<void(FileDownloadMqttCommand)> handler);
 
 private:
+	void addToCommandBuffer(std::function<void()> command);
+
 	Device m_device;
+
+	std::unique_ptr<CommandBuffer> m_commandBuffer;
 
 	std::vector<std::string> m_subscriptionList;
 

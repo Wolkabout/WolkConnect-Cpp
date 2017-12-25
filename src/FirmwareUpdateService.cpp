@@ -22,6 +22,7 @@
 #include "model/FirmwareUpdateCommand.h"
 #include "model/FirmwareUpdateResponse.h"
 #include "OutboundDataService.h"
+#include "FirmwareInstaller.h"
 
 namespace wolkabout
 {
@@ -34,73 +35,146 @@ FirmwareUpdateService::FirmwareUpdateService(std::shared_ptr<OutboundServiceData
 
 void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
 {
-	if(firmwareUpdateCommand.getType() == FirmwareUpdateCommand::Type::ABORT)
-	{
-		m_currentState = FirmwareUpdateService::State::IDLE;
-
-		FirmwareUpdateResponse response(FirmwareUpdateResponse::Status::OK);
-		m_outboundDataHandler->addFirmwareUpdateResponse(response);
-
-		return;
-	}
-
 	switch (m_currentState)
 	{
 		case FirmwareUpdateService::State::IDLE:
 		{
-			if(firmwareUpdateCommand.getType() == FirmwareUpdateCommand::Type::INIT)
+			switch (firmwareUpdateCommand.getType())
 			{
-				m_currentState = FirmwareUpdateService::State::FILE_DOWNLOAD;
+				case FirmwareUpdateCommand::Type::INIT:
+				{
+					m_currentState = FirmwareUpdateService::State::FILE_DOWNLOAD;
 
-				FirmwareUpdateResponse response(FirmwareUpdateResponse::Status::OK);
-				m_outboundDataHandler->addFirmwareUpdateResponse(response);
-			}
-			else if(firmwareUpdateCommand.getType() == FirmwareUpdateCommand::Type::INSTALL)
-			{
-				FirmwareUpdateResponse response(FirmwareUpdateResponse::Status::ERROR,
-												FirmwareUpdateResponse::ErrorCode::FIRMWARE_FILE_NOT_DOWNLOADED);
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
+												   FirmwareUpdateCommand::Type::INIT};
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
 
-				m_outboundDataHandler->addFirmwareUpdateResponse(response);
+					break;
+				}
+				case FirmwareUpdateCommand::Type::INSTALL:
+				{
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
+								FirmwareUpdateCommand::Type::INSTALL,
+								FirmwareUpdateResponse::ErrorCode::FIRMWARE_FILE_NOT_DOWNLOADED};
+
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+
+					break;
+				}
+				case FirmwareUpdateCommand::Type::ABORT:
+				{
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
+								firmwareUpdateCommand.getType(),
+								FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+
+					break;
+				}
+				default:
+					break;
 			}
 
 			break;
 		}
 		case FirmwareUpdateService::State::FILE_DOWNLOAD:
 		{
-			if(firmwareUpdateCommand.getType() == FirmwareUpdateCommand::Type::INSTALL)
+			switch (firmwareUpdateCommand.getType())
 			{
-				FirmwareUpdateResponse response(FirmwareUpdateResponse::Status::ERROR,
-												FirmwareUpdateResponse::ErrorCode::FIRMWARE_FILE_NOT_DOWNLOADED);
+				case FirmwareUpdateCommand::Type::INIT:
+				{
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
+								FirmwareUpdateCommand::Type::INIT,
+								FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-				m_outboundDataHandler->addFirmwareUpdateResponse(response);
-			}
-			else
-			{
-				FirmwareUpdateResponse response(FirmwareUpdateResponse::Status::ERROR,
-												FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR);
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
 
-				m_outboundDataHandler->addFirmwareUpdateResponse(response);
+					break;
+				}
+				case FirmwareUpdateCommand::Type::INSTALL:
+				{
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
+								FirmwareUpdateCommand::Type::INSTALL,
+								FirmwareUpdateResponse::ErrorCode::FIRMWARE_FILE_NOT_DOWNLOADED};
+
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+
+					break;
+				}
+				case FirmwareUpdateCommand::Type::ABORT:
+				{
+					m_currentState = FirmwareUpdateService::State::IDLE;
+
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
+												   FirmwareUpdateCommand::Type::ABORT};
+
+					if(m_abortCallback)
+					{
+						m_abortCallback();
+					}
+
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+
+					break;
+				}
+				default:
+					break;
 			}
 
 			break;
 		}
 		case FirmwareUpdateService::State::READY_FOR_INSTALL:
 		{
-			if(firmwareUpdateCommand.getType() == FirmwareUpdateCommand::Type::INSTALL)
+			switch (firmwareUpdateCommand.getType())
 			{
-				FirmwareUpdateResponse response(FirmwareUpdateResponse::Status::OK);
-				m_outboundDataHandler->addFirmwareUpdateResponse(response);
+				case FirmwareUpdateCommand::Type::INIT:
+				{
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
+								FirmwareUpdateCommand::Type::INIT,
+								FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-				// TODO install callback
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+					break;
+				}
+				case FirmwareUpdateCommand::Type::INSTALL:
+				{
+					if(auto installer = m_firmwareInstaller.lock())
+					{
+						FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
+													   FirmwareUpdateCommand::Type::INSTALL};
+						m_outboundDataHandler->addFirmwareUpdateResponse(response);
 
-				m_currentState = FirmwareUpdateService::State::IDLE;
-			}
-			else if(firmwareUpdateCommand.getType() == FirmwareUpdateCommand::Type::INIT)
-			{
-				FirmwareUpdateResponse response(FirmwareUpdateResponse::Status::ERROR,
-												FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR);
+						installer->install(m_firmwareFileName);
+					}
+					else
+					{
+						FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
+									FirmwareUpdateCommand::Type::INSTALL,
+									FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-				m_outboundDataHandler->addFirmwareUpdateResponse(response);
+						m_outboundDataHandler->addFirmwareUpdateResponse(response);
+					}
+
+					m_currentState = FirmwareUpdateService::State::IDLE;
+
+					break;
+				}
+				case FirmwareUpdateCommand::Type::ABORT:
+				{
+					m_currentState = FirmwareUpdateService::State::IDLE;
+
+					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
+												   FirmwareUpdateCommand::Type::ABORT};
+					if(m_abortCallback)
+					{
+						m_abortCallback();
+					}
+
+					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+
+					break;
+				}
+				default:
+					break;
 			}
 
 			break;
@@ -117,6 +191,11 @@ void FirmwareUpdateService::onFirmwareFileDownloaded(const std::string fileName)
 		m_currentState = FirmwareUpdateService::State::READY_FOR_INSTALL;
 		m_firmwareFileName = fileName;
 	}
+}
+
+void FirmwareUpdateService::setOnUpdateAbortCallback(std::function<void()> callback)
+{
+	m_abortCallback = callback;
 }
 }
 

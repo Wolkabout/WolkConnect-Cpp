@@ -32,6 +32,7 @@ public:
 
 	void addFirmwareUpdateResponse(const FirmwareUpdateResponse& response) override;
 	void addFileDownloadMqttResponse(const FileDownloadMqttResponse& response) override;
+	void addFileDownloadUrlResponse(const FileDownloadUrlResponse& response) override;
 
 private:
 	Device m_device;

@@ -23,6 +23,8 @@
 #include "model/SensorReading.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "model/FileDownloadMqttCommand.h"
+#include "model/FileDownloadUrlCommand.h"
+#include "utilities/StringUtils.h"
 
 #include <string>
 
@@ -74,7 +76,21 @@ void from_json(const json& j, FirmwareUpdateCommand& p)
 {
 	const std::string typeStr = j.at("command").get<std::string>();
 
-	FirmwareUpdateCommand::Type type = typeStr == "INSTALL" ? FirmwareUpdateCommand::Type::INSTALL : FirmwareUpdateCommand::Type::INIT;
+	FirmwareUpdateCommand::Type type;
+	if(typeStr == "INSTALL")
+	{
+		type = FirmwareUpdateCommand::Type::INSTALL;
+	}
+	else if(typeStr == "ABORT")
+	{
+		type = FirmwareUpdateCommand::Type::ABORT;
+	}
+	else
+	{
+		type = FirmwareUpdateCommand::Type::INIT;
+	}
+
+
 	p = FirmwareUpdateCommand(type);
 }
 
@@ -82,8 +98,29 @@ bool JsonParser::fromJson(const std::string& jsonString, FirmwareUpdateCommand& 
 {
 	try
 	{
-		json j = json::parse(jsonString);
-		firmwareUpdateCommandDto = j;
+		if(StringUtils::startsWith(jsonString, "{"))
+		{
+			json j = json::parse(jsonString);
+			firmwareUpdateCommandDto = j;
+		}
+		else
+		{
+			FirmwareUpdateCommand::Type type;
+			if(jsonString == "INSTALL")
+			{
+				type = FirmwareUpdateCommand::Type::INSTALL;
+			}
+			else if(jsonString == "ABORT")
+			{
+				type = FirmwareUpdateCommand::Type::ABORT;
+			}
+			else
+			{
+				type = FirmwareUpdateCommand::Type::INIT;
+			}
+
+			firmwareUpdateCommandDto = FirmwareUpdateCommand(type);
+		}
 	}
 	catch (...)
 	{
@@ -99,16 +136,72 @@ void from_json(const json& j, FileDownloadMqttCommand& p)
 {
 	const std::string typeStr = j.at("command").get<std::string>();
 
-	FileDownloadMqttCommand::Type type = typeStr == "END" ? FileDownloadMqttCommand::Type::END : FileDownloadMqttCommand::Type::INIT;
-	p = FileDownloadMqttCommand(type);
+	FileDownloadMqttCommand::Type type;
+	if(typeStr == "END")
+	{
+		type = FileDownloadMqttCommand::Type::END;
+	}
+	else if(typeStr == "STATUS")
+	{
+		type = FileDownloadMqttCommand::Type::STATUS;
+	}
+	else
+	{
+		type = FileDownloadMqttCommand::Type::INIT;
+	}
+
+
+	WolkOptional<std::string> name{};
+	try
+	{
+		name = j.at("name").get<std::string>();
+	}
+	catch (...) {}
+
+	WolkOptional<int> size{};
+	try
+	{
+		size = std::stoi(j.at("size").get<std::string>());
+	}
+	catch (...) {}
+
+	WolkOptional<std::string> hash{};
+	try
+	{
+		hash = j.at("hash").get<std::string>();
+	}
+	catch (...) {}
+
+	p = FileDownloadMqttCommand(type, name, size, hash);
 }
 
 bool JsonParser::fromJson(const std::string& jsonString, FileDownloadMqttCommand& fileDownloadMqttCommandDto)
 {
 	try
 	{
-		json j = json::parse(jsonString);
-		fileDownloadMqttCommandDto = j;
+		if(StringUtils::startsWith(jsonString, "{"))
+		{
+			json j = json::parse(jsonString);
+			fileDownloadMqttCommandDto = j;
+		}
+		else
+		{
+			FileDownloadMqttCommand::Type type;
+			if(jsonString == "END")
+			{
+				type = FileDownloadMqttCommand::Type::END;
+			}
+			else if(jsonString == "STATUS")
+			{
+				type = FileDownloadMqttCommand::Type::STATUS;
+			}
+			else
+			{
+				type = FileDownloadMqttCommand::Type::INIT;
+			}
+
+			fileDownloadMqttCommandDto = FileDownloadMqttCommand(type);
+		}
 	}
 	catch (...)
 	{
@@ -119,4 +212,69 @@ bool JsonParser::fromJson(const std::string& jsonString, FileDownloadMqttCommand
 }
 /*** FILE DOWNLOAD MQTT COMMAND ***/
 
+/*** FILE DOWNLOAD URL COMMAND ***/
+void from_json(const json& j, FileDownloadUrlCommand& p)
+{
+	const std::string typeStr = j.at("command").get<std::string>();
+
+	FileDownloadUrlCommand::Type type;
+	if(typeStr == "END")
+	{
+		type = FileDownloadUrlCommand::Type::END;
+	}
+	else if(typeStr == "STATUS")
+	{
+		type = FileDownloadUrlCommand::Type::STATUS;
+	}
+	else
+	{
+		type = FileDownloadUrlCommand::Type::INIT;
+	}
+
+	WolkOptional<std::string> url{};
+	try
+	{
+		url = j.at("url").get<std::string>();
+	}
+	catch (...) {}
+
+	p = FileDownloadUrlCommand(type, url);
+}
+
+bool JsonParser::fromJson(const std::string& jsonString, FileDownloadUrlCommand& fileDownloadUrlCommandDto)
+{
+	try
+	{
+		if(StringUtils::startsWith(jsonString, "{"))
+		{
+			json j = json::parse(jsonString);
+			fileDownloadUrlCommandDto = j;
+		}
+		else
+		{
+			FileDownloadUrlCommand::Type type;
+			if(jsonString == "END")
+			{
+				type = FileDownloadUrlCommand::Type::END;
+			}
+			else if(jsonString == "STATUS")
+			{
+				type = FileDownloadUrlCommand::Type::STATUS;
+			}
+			else
+			{
+				type = FileDownloadUrlCommand::Type::INIT;
+			}
+
+			fileDownloadUrlCommandDto = FileDownloadUrlCommand(type);
+		}
+	}
+	catch (...)
+	{
+		return false;
+	}
+
+	return true;
+}
+/*** FILE DOWNLOAD URL COMMAND ***/
 }

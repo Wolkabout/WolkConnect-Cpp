@@ -25,7 +25,7 @@ namespace wolkabout
 {
 
 InboundMessageHandler::InboundMessageHandler(Device device) :
-	m_device{device}
+	m_device{device}, m_commandBuffer{new CommandBuffer()}
 {
 	for (const std::string& actuatorReference : m_device.getActuatorReferences())
 	{
@@ -71,10 +71,12 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 
 		const std::string reference = topic.substr(referencePosition + 1);
 
-		if(m_actuationHandler)
-		{
-			m_actuationHandler(ActuatorCommand(actuatorCommand.getType(), reference, actuatorCommand.getValue()));
-		}
+		addToCommandBuffer([=]() -> void {
+			if(m_actuationHandler)
+			{
+				m_actuationHandler(ActuatorCommand(actuatorCommand.getType(), reference, actuatorCommand.getValue()));
+			}
+		});
 	}
 	else if(StringUtils::startsWith(topic, FIRMWARE_UPDATE_TOPIC_ROOT))
 	{
@@ -84,10 +86,12 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 			return;
 		}
 
-		if(m_firmwareUpdateHandler)
-		{
-			m_firmwareUpdateHandler(firmwareUpdateCommand);
-		}
+		addToCommandBuffer([=]() -> void {
+			if(m_firmwareUpdateHandler)
+			{
+				m_firmwareUpdateHandler(firmwareUpdateCommand);
+			}
+		});
 	}
 	else if(StringUtils::startsWith(topic, MQTT_FILE_HANDING_TOPIC_ROOT))
 	{
@@ -97,10 +101,12 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 			return;
 		}
 
-		if(m_fileDownloadMqttHandler)
-		{
-			m_fileDownloadMqttHandler(fileDownloadCommand);
-		}
+		addToCommandBuffer([=]() -> void {
+			if(m_fileDownloadMqttHandler)
+			{
+				m_fileDownloadMqttHandler(fileDownloadCommand);
+			}
+		});
 	}
 	else if(StringUtils::startsWith(topic, BINARY_TOPIC_ROOT))
 	{
@@ -108,10 +114,12 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 		{
 			BinaryData data{message};
 
-			if(m_binaryDataHandler)
-			{
-				m_binaryDataHandler(data);
-			}
+			addToCommandBuffer([=]() -> void {
+				if(m_binaryDataHandler)
+				{
+					m_binaryDataHandler(data);
+				}
+			});
 		}
 		catch (std::invalid_argument e)
 		{
@@ -143,6 +151,11 @@ void InboundMessageHandler::setFirmwareUpdateCommandHandler(std::function<void(F
 void InboundMessageHandler::setFileDownloadMqttCommandHandler(std::function<void(FileDownloadMqttCommand)> handler)
 {
 	m_fileDownloadMqttHandler = handler;
+}
+
+void InboundMessageHandler::addToCommandBuffer(std::function<void()> command)
+{
+	m_commandBuffer->pushCommand(std::make_shared<std::function<void()>>(command));
 }
 
 }

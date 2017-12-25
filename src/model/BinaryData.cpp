@@ -18,12 +18,6 @@
 #include "utilities/StringUtils.h"
 #include <stdexcept>
 
-namespace
-{
-const short SHA_256_HASH_BYTE_LENGTH = 32;
-const short SHA_256_HASH_CHAR_LENGTH = 2 * SHA_256_HASH_BYTE_LENGTH;
-}
-
 namespace wolkabout
 {
 

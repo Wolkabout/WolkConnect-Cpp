@@ -18,23 +18,32 @@
 #include "model/BinaryData.h"
 #include "utilities/StringUtils.h"
 #include "utilities/FileSystemUtils.h"
+#include <cmath>
 
 namespace wolkabout
 {
 
-FileHandler::FileHandler(const std::string& path, int maxPackageSize) : m_path{path}, m_maxPackageSize{maxPackageSize},
+FileHandler::FileHandler(const std::string& path, int maxFileSize, int maxPackageSize) :
+	m_path{path}, m_maxFileSize{maxFileSize}, m_maxPackageSize{maxPackageSize},
 	m_currentFileName{""}, m_currentPackageSize{-1}, m_currentPackageCount{-1}, m_currentFileHash{""},
 	m_currentPackageData{""}, m_currentPackageIndex{-1}, m_previousPackageHash{""}
 {
 }
 
-FileHandler::StatusCode FileHandler::prepare(const std::string& fileName, int packageSize,
-											 int packageCount, const std::string& fileHash)
+FileHandler::StatusCode FileHandler::prepare(const std::string& fileName, int fileSize,
+											 const std::string& fileHash, int& packageSize,
+											 int& packageCount)
 {
-	if(packageSize > m_maxPackageSize)
+	if(fileSize > m_maxFileSize)
 	{
-		return FileHandler::StatusCode::PACKAGE_SIZE_NOT_SUPPORTED;
+		return FileHandler::StatusCode::FILE_SIZE_NOT_SUPPORTED;
 	}
+
+	auto count = fileSize / (m_maxPackageSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH));
+
+	m_currentPackageCount = static_cast<int>(std::ceil(count));
+	packageCount = m_currentPackageCount;
+	packageSize = m_maxPackageSize;
 
 	m_currentFileName = fileName;
 	m_currentPackageSize = packageSize;

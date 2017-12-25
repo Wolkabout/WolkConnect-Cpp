@@ -37,6 +37,8 @@ public:
 
 	void onFirmwareFileDownloaded(const std::string fileName);
 
+	void setOnUpdateAbortCallback(std::function<void()> callback);
+
 private:
 	enum class State
 	{
@@ -50,6 +52,8 @@ private:
 
 	FirmwareUpdateService::State m_currentState;
 	std::string m_firmwareFileName;
+
+	std::function<void()> m_abortCallback;
 };
 
 }

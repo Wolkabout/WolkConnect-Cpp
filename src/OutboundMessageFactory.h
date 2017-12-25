@@ -29,6 +29,7 @@ class Alarm;
 class SensorReading;
 class FirmwareUpdateResponse;
 class FileDownloadMqttResponse;
+class FileDownloadUrlResponse;
 
 class OutboundMessageFactory
 {
@@ -48,13 +49,16 @@ public:
 	static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
 												 const FileDownloadMqttResponse& fileDownloadMqttResponse);
 
+	static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
+												 const FileDownloadUrlResponse& fileDownloadUrlResponse);
+
 private:
     static const constexpr char* SENSOR_READINGS_TOPIC_ROOT = "readings/";
     static const constexpr char* ALARMS_TOPIC_ROOT = "events/";
 	static const constexpr char* ACTUATOR_STATUS_TOPIC_ROOT = "actuators/status/";
 	static const constexpr char* FIRMWARE_UPDATE_STATUS_TOPIC_ROOT = "service/status/firmware/";
-	static const constexpr char* MQTT_FILE_HANDING_STATUS_TOPIC_ROOT = "service/status/file/";
-	static const constexpr char* URL_FILE_HANDING_STATIS_TOPIC_ROOT = "service/status/url/";
+	static const constexpr char* MQTT_FILE_HANDLING_STATUS_TOPIC_ROOT = "service/status/file/";
+	static const constexpr char* URL_FILE_HANDLING_STATUS_TOPIC_ROOT = "service/status/url/";
 };
 }
 

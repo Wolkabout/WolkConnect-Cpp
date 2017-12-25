@@ -14,31 +14,38 @@
  * limitations under the License.
  */
 
-#ifndef JSONDTOPARSER_H
-#define JSONDTOPARSER_H
+#ifndef FILEDOWNLOADURLCOMMAND_H
+#define FILEDOWNLOADURLCOMMAND_H
 
+#include "WolkOptional.h"
 #include <string>
 
 namespace wolkabout
 {
-class SensorReading;
-class Alarm;
-class ActuatorStatus;
-class ActuatorCommand;
-class FirmwareUpdateCommand;
-class FileDownloadMqttCommand;
-class FileDownloadUrlCommand;
-
-class JsonParser
+class FileDownloadUrlCommand
 {
 public:
-    JsonParser() = delete;
+	enum class Type
+	{
+		INIT = 0,
+		STATUS,
+		END,
+		UPLOAD
+	};
 
-    static bool fromJson(const std::string& jsonString, ActuatorCommand& actuatorCommand);
-	static bool fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommand);
-	static bool fromJson(const std::string& jsonString, FileDownloadMqttCommand& fileDownloadMqttCommand);
-	static bool fromJson(const std::string& jsonString, FileDownloadUrlCommand& fileDownloadUrlCommand);
+	FileDownloadUrlCommand();
+	FileDownloadUrlCommand(FileDownloadUrlCommand::Type type);
+	FileDownloadUrlCommand(FileDownloadUrlCommand::Type type, WolkOptional<std::string> url);
+
+	FileDownloadUrlCommand::Type getType() const;
+
+	WolkOptional<std::string> getUrl() const;
+
+private:
+	FileDownloadUrlCommand::Type m_type;
+
+	WolkOptional<std::string> m_url;
 };
 }
 
-#endif
+#endif // FILEDOWNLOADURLCOMMAND_H

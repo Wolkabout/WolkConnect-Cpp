@@ -157,7 +157,8 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 	if(m_urlFileDownloader.lock() != nullptr)
 	{
 		fileDownloadUrlService = std::make_shared<FileDownloadUrlService>(outboundServiceDataHandler, m_urlFileDownloader);
-		// TODO serviceCommandHandler->set
+		serviceCommandHandler->setFileDownloadUrlCommandHandler(fileDownloadUrlService);
+		wolk->addService(fileDownloadUrlService);
 	}
 
 	if(m_firmwareInstaller.lock() != nullptr)
@@ -167,6 +168,8 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 		wolk->addService(firmwareUpdateService);
 
 		std::weak_ptr<FirmwareUpdateService> firmwareUpdateService_weak{firmwareUpdateService};
+		std::weak_ptr<FileDownloadMqttService> fileDownloadMqttService_weak{fileDownloadMqttService};
+		std::weak_ptr<FileDownloadUrlService> fileDownloadUrlService_weak{fileDownloadUrlService};
 
 		if(fileDownloadMqttService)
 		{
@@ -174,6 +177,13 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 				if(auto handler = firmwareUpdateService_weak.lock())
 				{
 					handler->onFirmwareFileDownloaded(fileName);
+				}
+			});
+
+			firmwareUpdateService->setOnUpdateAbortCallback([=]() -> void {
+				if(auto handler = fileDownloadMqttService_weak.lock())
+				{
+					handler->abortDownload();
 				}
 			});
 		}
@@ -184,6 +194,13 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 				if(auto handler = firmwareUpdateService_weak.lock())
 				{
 					handler->onFirmwareFileDownloaded(fileName);
+				}
+			});
+
+			firmwareUpdateService->setOnUpdateAbortCallback([=]() -> void {
+				if(auto handler = fileDownloadUrlService_weak.lock())
+				{
+					handler->abortDownload();
 				}
 			});
 		}

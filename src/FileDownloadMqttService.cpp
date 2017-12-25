@@ -23,7 +23,8 @@
 namespace
 {
 const std::string SERVICE_FILE_PATH = "";
-const int MAX_PACKAGE_SIZE = 131072;
+const int MAX_PACKAGE_SIZE = 131072; // 128kB
+const int MAX_FILE_SIZE = 104857600; // 100MB
 }
 
 namespace wolkabout
@@ -31,7 +32,7 @@ namespace wolkabout
 
 FileDownloadMqttService::FileDownloadMqttService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler) :
 	m_currentState{FileDownloadMqttService::State::IDLE}, m_outboundDataHandler{std::move(outboundDataHandler)},
-	m_fileHandler{new FileHandler(SERVICE_FILE_PATH, MAX_PACKAGE_SIZE)}
+	m_fileHandler{new FileHandler(SERVICE_FILE_PATH, MAX_FILE_SIZE, MAX_PACKAGE_SIZE)}, m_fileName{}
 {
 }
 
@@ -41,9 +42,10 @@ void FileDownloadMqttService::handleBinaryData(const BinaryData& binaryData)
 	{
 		case FileDownloadMqttService::State::IDLE:
 		{
-			FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-											  FileDownloadMqttResponse::ErrorCode::FILE_TRANSFER_NOT_INITIATED);
-			m_outboundDataHandler->addFileDownloadMqttResponse(response);
+			FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+						FileDownloadMqttCommand::Type::UPLOAD,
+						FileDownloadMqttResponse::ErrorCode::FILE_TRANSFER_NOT_INITIATED};
+			sendResponse(response);
 
 			break;
 		}
@@ -56,33 +58,38 @@ void FileDownloadMqttService::handleBinaryData(const BinaryData& binaryData)
 			{
 				case FileHandler::StatusCode::OK:
 				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::OK, packageNumber);
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
+					FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::OK,
+								FileDownloadMqttCommand::Type::UPLOAD, packageNumber};
+					sendResponse(response);
+
 					break;
 				}
 				case FileHandler::StatusCode::PACKAGE_HASH_NOT_VALID:
 				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-													  FileDownloadMqttResponse::ErrorCode::PACKAGE_HASH_INVALID,
-													  packageNumber);
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
+					FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+								FileDownloadMqttCommand::Type::UPLOAD,
+								FileDownloadMqttResponse::ErrorCode::PACKAGE_HASH_INVALID,
+								packageNumber};
+					sendResponse(response);
 
 					break;
 				}
 				case FileHandler::StatusCode::PREVIOUS_PACKAGE_HASH_NOT_VALID:
 				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-													  FileDownloadMqttResponse::ErrorCode::PREVIOUS_PACKAGE_HASH_INVALID,
-													  packageNumber);
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
+					FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+								FileDownloadMqttCommand::Type::UPLOAD,
+								FileDownloadMqttResponse::ErrorCode::PREVIOUS_PACKAGE_HASH_INVALID,
+								packageNumber};
+					sendResponse(response);
 
 					break;
 				}
 				default:
 				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-													  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
+					FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+								FileDownloadMqttCommand::Type::UPLOAD,
+								FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
+					sendResponse(response);
 
 					break;
 				}
@@ -103,13 +110,14 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 		{
 			if(fileDownloadMqttCommand.getType() == FileDownloadMqttCommand::Type::INIT)
 			{
-				auto packageSize = fileDownloadMqttCommand.getSize();
-				if(packageSize.null() || static_cast<int>(packageSize) <= 0)
+				auto fileSize = fileDownloadMqttCommand.getSize();
+				if(fileSize.null() || static_cast<int>(fileSize) <= 0)
 				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-													  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
+					FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+								FileDownloadMqttCommand::Type::INIT,
+								FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
+					sendResponse(response);
 
 					break;
 				}
@@ -117,21 +125,11 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 				auto fileName = fileDownloadMqttCommand.getName();
 				if(fileName.null() || static_cast<std::string>(fileName).empty())
 				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-													  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
+					FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+								FileDownloadMqttCommand::Type::INIT,
+								FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
-
-					break;
-				}
-
-				auto packageCount = fileDownloadMqttCommand.getCount();
-				if(packageCount.null() || static_cast<int>(packageCount) <= 0)
-				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-													  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
-
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
+					sendResponse(response);
 
 					break;
 				}
@@ -139,15 +137,17 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 				auto fileHash = fileDownloadMqttCommand.getHash();
 				if(fileHash.null() || static_cast<std::string>(fileHash).empty())
 				{
-					FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-													  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
+					FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+								FileDownloadMqttCommand::Type::INIT,
+								FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-					m_outboundDataHandler->addFileDownloadMqttResponse(response);
+					sendResponse(response);
 
 					break;
 				}
 
-				auto result = m_fileHandler->prepare(fileName, packageSize, packageCount, fileHash);
+				int packageSize, packageCount;
+				auto result = m_fileHandler->prepare(fileName, fileSize, fileHash, packageSize, packageCount);
 
 				switch (result)
 				{
@@ -155,27 +155,29 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 					{
 						m_fileName = fileName;
 
-						FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::OK);
-						m_outboundDataHandler->addFileDownloadMqttResponse(response);
+						FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::OK,
+									FileDownloadMqttCommand::Type::INIT, packageSize, packageCount};
+						sendResponse(response);
 
 						m_currentState = FileDownloadMqttService::State::DOWNLOAD;
 
 						break;
 					}
-					case FileHandler::StatusCode::PACKAGE_SIZE_NOT_SUPPORTED:
+					case FileHandler::StatusCode::FILE_SIZE_NOT_SUPPORTED:
 					{
-						FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-														  FileDownloadMqttResponse::ErrorCode::PACKAGE_LENGTH_NOT_SUPPORTED);
-						m_outboundDataHandler->addFileDownloadMqttResponse(response);
+						FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+									FileDownloadMqttCommand::Type::INIT,
+									FileDownloadMqttResponse::ErrorCode::FILE_LENGTH_NOT_SUPPORTED};
+						sendResponse(response);
 
 						break;
 					}
 					default:
 					{
-						FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-														  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
-
-						m_outboundDataHandler->addFileDownloadMqttResponse(response);
+						FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+									FileDownloadMqttCommand::Type::INIT,
+									FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
+						sendResponse(response);
 
 						break;
 					}
@@ -183,9 +185,24 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 			}
 			else if (fileDownloadMqttCommand.getType() == FileDownloadMqttCommand::Type::END)
 			{
-				FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::OK);
+				FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::OK,
+												 FileDownloadMqttCommand::Type::INIT};
 
-				m_outboundDataHandler->addFileDownloadMqttResponse(response);
+				sendResponse(response);
+			}
+			else if (fileDownloadMqttCommand.getType() == FileDownloadMqttCommand::Type::STATUS)
+			{
+				FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::OK,
+												 FileDownloadMqttCommand::Type::STATUS};
+
+				sendResponse(response);
+			}
+			else
+			{
+				FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+							fileDownloadMqttCommand.getType(),
+							FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
+				sendResponse(response);
 			}
 
 			break;
@@ -206,9 +223,10 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 						{
 							case FileHandler::StatusCode::OK:
 							{
-								FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::OK);
+								FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::OK,
+																 FileDownloadMqttCommand::Type::END};
 
-								m_outboundDataHandler->addFileDownloadMqttResponse(response);
+								sendResponse(response);
 
 								if(m_fileDownloadedCallback)
 								{
@@ -219,19 +237,21 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 							}
 							case FileHandler::StatusCode::FILE_HANDLING_ERROR:
 							{
-								FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-																  FileDownloadMqttResponse::ErrorCode::FILE_HANDLING_ERROR);
+								FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+											FileDownloadMqttCommand::Type::END,
+											FileDownloadMqttResponse::ErrorCode::FILE_HANDLING_ERROR};
 
-								m_outboundDataHandler->addFileDownloadMqttResponse(response);
+								sendResponse(response);
 
 								break;
 							}
 							default:
 							{
-								FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-																  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
+								FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+											FileDownloadMqttCommand::Type::END,
+											FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-								m_outboundDataHandler->addFileDownloadMqttResponse(response);
+								sendResponse(response);
 
 								break;
 							}
@@ -241,28 +261,31 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 					}
 					case FileHandler::StatusCode::TRANSFER_NOT_COMPLETED:
 					{
-						FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-														  FileDownloadMqttResponse::ErrorCode::NOT_ALL_PACKAGES_RECEIVED);
+						FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+									FileDownloadMqttCommand::Type::END,
+									FileDownloadMqttResponse::ErrorCode::NOT_ALL_PACKAGES_RECEIVED};
 
-						m_outboundDataHandler->addFileDownloadMqttResponse(response);
+						sendResponse(response);
 
 						break;
 					}
 					case FileHandler::StatusCode::FILE_HASH_NOT_VALID:
 					{
-						FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-														  FileDownloadMqttResponse::ErrorCode::FILE_CHECKSUM_INVALID);
+						FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+									FileDownloadMqttCommand::Type::END,
+									FileDownloadMqttResponse::ErrorCode::FILE_CHECKSUM_INVALID};
 
-						m_outboundDataHandler->addFileDownloadMqttResponse(response);
+						sendResponse(response);
 
 						break;
 					}
 					default:
 					{
-						FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-														  FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR);
+						FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+									FileDownloadMqttCommand::Type::END,
+									FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
 
-						m_outboundDataHandler->addFileDownloadMqttResponse(response);
+						sendResponse(response);
 
 						break;
 					}
@@ -273,10 +296,22 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 			}
 			else if (fileDownloadMqttCommand.getType() == FileDownloadMqttCommand::Type::INIT)
 			{
-				FileDownloadMqttResponse response(FileDownloadMqttResponse::Status::ERROR,
-												  FileDownloadMqttResponse::ErrorCode::FILE_TRANSFER_IN_PROGRESS);
+				FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+							FileDownloadMqttCommand::Type::INIT,
+							FileDownloadMqttResponse::ErrorCode::FILE_TRANSFER_IN_PROGRESS};
 
-				m_outboundDataHandler->addFileDownloadMqttResponse(response);
+				sendResponse(response);
+			}
+			else if (fileDownloadMqttCommand.getType() == FileDownloadMqttCommand::Type::STATUS)
+			{
+				sendResponse(m_lastResponse);
+			}
+			else
+			{
+				FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+							fileDownloadMqttCommand.getType(),
+							FileDownloadMqttResponse::ErrorCode::UNSPECIFIED_ERROR};
+				sendResponse(response);
 			}
 
 			break;
@@ -289,6 +324,22 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 void FileDownloadMqttService::setFileDownloadedCallback(std::function<void(const std::string&)> callback)
 {
 	m_fileDownloadedCallback = callback;
+}
+
+void FileDownloadMqttService::abortDownload()
+{
+	if(m_currentState != FileDownloadMqttService::State::IDLE)
+	{
+		m_fileHandler->clear();
+		m_currentState = FileDownloadMqttService::State::IDLE;
+		m_fileName = "";
+	}
+}
+
+void FileDownloadMqttService::sendResponse(const FileDownloadMqttResponse& response)
+{
+	m_lastResponse = response;
+	m_outboundDataHandler->addFileDownloadMqttResponse(response);
 }
 
 }

@@ -17,7 +17,6 @@
 #ifndef SERVICECOMMANDHANDLER_H
 #define SERVICECOMMANDHANDLER_H
 
-#include "FileHandler.h"
 #include <memory>
 
 namespace wolkabout
@@ -26,9 +25,11 @@ namespace wolkabout
 class BinaryData;
 class FirmwareUpdateCommand;
 class FileDownloadMqttCommand;
+class FileDownloadUrlCommand;
 class BinaryDataListener;
-class FileDownloadMqttCommandListener;
 class FirmwareUpdateCommandListener;
+class FileDownloadMqttCommandListener;
+class FileDownloadUrlCommandListener;
 
 class ServiceCommandHandler
 {
@@ -39,17 +40,22 @@ public:
 
 	void handleFileDownloadMqttCommand(const FileDownloadMqttCommand& fileDownloadMqttCommand);
 
+	void handleFileDownloadUrlCommand(const FileDownloadUrlCommand& fileDownloadUrlCommand);
+
 
 	void setBinaryDataHandler(std::weak_ptr<BinaryDataListener> handler);
 
+	void setFirmwareUpdateCommandHandler(std::weak_ptr<FirmwareUpdateCommandListener> handler);
+
 	void setFileDownloadMqttCommandHandler(std::weak_ptr<FileDownloadMqttCommandListener> handler);
 
-	void setFirmwareUpdateCommandHandler(std::weak_ptr<FirmwareUpdateCommandListener> handler);
+	void setFileDownloadUrlCommandHandler(std::weak_ptr<FileDownloadUrlCommandListener> handler);
 
 private:
 	std::weak_ptr<BinaryDataListener> m_binaryDataHandler;
 	std::weak_ptr<FileDownloadMqttCommandListener> m_fileDownloadMqttCommandHandler;
 	std::weak_ptr<FirmwareUpdateCommandListener> m_firmwareUpdateCommandHandler;
+	std::weak_ptr<FileDownloadUrlCommandListener> m_fileDownloadUrlCommandHandler;
 };
 
 }

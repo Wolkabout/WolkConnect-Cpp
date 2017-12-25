@@ -17,12 +17,16 @@
 #ifndef FIRMWAREINSTALLER_H
 #define FIRMWAREINSTALLER_H
 
+#include <string>
+
 namespace wolkabout
 {
 class FirmwareInstaller
 {
 public:
 	virtual ~FirmwareInstaller() = default;
+
+	virtual void install(const std::string& firmwareFile) = 0;
 };
 }
 

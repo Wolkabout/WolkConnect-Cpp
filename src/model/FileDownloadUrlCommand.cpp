@@ -14,26 +14,32 @@
  * limitations under the License.
  */
 
-#ifndef OUTBOUNDSERVICEDATAHANDLER_H
-#define OUTBOUNDSERVICEDATAHANDLER_H
+#include "FileDownloadUrlCommand.h"
 
 namespace wolkabout
 {
-class FirmwareUpdateResponse;
-class FileDownloadMqttResponse;
-class FileDownloadUrlResponse;
 
-class OutboundServiceDataHandler
+FileDownloadUrlCommand::FileDownloadUrlCommand() : m_type{FileDownloadUrlCommand::Type::INIT}, m_url{}
 {
-public:
-	virtual ~OutboundServiceDataHandler() = default;
-
-	virtual void addFirmwareUpdateResponse(const FirmwareUpdateResponse& response) = 0;
-
-	virtual void addFileDownloadMqttResponse(const FileDownloadMqttResponse& response) = 0;
-
-	virtual void addFileDownloadUrlResponse(const FileDownloadUrlResponse& response) = 0;
-};
 }
 
-#endif // OUTBOUNDSERVICEDATAHANDLER_H
+FileDownloadUrlCommand::FileDownloadUrlCommand(FileDownloadUrlCommand::Type type) : m_type{type}, m_url{}
+{
+}
+
+FileDownloadUrlCommand::FileDownloadUrlCommand(FileDownloadUrlCommand::Type type, WolkOptional<std::string> url) :
+	m_type{type}, m_url{url}
+{
+}
+
+FileDownloadUrlCommand::Type FileDownloadUrlCommand::getType() const
+{
+	return m_type;
+}
+
+WolkOptional<std::string> FileDownloadUrlCommand::getUrl() const
+{
+	return m_url;
+}
+
+}
