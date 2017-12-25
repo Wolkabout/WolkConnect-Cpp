@@ -25,11 +25,11 @@ namespace wolkabout
 FileDownloadUrlService::FileDownloadUrlService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
 											   std::weak_ptr<UrlFileDownloader> downloader) :
 	m_outboundDataHandler{std::move(outboundDataHandler)}, m_urlFileDownloader{downloader},
-	m_currentState{FileDownloadUrlService::State::IDLE}, m_file{}
+	m_fileDownloadedCallback{}, m_currentState{FileDownloadUrlService::State::IDLE}, m_file{""}
 {
-	if(auto downloader = m_urlFileDownloader.lock())
+	if(auto handler = m_urlFileDownloader.lock())
 	{
-		downloader->setOnSuccessCallback([this](const std::string& file){
+		handler->setOnSuccessCallback([this](const std::string& file){
 			FileDownloadUrlResponse response{FileDownloadUrlResponse::Status::COMPLETED,
 						FileDownloadUrlCommand::Type::UPLOAD};
 
@@ -39,7 +39,7 @@ FileDownloadUrlService::FileDownloadUrlService(std::shared_ptr<OutboundServiceDa
 			m_currentState = FileDownloadUrlService::State::COMPLETED;
 		});
 
-		downloader->setOnErrorCallback([this](){
+		handler->setOnErrorCallback([this](){
 			FileDownloadUrlResponse response{FileDownloadUrlResponse::Status::ERROR,
 						FileDownloadUrlCommand::Type::UPLOAD,
 						FileDownloadUrlResponse::StatusCode::FILE_HANDLING_ERROR};

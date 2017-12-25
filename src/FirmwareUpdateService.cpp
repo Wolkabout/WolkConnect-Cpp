@@ -29,7 +29,7 @@ namespace wolkabout
 FirmwareUpdateService::FirmwareUpdateService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
 											 std::weak_ptr<FirmwareInstaller> firmwareInstaller) :
 	m_outboundDataHandler{std::move(outboundDataHandler)}, m_firmwareInstaller{firmwareInstaller},
-	m_currentState{FirmwareUpdateService::State::IDLE}
+	m_currentState{FirmwareUpdateService::State::IDLE}, m_firmwareFileName{""}, m_abortCallback{}
 {
 }
 

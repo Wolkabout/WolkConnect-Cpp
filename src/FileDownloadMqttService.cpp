@@ -32,7 +32,8 @@ namespace wolkabout
 
 FileDownloadMqttService::FileDownloadMqttService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler) :
 	m_currentState{FileDownloadMqttService::State::IDLE}, m_outboundDataHandler{std::move(outboundDataHandler)},
-	m_fileHandler{new FileHandler(SERVICE_FILE_PATH, MAX_FILE_SIZE, MAX_PACKAGE_SIZE)}, m_fileName{}
+	m_fileHandler{new FileHandler(SERVICE_FILE_PATH, MAX_FILE_SIZE, MAX_PACKAGE_SIZE)}, m_fileName{""},
+	m_lastResponse{FileDownloadMqttResponse::Status::OK, FileDownloadMqttCommand::Type::STATUS}, m_fileDownloadedCallback{}
 {
 }
 

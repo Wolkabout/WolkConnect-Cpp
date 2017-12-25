@@ -21,11 +21,11 @@
 namespace wolkabout
 {
 
-BinaryData::BinaryData() : m_value(""), m_data(""), m_hash(""), m_previousHash("")
+BinaryData::BinaryData() : m_value{""}, m_data{""}, m_hash{""}, m_previousHash{""}
 {
 }
 
-BinaryData::BinaryData(const std::string& value) : m_value(value)
+BinaryData::BinaryData(const std::string& value) : m_value{value}, m_data{""}, m_hash{""}, m_previousHash{""}
 {
 	if(value.length() <= 2 * SHA_256_HASH_CHAR_LENGTH)
 	{

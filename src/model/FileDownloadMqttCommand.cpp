@@ -18,11 +18,12 @@
 
 namespace wolkabout
 {
-FileDownloadMqttCommand::FileDownloadMqttCommand() : m_type{FileDownloadMqttCommand::Type::INIT}
+FileDownloadMqttCommand::FileDownloadMqttCommand() : FileDownloadMqttCommand(FileDownloadMqttCommand::Type::INIT)
 {
 }
 
-FileDownloadMqttCommand::FileDownloadMqttCommand(FileDownloadMqttCommand::Type type) : m_type{type}
+FileDownloadMqttCommand::FileDownloadMqttCommand(FileDownloadMqttCommand::Type type) :
+	m_type{type}, m_name{}, m_size{}, m_hash{}
 {
 }
 
