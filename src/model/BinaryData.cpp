@@ -27,14 +27,14 @@ BinaryData::BinaryData() : m_value{""}, m_data{""}, m_hash{""}, m_previousHash{"
 
 BinaryData::BinaryData(const std::string& value) : m_value{value}, m_data{""}, m_hash{""}, m_previousHash{""}
 {
-	if(value.length() <= 2 * SHA_256_HASH_CHAR_LENGTH)
+	if(value.length() <= 2 * SHA_256_HASH_BYTE_LENGTH)
 	{
-		throw new std::invalid_argument("Binary data size is smaller than required to fit standard data package");
+		throw std::invalid_argument("Binary data size is smaller than required to fit standard data package");
 	}
 
-	m_previousHash = m_value.substr(0, SHA_256_HASH_CHAR_LENGTH);
-	m_data = m_value.substr(SHA_256_HASH_CHAR_LENGTH, m_value.length() - SHA_256_HASH_CHAR_LENGTH);
-	m_hash = m_value.substr(SHA_256_HASH_CHAR_LENGTH + m_data.length(), SHA_256_HASH_CHAR_LENGTH);
+	m_previousHash = m_value.substr(0, SHA_256_HASH_BYTE_LENGTH);
+	m_data = m_value.substr(SHA_256_HASH_BYTE_LENGTH, m_value.length() - 2 * SHA_256_HASH_BYTE_LENGTH);
+	m_hash = m_value.substr(SHA_256_HASH_BYTE_LENGTH + m_data.length(), SHA_256_HASH_BYTE_LENGTH);
 }
 
 const std::string& BinaryData::getData() const
@@ -49,13 +49,14 @@ const std::string& BinaryData::getHash() const
 
 bool BinaryData::valid() const
 {
-	const std::string hash = StringUtils::hashSHA256(m_previousHash + m_data);
-	return hash == m_hash;
+	const std::string hashRaw = StringUtils::hashSHA256Raw(m_previousHash + m_data);
+
+	return hashRaw == m_hash;
 }
 
 bool BinaryData::validatePrevious() const
 {
-	return validatePrevious(StringUtils::hashSHA256(""));
+	return validatePrevious(StringUtils::hashSHA256Raw(""));
 }
 
 bool BinaryData::validatePrevious(const std::string& previousHash) const

@@ -36,25 +36,27 @@ InboundMessageHandler::InboundMessageHandler(Device device) :
 
 	// firmware update
 	std::stringstream topic("");
-	topic << FIRMWARE_UPDATE_TOPIC_ROOT << m_device.getDeviceKey() << "/";
+	topic << FIRMWARE_UPDATE_TOPIC_ROOT << m_device.getDeviceKey();
 	m_subscriptionList.emplace_back(topic.str());
 
 	// file handling
 	std::stringstream mqttFileHandlingTopic("");
-	mqttFileHandlingTopic << MQTT_FILE_HANDING_TOPIC_ROOT << m_device.getDeviceKey() << "/";
+	mqttFileHandlingTopic << MQTT_FILE_HANDING_TOPIC_ROOT << m_device.getDeviceKey();
 	m_subscriptionList.emplace_back(mqttFileHandlingTopic.str());
 
 	std::stringstream binaryTopic("");
-	binaryTopic << BINARY_TOPIC_ROOT << m_device.getDeviceKey() << "/";
+	binaryTopic << BINARY_TOPIC_ROOT << m_device.getDeviceKey();
 	m_subscriptionList.emplace_back(binaryTopic.str());
 
 	std::stringstream urlFileHandlingTopic("");
-	urlFileHandlingTopic << URL_FILE_HANDING_TOPIC_ROOT << m_device.getDeviceKey() << "/";
+	urlFileHandlingTopic << URL_FILE_HANDING_TOPIC_ROOT << m_device.getDeviceKey();
 	m_subscriptionList.emplace_back(urlFileHandlingTopic.str());
 }
 
 void InboundMessageHandler::messageReceived(const std::string& topic, const std::string& message)
 {
+	std::cout << "Message received: " << topic << ", " << message;
+
 	if(StringUtils::startsWith(topic, ACTUATION_REQUEST_TOPIC_ROOT))
 	{
 		const size_t referencePosition = topic.find_last_of('/');
@@ -121,7 +123,7 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 				}
 			});
 		}
-		catch (std::invalid_argument e)
+		catch (const std::invalid_argument& e)
 		{
 			std::cout << e.what();
 		}

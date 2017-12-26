@@ -71,7 +71,6 @@ public:
 	bool validatePrevious() const;
 
 	static const short SHA_256_HASH_BYTE_LENGTH = 32;
-	static const short SHA_256_HASH_CHAR_LENGTH = 2 * SHA_256_HASH_BYTE_LENGTH;
 
 private:
 	std::string m_value;

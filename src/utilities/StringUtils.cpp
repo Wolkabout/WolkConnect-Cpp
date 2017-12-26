@@ -179,4 +179,18 @@ std::string StringUtils::hashSHA256(const std::string& value)
 	return std::string(mdString);
 }
 
+std::string StringUtils::hashSHA256Raw(const std::string& value)
+{
+	unsigned char digest[SHA256_DIGEST_LENGTH];
+
+	SHA256((unsigned char*)value.c_str(), value.length(), (unsigned char*)&digest);
+
+	std::string ret = "";
+
+	for(int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+		ret.push_back(static_cast<char>(digest[i]));
+
+	return ret;
+}
+
 }

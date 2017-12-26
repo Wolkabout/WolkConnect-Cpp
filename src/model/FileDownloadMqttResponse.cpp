@@ -25,39 +25,40 @@ FileDownloadMqttResponse::FileDownloadMqttResponse() :
 
 FileDownloadMqttResponse::FileDownloadMqttResponse(
 		FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command) :
-	FileDownloadMqttResponse(status, command, WolkOptional<FileDownloadMqttResponse::ErrorCode>{},
-							 WolkOptional<int>{}, WolkOptional<int>{}, WolkOptional<int>{})
+	m_status{status}, m_command{command}, m_errorCode{}, m_packageNumber{},	m_packageSize{},
+	m_packageCount{}
 {
 }
 
 FileDownloadMqttResponse::FileDownloadMqttResponse(
 		FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
 		WolkOptional<FileDownloadMqttResponse::ErrorCode> errorCode) :
-	FileDownloadMqttResponse(status, command, errorCode, WolkOptional<int>{}, WolkOptional<int>{},
-							 WolkOptional<int>{})
+	m_status{status}, m_command{command}, m_errorCode{errorCode}, m_packageNumber{},
+	m_packageSize{}, m_packageCount{}
 {
 }
 
 FileDownloadMqttResponse::FileDownloadMqttResponse(
 		FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
 		WolkOptional<int> packageNumber) :
-	FileDownloadMqttResponse(status, command, WolkOptional<FileDownloadMqttResponse::ErrorCode>{},
-							 packageNumber, WolkOptional<int>{}, WolkOptional<int>{})
+	m_status{status}, m_command{command}, m_errorCode{}, m_packageNumber{packageNumber},
+	m_packageSize{}, m_packageCount{}
 {
 }
 
 FileDownloadMqttResponse::FileDownloadMqttResponse(
 		FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
 		WolkOptional<FileDownloadMqttResponse::ErrorCode> errorCode, WolkOptional<int> packageNumber) :
-	FileDownloadMqttResponse(status, command, errorCode, packageNumber, WolkOptional<int>{}, WolkOptional<int>{})
+	m_status{status}, m_command{command}, m_errorCode{errorCode}, m_packageNumber{packageNumber},
+	m_packageSize{}, m_packageCount{}
 {
 }
 
 FileDownloadMqttResponse::FileDownloadMqttResponse(
 		FileDownloadMqttResponse::Status status, FileDownloadMqttCommand::Type command,
 		WolkOptional<int> packageSize, WolkOptional<int> packageCount) :
-	FileDownloadMqttResponse(status, command, WolkOptional<FileDownloadMqttResponse::ErrorCode>{},
-							 WolkOptional<int>{}, packageSize, packageCount)
+	m_status{status}, m_command{command}, m_errorCode{}, m_packageNumber{}, m_packageSize{packageSize},
+	m_packageCount{packageCount}
 {
 }
 

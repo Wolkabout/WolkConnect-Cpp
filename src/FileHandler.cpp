@@ -39,16 +39,24 @@ FileHandler::StatusCode FileHandler::prepare(const std::string& fileName, int fi
 		return FileHandler::StatusCode::FILE_SIZE_NOT_SUPPORTED;
 	}
 
-	auto count = fileSize / (m_maxPackageSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH));
-
-	m_currentPackageCount = static_cast<int>(std::ceil(count));
-	packageCount = m_currentPackageCount;
-	packageSize = m_maxPackageSize;
+	if(fileSize <= m_maxPackageSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH))
+	{
+		m_currentPackageCount = 1;
+		packageCount = 1;
+		packageSize = fileSize + (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH);
+	}
+	else
+	{
+		auto count = static_cast<double>(fileSize) / (m_maxPackageSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH));
+		m_currentPackageCount = static_cast<int>(std::ceil(count));
+		packageCount = m_currentPackageCount;
+		packageSize = m_maxPackageSize;
+	}
 
 	m_currentFileName = fileName;
 	m_currentPackageSize = packageSize;
 	m_currentPackageCount = packageCount;
-	m_currentFileHash = fileHash;
+	m_currentFileHash = StringUtils::base64Decode(fileHash);
 
 	m_currentPackageData.str("");
 	m_currentPackageIndex = 0;
@@ -111,7 +119,7 @@ FileHandler::StatusCode FileHandler::validateFile()
 		return FileHandler::StatusCode::TRANSFER_NOT_COMPLETED;
 	}
 
-	if(m_currentFileHash == StringUtils::hashSHA256(m_currentPackageData.str()))
+	if(m_currentFileHash == StringUtils::hashSHA256Raw(m_currentPackageData.str()))
 	{
 		return FileHandler::StatusCode::OK;
 	}

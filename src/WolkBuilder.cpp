@@ -151,6 +151,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 	{
 		fileDownloadMqttService = std::make_shared<FileDownloadMqttService>(outboundServiceDataHandler);
 		serviceCommandHandler->setBinaryDataHandler(fileDownloadMqttService);
+		serviceCommandHandler->setFileDownloadMqttCommandHandler(fileDownloadMqttService);
 		wolk->addService(fileDownloadMqttService);
 	}
 
@@ -210,16 +211,27 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 		wolk->handleActuatorCommand(actuatorCommand);
 	});
 
-	inboundMessageHandler->setBinaryDataHandler([&](const BinaryData& binaryData) -> void {
-		serviceCommandHandler->handleBinaryData(binaryData);
+	std::weak_ptr<ServiceCommandHandler> serviceCommandHandler_weak{serviceCommandHandler};
+
+	inboundMessageHandler->setBinaryDataHandler([=](const BinaryData& binaryData) -> void {
+		if(auto handler = serviceCommandHandler_weak.lock())
+		{
+			handler->handleBinaryData(binaryData);
+		}
 	});
 
-	inboundMessageHandler->setFileDownloadMqttCommandHandler([&](const FileDownloadMqttCommand& fileDownloadCommand) -> void {
-		serviceCommandHandler->handleFileDownloadMqttCommand(fileDownloadCommand);
+	inboundMessageHandler->setFileDownloadMqttCommandHandler([=](const FileDownloadMqttCommand& fileDownloadCommand) -> void {
+		if(auto handler = serviceCommandHandler_weak.lock())
+		{
+			handler->handleFileDownloadMqttCommand(fileDownloadCommand);
+		}
 	});
 
-	inboundMessageHandler->setFirmwareUpdateCommandHandler([&](const FirmwareUpdateCommand& firmwareUpdateCommand) -> void {
-		serviceCommandHandler->handleFirmwareUpdateCommand(firmwareUpdateCommand);
+	inboundMessageHandler->setFirmwareUpdateCommandHandler([=](const FirmwareUpdateCommand& firmwareUpdateCommand) -> void {
+		if(auto handler = serviceCommandHandler_weak.lock())
+		{
+			handler->handleFirmwareUpdateCommand(firmwareUpdateCommand);
+		}
 	});
 
 	connectivityService->setListener(std::dynamic_pointer_cast<ConnectivityServiceListener>(inboundMessageHandler));

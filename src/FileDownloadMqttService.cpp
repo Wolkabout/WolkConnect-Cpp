@@ -22,7 +22,7 @@
 
 namespace
 {
-const std::string SERVICE_FILE_PATH = "";
+const std::string SERVICE_FILE_PATH = ".";
 const int MAX_PACKAGE_SIZE = 131072; // 128kB
 const int MAX_FILE_SIZE = 104857600; // 100MB
 }
@@ -186,8 +186,9 @@ void FileDownloadMqttService::handleFileDownloadMqttCommand(const FileDownloadMq
 			}
 			else if (fileDownloadMqttCommand.getType() == FileDownloadMqttCommand::Type::END)
 			{
-				FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::OK,
-												 FileDownloadMqttCommand::Type::INIT};
+				FileDownloadMqttResponse response{FileDownloadMqttResponse::Status::ERROR,
+												 FileDownloadMqttCommand::Type::END,
+												 FileDownloadMqttResponse::ErrorCode::FILE_TRANSFER_NOT_INITIATED};
 
 				sendResponse(response);
 			}

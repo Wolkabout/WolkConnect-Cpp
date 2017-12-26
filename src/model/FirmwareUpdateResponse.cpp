@@ -19,15 +19,14 @@
 namespace wolkabout
 {
 
-FirmwareUpdateResponse::FirmwareUpdateResponse() :
-	FirmwareUpdateResponse(FirmwareUpdateResponse::Status::OK, FirmwareUpdateCommand::Type::ABORT,
-						   WolkOptional<FirmwareUpdateResponse::ErrorCode>{})
+FirmwareUpdateResponse::FirmwareUpdateResponse() : m_status{FirmwareUpdateResponse::Status::OK},
+	m_command{FirmwareUpdateCommand::Type::ABORT}, m_errorCode{}
 {
 }
 
-FirmwareUpdateResponse::FirmwareUpdateResponse(
-		FirmwareUpdateResponse::Status status, FirmwareUpdateCommand::Type command) :
-	FirmwareUpdateResponse(status, command, WolkOptional<FirmwareUpdateResponse::ErrorCode>{})
+FirmwareUpdateResponse::FirmwareUpdateResponse(FirmwareUpdateResponse::Status status,
+											   FirmwareUpdateCommand::Type command) :
+	m_status{status}, m_command{command}, m_errorCode{}
 {
 }
 
