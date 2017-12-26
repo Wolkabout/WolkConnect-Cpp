@@ -41,7 +41,7 @@ InboundMessageHandler::InboundMessageHandler(Device device) :
 
 	// file handling
 	std::stringstream mqttFileHandlingTopic("");
-	mqttFileHandlingTopic << MQTT_FILE_HANDING_TOPIC_ROOT << m_device.getDeviceKey();
+	mqttFileHandlingTopic << MQTT_FILE_HANDLING_TOPIC_ROOT << m_device.getDeviceKey();
 	m_subscriptionList.emplace_back(mqttFileHandlingTopic.str());
 
 	std::stringstream binaryTopic("");
@@ -49,13 +49,13 @@ InboundMessageHandler::InboundMessageHandler(Device device) :
 	m_subscriptionList.emplace_back(binaryTopic.str());
 
 	std::stringstream urlFileHandlingTopic("");
-	urlFileHandlingTopic << URL_FILE_HANDING_TOPIC_ROOT << m_device.getDeviceKey();
+	urlFileHandlingTopic << URL_FILE_HANDLING_TOPIC_ROOT << m_device.getDeviceKey();
 	m_subscriptionList.emplace_back(urlFileHandlingTopic.str());
 }
 
 void InboundMessageHandler::messageReceived(const std::string& topic, const std::string& message)
 {
-	std::cout << "Message received: " << topic << ", " << message;
+	std::cout << "Message received: " << topic << ", " << message << std::endl;
 
 	if(StringUtils::startsWith(topic, ACTUATION_REQUEST_TOPIC_ROOT))
 	{
@@ -95,7 +95,7 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 			}
 		});
 	}
-	else if(StringUtils::startsWith(topic, MQTT_FILE_HANDING_TOPIC_ROOT))
+	else if(StringUtils::startsWith(topic, MQTT_FILE_HANDLING_TOPIC_ROOT))
 	{
 		FileDownloadMqttCommand fileDownloadCommand;
 		if (!JsonParser::fromJson(message, fileDownloadCommand))
@@ -107,6 +107,21 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 			if(m_fileDownloadMqttHandler)
 			{
 				m_fileDownloadMqttHandler(fileDownloadCommand);
+			}
+		});
+	}
+	else if(StringUtils::startsWith(topic, URL_FILE_HANDLING_TOPIC_ROOT))
+	{
+		FileDownloadUrlCommand fileDownloadCommand;
+		if (!JsonParser::fromJson(message, fileDownloadCommand))
+		{
+			return;
+		}
+
+		addToCommandBuffer([=]() -> void {
+			if(m_fileDownloadUrlHandler)
+			{
+				m_fileDownloadUrlHandler(fileDownloadCommand);
 			}
 		});
 	}
@@ -153,6 +168,11 @@ void InboundMessageHandler::setFirmwareUpdateCommandHandler(std::function<void(F
 void InboundMessageHandler::setFileDownloadMqttCommandHandler(std::function<void(FileDownloadMqttCommand)> handler)
 {
 	m_fileDownloadMqttHandler = handler;
+}
+
+void InboundMessageHandler::setFileDownloadUrlCommandHandler(std::function<void(FileDownloadUrlCommand)> handler)
+{
+	m_fileDownloadUrlHandler = handler;
 }
 
 void InboundMessageHandler::addToCommandBuffer(std::function<void()> command)

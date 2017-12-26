@@ -227,6 +227,13 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 		}
 	});
 
+	inboundMessageHandler->setFileDownloadUrlCommandHandler([=](const FileDownloadUrlCommand& fileDownloadCommand) -> void {
+		if(auto handler = serviceCommandHandler_weak.lock())
+		{
+			handler->handleFileDownloadUrlCommand(fileDownloadCommand);
+		}
+	});
+
 	inboundMessageHandler->setFirmwareUpdateCommandHandler([=](const FirmwareUpdateCommand& firmwareUpdateCommand) -> void {
 		if(auto handler = serviceCommandHandler_weak.lock())
 		{

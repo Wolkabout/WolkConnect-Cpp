@@ -124,6 +124,18 @@ bool FileSystemUtils::readFileContent(const std::string& filePath, std::string& 
     return true;
 }
 
+bool FileSystemUtils::readBinaryFileContent(const std::string& filePath, std::string& content)
+{
+	std::ifstream ifstream(filePath, std::ofstream::binary);
+	if (!ifstream.is_open())
+	{
+		return false;
+	}
+
+	content = std::string((std::istreambuf_iterator<char>(ifstream)), std::istreambuf_iterator<char>());
+	return true;
+}
+
 std::vector<std::string> FileSystemUtils::listFiles(std::string directoryPath)
 {
     std::vector<std::string> result;

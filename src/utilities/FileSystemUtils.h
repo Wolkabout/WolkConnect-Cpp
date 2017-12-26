@@ -42,6 +42,8 @@ public:
 
     static bool readFileContent(const std::string& filePath, std::string& content);
 
+	static bool readBinaryFileContent(const std::string& filePath, std::string& content);
+
     static std::vector<std::string> listFiles(std::string directoryPath);
 };
 }
