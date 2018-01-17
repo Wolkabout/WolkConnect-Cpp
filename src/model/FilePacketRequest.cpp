@@ -14,33 +14,31 @@
  * limitations under the License.
  */
 
-#include "FirmwareUpdateResponse.h"
+#include "FilePacketRequest.h"
 
 namespace wolkabout
 {
-
-FirmwareUpdateResponse::FirmwareUpdateResponse() : m_status{FirmwareUpdateResponse::Status::ERROR}, m_errorCode{}
+FilePacketRequest::FilePacketRequest() : m_fileName{""}, m_chunkIndex{0}, m_chunkSize{0}
 {
 }
 
-FirmwareUpdateResponse::FirmwareUpdateResponse(FirmwareUpdateResponse::Status status) :
-	m_status{status}, m_errorCode{}
+FilePacketRequest::FilePacketRequest(const std::string& fileName, unsigned chunkIndex, uint_fast64_t chunkSize) :
+	m_fileName{fileName}, m_chunkIndex{chunkIndex}, m_chunkSize{chunkSize}
 {
 }
 
-FirmwareUpdateResponse::FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateResponse::ErrorCode errorCode) :
-	m_status{status}, m_errorCode{errorCode}
+const std::string& FilePacketRequest::getFileName() const
 {
+	return m_fileName;
 }
 
-FirmwareUpdateResponse::Status FirmwareUpdateResponse::getStatus() const
+unsigned FilePacketRequest::getChunkIndex() const
 {
-	return m_status;
+	return m_chunkIndex;
 }
 
-WolkOptional<FirmwareUpdateResponse::ErrorCode> FirmwareUpdateResponse::getErrorCode() const
+uint_fast64_t FilePacketRequest::getChunkSize() const
 {
-	return m_errorCode;
+	return m_chunkSize;
 }
-
 }

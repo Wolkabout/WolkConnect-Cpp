@@ -14,38 +14,43 @@
  * limitations under the License.
  */
 
-#ifndef URLFILEDOWNLOADER_H
-#define URLFILEDOWNLOADER_H
+#ifndef WOLKABOUTFILEDOWNLOADER_H
+#define WOLKABOUTFILEDOWNLOADER_H
 
+#include "utilities/ByteUtils.h"
 #include <string>
 #include <functional>
 
 namespace wolkabout
 {
-class UrlFileDownloader
+class WolkaboutFileDownloader
 {
 public:
 	enum class Error
 	{
 		UNSPECIFIED_ERROR,
 		FILE_SYSTEM_ERROR,
-		MALFORMED_URL,
+		RETRY_COUNT_EXCEEDED,
 		UNSUPPORTED_FILE_SIZE
 	};
 
-	virtual ~UrlFileDownloader() = default;
+	virtual ~WolkaboutFileDownloader() = default;
 
 	/**
-	 * @brief download Starts downloading of the file from provided url
+	 * @brief download Starts downloading of the file from Wolkabout platform
 	 * Should be implemented in a thread safe manner
-	 * @param url Url of the file to download
+	 * @param fileName Name of the file to be downloaded
+	 * @param fileSize Size of the file to be downloaded
+	 * @param fileHash SHA256 hash of the file to be downloaded
 	 * @param downloadDirectory Directory where to download file
 	 * @param onSuccessCallback Function to call when file is downloaded with file path as argument
 	 * @param onFailCallback Function to call when download fails with error code as argument
 	 */
-	virtual void download(const std::string& url, const std::string& downloadDirectory,
+	virtual void download(const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash,
+						  const std::string& downloadDirectory,
 						  std::function<void(const std::string& filePath)> onSuccessCallback,
-						  std::function<void(UrlFileDownloader::Error errorCode)> onFailCallback) = 0;
+						  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) = 0;
+
 	/**
 	 * @brief abort Aborts file download and removes any saved data
 	 * Should be implemented in a thread safe manner
@@ -54,4 +59,4 @@ public:
 };
 }
 
-#endif // URLFILEDOWNLOADER_H
+#endif // WOLKABOUTFILEDOWNLOADER_H

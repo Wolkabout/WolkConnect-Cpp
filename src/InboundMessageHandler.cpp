@@ -17,6 +17,7 @@
 #include "InboundMessageHandler.h"
 #include "connectivity/mqtt/JsonDtoParser.h"
 #include "utilities/StringUtils.h"
+#include "utilities/ByteUtils.h"
 
 #include <sstream>
 #include <iostream>
@@ -40,17 +41,9 @@ InboundMessageHandler::InboundMessageHandler(Device device) :
 	m_subscriptionList.emplace_back(topic.str());
 
 	// file handling
-	std::stringstream mqttFileHandlingTopic("");
-	mqttFileHandlingTopic << MQTT_FILE_HANDLING_TOPIC_ROOT << m_device.getDeviceKey();
-	m_subscriptionList.emplace_back(mqttFileHandlingTopic.str());
-
 	std::stringstream binaryTopic("");
 	binaryTopic << BINARY_TOPIC_ROOT << m_device.getDeviceKey();
 	m_subscriptionList.emplace_back(binaryTopic.str());
-
-	std::stringstream urlFileHandlingTopic("");
-	urlFileHandlingTopic << URL_FILE_HANDLING_TOPIC_ROOT << m_device.getDeviceKey();
-	m_subscriptionList.emplace_back(urlFileHandlingTopic.str());
 }
 
 void InboundMessageHandler::messageReceived(const std::string& topic, const std::string& message)
@@ -95,41 +88,11 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
 			}
 		});
 	}
-	else if(StringUtils::startsWith(topic, MQTT_FILE_HANDLING_TOPIC_ROOT))
-	{
-		FileDownloadMqttCommand fileDownloadCommand;
-		if (!JsonParser::fromJson(message, fileDownloadCommand))
-		{
-			return;
-		}
-
-		addToCommandBuffer([=]() -> void {
-			if(m_fileDownloadMqttHandler)
-			{
-				m_fileDownloadMqttHandler(fileDownloadCommand);
-			}
-		});
-	}
-	else if(StringUtils::startsWith(topic, URL_FILE_HANDLING_TOPIC_ROOT))
-	{
-		FileDownloadUrlCommand fileDownloadCommand;
-		if (!JsonParser::fromJson(message, fileDownloadCommand))
-		{
-			return;
-		}
-
-		addToCommandBuffer([=]() -> void {
-			if(m_fileDownloadUrlHandler)
-			{
-				m_fileDownloadUrlHandler(fileDownloadCommand);
-			}
-		});
-	}
 	else if(StringUtils::startsWith(topic, BINARY_TOPIC_ROOT))
 	{
 		try
 		{
-			BinaryData data{message};
+			BinaryData data{ByteUtils::toByteArray(message)};
 
 			addToCommandBuffer([=]() -> void {
 				if(m_binaryDataHandler)
@@ -163,16 +126,6 @@ void InboundMessageHandler::setBinaryDataHandler(std::function<void(BinaryData)>
 void InboundMessageHandler::setFirmwareUpdateCommandHandler(std::function<void(FirmwareUpdateCommand)> handler)
 {
 	m_firmwareUpdateHandler = handler;
-}
-
-void InboundMessageHandler::setFileDownloadMqttCommandHandler(std::function<void(FileDownloadMqttCommand)> handler)
-{
-	m_fileDownloadMqttHandler = handler;
-}
-
-void InboundMessageHandler::setFileDownloadUrlCommandHandler(std::function<void(FileDownloadUrlCommand)> handler)
-{
-	m_fileDownloadUrlHandler = handler;
 }
 
 void InboundMessageHandler::addToCommandBuffer(std::function<void()> command)

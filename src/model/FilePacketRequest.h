@@ -14,19 +14,28 @@
  * limitations under the License.
  */
 
-#ifndef FILEDOWNLOADMQTTCOMMANDLISTENER_H
-#define FILEDOWNLOADMQTTCOMMANDLISTENER_H
+#ifndef FILEPACKETREQUEST_H
+#define FILEPACKETREQUEST_H
+
+#include <string>
 
 namespace wolkabout
 {
-class FileDownloadMqttCommand;
-
-class FileDownloadMqttCommandListener
+class FilePacketRequest
 {
 public:
-	virtual ~FileDownloadMqttCommandListener() = default;
+	FilePacketRequest();
+	FilePacketRequest(const std::string& fileName, unsigned chunkIndex, uint_fast64_t chunkSize);
 
-	virtual void handleFileDownloadMqttCommand(const FileDownloadMqttCommand& fileDownloadMqttCommand) = 0;
+	const std::string& getFileName() const;
+	unsigned getChunkIndex() const;
+	uint_fast64_t getChunkSize() const;
+
+private:
+	const std::string m_fileName;
+	const unsigned m_chunkIndex;
+	const uint_fast64_t m_chunkSize;
 };
 }
-#endif // FILEDOWNLOADMQTTCOMMANDLISTENER_H
+
+#endif // FILEPACKETREQUEST_H

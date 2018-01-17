@@ -22,8 +22,6 @@
 #include "model/ActuatorCommand.h"
 #include "model/BinaryData.h"
 #include "model/FirmwareUpdateCommand.h"
-#include "model/FileDownloadMqttCommand.h"
-#include "model/FileDownloadUrlCommand.h"
 #include "CommandBuffer.h"
 
 #include <string>
@@ -46,10 +44,6 @@ public:
 
 	void setFirmwareUpdateCommandHandler(std::function<void(FirmwareUpdateCommand)> handler);
 
-	void setFileDownloadMqttCommandHandler(std::function<void(FileDownloadMqttCommand)> handler);
-
-	void setFileDownloadUrlCommandHandler(std::function<void(FileDownloadUrlCommand)> handler);
-
 private:
 	void addToCommandBuffer(std::function<void()> command);
 
@@ -62,15 +56,10 @@ private:
 	std::function<void(ActuatorCommand)> m_actuationHandler;
 	std::function<void(BinaryData)> m_binaryDataHandler;
 	std::function<void(FirmwareUpdateCommand)> m_firmwareUpdateHandler;
-	std::function<void(FileDownloadMqttCommand)> m_fileDownloadMqttHandler;
-	std::function<void(FileDownloadUrlCommand)> m_fileDownloadUrlHandler;
-
 
 	static const constexpr char* ACTUATION_REQUEST_TOPIC_ROOT = "actuators/commands/";
 	static const constexpr char* FIRMWARE_UPDATE_TOPIC_ROOT = "service/commands/firmware/";
 	static const constexpr char* BINARY_TOPIC_ROOT = "service/binary/";
-	static const constexpr char* MQTT_FILE_HANDLING_TOPIC_ROOT = "service/commands/file/";
-	static const constexpr char* URL_FILE_HANDLING_TOPIC_ROOT = "service/commands/url/";
 };
 }
 

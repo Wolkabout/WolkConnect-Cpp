@@ -18,7 +18,6 @@
 #define FIRMWAREUPDATERESPONSE_H
 
 #include "WolkOptional.h"
-#include "FirmwareUpdateCommand.h"
 
 namespace wolkabout
 {
@@ -27,31 +26,34 @@ class FirmwareUpdateResponse
 public:
 	enum class Status
 	{
-		OK,
+		FILE_TRANSFER,
+		FILE_READY,
+		INSTALLATION,
+		COMPLETED,
+		ABORTED,
 		ERROR
 	};
 
 	enum class ErrorCode
 	{
 		UNSPECIFIED_ERROR = 0,
-		FIRMWARE_UPDATE_DISABLED,
-		FIRMWARE_FILE_NOT_DOWNLOADED
+		FILE_UPLOAD_DISABLED = 1,
+		UNSUPPORTED_FILE_SIZE = 2,
+		INSTALLATION_FAILED = 3,
+		MALFORMED_URL = 4,
+		FILE_SYSTEM_ERROR = 5,
+		RETRY_COUNT_EXCEEDED = 10
 	};
 
 	FirmwareUpdateResponse();
-	FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateCommand::Type command);
-	FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateCommand::Type command,
-						   FirmwareUpdateResponse::ErrorCode errorCode);
-
-	virtual ~FirmwareUpdateResponse() = default;
+	FirmwareUpdateResponse(FirmwareUpdateResponse::Status status);
+	FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateResponse::ErrorCode errorCode);
 
 	FirmwareUpdateResponse::Status getStatus() const;
-	FirmwareUpdateCommand::Type getCommand() const;
 	WolkOptional<FirmwareUpdateResponse::ErrorCode> getErrorCode() const;
 
 private:
 	FirmwareUpdateResponse::Status m_status;
-	FirmwareUpdateCommand::Type m_command;
 	WolkOptional<FirmwareUpdateResponse::ErrorCode> m_errorCode;
 };
 }

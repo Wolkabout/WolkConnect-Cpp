@@ -28,9 +28,9 @@
 #include "ServiceCommandHandler.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "OutboundDataService.h"
-#include "FileDownloadMqttService.h"
-#include "FileDownloadUrlService.h"
+#include "FileDownloadService.h"
 #include "FirmwareUpdateService.h"
+#include "FileHandler.h"
 
 #include <functional>
 #include <stdexcept>
@@ -80,21 +80,15 @@ WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persisten
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withDirectFileDownload()
+WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
+											 const std::string& firmwareDownloadDirectory, uint_fast64_t maxFirmwareFileSize,
+											 std::weak_ptr<UrlFileDownloader> urlDownloader)
 {
-	m_directFileDownloadEnabled = true;
-	return *this;
-}
-
-WolkBuilder& WolkBuilder::withUrlFileDownload(std::weak_ptr<UrlFileDownloader> downloader)
-{
-	m_urlFileDownloader = downloader;
-	return *this;
-}
-
-WolkBuilder& WolkBuilder::withFirmwareUpdate(std::weak_ptr<FirmwareInstaller> installer)
-{
+	m_firmwareVersion = firmwareVersion;
+	m_firmwareDownloadDirectory = firmwareDownloadDirectory;
+	m_maxFirmwareFileSize = maxFirmwareFileSize;
 	m_firmwareInstaller = installer;
+	m_urlFileDownloader = urlDownloader;
 	return *this;
 }
 
@@ -119,14 +113,6 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
         }
     }
 
-	if(m_firmwareInstaller.lock() != nullptr)
-	{
-		if(!(m_directFileDownloadEnabled || m_urlFileDownloader.lock() != nullptr))
-		{
-			throw std::logic_error("At least one file download method must be enabled for firmware update");
-		}
-	}
-
     auto mqttClient = std::make_shared<PahoMqttClient>();
     auto connectivityService = std::make_shared<MqttConnectivityService>(mqttClient, m_device, m_host);
 
@@ -144,67 +130,20 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
     wolk->m_actuatorStatusProviderLambda = m_actuatorStatusProviderLambda;
     wolk->m_actuatorStatusProvider = m_actuatorStatusProvider;
 
-	std::shared_ptr<FileDownloadMqttService> fileDownloadMqttService;
-	std::shared_ptr<FileDownloadUrlService> fileDownloadUrlService;
-
-	if(m_directFileDownloadEnabled)
-	{
-		fileDownloadMqttService = std::make_shared<FileDownloadMqttService>(outboundServiceDataHandler);
-		serviceCommandHandler->setBinaryDataHandler(fileDownloadMqttService);
-		serviceCommandHandler->setFileDownloadMqttCommandHandler(fileDownloadMqttService);
-		wolk->addService(fileDownloadMqttService);
-	}
-
-	if(m_urlFileDownloader.lock() != nullptr)
-	{
-		fileDownloadUrlService = std::make_shared<FileDownloadUrlService>(outboundServiceDataHandler, m_urlFileDownloader);
-		serviceCommandHandler->setFileDownloadUrlCommandHandler(fileDownloadUrlService);
-		wolk->addService(fileDownloadUrlService);
-	}
+	auto fileDownloadService = std::make_shared<FileDownloadService>(m_maxFirmwareFileSize, MAX_BINARY_CHUNK_SIZE,
+																	 std::unique_ptr<FileHandler>(new FileHandler()),
+																	 outboundServiceDataHandler);
+	serviceCommandHandler->setBinaryDataHandler(fileDownloadService);
+	wolk->addService(fileDownloadService);
 
 	if(m_firmwareInstaller.lock() != nullptr)
 	{
-		auto firmwareUpdateService = std::make_shared<FirmwareUpdateService>(outboundServiceDataHandler, m_firmwareInstaller);
+		auto firmwareUpdateService = std::make_shared<FirmwareUpdateService>(m_firmwareVersion, m_firmwareDownloadDirectory,
+																			 m_maxFirmwareFileSize, outboundServiceDataHandler,
+																			 fileDownloadService, m_urlFileDownloader,
+																			 m_firmwareInstaller);
 		serviceCommandHandler->setFirmwareUpdateCommandHandler(firmwareUpdateService);
 		wolk->addService(firmwareUpdateService);
-
-		std::weak_ptr<FirmwareUpdateService> firmwareUpdateService_weak{firmwareUpdateService};
-		std::weak_ptr<FileDownloadMqttService> fileDownloadMqttService_weak{fileDownloadMqttService};
-		std::weak_ptr<FileDownloadUrlService> fileDownloadUrlService_weak{fileDownloadUrlService};
-
-		if(fileDownloadMqttService)
-		{
-			fileDownloadMqttService->setFileDownloadedCallback([=](const std::string& fileName) -> void {
-				if(auto handler = firmwareUpdateService_weak.lock())
-				{
-					handler->onFirmwareFileDownloaded(fileName);
-				}
-			});
-
-			firmwareUpdateService->setOnUpdateAbortCallback([=]() -> void {
-				if(auto handler = fileDownloadMqttService_weak.lock())
-				{
-					handler->abortDownload();
-				}
-			});
-		}
-
-		if(fileDownloadUrlService)
-		{
-			fileDownloadUrlService->setFileDownloadedCallback([=](const std::string& fileName) -> void {
-				if(auto handler = firmwareUpdateService_weak.lock())
-				{
-					handler->onFirmwareFileDownloaded(fileName);
-				}
-			});
-
-			firmwareUpdateService->setOnUpdateAbortCallback([=]() -> void {
-				if(auto handler = fileDownloadUrlService_weak.lock())
-				{
-					handler->abortDownload();
-				}
-			});
-		}
 	}
 
 	inboundMessageHandler->setActuatorCommandHandler([&](const ActuatorCommand& actuatorCommand) -> void {
@@ -217,20 +156,6 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 		if(auto handler = serviceCommandHandler_weak.lock())
 		{
 			handler->handleBinaryData(binaryData);
-		}
-	});
-
-	inboundMessageHandler->setFileDownloadMqttCommandHandler([=](const FileDownloadMqttCommand& fileDownloadCommand) -> void {
-		if(auto handler = serviceCommandHandler_weak.lock())
-		{
-			handler->handleFileDownloadMqttCommand(fileDownloadCommand);
-		}
-	});
-
-	inboundMessageHandler->setFileDownloadUrlCommandHandler([=](const FileDownloadUrlCommand& fileDownloadCommand) -> void {
-		if(auto handler = serviceCommandHandler_weak.lock())
-		{
-			handler->handleFileDownloadUrlCommand(fileDownloadCommand);
 		}
 	});
 
@@ -252,7 +177,8 @@ wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>() const
 }
 
 WolkBuilder::WolkBuilder(Device device)
-	: m_host{WOLK_DEMO_HOST}, m_device{std::move(device)}, m_persistence{new InMemoryPersistence()}, m_directFileDownloadEnabled{false}
+	: m_host{WOLK_DEMO_HOST}, m_device{std::move(device)}, m_persistence{new InMemoryPersistence()},
+	  m_firmwareVersion{""}, m_firmwareDownloadDirectory{""}, m_maxFirmwareFileSize{0}
 {
 }
 }

@@ -17,9 +17,8 @@
 #ifndef FILEHANDLER_H
 #define FILEHANDLER_H
 
+#include "utilities/ByteUtils.h"
 #include <string>
-#include <sstream>
-#include <stdexcept>
 
 namespace wolkabout
 {
@@ -33,41 +32,25 @@ public:
 		OK = 0,
 		PACKAGE_HASH_NOT_VALID,
 		PREVIOUS_PACKAGE_HASH_NOT_VALID,
-		TRANSFER_NOT_INITIATED,
-		TRANSFER_NOT_COMPLETED,
 		FILE_HASH_NOT_VALID,
-		FILE_HANDLING_ERROR,
-		FILE_SIZE_NOT_SUPPORTED
+		FILE_HANDLING_ERROR
 	};
 
-	FileHandler(const std::string& path, int maxFileSize, int maxPackageSize);
+	FileHandler();
 
 	virtual ~FileHandler() = default;
 
-	FileHandler::StatusCode prepare(const std::string& fileName, int fileSize, const std::string& fileHash,
-									int& packageSize, int& packageCount);
-
 	void clear();
 
-	FileHandler::StatusCode handleData(const BinaryData& binaryData, int& packageNumber);
+	FileHandler::StatusCode handleData(const BinaryData& binaryData);
 
-	FileHandler::StatusCode validateFile();
+	FileHandler::StatusCode validateFile(const ByteArray& fileHash);
 
-	FileHandler::StatusCode saveFile();
+	FileHandler::StatusCode saveFile(const std::string& filePath);
 
 private:
-	const std::string m_path;
-	const int m_maxFileSize;
-	const int m_maxPackageSize;
-
-	std::string m_currentFileName;
-	int m_currentPackageSize;
-	int m_currentPackageCount;
-	std::string m_currentFileHash;
-
-	std::stringstream m_currentPackageData;
-	int m_currentPackageIndex;
-	std::string m_previousPackageHash;
+	ByteArray m_currentPacketData;
+	ByteArray m_previousPacketHash;
 };
 }
 

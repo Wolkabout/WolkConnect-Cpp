@@ -42,10 +42,6 @@ public:
 	static std::string base64Encode(const char* bytesToEncode, unsigned int len);
 
 	static std::string base64Decode(const std::string& encodedString);
-
-	static std::string hashSHA256(const std::string& value);
-
-	static std::string hashSHA256Raw(const std::string& value);
 };
 }
 

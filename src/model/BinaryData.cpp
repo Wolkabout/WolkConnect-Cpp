@@ -15,51 +15,51 @@
  */
 
 #include "BinaryData.h"
-#include "utilities/StringUtils.h"
 #include <stdexcept>
 
 namespace wolkabout
 {
 
-BinaryData::BinaryData() : m_value{""}, m_data{""}, m_hash{""}, m_previousHash{""}
+BinaryData::BinaryData() : m_value{}, m_data{}, m_hash{}, m_previousHash{}
 {
 }
 
-BinaryData::BinaryData(const std::string& value) : m_value{value}, m_data{""}, m_hash{""}, m_previousHash{""}
+BinaryData::BinaryData(const ByteArray& value) : m_value{value}, m_data{}, m_hash{}, m_previousHash{}
 {
-	if(value.length() <= 2 * SHA_256_HASH_BYTE_LENGTH)
+	if(value.size() <= 2 * SHA_256_HASH_BYTE_LENGTH)
 	{
-		throw std::invalid_argument("Binary data size is smaller than required to fit standard data package");
+		throw std::invalid_argument("Binary data size is smaller than required to fit standard data packet");
 	}
 
-	m_previousHash = m_value.substr(0, SHA_256_HASH_BYTE_LENGTH);
-	m_data = m_value.substr(SHA_256_HASH_BYTE_LENGTH, m_value.length() - 2 * SHA_256_HASH_BYTE_LENGTH);
-	m_hash = m_value.substr(SHA_256_HASH_BYTE_LENGTH + m_data.length(), SHA_256_HASH_BYTE_LENGTH);
+	m_previousHash = {m_value.begin(), m_value.begin() + SHA_256_HASH_BYTE_LENGTH - 1};
+	m_data = {m_value.begin() + SHA_256_HASH_BYTE_LENGTH, m_value.end() - SHA_256_HASH_BYTE_LENGTH};
+	m_hash = {m_value.end() - SHA_256_HASH_BYTE_LENGTH, m_value.end()};
 }
 
-const std::string& BinaryData::getData() const
+const ByteArray& BinaryData::getData() const
 {
 	return m_data;
 }
 
-const std::string& BinaryData::getHash() const
+const ByteArray& BinaryData::getHash() const
 {
 	return m_hash;
 }
 
 bool BinaryData::valid() const
 {
-	const std::string hashRaw = StringUtils::hashSHA256Raw(m_previousHash + m_data);
+	const ByteArray hash = ByteUtils::hashSHA256(m_data);
 
-	return hashRaw == m_hash;
+	return hash == m_hash;
 }
 
 bool BinaryData::validatePrevious() const
 {
-	return validatePrevious(StringUtils::hashSHA256Raw(""));
+	// validate with all zero hash
+	return validatePrevious(ByteUtils::hashSHA256(ByteArray{SHA_256_HASH_BYTE_LENGTH, 0}));
 }
 
-bool BinaryData::validatePrevious(const std::string& previousHash) const
+bool BinaryData::validatePrevious(const ByteArray& previousHash) const
 {
 	return m_previousHash == previousHash;
 }

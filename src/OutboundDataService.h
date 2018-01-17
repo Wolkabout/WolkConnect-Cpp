@@ -31,8 +31,7 @@ public:
 	OutboundDataService(Device device, std::shared_ptr<ConnectivityService> connectivityService);
 
 	void addFirmwareUpdateResponse(const FirmwareUpdateResponse& response) override;
-	void addFileDownloadMqttResponse(const FileDownloadMqttResponse& response) override;
-	void addFileDownloadUrlResponse(const FileDownloadUrlResponse& response) override;
+	void addFilePacketRequest(const FilePacketRequest& request) override;
 
 private:
 	Device m_device;

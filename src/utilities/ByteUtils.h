@@ -14,38 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef FILEDOWNLOADURLCOMMAND_H
-#define FILEDOWNLOADURLCOMMAND_H
+#ifndef BYTEUTILS_H
+#define BYTEUTILS_H
 
-#include "WolkOptional.h"
+#include <vector>
 #include <string>
+#include <stdint.h>
 
 namespace wolkabout
 {
-class FileDownloadUrlCommand
+
+using Byte = uint8_t;
+using ByteArray = std::vector<uint8_t>;
+
+class ByteUtils
 {
 public:
-	enum class Type
-	{
-		INIT = 0,
-		STATUS,
-		END,
-		UPLOAD
-	};
+	ByteUtils() = delete;
 
-	FileDownloadUrlCommand();
-	FileDownloadUrlCommand(FileDownloadUrlCommand::Type type);
-	FileDownloadUrlCommand(FileDownloadUrlCommand::Type type, WolkOptional<std::string> url);
-
-	FileDownloadUrlCommand::Type getType() const;
-
-	WolkOptional<std::string> getUrl() const;
-
-private:
-	FileDownloadUrlCommand::Type m_type;
-
-	WolkOptional<std::string> m_url;
+	static ByteArray toByteArray(const std::string& data);
+	static ByteArray hashSHA256(const ByteArray& value);
 };
 }
 
-#endif // FILEDOWNLOADURLCOMMAND_H
+#endif // BYTE_H

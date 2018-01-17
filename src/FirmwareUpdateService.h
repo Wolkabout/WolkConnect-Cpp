@@ -19,6 +19,10 @@
 
 #include "CommandHandlingService.h"
 #include "FirmwareUpdateCommandListener.h"
+#include "utilities/ByteUtils.h"
+#include "CommandBuffer.h"
+#include "WolkaboutFileDownloader.h"
+#include "UrlFileDownloader.h"
 #include <string>
 #include <memory>
 
@@ -26,34 +30,106 @@ namespace wolkabout
 {
 class OutboundServiceDataHandler;
 class FirmwareInstaller;
+class FirmwareUpdateResponse;
 
 class FirmwareUpdateService: public CommandHandlingService, public FirmwareUpdateCommandListener
 {
 public:
-	FirmwareUpdateService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
+	FirmwareUpdateService(const std::string& firmwareVersion, const std::string& downloadDirectory,
+						  uint_fast64_t maximumFirmwareSize,
+						  std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
+						  std::weak_ptr<WolkaboutFileDownloader> wolkDownloader,
+						  std::weak_ptr<UrlFileDownloader> urlDownloader,
 						  std::weak_ptr<FirmwareInstaller> firmwareInstaller);
+
+	~FirmwareUpdateService();
 
 	void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
 
-	void onFirmwareFileDownloaded(const std::string fileName);
-
-	void setOnUpdateAbortCallback(std::function<void()> callback);
-
 private:
-	enum class State
+	void addToCommandBuffer(std::function<void()> command);
+
+	void sendResponse(const FirmwareUpdateResponse& response);
+
+	void onFirmwareFileDownloadSuccess(const std::string& filePath);
+
+	void onFirmwareFileDownloadFail(WolkaboutFileDownloader::Error errorCode);
+
+	void onFirmwareFileDownloadFail(UrlFileDownloader::Error errorCode);
+
+	void downloadFirmware(const std::string& name, uint_fast64_t size, const ByteArray& hash);
+
+	void downloadFirmware(const std::string& url);
+
+	void install();
+
+	void clear();
+
+	class FirmwareUpdateServiceState
 	{
-		IDLE = 0,
-		FILE_DOWNLOAD,
-		READY_FOR_INSTALL
+	public:
+		FirmwareUpdateServiceState(FirmwareUpdateService& service): m_service{service} {}
+		virtual void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) = 0;
+		virtual ~FirmwareUpdateServiceState() = default;
+	protected:
+		FirmwareUpdateService& m_service;
 	};
 
+	class IdleState: public FirmwareUpdateServiceState
+	{
+	public:
+		using FirmwareUpdateServiceState::FirmwareUpdateServiceState;
+		void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
+	};
+
+	class WolkDownloadState: public FirmwareUpdateServiceState
+	{
+	public:
+		using FirmwareUpdateServiceState::FirmwareUpdateServiceState;
+		void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
+	};
+
+	class UrlDownloadState: public FirmwareUpdateServiceState
+	{
+	public:
+		using FirmwareUpdateServiceState::FirmwareUpdateServiceState;
+		void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
+	};
+
+	class ReadyState: public FirmwareUpdateServiceState
+	{
+	public:
+		using FirmwareUpdateServiceState::FirmwareUpdateServiceState;
+		void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
+	};
+
+	friend class IdleState;
+	friend class WolkDownloadState;
+	friend class UrlDownloadState;
+	friend class ReadyState;
+
+	const std::string m_currentFirmwareVersion;
+	const std::string m_firmwareDownloadDirectory;
+	const uint_fast64_t m_maximumFirmwareSize;
+
 	std::shared_ptr<OutboundServiceDataHandler> m_outboundDataHandler;
+	std::weak_ptr<WolkaboutFileDownloader> m_wolkFileDownloader;
+	std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
 	std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
 
-	FirmwareUpdateService::State m_currentState;
-	std::string m_firmwareFileName;
+	std::unique_ptr<IdleState> m_idleState;
+	std::unique_ptr<WolkDownloadState> m_wolkDownloadState;
+	std::unique_ptr<UrlDownloadState> m_urlDownloadState;
+	std::unique_ptr<ReadyState> m_readyState;
 
-	std::function<void()> m_abortCallback;
+	FirmwareUpdateServiceState* m_currentState;
+
+	std::string m_firmwareFile;
+	bool m_autoInstall;
+
+	std::unique_ptr<std::thread> m_executor;
+
+	std::unique_ptr<CommandBuffer> m_commandBuffer;
 };
 
 }

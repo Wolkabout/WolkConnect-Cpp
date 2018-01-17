@@ -17,6 +17,7 @@
 #ifndef FIRMWAREUPDATECOMMAND_H
 #define FIRMWAREUPDATECOMMAND_H
 
+#include "WolkOptional.h"
 #include <string>
 
 namespace wolkabout
@@ -26,20 +27,41 @@ class FirmwareUpdateCommand
 public:
 	enum class Type
 	{
-		INIT,
+		FILE_UPLOAD,
+		URL_DOWNLOAD,
 		INSTALL,
-		ABORT
+		ABORT,
+		UNKNOWN = -1
 	};
 
 	FirmwareUpdateCommand();
+
 	explicit FirmwareUpdateCommand(FirmwareUpdateCommand::Type type);
 
-	virtual ~FirmwareUpdateCommand() = default;
+	FirmwareUpdateCommand(FirmwareUpdateCommand::Type type, std::string name, uint_fast64_t size, std::string hash, bool autoInstall);
+
+	FirmwareUpdateCommand(FirmwareUpdateCommand::Type type, std::string url, bool autoInstall);
 
 	FirmwareUpdateCommand::Type getType() const;
 
+	WolkOptional<std::string> getName() const;
+	WolkOptional<uint_fast64_t> getSize() const;
+	WolkOptional<std::string> getHash() const;
+
+	WolkOptional<std::string> getUrl() const;
+
+	WolkOptional<bool> getAutoInstall() const;
+
 private:
 	FirmwareUpdateCommand::Type m_type;
+
+	WolkOptional<std::string> m_name;
+	WolkOptional<uint_fast64_t> m_size;
+	WolkOptional<std::string> m_hash;
+
+	WolkOptional<std::string> m_url;
+
+	WolkOptional<bool> m_autoInstall;
 };
 }
 

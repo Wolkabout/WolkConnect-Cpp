@@ -60,7 +60,7 @@ bool FileSystemUtils::createFileWithContent(const std::string& filePath, const s
     }
 }
 
-bool FileSystemUtils::createBinaryFileWithContent(const std::string& filePath, const std::string& content)
+bool FileSystemUtils::createBinaryFileWithContent(const std::string& filePath, const ByteArray& content)
 {
 	try
 	{
@@ -71,7 +71,7 @@ bool FileSystemUtils::createBinaryFileWithContent(const std::string& filePath, c
 			return false;
 		}
 
-		ofstream << content;
+		ofstream.write(reinterpret_cast<const char *>(content.data()), content.size());
 		if (!ofstream)
 		{
 			deleteFile(filePath);
@@ -120,11 +120,11 @@ bool FileSystemUtils::readFileContent(const std::string& filePath, std::string& 
         return false;
     }
 
-    content = std::string((std::istreambuf_iterator<char>(ifstream)), std::istreambuf_iterator<char>());
+	content = std::string((std::istreambuf_iterator<char>(ifstream)), std::istreambuf_iterator<char>());
     return true;
 }
 
-bool FileSystemUtils::readBinaryFileContent(const std::string& filePath, std::string& content)
+bool FileSystemUtils::readBinaryFileContent(const std::string& filePath, ByteArray& content)
 {
 	std::ifstream ifstream(filePath, std::ofstream::binary);
 	if (!ifstream.is_open())
@@ -132,7 +132,8 @@ bool FileSystemUtils::readBinaryFileContent(const std::string& filePath, std::st
 		return false;
 	}
 
-	content = std::string((std::istreambuf_iterator<char>(ifstream)), std::istreambuf_iterator<char>());
+	content = ByteUtils::toByteArray(std::string((std::istreambuf_iterator<char>(ifstream)), std::istreambuf_iterator<char>()));
+
 	return true;
 }
 

@@ -16,7 +16,6 @@
 
 #include "OutboundDataService.h"
 #include "model/FirmwareUpdateResponse.h"
-#include "model/FileDownloadMqttResponse.h"
 #include "connectivity/ConnectivityService.h"
 #include "OutboundMessageFactory.h"
 
@@ -40,10 +39,10 @@ void OutboundDataService::addFirmwareUpdateResponse(const FirmwareUpdateResponse
 	}
 }
 
-void OutboundDataService::addFileDownloadMqttResponse(const FileDownloadMqttResponse& response)
+void OutboundDataService::addFilePacketRequest(const FilePacketRequest& request)
 {
 	const std::shared_ptr<OutboundMessage> outboundMessage =
-			OutboundMessageFactory::make(m_device.getDeviceKey(), response);
+			OutboundMessageFactory::make(m_device.getDeviceKey(), request);
 
 	if (outboundMessage && m_connectivityService->publish(outboundMessage))
 	{
@@ -51,14 +50,4 @@ void OutboundDataService::addFileDownloadMqttResponse(const FileDownloadMqttResp
 	}
 }
 
-void OutboundDataService::addFileDownloadUrlResponse(const FileDownloadUrlResponse& response)
-{
-	const std::shared_ptr<OutboundMessage> outboundMessage =
-			OutboundMessageFactory::make(m_device.getDeviceKey(), response);
-
-	if (outboundMessage && m_connectivityService->publish(outboundMessage))
-	{
-		std::cout << "Message sent " << outboundMessage->getContent();
-	}
-}
 }

@@ -16,81 +16,31 @@
 
 #include "FileHandler.h"
 #include "model/BinaryData.h"
-#include "utilities/StringUtils.h"
 #include "utilities/FileSystemUtils.h"
-#include <cmath>
 
 namespace wolkabout
 {
 
-FileHandler::FileHandler(const std::string& path, int maxFileSize, int maxPackageSize) :
-	m_path{path}, m_maxFileSize{maxFileSize}, m_maxPackageSize{maxPackageSize},
-	m_currentFileName{""}, m_currentPackageSize{-1}, m_currentPackageCount{-1}, m_currentFileHash{""},
-	m_currentPackageData{""}, m_currentPackageIndex{-1}, m_previousPackageHash{""}
+FileHandler::FileHandler() :
+	m_currentPacketData{},
+	m_previousPacketHash{}
 {
-}
-
-FileHandler::StatusCode FileHandler::prepare(const std::string& fileName, int fileSize,
-											 const std::string& fileHash, int& packageSize,
-											 int& packageCount)
-{
-	if(fileSize > m_maxFileSize)
-	{
-		return FileHandler::StatusCode::FILE_SIZE_NOT_SUPPORTED;
-	}
-
-	if(fileSize <= m_maxPackageSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH))
-	{
-		m_currentPackageCount = 1;
-		packageCount = 1;
-		packageSize = fileSize + (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH);
-	}
-	else
-	{
-		auto count = static_cast<double>(fileSize) / (m_maxPackageSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH));
-		m_currentPackageCount = static_cast<int>(std::ceil(count));
-		packageCount = m_currentPackageCount;
-		packageSize = m_maxPackageSize;
-	}
-
-	m_currentFileName = fileName;
-	m_currentPackageSize = packageSize;
-	m_currentPackageCount = packageCount;
-	m_currentFileHash = StringUtils::base64Decode(fileHash);
-
-	m_currentPackageData.str("");
-	m_currentPackageIndex = 0;
-	m_previousPackageHash = "";
-
-	return FileHandler::StatusCode::OK;
 }
 
 void FileHandler::clear()
 {
-	m_currentFileName = "";
-	m_currentPackageSize = -1;
-	m_currentPackageCount = -1;
-	m_currentFileHash = "";
-	m_currentPackageData.str("");
-	m_currentPackageIndex = -1;
-	m_previousPackageHash = "";
+	m_currentPacketData = {};
+	m_previousPacketHash = {};
 }
 
-FileHandler::StatusCode FileHandler::handleData(const BinaryData& binaryData, int& packageNumber)
+FileHandler::StatusCode FileHandler::handleData(const BinaryData& binaryData)
 {
-	packageNumber = m_currentPackageIndex;
-
-	if(m_currentPackageIndex == -1)
-	{
-		return FileHandler::StatusCode::TRANSFER_NOT_INITIATED;
-	}
-
 	if(!binaryData.valid())
 	{
 		return FileHandler::StatusCode::PACKAGE_HASH_NOT_VALID;
 	}
 
-	if(m_previousPackageHash.empty())
+	if(m_previousPacketHash.empty())
 	{
 		if(!binaryData.validatePrevious())
 		{
@@ -99,27 +49,21 @@ FileHandler::StatusCode FileHandler::handleData(const BinaryData& binaryData, in
 	}
 	else
 	{
-		if(!binaryData.validatePrevious(m_previousPackageHash))
+		if(!binaryData.validatePrevious(m_previousPacketHash))
 		{
 			return FileHandler::StatusCode::PREVIOUS_PACKAGE_HASH_NOT_VALID;
 		}
 	}
 
-	m_currentPackageData << binaryData.getData();
-	m_previousPackageHash = binaryData.getHash();
-	++m_currentPackageIndex;
+	m_currentPacketData.insert(m_currentPacketData.end(), binaryData.getData().begin(), binaryData.getData().end());
+	m_previousPacketHash = binaryData.getHash();
 
 	return FileHandler::StatusCode::OK;
 }
 
-FileHandler::StatusCode FileHandler::validateFile()
+FileHandler::StatusCode FileHandler::validateFile(const ByteArray& fileHash)
 {
-	if(m_currentPackageIndex != m_currentPackageCount)
-	{
-		return FileHandler::StatusCode::TRANSFER_NOT_COMPLETED;
-	}
-
-	if(m_currentFileHash == StringUtils::hashSHA256Raw(m_currentPackageData.str()))
+	if(fileHash == ByteUtils::hashSHA256(m_currentPacketData))
 	{
 		return FileHandler::StatusCode::OK;
 	}
@@ -129,11 +73,9 @@ FileHandler::StatusCode FileHandler::validateFile()
 	}
 }
 
-FileHandler::StatusCode FileHandler::saveFile()
+FileHandler::StatusCode FileHandler::saveFile(const std::string& filePath)
 {
-	const std::string filePath = m_path + "/" + m_currentFileName;
-
-	if(FileSystemUtils::createBinaryFileWithContent(filePath, m_currentPackageData.str()))
+	if(FileSystemUtils::createBinaryFileWithContent(filePath, m_currentPacketData))
 	{
 		return FileHandler::StatusCode::OK;
 	}

@@ -17,55 +17,54 @@
 #ifndef BINARYDATA_H
 #define BINARYDATA_H
 
-#include <string>
+#include "utilities/ByteUtils.h"
 
 namespace wolkabout
 {
+
 class BinaryData
 {
 public:
 	BinaryData();
 
 	/**
-	 * @brief BinaryData Constructs the object using binary value
-	 * Throws std::invalid_argument if the length binary value is not
-	 * big enough to contain valid data
+	 * @brief BinaryData Constructs the object using binary data
+	 * Throws std::invalid_argument if the size of the binary data
+	 * is not big enough to contain valid data
 	 * @param value Binary data
 	 */
-	BinaryData(const std::string& value);
-
-	virtual ~BinaryData() = default;
+	BinaryData(const ByteArray& data);
 
 	/**
 	 * @brief getData
-	 * @return data part of the binary package
+	 * @return data part of the binary packet
 	 */
-	const std::string& getData() const;
+	const ByteArray& getData() const;
 
 	/**
 	 * @brief getHash
-	 * @return hash part of the binary package
+	 * @return hash part of the binary packet
 	 */
-	const std::string& getHash() const;
+	const ByteArray& getHash() const;
 
 	/**
-	 * @brief valid Validates the package using its hash
-	 * @return true if package is valid, false otherwise
+	 * @brief valid Validates the packet using its hash
+	 * @return true if packet is valid, false otherwise
 	 */
 	bool valid() const;
 
 	/**
 	 * @brief validatePrevious Validates that param matches the previous hash
-	 * part of the binary package
+	 * part of the binary packet
 	 * @param previousHash Previous hash to validate against
 	 * @return true if previous hash is valid, false otherwise
 	 */
-	bool validatePrevious(const std::string& previousHash) const;
+	bool validatePrevious(const ByteArray& previousHash) const;
 
 	/**
 	 * @brief validatePrevious Validates that the previous hash part of the
-	 * binary package matches hash of an empty string
-	 * Used when package is first in order and no previous hash exists
+	 * binary packet matches hash of an empty string
+	 * Used when packet is first in order and no previous hash exists
 	 * @return true if previous hash is valid, false otherwise
 	 */
 	bool validatePrevious() const;
@@ -73,11 +72,11 @@ public:
 	static const short SHA_256_HASH_BYTE_LENGTH = 32;
 
 private:
-	std::string m_value;
+	ByteArray m_value;
 
-	std::string m_data;
-	std::string m_hash;
-	std::string m_previousHash;
+	ByteArray m_data;
+	ByteArray m_hash;
+	ByteArray m_previousHash;
 };
 }
 

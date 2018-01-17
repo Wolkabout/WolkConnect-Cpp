@@ -14,20 +14,36 @@
  * limitations under the License.
  */
 
-#ifndef FILEDOWNLOADURLCOMMANDLISTENER_H
-#define FILEDOWNLOADURLCOMMANDLISTENER_H
+#include "utilities/ByteUtils.h"
+#include "openssl/sha.h"
 
 namespace wolkabout
 {
-class FileDownloadUrlCommand;
-
-class FileDownloadUrlCommandListener
+ByteArray ByteUtils::toByteArray(const std::string& data)
 {
-public:
-	virtual ~FileDownloadUrlCommandListener() = default;
+	ByteArray array{};
 
-	virtual void handleFileDownloadUrlCommand(const FileDownloadUrlCommand& fileDownloadUrlCommand) = 0;
-};
+	for(auto it = data.begin(); it != data.end(); ++it)
+	{
+		array.push_back(static_cast<Byte>(*it));
+	}
+
+	return array;
 }
 
-#endif // FILEDOWNLOADURLCOMMANDLISTENER_H
+ByteArray ByteUtils::hashSHA256(const ByteArray& value)
+{
+	unsigned char digest[SHA256_DIGEST_LENGTH];
+
+	SHA256(&value[0], value.size(), reinterpret_cast<unsigned char*>(&digest));
+
+	ByteArray ret{};
+
+	for(int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+	{
+		ret.push_back(digest[i]);
+	}
+
+	return ret;
+}
+}

@@ -15,7 +15,6 @@
  */
 
 #include "utilities/StringUtils.h"
-#include "openssl/sha.h"
 
 #include <string>
 #include <vector>
@@ -164,33 +163,4 @@ std::string StringUtils::base64Decode(const std::string& encodedString)
 
 	return ret;
 }
-
-std::string StringUtils::hashSHA256(const std::string& value)
-{
-	unsigned char digest[SHA256_DIGEST_LENGTH];
-
-	SHA256((unsigned char*)value.c_str(), value.length(), (unsigned char*)&digest);
-
-	char mdString[SHA256_DIGEST_LENGTH*2+1];
-
-	for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-		sprintf(&mdString[i*2], "%02x", (unsigned int)digest[i]);
-
-	return std::string(mdString);
-}
-
-std::string StringUtils::hashSHA256Raw(const std::string& value)
-{
-	unsigned char digest[SHA256_DIGEST_LENGTH];
-
-	SHA256((unsigned char*)value.c_str(), value.length(), (unsigned char*)&digest);
-
-	std::string ret = "";
-
-	for(int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
-		ret.push_back(static_cast<char>(digest[i]));
-
-	return ret;
-}
-
 }

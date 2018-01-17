@@ -14,32 +14,34 @@
  * limitations under the License.
  */
 
-#include "FileDownloadUrlCommand.h"
+#ifndef TIMER_H
+#define TIMER_H
+
+#include <thread>
+#include <atomic>
+#include <functional>
+#include <condition_variable>
 
 namespace wolkabout
 {
 
-FileDownloadUrlCommand::FileDownloadUrlCommand() : m_type{FileDownloadUrlCommand::Type::INIT}, m_url{}
+class Timer
 {
-}
+public:
+	Timer();
+	~Timer();
 
-FileDownloadUrlCommand::FileDownloadUrlCommand(FileDownloadUrlCommand::Type type) : m_type{type}, m_url{}
-{
-}
+	void start(unsigned intervalMsec, std::function<void()> callback);
+	void stop();
+	bool running() const;
 
-FileDownloadUrlCommand::FileDownloadUrlCommand(FileDownloadUrlCommand::Type type, WolkOptional<std::string> url) :
-	m_type{type}, m_url{url}
-{
-}
-
-FileDownloadUrlCommand::Type FileDownloadUrlCommand::getType() const
-{
-	return m_type;
-}
-
-WolkOptional<std::string> FileDownloadUrlCommand::getUrl() const
-{
-	return m_url;
-}
+private:
+	std::mutex m_lock;
+	std::condition_variable m_condition;
+	std::atomic_bool m_isRunning;
+	std::unique_ptr<std::thread> m_worker;
+};
 
 }
+
+#endif // TIMER_H

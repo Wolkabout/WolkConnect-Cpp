@@ -20,8 +20,7 @@
 #include "model/OutboundMessage.h"
 #include "model/SensorReading.h"
 #include "model/FirmwareUpdateResponse.h"
-#include "model/FileDownloadMqttResponse.h"
-#include "model/FileDownloadUrlResponse.h"
+#include "model/FilePacketRequest.h"
 #include "utilities/json.hpp"
 
 #include <memory>
@@ -103,8 +102,16 @@ void to_json(json& j, const FirmwareUpdateResponse& p)
 	const std::string status = [&]() -> std::string {
 		switch (p.getStatus())
 		{
-			case FirmwareUpdateResponse::Status::OK:
-				return "OK";
+			case FirmwareUpdateResponse::Status::FILE_TRANSFER:
+				return "FILE_TRANSFER";
+			case FirmwareUpdateResponse::Status::FILE_READY:
+				return "FILE_READY";
+			case FirmwareUpdateResponse::Status::INSTALLATION:
+				return "INSTALLATION";
+			case FirmwareUpdateResponse::Status::COMPLETED:
+				return "COMPLETED";
+			case FirmwareUpdateResponse::Status::ABORTED:
+				return "ABORTED";
 			case FirmwareUpdateResponse::Status::ERROR:
 				return "ERROR";
 			default:
@@ -112,21 +119,7 @@ void to_json(json& j, const FirmwareUpdateResponse& p)
 		}
 	}();
 
-	const std::string command = [&]() -> std::string {
-		switch (p.getCommand())
-		{
-			case FirmwareUpdateCommand::Type::INIT:
-				return "INIT";
-			case FirmwareUpdateCommand::Type::INSTALL:
-				return "INSTALL";
-			case FirmwareUpdateCommand::Type::ABORT:
-				return "ABORT";
-			default:
-				return "INIT";
-		}
-	}();
-
-	j = json{{"status", status}, {"command", command}};
+	j = json{{"status", status}};
 
 	if(!p.getErrorCode().null())
 	{
@@ -143,126 +136,18 @@ void to_json(json& j, const std::shared_ptr<FirmwareUpdateResponse>& p)
 }
 /*** FIRMWARE UPDATE RESPONSE ***/
 
-/*** FILE DOWNLOAD MQTT RESPONSE ***/
-void to_json(json& j, const FileDownloadMqttResponse& p)
+/*** FILE PACKET_REQUEST ***/
+void to_json(json& j, const FilePacketRequest& p)
 {
-	const std::string status = [&]() -> std::string {
-		switch (p.getStatus())
-		{
-			case FileDownloadMqttResponse::Status::OK:
-				return "OK";
-			case FileDownloadMqttResponse::Status::ERROR:
-				return "ERROR";
-			default:
-				return "ERROR";
-		}
-	}();
-
-	const std::string command = [&]() -> std::string {
-		switch (p.getCommand())
-		{
-			case FileDownloadMqttCommand::Type::INIT:
-				return "INIT";
-			case FileDownloadMqttCommand::Type::END:
-				return "END";
-			case FileDownloadMqttCommand::Type::UPLOAD:
-				return "UPLOAD";
-			case FileDownloadMqttCommand::Type::STATUS:
-				return "STATUS";
-			default:
-				return "STATUS";
-		}
-	}();
-
-	j = json{{"status", status}, {"command", command}};
-
-	if(!p.getErrorCode().null())
-	{
-		auto errorCode = static_cast<FileDownloadMqttResponse::ErrorCode>(p.getErrorCode());
-		std::string error = std::to_string(static_cast<int>(errorCode));
-
-		j.emplace("error", error);
-	}
-
-	if(!p.getPackageNumber().null())
-	{
-		std::string packageNumber = std::to_string(static_cast<int>(p.getPackageNumber()));
-
-		j.emplace("package", packageNumber);
-	}
-
-	if(!p.getPackageSize().null())
-	{
-		std::string packageSize = std::to_string(static_cast<int>(p.getPackageSize()));
-
-		j.emplace("size", packageSize);
-	}
-
-	if(!p.getPackageCount().null())
-	{
-		std::string packageCount = std::to_string(static_cast<int>(p.getPackageCount()));
-
-		j.emplace("count", packageCount);
-	}
+	j = json{{"fileName", p.getFileName()}, {"chunkIndex", p.getChunkIndex()}, {"chunkSize", p.getChunkSize()}};
 }
 
-void to_json(json& j, const std::shared_ptr<FileDownloadMqttResponse>& p)
+void to_json(json& j, const std::shared_ptr<FilePacketRequest>& p)
 {
 	to_json(j, *p);
 }
-/*** FILE DOWNLOAD MQTT RESPONSE ***/
+/*** FILE PACKET_REQUEST ***/
 
-/*** FILE DOWNLOAD URL RESPONSE ***/
-void to_json(json& j, const FileDownloadUrlResponse& p)
-{
-	const std::string status = [&]() -> std::string {
-		switch (p.getStatus())
-		{
-			case FileDownloadUrlResponse::Status::OK:
-				return "OK";
-			case FileDownloadUrlResponse::Status::IN_PROGRESS:
-				return "IN_PROGRESS";
-			case FileDownloadUrlResponse::Status::COMPLETED:
-				return "COMPLETED";
-			case FileDownloadUrlResponse::Status::ERROR:
-				return "ERROR";
-			default:
-				return "ERROR";
-		}
-	}();
-
-	const std::string command = [&]() -> std::string {
-		switch (p.getCommand())
-		{
-			case FileDownloadUrlCommand::Type::INIT:
-				return "INIT";
-			case FileDownloadUrlCommand::Type::END:
-				return "END";
-			case FileDownloadUrlCommand::Type::UPLOAD:
-				return "UPLOAD";
-			case FileDownloadUrlCommand::Type::STATUS:
-				return "STATUS";
-			default:
-				return "STATUS";
-		}
-	}();
-
-	j = json{{"status", status}, {"command", command}};
-
-	if(!p.getStatusCode().null())
-	{
-		auto errorCode = static_cast<FileDownloadUrlResponse::StatusCode>(p.getStatusCode());
-		std::string error = std::to_string(static_cast<int>(errorCode));
-
-		j.emplace("error", error);
-	}
-}
-
-void to_json(json& j, const std::shared_ptr<FileDownloadUrlResponse>& p)
-{
-	to_json(j, *p);
-}
-/*** FILE DOWNLOAD MQTT RESPONSE ***/
 
 std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
   const std::string& deviceKey, std::vector<std::shared_ptr<SensorReading>> sensorReadings)
@@ -322,21 +207,11 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 }
 
 std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
-		const std::string& deviceKey, const FileDownloadMqttResponse& fileDownloadMqttResponse)
+		const std::string& deviceKey, const FilePacketRequest& filePacketRequest)
 {
-	const json jPayload{fileDownloadMqttResponse};
+	const json jPayload{filePacketRequest};
 	const std::string payload = jPayload.dump();
-	const std::string topic = MQTT_FILE_HANDLING_STATUS_TOPIC_ROOT + deviceKey;
-
-	return std::make_shared<OutboundMessage>(payload, topic, 1);
-}
-
-std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
-		const std::string& deviceKey, const FileDownloadUrlResponse& fileDownloadUrlResponse)
-{
-	const json jPayload{fileDownloadUrlResponse};
-	const std::string payload = jPayload.dump();
-	const std::string topic = URL_FILE_HANDLING_STATUS_TOPIC_ROOT + deviceKey;
+	const std::string topic = FILE_HANDLING_STATUS_TOPIC_ROOT + deviceKey;
 
 	return std::make_shared<OutboundMessage>(payload, topic, 1);
 }

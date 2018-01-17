@@ -20,8 +20,7 @@
 namespace wolkabout
 {
 class FirmwareUpdateResponse;
-class FileDownloadMqttResponse;
-class FileDownloadUrlResponse;
+class FilePacketRequest;
 
 class OutboundServiceDataHandler
 {
@@ -30,9 +29,7 @@ public:
 
 	virtual void addFirmwareUpdateResponse(const FirmwareUpdateResponse& response) = 0;
 
-	virtual void addFileDownloadMqttResponse(const FileDownloadMqttResponse& response) = 0;
-
-	virtual void addFileDownloadUrlResponse(const FileDownloadUrlResponse& response) = 0;
+	virtual void addFilePacketRequest(const FilePacketRequest& request) = 0;
 };
 }
 

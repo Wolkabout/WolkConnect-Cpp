@@ -21,12 +21,50 @@
 
 namespace wolkabout
 {
-FirmwareUpdateCommand::FirmwareUpdateCommand() : m_type{FirmwareUpdateCommand::Type::INIT}
+FirmwareUpdateCommand::FirmwareUpdateCommand() : m_type{FirmwareUpdateCommand::Type::UNKNOWN}, m_name{}, m_size{}, m_hash{},
+	m_url{}, m_autoInstall{}
 {
 }
 
-FirmwareUpdateCommand::FirmwareUpdateCommand(FirmwareUpdateCommand::Type type) : m_type{type}
+FirmwareUpdateCommand::FirmwareUpdateCommand(FirmwareUpdateCommand::Type type) : m_type{type}, m_name{}, m_size{}, m_hash{},
+	m_url{}, m_autoInstall{}
 {
+}
+
+FirmwareUpdateCommand::FirmwareUpdateCommand(FirmwareUpdateCommand::Type type, std::string name, uint_fast64_t size,
+											 std::string hash, bool autoInstall) :
+	m_type{type}, m_name{name}, m_size{size}, m_hash{hash}, m_url{}, m_autoInstall{autoInstall}
+{
+}
+
+FirmwareUpdateCommand::FirmwareUpdateCommand(FirmwareUpdateCommand::Type type, std::string url, bool autoInstall) :
+	m_type{type}, m_name{}, m_size{}, m_hash{}, m_url{url}, m_autoInstall{autoInstall}
+{
+}
+
+WolkOptional<std::string> FirmwareUpdateCommand::getName() const
+{
+	return m_name;
+}
+
+WolkOptional<uint_fast64_t> FirmwareUpdateCommand::getSize() const
+{
+	return m_size;
+}
+
+WolkOptional<std::string> FirmwareUpdateCommand::getHash() const
+{
+	return m_hash;
+}
+
+WolkOptional<std::string> FirmwareUpdateCommand::getUrl() const
+{
+	return m_url;
+}
+
+WolkOptional<bool> FirmwareUpdateCommand::getAutoInstall() const
+{
+	return m_autoInstall;
 }
 
 FirmwareUpdateCommand::Type FirmwareUpdateCommand::getType() const

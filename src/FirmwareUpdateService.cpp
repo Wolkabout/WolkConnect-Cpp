@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef FIRMWAREUPDATESERVICE_CPP
 #define FIRMWAREUPDATESERVICE_CPP
 
@@ -23,180 +22,408 @@
 #include "model/FirmwareUpdateResponse.h"
 #include "OutboundDataService.h"
 #include "FirmwareInstaller.h"
+#include "WolkaboutFileDownloader.h"
+#include "UrlFileDownloader.h"
+#include "utilities/FileSystemUtils.h"
+#include "utilities/StringUtils.h"
 
 namespace wolkabout
 {
-FirmwareUpdateService::FirmwareUpdateService(std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
+FirmwareUpdateService::FirmwareUpdateService(const std::string& firmwareVersion, const std::string& downloadDirectory,
+											 uint_fast64_t maximumFirmwareSize,
+											 std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
+											 std::weak_ptr<WolkaboutFileDownloader> wolkDownloader,
+											 std::weak_ptr<UrlFileDownloader> urlDownloader,
 											 std::weak_ptr<FirmwareInstaller> firmwareInstaller) :
-	m_outboundDataHandler{std::move(outboundDataHandler)}, m_firmwareInstaller{firmwareInstaller},
-	m_currentState{FirmwareUpdateService::State::IDLE}, m_firmwareFileName{""}, m_abortCallback{}
+	m_currentFirmwareVersion{firmwareVersion},
+	m_firmwareDownloadDirectory{downloadDirectory},
+	m_maximumFirmwareSize{maximumFirmwareSize},
+	m_outboundDataHandler{std::move(outboundDataHandler)},
+	m_wolkFileDownloader{wolkDownloader},
+	m_urlFileDownloader{urlDownloader},
+	m_firmwareInstaller{firmwareInstaller},
+	m_idleState{new FirmwareUpdateService::IdleState(*this)},
+	m_wolkDownloadState{new FirmwareUpdateService::WolkDownloadState(*this)},
+	m_urlDownloadState{new FirmwareUpdateService::UrlDownloadState(*this)},
+	m_readyState{new FirmwareUpdateService::ReadyState(*this)},
+	m_firmwareFile{""},
+	m_autoInstall{false},
+	m_commandBuffer{new CommandBuffer()}
 {
+	m_currentState = m_idleState.get();
+}
+
+FirmwareUpdateService::~FirmwareUpdateService()
+{
+	if(m_executor && m_executor->joinable())
+	{
+		m_executor->join();
+	}
 }
 
 void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
 {
-	switch (m_currentState)
+	addToCommandBuffer([=]{
+		m_currentState->handleFirmwareUpdateCommand(firmwareUpdateCommand);
+	});
+}
+
+void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
+{
+	switch (firmwareUpdateCommand.getType())
 	{
-		case FirmwareUpdateService::State::IDLE:
+		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
 		{
-			switch (firmwareUpdateCommand.getType())
+			auto name = firmwareUpdateCommand.getName();
+			if(name.null() || static_cast<std::string>(name).empty())
 			{
-				case FirmwareUpdateCommand::Type::INIT:
-				{
-					m_currentState = FirmwareUpdateService::State::FILE_DOWNLOAD;
+				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+															  FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+				return;
+			}
 
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
-												   FirmwareUpdateCommand::Type::INIT};
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+			auto size = firmwareUpdateCommand.getSize();
+			if(size.null() || static_cast<uint_fast64_t>(size) > m_service.m_maximumFirmwareSize)
+			{
+				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+															  FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+				return;
+			}
 
-					break;
-				}
-				case FirmwareUpdateCommand::Type::INSTALL:
-				{
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
-								FirmwareUpdateCommand::Type::INSTALL,
-								FirmwareUpdateResponse::ErrorCode::FIRMWARE_FILE_NOT_DOWNLOADED};
+			auto hash = firmwareUpdateCommand.getHash();
+			if(hash.null() || static_cast<std::string>(hash).empty())
+			{
+				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+															  FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+				return;
+			}
 
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+			if(m_service.m_wolkFileDownloader.lock())
+			{
+				m_service.m_currentState = m_service.m_wolkDownloadState.get();
 
-					break;
-				}
-				case FirmwareUpdateCommand::Type::ABORT:
-				{
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
-								firmwareUpdateCommand.getType(),
-								FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+				auto autoInstall = firmwareUpdateCommand.getAutoInstall();
+				m_service.m_autoInstall = !autoInstall.null() && static_cast<bool>(autoInstall);
 
-					break;
-				}
-				default:
-					break;
+				auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(hash));
+				m_service.downloadFirmware(name, size, byteHash);
+			}
+			else
+			{
+				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+									   FirmwareUpdateResponse::ErrorCode::FILE_UPLOAD_DISABLED});
 			}
 
 			break;
 		}
-		case FirmwareUpdateService::State::FILE_DOWNLOAD:
+		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
 		{
-			switch (firmwareUpdateCommand.getType())
+			auto url = firmwareUpdateCommand.getUrl();
+			if(url.null() || static_cast<std::string>(url).empty())
 			{
-				case FirmwareUpdateCommand::Type::INIT:
-				{
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
-								FirmwareUpdateCommand::Type::INIT,
-								FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
+				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+															  FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+				return;
+			}
 
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
+			if(m_service.m_urlFileDownloader.lock())
+			{
+				m_service.m_currentState = m_service.m_urlDownloadState.get();
 
-					break;
-				}
-				case FirmwareUpdateCommand::Type::INSTALL:
-				{
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
-								FirmwareUpdateCommand::Type::INSTALL,
-								FirmwareUpdateResponse::ErrorCode::FIRMWARE_FILE_NOT_DOWNLOADED};
+				auto autoInstall = firmwareUpdateCommand.getAutoInstall();
+				m_service.m_autoInstall = !autoInstall.null() && static_cast<bool>(autoInstall);
 
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
-
-					break;
-				}
-				case FirmwareUpdateCommand::Type::ABORT:
-				{
-					m_currentState = FirmwareUpdateService::State::IDLE;
-
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
-												   FirmwareUpdateCommand::Type::ABORT};
-
-					if(m_abortCallback)
-					{
-						m_abortCallback();
-					}
-
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
-
-					break;
-				}
-				default:
-					break;
+				m_service.downloadFirmware(url);
+			}
+			else
+			{
+				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+									   FirmwareUpdateResponse::ErrorCode::FILE_UPLOAD_DISABLED});
 			}
 
 			break;
 		}
-		case FirmwareUpdateService::State::READY_FOR_INSTALL:
+		case FirmwareUpdateCommand::Type::INSTALL:
+		case FirmwareUpdateCommand::Type::ABORT:
 		{
-			switch (firmwareUpdateCommand.getType())
-			{
-				case FirmwareUpdateCommand::Type::INIT:
-				{
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
-								FirmwareUpdateCommand::Type::INIT,
-								FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
-
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
-					break;
-				}
-				case FirmwareUpdateCommand::Type::INSTALL:
-				{
-					if(auto installer = m_firmwareInstaller.lock())
-					{
-						FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
-													   FirmwareUpdateCommand::Type::INSTALL};
-						m_outboundDataHandler->addFirmwareUpdateResponse(response);
-
-						installer->install(m_firmwareFileName);
-					}
-					else
-					{
-						FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::ERROR,
-									FirmwareUpdateCommand::Type::INSTALL,
-									FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR};
-
-						m_outboundDataHandler->addFirmwareUpdateResponse(response);
-					}
-
-					m_currentState = FirmwareUpdateService::State::IDLE;
-
-					break;
-				}
-				case FirmwareUpdateCommand::Type::ABORT:
-				{
-					m_currentState = FirmwareUpdateService::State::IDLE;
-
-					FirmwareUpdateResponse response{FirmwareUpdateResponse::Status::OK,
-												   FirmwareUpdateCommand::Type::ABORT};
-					if(m_abortCallback)
-					{
-						m_abortCallback();
-					}
-
-					m_outboundDataHandler->addFirmwareUpdateResponse(response);
-
-					break;
-				}
-				default:
-					break;
-			}
-
 			break;
 		}
+		case FirmwareUpdateCommand::Type::UNKNOWN:
 		default:
 			break;
 	}
 }
 
-void FirmwareUpdateService::onFirmwareFileDownloaded(const std::string fileName)
+void FirmwareUpdateService::WolkDownloadState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
 {
-	if(m_currentState == FirmwareUpdateService::State::FILE_DOWNLOAD)
+	switch (firmwareUpdateCommand.getType())
 	{
-		m_currentState = FirmwareUpdateService::State::READY_FOR_INSTALL;
-		m_firmwareFileName = fileName;
+		case FirmwareUpdateCommand::Type::ABORT:
+		{
+			if(auto downloader = m_service.m_wolkFileDownloader.lock())
+			{
+				downloader->abort();
+			}
+
+			m_service.clear();
+
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
+
+			break;
+		}
+		case FirmwareUpdateCommand::Type::INSTALL:
+		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
+		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
+		{
+			break;
+		}
+		case FirmwareUpdateCommand::Type::UNKNOWN:
+		default:
+			break;
 	}
 }
 
-void FirmwareUpdateService::setOnUpdateAbortCallback(std::function<void()> callback)
+void FirmwareUpdateService::UrlDownloadState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
 {
-	m_abortCallback = callback;
+	switch (firmwareUpdateCommand.getType())
+	{
+		case FirmwareUpdateCommand::Type::ABORT:
+		{
+			if(auto downloader = m_service.m_urlFileDownloader.lock())
+			{
+				downloader->abort();
+			}
+
+			m_service.clear();
+
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
+
+			break;
+		}
+		case FirmwareUpdateCommand::Type::INSTALL:
+		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
+		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
+		{
+			break;
+		}
+		case FirmwareUpdateCommand::Type::UNKNOWN:
+		default:
+			break;
+	}
 }
+
+void FirmwareUpdateService::ReadyState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
+{
+	switch (firmwareUpdateCommand.getType())
+	{
+		case FirmwareUpdateCommand::Type::INSTALL:
+		{
+			m_service.install();
+
+			if(!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
+			{
+				// log error
+			}
+
+			m_service.clear();
+
+			break;
+		}
+		case FirmwareUpdateCommand::Type::ABORT:
+		{
+			if(!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
+			{
+				// log error
+			}
+
+			m_service.clear();
+
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
+
+			break;
+		}
+		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
+		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
+		{
+			break;
+		}
+		case FirmwareUpdateCommand::Type::UNKNOWN:
+		default:
+			break;
+	}
+}
+
+void FirmwareUpdateService::addToCommandBuffer(std::function<void()> command)
+{
+	m_commandBuffer->pushCommand(std::make_shared<std::function<void()>>(command));
+}
+
+void FirmwareUpdateService::sendResponse(const FirmwareUpdateResponse& response)
+{
+	m_outboundDataHandler->addFirmwareUpdateResponse(response);
+}
+
+void FirmwareUpdateService::onFirmwareFileDownloadSuccess(const std::string& filePath)
+{
+	if(m_currentState == m_wolkDownloadState.get() || m_currentState == m_urlDownloadState.get())
+	{
+		m_currentState = m_readyState.get();
+		m_firmwareFile = filePath;
+
+		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_READY});
+
+		if(m_autoInstall)
+		{
+			install();
+		}
+	}
+}
+
+void FirmwareUpdateService::onFirmwareFileDownloadFail(WolkaboutFileDownloader::Error errorCode)
+{
+	switch (errorCode)
+	{
+		case WolkaboutFileDownloader::Error::FILE_SYSTEM_ERROR:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::FILE_SYSTEM_ERROR});
+			clear();
+			break;
+		}
+		case WolkaboutFileDownloader::Error::RETRY_COUNT_EXCEEDED:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::RETRY_COUNT_EXCEEDED});
+			clear();
+			break;
+		}
+		case WolkaboutFileDownloader::Error::UNSUPPORTED_FILE_SIZE:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::UNSUPPORTED_FILE_SIZE});
+			clear();
+			break;
+		}
+		case WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR:
+		default:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+			clear();
+			break;
+		}
+	}
+}
+
+void FirmwareUpdateService::onFirmwareFileDownloadFail(UrlFileDownloader::Error errorCode)
+{
+	switch (errorCode)
+	{
+		case UrlFileDownloader::Error::FILE_SYSTEM_ERROR:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::FILE_SYSTEM_ERROR});
+			clear();
+			break;
+		}
+		case UrlFileDownloader::Error::MALFORMED_URL:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::MALFORMED_URL});
+			clear();
+			break;
+		}
+		case UrlFileDownloader::Error::UNSUPPORTED_FILE_SIZE:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::UNSUPPORTED_FILE_SIZE});
+			clear();
+			break;
+		}
+		case UrlFileDownloader::Error::UNSPECIFIED_ERROR:
+		default:
+		{
+			sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+												FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+			clear();
+			break;
+		}
+	}
+}
+
+void FirmwareUpdateService::downloadFirmware(const std::string& name, uint_fast64_t size, const ByteArray& hash)
+{
+	if(auto downloader = m_wolkFileDownloader.lock())
+	{
+		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_TRANSFER});
+
+		if(!m_executor || !m_executor->joinable())
+		{
+			m_executor.reset(new std::thread([=]{
+				downloader->download(name, size, hash, m_firmwareDownloadDirectory,
+									 [=](const std::string& firmwareFile){// onSuccess
+					addToCommandBuffer([=]{
+						onFirmwareFileDownloadSuccess(firmwareFile);
+					});
+				}, [=](WolkaboutFileDownloader::Error errorCode){// onFail
+					addToCommandBuffer([=]{
+						onFirmwareFileDownloadFail(errorCode);
+					});}
+				);
+			}));
+		}
+	}
+}
+
+void FirmwareUpdateService::downloadFirmware(const std::string& url)
+{
+	if(auto downloader = m_urlFileDownloader.lock())
+	{
+		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_TRANSFER});
+
+		if(!m_executor || !m_executor->joinable())
+		{
+			m_executor.reset(new std::thread([=]{
+				downloader->download(url, m_firmwareDownloadDirectory,
+									 [=](const std::string& firmwareFile){// onSuccess
+					addToCommandBuffer([=]{
+						onFirmwareFileDownloadSuccess(firmwareFile);
+					});
+				}, [=](UrlFileDownloader::Error errorCode){// onFail
+					addToCommandBuffer([=]{
+						onFirmwareFileDownloadFail(errorCode);
+					});});
+			}));
+		}
+	}
+}
+
+void FirmwareUpdateService::install()
+{
+	if(auto installer = m_firmwareInstaller.lock())
+	{
+		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::INSTALLATION});
+
+		if(!m_executor || !m_executor->joinable())
+		{
+			m_executor.reset(new std::thread([=]{
+				if(!installer->install(m_firmwareFile))
+				{
+					sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+								 FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
+				}
+			}));
+		}
+	}
+}
+
+void FirmwareUpdateService::clear()
+{
+	m_firmwareFile = "";
+	m_autoInstall = false;
+	m_currentState = m_idleState.get();
+}
+
 }
 
 #endif // FIRMWAREUPDATESERVICE_CPP

@@ -26,8 +26,6 @@ class Alarm;
 class ActuatorStatus;
 class ActuatorCommand;
 class FirmwareUpdateCommand;
-class FileDownloadMqttCommand;
-class FileDownloadUrlCommand;
 
 class JsonParser
 {
@@ -36,8 +34,6 @@ public:
 
     static bool fromJson(const std::string& jsonString, ActuatorCommand& actuatorCommand);
 	static bool fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommand);
-	static bool fromJson(const std::string& jsonString, FileDownloadMqttCommand& fileDownloadMqttCommand);
-	static bool fromJson(const std::string& jsonString, FileDownloadUrlCommand& fileDownloadUrlCommand);
 };
 }
 
