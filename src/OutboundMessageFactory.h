@@ -48,12 +48,16 @@ public:
 	static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
 												 const FilePacketRequest& filePacketRequest);
 
+	static std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& deviceKey,
+																	const std::string& firmwareVerion);
+
 private:
     static const constexpr char* SENSOR_READINGS_TOPIC_ROOT = "readings/";
     static const constexpr char* ALARMS_TOPIC_ROOT = "events/";
 	static const constexpr char* ACTUATOR_STATUS_TOPIC_ROOT = "actuators/status/";
 	static const constexpr char* FIRMWARE_UPDATE_STATUS_TOPIC_ROOT = "service/status/firmware/";
 	static const constexpr char* FILE_HANDLING_STATUS_TOPIC_ROOT = "service/status/file/";
+	static const constexpr char* FIRMWARE_VERSION_TOPIC_ROOT = "firmware/version/";
 };
 }
 

@@ -98,6 +98,17 @@ public:
 	 * @param installer Instance of wolkabout::FirmwareInstaller used to install firmware
 	 * @param firmwareDownloadDirectory Directory where to download firmware file
 	 * @param maxFirmwareFileSize Maximum size of firmware file that can be handled
+	 * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+	 */
+	WolkBuilder& withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
+									const std::string& firmwareDownloadDirectory, uint_fast64_t maxFirmwareFileSize);
+
+	/**
+	 * @brief withFirmwareUpdate Enables firmware update for device
+	 * @param firmwareVersion Current version of the firmware
+	 * @param installer Instance of wolkabout::FirmwareInstaller used to install firmware
+	 * @param firmwareDownloadDirectory Directory where to download firmware file
+	 * @param maxFirmwareFileSize Maximum size of firmware file that can be handled
 	 * @param urlDownloader Instance of wolkabout::UrlFileDownloader used to downlad firmware from provided url
 	 * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
 	 */
@@ -141,7 +152,7 @@ private:
 
 	static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
 
-	static const unsigned MAX_BINARY_CHUNK_SIZE = 131072;
+	static const unsigned MAX_BINARY_CHUNK_SIZE;
 };
 }
 

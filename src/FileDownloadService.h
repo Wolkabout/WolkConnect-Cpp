@@ -17,7 +17,6 @@
 #ifndef FILEDOWNLOADSERVICE_H
 #define FILEDOWNLOADSERVICE_H
 
-#include "CommandHandlingService.h"
 #include "WolkaboutFileDownloader.h"
 #include "BinaryDataListener.h"
 #include "CommandBuffer.h"
@@ -31,7 +30,7 @@ namespace wolkabout
 class OutboundServiceDataHandler;
 class FileHandler;
 
-class FileDownloadService: public CommandHandlingService, public WolkaboutFileDownloader, public BinaryDataListener
+class FileDownloadService: public WolkaboutFileDownloader, public BinaryDataListener
 {
 public:
 	FileDownloadService(uint_fast64_t maxFileSize, uint_fast64_t maxPacketSize, std::unique_ptr<FileHandler> fileHandler,

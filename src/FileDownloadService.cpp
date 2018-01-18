@@ -176,7 +176,7 @@ void FileDownloadService::DownloadState::handleBinaryData(const BinaryData& bina
 	{
 		case FileHandler::StatusCode::OK:
 		{
-			if(m_service.m_currentPacketIndex == m_service.m_currentPacketCount)
+			if(++m_service.m_currentPacketIndex == m_service.m_currentPacketCount)
 			{
 				// download complete
 				auto validationResult = m_service.m_fileHandler->validateFile(m_service.m_currentFileHash);
@@ -250,7 +250,7 @@ void FileDownloadService::DownloadState::handleBinaryData(const BinaryData& bina
 			else
 			{
 				m_service.m_retryCount = 0;
-				m_service.requestPacket(++m_service.m_currentPacketIndex, m_service.m_currentPacketSize);
+				m_service.requestPacket(m_service.m_currentPacketIndex, m_service.m_currentPacketSize);
 			}
 
 			break;

@@ -124,9 +124,8 @@ void to_json(json& j, const FirmwareUpdateResponse& p)
 	if(!p.getErrorCode().null())
 	{
 		auto errorCode = static_cast<FirmwareUpdateResponse::ErrorCode>(p.getErrorCode());
-		std::string value = std::to_string(static_cast<int>(errorCode));
 
-		j.emplace("error", value);
+		j.emplace("error", static_cast<int>(errorCode));
 	}
 }
 
@@ -199,7 +198,7 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 		const std::string& deviceKey, const FirmwareUpdateResponse& firmwareUpdateResponse)
 {
-	const json jPayload{firmwareUpdateResponse};
+	const json jPayload(firmwareUpdateResponse);
 	const std::string payload = jPayload.dump();
 	const std::string topic = FIRMWARE_UPDATE_STATUS_TOPIC_ROOT + deviceKey;
 
@@ -209,10 +208,17 @@ std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 std::shared_ptr<OutboundMessage> OutboundMessageFactory::make(
 		const std::string& deviceKey, const FilePacketRequest& filePacketRequest)
 {
-	const json jPayload{filePacketRequest};
+	const json jPayload(filePacketRequest);
 	const std::string payload = jPayload.dump();
 	const std::string topic = FILE_HANDLING_STATUS_TOPIC_ROOT + deviceKey;
 
 	return std::make_shared<OutboundMessage>(payload, topic, 1);
+}
+
+std::shared_ptr<OutboundMessage> OutboundMessageFactory::makeFromFirmwareVersion(
+		const std::string& deviceKey, const std::string& firmwareVerion)
+{
+	const std::string topic = FIRMWARE_VERSION_TOPIC_ROOT + deviceKey;
+	return std::make_shared<OutboundMessage>(firmwareVerion, topic, 1);
 }
 }

@@ -17,7 +17,6 @@
 #ifndef FIRMWAREUPDATESERVICE_H
 #define FIRMWAREUPDATESERVICE_H
 
-#include "CommandHandlingService.h"
 #include "FirmwareUpdateCommandListener.h"
 #include "utilities/ByteUtils.h"
 #include "CommandBuffer.h"
@@ -32,7 +31,7 @@ class OutboundServiceDataHandler;
 class FirmwareInstaller;
 class FirmwareUpdateResponse;
 
-class FirmwareUpdateService: public CommandHandlingService, public FirmwareUpdateCommandListener
+class FirmwareUpdateService: public FirmwareUpdateCommandListener
 {
 public:
 	FirmwareUpdateService(const std::string& firmwareVersion, const std::string& downloadDirectory,
@@ -45,6 +44,10 @@ public:
 	~FirmwareUpdateService();
 
 	void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
+
+	const std::string& getFirmwareVersion() const;
+
+	void reportFirmwareUpdateResult();
 
 private:
 	void addToCommandBuffer(std::function<void()> command);
@@ -130,6 +133,8 @@ private:
 	std::unique_ptr<std::thread> m_executor;
 
 	std::unique_ptr<CommandBuffer> m_commandBuffer;
+
+	static const constexpr char* FIRMWARE_VERSION_FILE = ".dfu-version";
 };
 
 }

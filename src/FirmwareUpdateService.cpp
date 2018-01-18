@@ -68,6 +68,34 @@ void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateComm
 	});
 }
 
+const std::string& FirmwareUpdateService::getFirmwareVersion() const
+{
+	return m_currentFirmwareVersion;
+}
+
+void FirmwareUpdateService::reportFirmwareUpdateResult()
+{
+	if(!FileSystemUtils::isFilePresent(FIRMWARE_VERSION_FILE))
+	{
+		return;
+	}
+
+	std::string firmwareVersion;
+	FileSystemUtils::readFileContent(FIRMWARE_VERSION_FILE, firmwareVersion);
+
+	if(m_currentFirmwareVersion != firmwareVersion)
+	{
+		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::COMPLETED});
+	}
+	else
+	{
+		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+											FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
+	}
+
+	FileSystemUtils::deleteFile(FIRMWARE_VERSION_FILE);
+}
+
 void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
 {
 	switch (firmwareUpdateCommand.getType())
@@ -83,7 +111,8 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
 			}
 
 			auto size = firmwareUpdateCommand.getSize();
-			if(size.null() || static_cast<uint_fast64_t>(size) > m_service.m_maximumFirmwareSize)
+			if(size.null() || static_cast<uint_fast64_t>(size) > m_service.m_maximumFirmwareSize ||
+					static_cast<uint_fast64_t>(size) == 0)
 			{
 				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
 															  FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
@@ -220,11 +249,6 @@ void FirmwareUpdateService::ReadyState::handleFirmwareUpdateCommand(const Firmwa
 		{
 			m_service.install();
 
-			if(!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
-			{
-				// log error
-			}
-
 			m_service.clear();
 
 			break;
@@ -357,21 +381,23 @@ void FirmwareUpdateService::downloadFirmware(const std::string& name, uint_fast6
 	{
 		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_TRANSFER});
 
-		if(!m_executor || !m_executor->joinable())
+		if(m_executor && m_executor->joinable())
 		{
-			m_executor.reset(new std::thread([=]{
-				downloader->download(name, size, hash, m_firmwareDownloadDirectory,
-									 [=](const std::string& firmwareFile){// onSuccess
-					addToCommandBuffer([=]{
-						onFirmwareFileDownloadSuccess(firmwareFile);
-					});
-				}, [=](WolkaboutFileDownloader::Error errorCode){// onFail
-					addToCommandBuffer([=]{
-						onFirmwareFileDownloadFail(errorCode);
-					});}
-				);
-			}));
+			m_executor->join();
 		}
+
+		m_executor.reset(new std::thread([=]{
+			downloader->download(name, size, hash, m_firmwareDownloadDirectory,
+								 [=](const std::string& firmwareFile){// onSuccess
+				addToCommandBuffer([=]{
+					onFirmwareFileDownloadSuccess(firmwareFile);
+				});
+			}, [=](WolkaboutFileDownloader::Error errorCode){// onFail
+				addToCommandBuffer([=]{
+					onFirmwareFileDownloadFail(errorCode);
+				});}
+			);
+		}));
 	}
 }
 
@@ -381,20 +407,22 @@ void FirmwareUpdateService::downloadFirmware(const std::string& url)
 	{
 		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_TRANSFER});
 
-		if(!m_executor || !m_executor->joinable())
+		if(m_executor && m_executor->joinable())
 		{
-			m_executor.reset(new std::thread([=]{
-				downloader->download(url, m_firmwareDownloadDirectory,
-									 [=](const std::string& firmwareFile){// onSuccess
-					addToCommandBuffer([=]{
-						onFirmwareFileDownloadSuccess(firmwareFile);
-					});
-				}, [=](UrlFileDownloader::Error errorCode){// onFail
-					addToCommandBuffer([=]{
-						onFirmwareFileDownloadFail(errorCode);
-					});});
-			}));
+			m_executor->join();
 		}
+
+		m_executor.reset(new std::thread([=]{
+			downloader->download(url, m_firmwareDownloadDirectory,
+								 [=](const std::string& firmwareFile){// onSuccess
+				addToCommandBuffer([=]{
+					onFirmwareFileDownloadSuccess(firmwareFile);
+				});
+			}, [=](UrlFileDownloader::Error errorCode){// onFail
+				addToCommandBuffer([=]{
+					onFirmwareFileDownloadFail(errorCode);
+				});});
+		}));
 	}
 }
 
@@ -404,16 +432,35 @@ void FirmwareUpdateService::install()
 	{
 		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::INSTALLATION});
 
-		if(!m_executor || !m_executor->joinable())
+		if(m_executor && m_executor->joinable())
 		{
-			m_executor.reset(new std::thread([=]{
-				if(!installer->install(m_firmwareFile))
-				{
-					sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-								 FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
-				}
-			}));
+			m_executor->join();
 		}
+
+		m_executor.reset(new std::thread([=]{
+			if(!FileSystemUtils::createFileWithContent(FIRMWARE_VERSION_FILE, m_currentFirmwareVersion))
+			{
+				if(!FileSystemUtils::deleteFile(m_firmwareFile))
+				{
+					// log error
+				}
+
+				sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+							 FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
+				return;
+			}
+
+			if(!installer->install(m_firmwareFile))
+			{
+				if(!FileSystemUtils::deleteFile(m_firmwareFile))
+				{
+					// log error
+				}
+
+				sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+							 FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
+			}
+		}));
 	}
 }
 

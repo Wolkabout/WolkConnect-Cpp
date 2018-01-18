@@ -22,12 +22,4 @@ void ConnectivityService::setListener(std::weak_ptr<ConnectivityServiceListener>
 {
     m_listener = listener;
 }
-
-void ConnectivityService::invokeListener(const std::string& topic, const std::string& message) const
-{
-    if (auto listener = m_listener.lock())
-    {
-		listener->messageReceived(topic, message);
-    }
-}
 }

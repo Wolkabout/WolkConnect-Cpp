@@ -31,7 +31,7 @@ BinaryData::BinaryData(const ByteArray& value) : m_value{value}, m_data{}, m_has
 		throw std::invalid_argument("Binary data size is smaller than required to fit standard data packet");
 	}
 
-	m_previousHash = {m_value.begin(), m_value.begin() + SHA_256_HASH_BYTE_LENGTH - 1};
+	m_previousHash = {m_value.begin(), m_value.begin() + SHA_256_HASH_BYTE_LENGTH};
 	m_data = {m_value.begin() + SHA_256_HASH_BYTE_LENGTH, m_value.end() - SHA_256_HASH_BYTE_LENGTH};
 	m_hash = {m_value.end() - SHA_256_HASH_BYTE_LENGTH, m_value.end()};
 }
@@ -56,7 +56,7 @@ bool BinaryData::valid() const
 bool BinaryData::validatePrevious() const
 {
 	// validate with all zero hash
-	return validatePrevious(ByteUtils::hashSHA256(ByteArray{SHA_256_HASH_BYTE_LENGTH, 0}));
+	return validatePrevious(ByteArray(SHA_256_HASH_BYTE_LENGTH, 0));
 }
 
 bool BinaryData::validatePrevious(const ByteArray& previousHash) const

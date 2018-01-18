@@ -96,7 +96,75 @@ void from_json(const json& j, FirmwareUpdateCommand& p)
 		type = FirmwareUpdateCommand::Type::UNKNOWN;
 	}
 
-	p = FirmwareUpdateCommand(type);
+	const bool autoInstall = [&]() -> bool {
+		if (j.find("autoInstall") != j.end())
+		{
+			return j.at("autoInstall").get<bool>();
+		}
+		else
+		{
+			return false;
+		}
+	}();
+
+	if(type == FirmwareUpdateCommand::Type::FILE_UPLOAD)
+	{
+		const std::string name = [&]() -> std::string {
+			if (j.find("fileName") != j.end())
+			{
+				return j.at("fileName").get<std::string>();
+			}
+			else
+			{
+				return "";
+			}
+		}();
+
+		const uint_fast64_t size = [&]() -> uint_fast64_t {
+			if (j.find("fileSize") != j.end())
+			{
+				return j.at("fileSize").get<uint_fast64_t>();
+			}
+			else
+			{
+				return 0;
+			}
+		}();
+
+		const std::string hash = [&]() -> std::string {
+			if (j.find("fileHash") != j.end())
+			{
+				return j.at("fileHash").get<std::string>();
+			}
+			else
+			{
+				return "";
+			}
+		}();
+
+		p = FirmwareUpdateCommand(type, name, size, hash, autoInstall);
+		return;
+	}
+	else if(type == FirmwareUpdateCommand::Type::URL_DOWNLOAD)
+	{
+		const std::string url = [&]() -> std::string {
+			if (j.find("fileUrl") != j.end())
+			{
+				return j.at("fileUrl").get<std::string>();
+			}
+			else
+			{
+				return "";
+			}
+		}();
+
+		p = FirmwareUpdateCommand(type, url, autoInstall);
+		return;
+	}
+	else
+	{
+		p = FirmwareUpdateCommand(type);
+	}
 }
 
 bool JsonParser::fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommandDto)

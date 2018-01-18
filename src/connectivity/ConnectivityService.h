@@ -49,8 +49,6 @@ public:
 
     void setListener(std::weak_ptr<ConnectivityServiceListener> listener);
 
-	void invokeListener(const std::string& topic, const std::string& message) const;
-
 protected:
     std::weak_ptr<ConnectivityServiceListener> m_listener;
 };

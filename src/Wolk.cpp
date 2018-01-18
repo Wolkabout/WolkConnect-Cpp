@@ -20,6 +20,7 @@
 #include "OutboundMessageFactory.h"
 #include "WolkBuilder.h"
 #include "connectivity/ConnectivityService.h"
+#include "FirmwareUpdateService.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
@@ -122,14 +123,18 @@ void Wolk::publishActuatorStatus(const std::string& reference)
 void Wolk::connect()
 {
     addToCommandBuffer([=]() -> void {
-        m_connectivityService->connect();
+		if(m_connectivityService->connect())
+		{
+			publishFirmwareVersion();
+			m_firmwareUpdateService->reportFirmwareUpdateResult();
 
-        for (const std::string& actuatorReference : m_device.getActuatorReferences())
-        {
-            publishActuatorStatus(actuatorReference);
-        }
+			for (const std::string& actuatorReference : m_device.getActuatorReferences())
+			{
+				publishActuatorStatus(actuatorReference);
+			}
 
-        publish();
+			publish();
+		}
     });
 }
 
@@ -153,22 +158,15 @@ void Wolk::publish()
 }
 
 Wolk::Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-		   std::shared_ptr<ServiceCommandHandler> serviceCommandHandler, std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
-		   Device device)
+		   std::shared_ptr<InboundMessageHandler> inboundMessageHandler, Device device)
 : m_connectivityService(std::move(connectivityService))
 , m_persistence(persistence)
-, m_serviceCommandHandler(std::move(serviceCommandHandler))
 , m_inboundMessageHandler(std::move(inboundMessageHandler))
 , m_device(device)
 , m_actuationHandlerLambda(nullptr)
 , m_actuatorStatusProviderLambda(nullptr)
 {
     m_commandBuffer = std::unique_ptr<CommandBuffer>(new CommandBuffer());
-}
-
-void Wolk::addService(std::shared_ptr<CommandHandlingService> service)
-{
-	m_commandHandlingServices.push_back(std::move(service));
 }
 
 void Wolk::addToCommandBuffer(std::function<void()> command)
@@ -255,5 +253,20 @@ void Wolk::handleSetActuator(const ActuatorCommand& actuatorCommand)
     {
         m_actuationHandlerLambda(actuatorCommand.getReference(), actuatorCommand.getValue());
     }
+}
+
+void Wolk::publishFirmwareVersion()
+{
+	if(m_firmwareUpdateService)
+	{
+		const auto firmwareVerion = m_firmwareUpdateService->getFirmwareVersion();
+		const std::shared_ptr<OutboundMessage> outboundMessage =
+				OutboundMessageFactory::makeFromFirmwareVersion(m_device.getDeviceKey(), firmwareVerion);
+
+		if (!(outboundMessage && m_connectivityService->publish(outboundMessage)))
+		{
+			// Log error
+		}
+	}
 }
 }

@@ -34,8 +34,9 @@
 namespace wolkabout
 {
 class ConnectivityService;
-class ServiceCommandHandler;
 class InboundMessageHandler;
+class FirmwareUpdateService;
+class FileDownloadService;
 
 class Wolk
 {
@@ -110,10 +111,7 @@ private:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 
     Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-		 std::shared_ptr<ServiceCommandHandler> serviceCommandHandler, std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
-		 Device device);
-
-	void addService(std::shared_ptr<CommandHandlingService> service);
+		 std::shared_ptr<InboundMessageHandler> inboundMessageHandler, Device device);
 
     void addToCommandBuffer(std::function<void()> command);
 
@@ -128,11 +126,17 @@ private:
     void handleActuatorCommand(const ActuatorCommand& actuatorCommand);
     void handleSetActuator(const ActuatorCommand& actuatorCommand);
 
+	void publishFirmwareVersion();
+
     std::shared_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
-	std::shared_ptr<ServiceCommandHandler> m_serviceCommandHandler;
+
 	std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
-    Device m_device;
+
+	std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
+	std::shared_ptr<FileDownloadService> m_fileDownloadService;
+
+	Device m_device;
 
     std::function<void(std::string, std::string)> m_actuationHandlerLambda;
     std::weak_ptr<ActuationHandler> m_actuationHandler;
@@ -141,8 +145,6 @@ private:
     std::weak_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
-
-	std::vector<std::shared_ptr<CommandHandlingService>> m_commandHandlingServices;
 };
 }
 

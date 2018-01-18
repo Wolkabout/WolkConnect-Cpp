@@ -31,7 +31,7 @@ bool FileSystemUtils::isFilePresent(const std::string& filePath)
     }
 
     fclose(configFile);
-    return false;
+	return true;
 }
 
 bool FileSystemUtils::createFileWithContent(const std::string& filePath, const std::string& content)
