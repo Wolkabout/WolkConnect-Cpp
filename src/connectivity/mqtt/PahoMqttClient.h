@@ -53,11 +53,10 @@ private:
 
 	std::mutex m_mutex;
 
-    static const constexpr int MQTT_CONNECTION_COMPLETITION_TIMEOUT_SEC = 2;
-    static const constexpr int MQTT_ACTION_COMPLETITION_TIMEOUT_SEC = 2;
-    static const constexpr int MQTT_KEEP_ALIVE_SEC = 60;
-
-    static const constexpr int MQTT_QOS = 0;
+	static const unsigned short MQTT_CONNECTION_COMPLETITION_TIMEOUT_MSEC;
+	static const unsigned short MQTT_ACTION_COMPLETITION_TIMEOUT_MSEC;
+	static const unsigned short MQTT_KEEP_ALIVE_SEC;
+	static const unsigned short MQTT_QOS;
 
     void connected(const mqtt::string& cause) override;
     void connection_lost(const mqtt::string& cause) override;

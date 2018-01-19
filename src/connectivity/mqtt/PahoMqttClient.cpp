@@ -23,6 +23,11 @@
 
 namespace wolkabout
 {
+const unsigned short PahoMqttClient::MQTT_CONNECTION_COMPLETITION_TIMEOUT_MSEC = 2000;
+const unsigned short PahoMqttClient::MQTT_ACTION_COMPLETITION_TIMEOUT_MSEC = 2000;
+const unsigned short PahoMqttClient::MQTT_KEEP_ALIVE_SEC = 60;
+const unsigned short PahoMqttClient::MQTT_QOS = 2;
+
 PahoMqttClient::PahoMqttClient() : m_isConnected(false), m_lastWillTopic(""), m_lastWillMessage("") {}
 
 bool PahoMqttClient::connect(const std::string& username, const std::string& password, const std::string& trustStore,
@@ -61,7 +66,7 @@ bool PahoMqttClient::connect(const std::string& username, const std::string& pas
     try
     {
         mqtt::token_ptr token = m_client->connect(connectOptions);
-        token->wait_for(MQTT_CONNECTION_COMPLETITION_TIMEOUT_SEC * 1000);
+		token->wait_for(std::chrono::milliseconds(MQTT_CONNECTION_COMPLETITION_TIMEOUT_MSEC));
 
         if (!token->is_complete() || !m_isConnected)
         {
@@ -105,7 +110,7 @@ bool PahoMqttClient::subscribe(const std::string& topic)
     try
     {
         mqtt::token_ptr token = m_client->subscribe(topic, MQTT_QOS);
-        token->wait_for(MQTT_ACTION_COMPLETITION_TIMEOUT_SEC);
+		token->wait_for(std::chrono::milliseconds(MQTT_ACTION_COMPLETITION_TIMEOUT_MSEC));
 
         if (!token->is_complete())
         {
@@ -135,7 +140,7 @@ bool PahoMqttClient::publish(const std::string& topic, const std::string& messag
         pubmsg->set_qos(MQTT_QOS);
 
         mqtt::token_ptr token = m_client->publish(pubmsg);
-        token->wait_for(MQTT_ACTION_COMPLETITION_TIMEOUT_SEC);
+		token->wait_for(std::chrono::milliseconds(MQTT_ACTION_COMPLETITION_TIMEOUT_MSEC));
 
         if (!token->is_complete() || !m_isConnected)
         {
