@@ -36,6 +36,9 @@ public:
 	FileDownloadService(uint_fast64_t maxFileSize, uint_fast64_t maxPacketSize, std::unique_ptr<FileHandler> fileHandler,
 						std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler);
 
+	FileDownloadService (const FileDownloadService&) = delete;
+	FileDownloadService& operator= (const FileDownloadService&) = delete;
+
 	void download(const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash,
 				  const std::string& downloadDirectory, std::function<void(const std::string& filePath)> onSuccessCallback,
 				  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) override;

@@ -36,9 +36,9 @@ public:
 	bool running() const;
 
 private:
+	std::atomic_bool m_isRunning;
 	std::mutex m_lock;
 	std::condition_variable m_condition;
-	std::atomic_bool m_isRunning;
 	std::unique_ptr<std::thread> m_worker;
 };
 

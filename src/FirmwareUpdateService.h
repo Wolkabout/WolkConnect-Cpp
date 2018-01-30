@@ -43,6 +43,9 @@ public:
 
 	~FirmwareUpdateService();
 
+	FirmwareUpdateService (const FirmwareUpdateService&) = delete;
+	FirmwareUpdateService& operator= (const FirmwareUpdateService&) = delete;
+
 	void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
 
 	const std::string& getFirmwareVersion() const;
