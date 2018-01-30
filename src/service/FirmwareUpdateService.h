@@ -19,7 +19,7 @@
 
 #include "FirmwareUpdateCommandListener.h"
 #include "utilities/ByteUtils.h"
-#include "CommandBuffer.h"
+#include "utilities/CommandBuffer.h"
 #include "WolkaboutFileDownloader.h"
 #include "UrlFileDownloader.h"
 #include <string>

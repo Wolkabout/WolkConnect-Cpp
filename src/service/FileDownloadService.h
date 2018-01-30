@@ -19,7 +19,7 @@
 
 #include "WolkaboutFileDownloader.h"
 #include "BinaryDataListener.h"
-#include "CommandBuffer.h"
+#include "utilities/CommandBuffer.h"
 #include "utilities/ByteUtils.h"
 #include "utilities/Timer.h"
 #include <stdint.h>

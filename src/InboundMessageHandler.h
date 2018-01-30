@@ -22,7 +22,7 @@
 #include "model/ActuatorCommand.h"
 #include "model/BinaryData.h"
 #include "model/FirmwareUpdateCommand.h"
-#include "CommandBuffer.h"
+#include "utilities/CommandBuffer.h"
 
 #include <string>
 #include <vector>

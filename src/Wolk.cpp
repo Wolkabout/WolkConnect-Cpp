@@ -17,10 +17,10 @@
 #include "Wolk.h"
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
-#include "OutboundMessageFactory.h"
+#include "connectivity/json/OutboundMessageFactory.h"
 #include "WolkBuilder.h"
 #include "connectivity/ConnectivityService.h"
-#include "FirmwareUpdateService.h"
+#include "service/FirmwareUpdateService.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
@@ -158,10 +158,12 @@ void Wolk::publish()
 }
 
 Wolk::Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-		   std::shared_ptr<InboundMessageHandler> inboundMessageHandler, Device device)
+		   std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
+		   std::shared_ptr<OutboundServiceDataHandler> outboundServiceDataHandler, Device device)
 : m_connectivityService(std::move(connectivityService))
 , m_persistence(persistence)
 , m_inboundMessageHandler(std::move(inboundMessageHandler))
+, m_outboundServiceDataHandler(std::move(outboundServiceDataHandler))
 , m_device(device)
 , m_actuationHandlerLambda(nullptr)
 , m_actuatorStatusProviderLambda(nullptr)

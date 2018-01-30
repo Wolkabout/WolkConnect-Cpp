@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "connectivity/mqtt/JsonDtoParser.h"
+#include "connectivity/json/JsonDtoParser.h"
 #include "utilities/json.hpp"
 
 #include "model/ActuatorCommand.h"

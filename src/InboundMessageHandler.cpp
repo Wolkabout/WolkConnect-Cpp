@@ -15,7 +15,7 @@
  */
 
 #include "InboundMessageHandler.h"
-#include "connectivity/mqtt/JsonDtoParser.h"
+#include "connectivity/json/JsonDtoParser.h"
 #include "utilities/StringUtils.h"
 #include "utilities/ByteUtils.h"
 

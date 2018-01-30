@@ -17,7 +17,7 @@
 #include "OutboundDataService.h"
 #include "model/FirmwareUpdateResponse.h"
 #include "connectivity/ConnectivityService.h"
-#include "OutboundMessageFactory.h"
+#include "connectivity/json/OutboundMessageFactory.h"
 
 #include <iostream>
 

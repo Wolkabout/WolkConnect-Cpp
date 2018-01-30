@@ -27,8 +27,8 @@
 #include "persistence/inmemory/InMemoryPersistence.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "OutboundDataService.h"
-#include "FileDownloadService.h"
-#include "FirmwareUpdateService.h"
+#include "service/FileDownloadService.h"
+#include "service/FirmwareUpdateService.h"
 #include "FileHandler.h"
 
 #include <functional>
@@ -127,7 +127,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 	auto inboundMessageHandler = std::make_shared<InboundMessageHandler>(m_device);
 	auto outboundServiceDataHandler = std::make_shared<OutboundDataService>(m_device, connectivityService);
 
-	auto wolk = std::unique_ptr<Wolk>(new Wolk(connectivityService, m_persistence, inboundMessageHandler, m_device));
+	auto wolk = std::unique_ptr<Wolk>(new Wolk(connectivityService, m_persistence, inboundMessageHandler, outboundServiceDataHandler, m_device));
 
     wolk->m_actuationHandlerLambda = m_actuationHandlerLambda;
     wolk->m_actuationHandler = m_actuationHandler;

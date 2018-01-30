@@ -19,12 +19,11 @@
 
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
-#include "CommandBuffer.h"
+#include "utilities/CommandBuffer.h"
 #include "WolkBuilder.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Device.h"
-#include "CommandHandlingService.h"
 
 #include <functional>
 #include <memory>
@@ -37,6 +36,7 @@ class ConnectivityService;
 class InboundMessageHandler;
 class FirmwareUpdateService;
 class FileDownloadService;
+class OutboundServiceDataHandler;
 
 class Wolk
 {
@@ -111,7 +111,8 @@ private:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 
     Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-		 std::shared_ptr<InboundMessageHandler> inboundMessageHandler, Device device);
+		 std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
+		 std::shared_ptr<OutboundServiceDataHandler> outboundServiceDataHandler, Device device);
 
     void addToCommandBuffer(std::function<void()> command);
 
@@ -132,6 +133,7 @@ private:
     std::shared_ptr<Persistence> m_persistence;
 
 	std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
+	std::shared_ptr<OutboundServiceDataHandler> m_outboundServiceDataHandler;
 
 	std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
 	std::shared_ptr<FileDownloadService> m_fileDownloadService;
