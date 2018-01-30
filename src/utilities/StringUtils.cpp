@@ -67,6 +67,14 @@ bool StringUtils::endsWith(const std::string& string, const std::string& suffix)
     return string.size() >= suffix.size() && 0 == string.compare(string.size() - suffix.size(), suffix.size(), suffix);
 }
 
+void StringUtils::removeTrailingWhitespace(std::string& string)
+{
+	while(!string.empty() && std::isspace(*string.rbegin()))
+	{
+		string.erase(string.length() - 1);
+	}
+}
+
 bool StringUtils::isBase64(unsigned char c)
 {
 	return (isalnum(c) || (c == '+') || (c == '/'));

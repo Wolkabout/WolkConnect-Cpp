@@ -83,6 +83,8 @@ void FirmwareUpdateService::reportFirmwareUpdateResult()
 	std::string firmwareVersion;
 	FileSystemUtils::readFileContent(FIRMWARE_VERSION_FILE, firmwareVersion);
 
+	StringUtils::removeTrailingWhitespace(firmwareVersion);
+
 	if(m_currentFirmwareVersion != firmwareVersion)
 	{
 		sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::COMPLETED});
@@ -248,8 +250,6 @@ void FirmwareUpdateService::ReadyState::handleFirmwareUpdateCommand(const Firmwa
 		case FirmwareUpdateCommand::Type::INSTALL:
 		{
 			m_service.install();
-
-			m_service.clear();
 
 			break;
 		}
@@ -447,6 +447,9 @@ void FirmwareUpdateService::install()
 
 				sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
 							 FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
+
+				clear();
+
 				return;
 			}
 
@@ -459,6 +462,8 @@ void FirmwareUpdateService::install()
 
 				sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
 							 FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
+
+				clear();
 			}
 		}));
 	}

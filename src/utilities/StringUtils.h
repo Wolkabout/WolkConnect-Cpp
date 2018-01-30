@@ -37,6 +37,8 @@ public:
 
     static bool endsWith(const std::string& string, const std::string& suffix);
 
+	static void removeTrailingWhitespace(std::string& string);
+
 	static bool isBase64(unsigned char c);
 
 	static std::string base64Encode(const char* bytesToEncode, unsigned int len);
