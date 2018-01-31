@@ -52,6 +52,7 @@ add_subdirectory(mqtt lib)
 # WolkAbout c++ Connector
 include_directories("mqtt")
 include_directories("src")
+include_directories(SYSTEM "${OPENSSL_INCLUDE_DIR}")
 
 file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
 file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
