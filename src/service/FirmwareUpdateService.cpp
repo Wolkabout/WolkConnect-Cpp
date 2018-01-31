@@ -176,12 +176,13 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
 		}
 		case FirmwareUpdateCommand::Type::INSTALL:
 		case FirmwareUpdateCommand::Type::ABORT:
-		{
-			break;
-		}
 		case FirmwareUpdateCommand::Type::UNKNOWN:
 		default:
-			break;
+		{
+			m_service.clear();
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+								   FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+		}
 	}
 }
 
@@ -205,12 +206,18 @@ void FirmwareUpdateService::WolkDownloadState::handleFirmwareUpdateCommand(const
 		case FirmwareUpdateCommand::Type::INSTALL:
 		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
 		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-		{
-			break;
-		}
 		case FirmwareUpdateCommand::Type::UNKNOWN:
 		default:
-			break;
+		{
+			if(auto downloader = m_service.m_wolkFileDownloader.lock())
+			{
+				downloader->abort();
+			}
+
+			m_service.clear();
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+								   FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+		}
 	}
 }
 
@@ -234,12 +241,18 @@ void FirmwareUpdateService::UrlDownloadState::handleFirmwareUpdateCommand(const 
 		case FirmwareUpdateCommand::Type::INSTALL:
 		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
 		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-		{
-			break;
-		}
 		case FirmwareUpdateCommand::Type::UNKNOWN:
 		default:
-			break;
+		{
+			if(auto downloader = m_service.m_urlFileDownloader.lock())
+			{
+				downloader->abort();
+			}
+
+			m_service.clear();
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+								   FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+		}
 	}
 }
 
@@ -268,12 +281,18 @@ void FirmwareUpdateService::ReadyState::handleFirmwareUpdateCommand(const Firmwa
 		}
 		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
 		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-		{
-			break;
-		}
 		case FirmwareUpdateCommand::Type::UNKNOWN:
 		default:
-			break;
+		{
+			if(!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
+			{
+				// log error
+			}
+
+			m_service.clear();
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
+								   FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+		}
 	}
 }
 
