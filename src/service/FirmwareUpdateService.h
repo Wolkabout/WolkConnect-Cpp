@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include "UrlFileDownloader.h"
 #include <string>
 #include <memory>
+#include <cstdint>
 
 namespace wolkabout
 {
@@ -35,7 +36,7 @@ class FirmwareUpdateService: public FirmwareUpdateCommandListener
 {
 public:
 	FirmwareUpdateService(const std::string& firmwareVersion, const std::string& downloadDirectory,
-						  uint_fast64_t maximumFirmwareSize,
+						  std::uint_fast64_t maximumFirmwareSize,
 						  std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
 						  std::weak_ptr<WolkaboutFileDownloader> wolkDownloader,
 						  std::weak_ptr<UrlFileDownloader> urlDownloader,
@@ -63,7 +64,7 @@ private:
 
 	void onFirmwareFileDownloadFail(UrlFileDownloader::Error errorCode);
 
-	void downloadFirmware(const std::string& name, uint_fast64_t size, const ByteArray& hash);
+	void downloadFirmware(const std::string& name, std::uint_fast64_t size, const ByteArray& hash);
 
 	void downloadFirmware(const std::string& url);
 
@@ -109,6 +110,13 @@ private:
 		void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
 	};
 
+	class InstallationState: public FirmwareUpdateServiceState
+	{
+	public:
+		using FirmwareUpdateServiceState::FirmwareUpdateServiceState;
+		void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
+	};
+
 	friend class IdleState;
 	friend class WolkDownloadState;
 	friend class UrlDownloadState;
@@ -116,7 +124,7 @@ private:
 
 	const std::string m_currentFirmwareVersion;
 	const std::string m_firmwareDownloadDirectory;
-	const uint_fast64_t m_maximumFirmwareSize;
+	const std::uint_fast64_t m_maximumFirmwareSize;
 
 	std::shared_ptr<OutboundServiceDataHandler> m_outboundDataHandler;
 	std::weak_ptr<WolkaboutFileDownloader> m_wolkFileDownloader;
@@ -127,6 +135,7 @@ private:
 	std::unique_ptr<WolkDownloadState> m_wolkDownloadState;
 	std::unique_ptr<UrlDownloadState> m_urlDownloadState;
 	std::unique_ptr<ReadyState> m_readyState;
+	std::unique_ptr<InstallationState> m_installationState;
 
 	FirmwareUpdateServiceState* m_currentState;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,10 +44,8 @@ void from_json(const json& j, ActuatorCommand& p)
         {
             return j.at("value").get<std::string>();
         }
-        else
-        {
-            return "";
-        }
+
+		return "";
     }();
 
     p = ActuatorCommand(type == "SET" ? ActuatorCommand::Type::SET : ActuatorCommand::Type::STATUS, "", value);
@@ -101,10 +99,8 @@ void from_json(const json& j, FirmwareUpdateCommand& p)
 		{
 			return j.at("autoInstall").get<bool>();
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}();
 
 	if(type == FirmwareUpdateCommand::Type::FILE_UPLOAD)
@@ -114,10 +110,8 @@ void from_json(const json& j, FirmwareUpdateCommand& p)
 			{
 				return j.at("fileName").get<std::string>();
 			}
-			else
-			{
-				return "";
-			}
+
+			return "";
 		}();
 
 		const uint_fast64_t size = [&]() -> uint_fast64_t {
@@ -125,10 +119,8 @@ void from_json(const json& j, FirmwareUpdateCommand& p)
 			{
 				return j.at("fileSize").get<uint_fast64_t>();
 			}
-			else
-			{
-				return 0;
-			}
+
+			return 0;
 		}();
 
 		const std::string hash = [&]() -> std::string {
@@ -136,10 +128,8 @@ void from_json(const json& j, FirmwareUpdateCommand& p)
 			{
 				return j.at("fileHash").get<std::string>();
 			}
-			else
-			{
-				return "";
-			}
+
+			return "";
 		}();
 
 		p = FirmwareUpdateCommand(type, name, size, hash, autoInstall);
@@ -152,10 +142,8 @@ void from_json(const json& j, FirmwareUpdateCommand& p)
 			{
 				return j.at("fileUrl").get<std::string>();
 			}
-			else
-			{
-				return "";
-			}
+
+			return "";
 		}();
 
 		p = FirmwareUpdateCommand(type, url, autoInstall);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@
 
 #include <vector>
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 
 namespace wolkabout
 {
 
-using Byte = uint8_t;
-using ByteArray = std::vector<uint8_t>;
+using Byte = std::uint8_t;
+using ByteArray = std::vector<Byte>;
 
 class ByteUtils
 {
@@ -34,6 +34,8 @@ public:
 
 	static ByteArray toByteArray(const std::string& data);
 	static ByteArray hashSHA256(const ByteArray& value);
+
+	static const short SHA_256_HASH_BYTE_LENGTH = 32;
 };
 }
 

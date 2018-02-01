@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,14 +26,14 @@ BinaryData::BinaryData() : m_value{}, m_data{}, m_hash{}, m_previousHash{}
 
 BinaryData::BinaryData(const ByteArray& value) : m_value{value}, m_data{}, m_hash{}, m_previousHash{}
 {
-	if(value.size() <= 2 * SHA_256_HASH_BYTE_LENGTH)
+	if(value.size() <= 2 * ByteUtils::SHA_256_HASH_BYTE_LENGTH)
 	{
 		throw std::invalid_argument("Binary data size is smaller than required to fit standard data packet");
 	}
 
-	m_previousHash = {m_value.begin(), m_value.begin() + SHA_256_HASH_BYTE_LENGTH};
-	m_data = {m_value.begin() + SHA_256_HASH_BYTE_LENGTH, m_value.end() - SHA_256_HASH_BYTE_LENGTH};
-	m_hash = {m_value.end() - SHA_256_HASH_BYTE_LENGTH, m_value.end()};
+	m_previousHash = {m_value.begin(), m_value.begin() + ByteUtils::SHA_256_HASH_BYTE_LENGTH};
+	m_data = {m_value.begin() + ByteUtils::SHA_256_HASH_BYTE_LENGTH, m_value.end() - ByteUtils::SHA_256_HASH_BYTE_LENGTH};
+	m_hash = {m_value.end() - ByteUtils::SHA_256_HASH_BYTE_LENGTH, m_value.end()};
 }
 
 const ByteArray& BinaryData::getData() const
@@ -56,7 +56,7 @@ bool BinaryData::valid() const
 bool BinaryData::validatePrevious() const
 {
 	// validate with all zero hash
-	return validatePrevious(ByteArray(SHA_256_HASH_BYTE_LENGTH, 0));
+	return validatePrevious(ByteArray(ByteUtils::SHA_256_HASH_BYTE_LENGTH, 0));
 }
 
 bool BinaryData::validatePrevious(const ByteArray& previousHash) const

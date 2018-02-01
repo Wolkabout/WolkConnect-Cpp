@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #include "utilities/CommandBuffer.h"
 #include "utilities/ByteUtils.h"
 #include "utilities/Timer.h"
-#include <stdint.h>
+#include <cstdint>
 #include <memory>
 
 namespace wolkabout
@@ -33,13 +33,13 @@ class FileHandler;
 class FileDownloadService: public WolkaboutFileDownloader, public BinaryDataListener
 {
 public:
-	FileDownloadService(uint_fast64_t maxFileSize, uint_fast64_t maxPacketSize, std::unique_ptr<FileHandler> fileHandler,
+	FileDownloadService(uint_fast64_t maxFileSize, std::uint_fast64_t maxPacketSize, std::unique_ptr<FileHandler> fileHandler,
 						std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler);
 
 	FileDownloadService (const FileDownloadService&) = delete;
 	FileDownloadService& operator= (const FileDownloadService&) = delete;
 
-	void download(const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash,
+	void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
 				  const std::string& downloadDirectory, std::function<void(const std::string& filePath)> onSuccessCallback,
 				  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) override;
 
@@ -50,7 +50,7 @@ public:
 private:
 	void addToCommandBuffer(std::function<void()> command);
 
-	void requestPacket(unsigned index, uint_fast64_t size);
+	void requestPacket(unsigned index, std::uint_fast64_t size);
 
 	void packetFailed();
 
@@ -62,7 +62,7 @@ private:
 		FileDownloadServiceState(FileDownloadService& service) : m_service{service} {}
 		virtual ~FileDownloadServiceState() = default;
 		virtual void handleBinaryData(const BinaryData& binaryData) = 0;
-		virtual void download(const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash,
+		virtual void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
 							  const std::string& downloadDirectory, std::function<void(const std::string& filePath)> onSuccessCallback,
 							  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) = 0;
 		virtual void abort() = 0;
@@ -76,7 +76,7 @@ private:
 	public:
 		using FileDownloadServiceState::FileDownloadServiceState;
 		void handleBinaryData(const BinaryData& binaryData) override;
-		void download(const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash,
+		void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
 					  const std::string& downloadDirectory, std::function<void(const std::string& filePath)> onSuccessCallback,
 					  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) override;
 		void abort() override;
@@ -87,7 +87,7 @@ private:
 	public:
 		using FileDownloadServiceState::FileDownloadServiceState;
 		void handleBinaryData(const BinaryData& binaryData) override;
-		void download(const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash,
+		void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
 					  const std::string& downloadDirectory, std::function<void(const std::string& filePath)> onSuccessCallback,
 					  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) override;
 		void abort() override;
@@ -96,8 +96,8 @@ private:
 	friend class IdleState;
 	friend class DownloadState;
 
-	uint_fast64_t m_maxFileSize;
-	uint_fast64_t m_maxPacketSize;
+	std::uint_fast64_t m_maxFileSize;
+	std::uint_fast64_t m_maxPacketSize;
 	std::unique_ptr<FileHandler> m_fileHandler;
 	std::shared_ptr<OutboundServiceDataHandler> m_outboundDataHandler;
 
@@ -110,8 +110,8 @@ private:
 	Timer m_timer;
 
 	std::string m_currentFileName;
-	uint_fast64_t m_currentFileSize;
-	uint_fast64_t m_currentPacketSize;
+	std::uint_fast64_t m_currentFileSize;
+	std::uint_fast64_t m_currentPacketSize;
 	unsigned m_currentPacketCount;
 	unsigned m_currentPacketIndex;
 	ByteArray m_currentFileHash;

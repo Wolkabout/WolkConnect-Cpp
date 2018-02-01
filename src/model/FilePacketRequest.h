@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #define FILEPACKETREQUEST_H
 
 #include <string>
+#include <cstdint>
 
 namespace wolkabout
 {
@@ -25,11 +26,11 @@ class FilePacketRequest
 {
 public:
 	FilePacketRequest();
-	FilePacketRequest(const std::string& fileName, unsigned chunkIndex, uint_fast64_t chunkSize);
+	FilePacketRequest(const std::string& fileName, unsigned chunkIndex, std::uint_fast64_t chunkSize);
 
 	const std::string& getFileName() const;
 	unsigned getChunkIndex() const;
-	uint_fast64_t getChunkSize() const;
+	std::uint_fast64_t getChunkSize() const;
 
 private:
 	const std::string m_fileName;

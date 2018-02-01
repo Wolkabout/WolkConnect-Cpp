@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,27 +42,27 @@ FirmwareUpdateCommand::FirmwareUpdateCommand(FirmwareUpdateCommand::Type type, s
 {
 }
 
-WolkOptional<std::string> FirmwareUpdateCommand::getName() const
+const WolkOptional<std::string>& FirmwareUpdateCommand::getName() const
 {
 	return m_name;
 }
 
-WolkOptional<uint_fast64_t> FirmwareUpdateCommand::getSize() const
+const WolkOptional<uint_fast64_t>& FirmwareUpdateCommand::getSize() const
 {
 	return m_size;
 }
 
-WolkOptional<std::string> FirmwareUpdateCommand::getHash() const
+const WolkOptional<std::string>& FirmwareUpdateCommand::getHash() const
 {
 	return m_hash;
 }
 
-WolkOptional<std::string> FirmwareUpdateCommand::getUrl() const
+const WolkOptional<std::string>& FirmwareUpdateCommand::getUrl() const
 {
 	return m_url;
 }
 
-WolkOptional<bool> FirmwareUpdateCommand::getAutoInstall() const
+const WolkOptional<bool>& FirmwareUpdateCommand::getAutoInstall() const
 {
 	return m_autoInstall;
 }

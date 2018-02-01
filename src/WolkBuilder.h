@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 #include <functional>
 #include <memory>
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 
 namespace wolkabout
 {
@@ -101,7 +101,8 @@ public:
 	 * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
 	 */
 	WolkBuilder& withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
-									const std::string& firmwareDownloadDirectory, uint_fast64_t maxFirmwareFileSize);
+									const std::string& firmwareDownloadDirectory, std::uint_fast64_t maxFirmwareFileSize,
+									std::uint_fast64_t maxFirmwareFileChunkSize);
 
 	/**
 	 * @brief withFirmwareUpdate Enables firmware update for device
@@ -113,8 +114,8 @@ public:
 	 * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
 	 */
 	WolkBuilder& withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
-									const std::string& firmwareDownloadDirectory, uint_fast64_t maxFirmwareFileSize,
-									std::weak_ptr<UrlFileDownloader> urlDownloader);
+									const std::string& firmwareDownloadDirectory, std::uint_fast64_t maxFirmwareFileSize,
+									std::uint_fast64_t maxFirmwareFileChunkSize, std::weak_ptr<UrlFileDownloader> urlDownloader);
 
     /**
      * @brief Builds Wolk instance
@@ -146,13 +147,12 @@ private:
 
 	std::string m_firmwareVersion;
 	std::string m_firmwareDownloadDirectory;
-	uint_fast64_t m_maxFirmwareFileSize;
+	std::uint_fast64_t m_maxFirmwareFileSize;
+	std::uint_fast64_t m_maxFirmwareFileChunkSize;
 	std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
 	std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
 
 	static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
-
-	static const unsigned MAX_BINARY_CHUNK_SIZE;
 };
 }
 

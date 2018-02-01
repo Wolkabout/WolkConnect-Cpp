@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,9 +44,9 @@ public:
 
 	FileHandler::StatusCode handleData(const BinaryData& binaryData);
 
-	FileHandler::StatusCode validateFile(const ByteArray& fileHash);
+	FileHandler::StatusCode validateFile(const ByteArray& fileHash) const;
 
-	FileHandler::StatusCode saveFile(const std::string& filePath);
+	FileHandler::StatusCode saveFile(const std::string& filePath) const;
 
 private:
 	ByteArray m_currentPacketData;

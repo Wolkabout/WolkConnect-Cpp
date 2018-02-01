@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ FirmwareUpdateResponse::Status FirmwareUpdateResponse::getStatus() const
 	return m_status;
 }
 
-WolkOptional<FirmwareUpdateResponse::ErrorCode> FirmwareUpdateResponse::getErrorCode() const
+const WolkOptional<FirmwareUpdateResponse::ErrorCode>& FirmwareUpdateResponse::getErrorCode() const
 {
 	return m_errorCode;
 }

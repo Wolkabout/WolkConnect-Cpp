@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,6 @@
 
 namespace wolkabout
 {
-const unsigned WolkBuilder::MAX_BINARY_CHUNK_SIZE = 131072;
-
 WolkBuilder& WolkBuilder::host(const std::string& host)
 {
     m_host = host;
@@ -82,19 +80,21 @@ WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persisten
 }
 
 WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
-											 const std::string& firmwareDownloadDirectory, uint_fast64_t maxFirmwareFileSize)
+											 const std::string& firmwareDownloadDirectory, uint_fast64_t maxFirmwareFileSize,
+											 std::uint_fast64_t maxFirmwareFileChunkSize)
 {
 	return withFirmwareUpdate(firmwareVersion, installer, firmwareDownloadDirectory, maxFirmwareFileSize,
-							  std::weak_ptr<UrlFileDownloader>());
+							  maxFirmwareFileChunkSize, std::weak_ptr<UrlFileDownloader>());
 }
 
 WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
 											 const std::string& firmwareDownloadDirectory, uint_fast64_t maxFirmwareFileSize,
-											 std::weak_ptr<UrlFileDownloader> urlDownloader)
+											 std::uint_fast64_t maxFirmwareFileChunkSize, std::weak_ptr<UrlFileDownloader> urlDownloader)
 {
 	m_firmwareVersion = firmwareVersion;
 	m_firmwareDownloadDirectory = firmwareDownloadDirectory;
 	m_maxFirmwareFileSize = maxFirmwareFileSize;
+	m_maxFirmwareFileChunkSize = maxFirmwareFileChunkSize;
 	m_firmwareInstaller = installer;
 	m_urlFileDownloader = urlDownloader;
 	return *this;
@@ -135,7 +135,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
     wolk->m_actuatorStatusProviderLambda = m_actuatorStatusProviderLambda;
     wolk->m_actuatorStatusProvider = m_actuatorStatusProvider;
 
-	wolk->m_fileDownloadService = std::make_shared<FileDownloadService>(m_maxFirmwareFileSize, MAX_BINARY_CHUNK_SIZE,
+	wolk->m_fileDownloadService = std::make_shared<FileDownloadService>(m_maxFirmwareFileSize, m_maxFirmwareFileChunkSize,
 																		std::unique_ptr<FileHandler>(new FileHandler()),
 																		outboundServiceDataHandler);
 
@@ -180,7 +180,7 @@ wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>() const
 
 WolkBuilder::WolkBuilder(Device device)
 	: m_host{WOLK_DEMO_HOST}, m_device{std::move(device)}, m_persistence{new InMemoryPersistence()},
-	  m_firmwareVersion{""}, m_firmwareDownloadDirectory{""}, m_maxFirmwareFileSize{0}
+	  m_firmwareVersion{""}, m_firmwareDownloadDirectory{""}, m_maxFirmwareFileSize{0}, m_maxFirmwareFileChunkSize{0}
 {
 }
 }

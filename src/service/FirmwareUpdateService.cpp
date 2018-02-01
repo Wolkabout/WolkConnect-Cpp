@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ FirmwareUpdateService::FirmwareUpdateService(const std::string& firmwareVersion,
 	m_wolkDownloadState{new FirmwareUpdateService::WolkDownloadState(*this)},
 	m_urlDownloadState{new FirmwareUpdateService::UrlDownloadState(*this)},
 	m_readyState{new FirmwareUpdateService::ReadyState(*this)},
+	m_installationState{new FirmwareUpdateService::InstallationState(*this)},
 	m_firmwareFile{""},
 	m_autoInstall{false},
 	m_commandBuffer{new CommandBuffer()}
@@ -112,7 +113,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
 				return;
 			}
 
-			auto size = firmwareUpdateCommand.getSize();
+			const auto size = firmwareUpdateCommand.getSize();
 			if(size.null() || static_cast<uint_fast64_t>(size) > m_service.m_maximumFirmwareSize ||
 					static_cast<uint_fast64_t>(size) == 0)
 			{
@@ -121,7 +122,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
 				return;
 			}
 
-			auto hash = firmwareUpdateCommand.getHash();
+			const auto hash = firmwareUpdateCommand.getHash();
 			if(hash.null() || static_cast<std::string>(hash).empty())
 			{
 				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
@@ -133,10 +134,10 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
 			{
 				m_service.m_currentState = m_service.m_wolkDownloadState.get();
 
-				auto autoInstall = firmwareUpdateCommand.getAutoInstall();
+				const auto autoInstall = firmwareUpdateCommand.getAutoInstall();
 				m_service.m_autoInstall = !autoInstall.null() && static_cast<bool>(autoInstall);
 
-				auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(hash));
+				const auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(hash));
 				m_service.downloadFirmware(name, size, byteHash);
 			}
 			else
@@ -149,7 +150,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
 		}
 		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
 		{
-			auto url = firmwareUpdateCommand.getUrl();
+			const auto url = firmwareUpdateCommand.getUrl();
 			if(url.null() || static_cast<std::string>(url).empty())
 			{
 				m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
@@ -161,7 +162,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
 			{
 				m_service.m_currentState = m_service.m_urlDownloadState.get();
 
-				auto autoInstall = firmwareUpdateCommand.getAutoInstall();
+				const auto autoInstall = firmwareUpdateCommand.getAutoInstall();
 				m_service.m_autoInstall = !autoInstall.null() && static_cast<bool>(autoInstall);
 
 				m_service.downloadFirmware(url);
@@ -270,7 +271,7 @@ void FirmwareUpdateService::ReadyState::handleFirmwareUpdateCommand(const Firmwa
 		{
 			if(!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
 			{
-				// log error
+				// TODO log error
 			}
 
 			m_service.clear();
@@ -286,12 +287,45 @@ void FirmwareUpdateService::ReadyState::handleFirmwareUpdateCommand(const Firmwa
 		{
 			if(!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
 			{
-				// log error
+				// TODO log error
 			}
 
 			m_service.clear();
 			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
 								   FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
+		}
+	}
+}
+
+void FirmwareUpdateService::InstallationState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
+{
+	switch (firmwareUpdateCommand.getType())
+	{
+		case FirmwareUpdateCommand::Type::ABORT:
+		{
+			if(m_service.m_executor && m_service.m_executor->joinable())
+			{
+				m_service.m_executor->join();
+			}
+
+			if(!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
+			{
+				// TODO log error
+			}
+
+			m_service.clear();
+
+			m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
+
+			break;
+		}
+		case FirmwareUpdateCommand::Type::INSTALL:
+		case FirmwareUpdateCommand::Type::FILE_UPLOAD:
+		case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
+		case FirmwareUpdateCommand::Type::UNKNOWN:
+		default:
+		{
+			break;
 		}
 	}
 }
@@ -461,7 +495,7 @@ void FirmwareUpdateService::install()
 			{
 				if(!FileSystemUtils::deleteFile(m_firmwareFile))
 				{
-					// log error
+					// TODO log error
 				}
 
 				sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
@@ -476,7 +510,7 @@ void FirmwareUpdateService::install()
 			{
 				if(!FileSystemUtils::deleteFile(m_firmwareFile))
 				{
-					// log error
+					// TODO log error
 				}
 
 				sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,

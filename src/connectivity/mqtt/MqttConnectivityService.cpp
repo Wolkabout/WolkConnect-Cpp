@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ bool MqttConnectivityService::connect()
     {
 		if(auto handler = m_listener.lock())
 		{
-			auto topics = handler->getTopics();
+			const auto& topics = handler->getTopics();
 			for (const std::string& topic : topics)
 			{
 				m_mqttClient->subscribe(topic);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,28 +61,24 @@ FileHandler::StatusCode FileHandler::handleData(const BinaryData& binaryData)
 	return FileHandler::StatusCode::OK;
 }
 
-FileHandler::StatusCode FileHandler::validateFile(const ByteArray& fileHash)
+FileHandler::StatusCode FileHandler::validateFile(const ByteArray& fileHash) const
 {
 	if(fileHash == ByteUtils::hashSHA256(m_currentPacketData))
 	{
 		return FileHandler::StatusCode::OK;
 	}
-	else
-	{
-		return FileHandler::StatusCode::FILE_HASH_NOT_VALID;
-	}
+
+	return FileHandler::StatusCode::FILE_HASH_NOT_VALID;
 }
 
-FileHandler::StatusCode FileHandler::saveFile(const std::string& filePath)
+FileHandler::StatusCode FileHandler::saveFile(const std::string& filePath) const
 {
 	if(FileSystemUtils::createBinaryFileWithContent(filePath, m_currentPacketData))
 	{
 		return FileHandler::StatusCode::OK;
 	}
-	else
-	{
-		return FileHandler::StatusCode::FILE_HANDLING_ERROR;
-	}
+
+	return FileHandler::StatusCode::FILE_HANDLING_ERROR;
 }
 
 }

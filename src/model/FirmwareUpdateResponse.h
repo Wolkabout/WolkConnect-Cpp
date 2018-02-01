@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public:
 	FirmwareUpdateResponse(FirmwareUpdateResponse::Status status, FirmwareUpdateResponse::ErrorCode errorCode);
 
 	FirmwareUpdateResponse::Status getStatus() const;
-	WolkOptional<FirmwareUpdateResponse::ErrorCode> getErrorCode() const;
+	const WolkOptional<FirmwareUpdateResponse::ErrorCode>& getErrorCode() const;
 
 private:
 	FirmwareUpdateResponse::Status m_status;

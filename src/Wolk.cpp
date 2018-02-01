@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,18 +123,20 @@ void Wolk::publishActuatorStatus(const std::string& reference)
 void Wolk::connect()
 {
     addToCommandBuffer([=]() -> void {
-		if(m_connectivityService->connect())
+		if(!m_connectivityService->connect())
 		{
-			publishFirmwareVersion();
-			m_firmwareUpdateService->reportFirmwareUpdateResult();
-
-			for (const std::string& actuatorReference : m_device.getActuatorReferences())
-			{
-				publishActuatorStatus(actuatorReference);
-			}
-
-			publish();
+			return;
 		}
+
+		publishFirmwareVersion();
+		m_firmwareUpdateService->reportFirmwareUpdateResult();
+
+		for (const std::string& actuatorReference : m_device.getActuatorReferences())
+		{
+			publishActuatorStatus(actuatorReference);
+		}
+
+		publish();
     });
 }
 
@@ -267,7 +269,7 @@ void Wolk::publishFirmwareVersion()
 
 		if (!(outboundMessage && m_connectivityService->publish(outboundMessage)))
 		{
-			// Log error
+			// TODO Log error
 		}
 	}
 }

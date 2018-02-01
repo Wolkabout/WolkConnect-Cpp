@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,10 +132,12 @@ bool PahoMqttClient::publish(const std::string& topic, const std::string& messag
         return false;
     }
 
-	std::lock_guard<std::mutex> guard(m_mutex);
+	std::lock_guard<std::mutex> guard{m_mutex};
 
     try
-    {
+	{
+		//std::cout << "sending message: " << message << ", to: " << topic << std::endl;
+
         mqtt::message_ptr pubmsg = mqtt::make_message(topic, message.c_str(), strlen(message.c_str()));
         pubmsg->set_qos(MQTT_QOS);
 

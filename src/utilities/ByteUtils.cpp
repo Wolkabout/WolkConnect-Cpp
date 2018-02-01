@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ ByteArray ByteUtils::toByteArray(const std::string& data)
 {
 	ByteArray array{};
 
-	for(auto it = data.begin(); it != data.end(); ++it)
+	for(const auto& byte : data)
 	{
-		array.push_back(static_cast<Byte>(*it));
+		array.push_back(static_cast<Byte>(byte));
 	}
 
 	return array;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ class WolkOptional
 public:
 	WolkOptional() : m_value{}, m_null{true}
     {
-        static_assert(std::is_default_constructible<T>::value, "Type doesn't have default constructor");
+		static_assert(std::is_default_constructible<T>::value, "Wrapped type must be default constructible");
     }
 
     WolkOptional(T value) : m_value{value}, m_null{false} {}

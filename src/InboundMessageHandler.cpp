@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ InboundMessageHandler::InboundMessageHandler(Device device) :
 
 void InboundMessageHandler::messageReceived(const std::string& topic, const std::string& message)
 {
-	std::cout << "Message received: " << topic << ", " << message << std::endl;
+	//std::cout << "Message received: " << topic << ", " << message << std::endl;
 
 	if(StringUtils::startsWith(topic, ACTUATION_REQUEST_TOPIC_ROOT))
 	{

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,14 +135,14 @@ void FileDownloadService::IdleState::download(const std::string& fileName, uint_
 		return;
 	}
 
-	if(fileSize <= m_service.m_maxPacketSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH))
+	if(fileSize <= m_service.m_maxPacketSize - (2 * ByteUtils::SHA_256_HASH_BYTE_LENGTH))
 	{
 		m_service.m_currentPacketCount = 1;
-		m_service.m_currentPacketSize = fileSize + (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH);
+		m_service.m_currentPacketSize = fileSize + (2 * ByteUtils::SHA_256_HASH_BYTE_LENGTH);
 	}
 	else
 	{
-		auto count = static_cast<double>(fileSize) / (m_service.m_maxPacketSize - (2 * BinaryData::SHA_256_HASH_BYTE_LENGTH));
+		const auto count = static_cast<double>(fileSize) / (m_service.m_maxPacketSize - (2 * ByteUtils::SHA_256_HASH_BYTE_LENGTH));
 		m_service.m_currentPacketCount = static_cast<unsigned>(std::ceil(count));
 		m_service.m_currentPacketSize = m_service.m_maxPacketSize;
 	}
@@ -171,7 +171,7 @@ void FileDownloadService::DownloadState::handleBinaryData(const BinaryData& bina
 {
 	m_service.m_timer.stop();
 
-	auto result = m_service.m_fileHandler->handleData(binaryData);
+	const auto result = m_service.m_fileHandler->handleData(binaryData);
 	switch (result)
 	{
 		case FileHandler::StatusCode::OK:
@@ -179,13 +179,13 @@ void FileDownloadService::DownloadState::handleBinaryData(const BinaryData& bina
 			if(++m_service.m_currentPacketIndex == m_service.m_currentPacketCount)
 			{
 				// download complete
-				auto validationResult = m_service.m_fileHandler->validateFile(m_service.m_currentFileHash);
+				const auto validationResult = m_service.m_fileHandler->validateFile(m_service.m_currentFileHash);
 				switch (validationResult)
 				{
 					case FileHandler::StatusCode::OK:
 					{
 						const std::string filePath = m_service.m_currentDownloadDirectory + "/" + m_service.m_currentFileName;
-						auto saveResult = m_service.m_fileHandler->saveFile(filePath);
+						const auto saveResult = m_service.m_fileHandler->saveFile(filePath);
 						switch (saveResult)
 						{
 							case FileHandler::StatusCode::OK:
