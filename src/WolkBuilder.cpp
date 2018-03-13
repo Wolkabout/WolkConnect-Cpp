@@ -74,6 +74,36 @@ WolkBuilder& WolkBuilder::actuatorStatusProvider(std::weak_ptr<ActuatorStatusPro
     return *this;
 }
 
+WolkBuilder& WolkBuilder::configurationHandler(
+  std::function<void(const std::map<std::string, std::string>& configuration)> configurationHandler)
+{
+    m_configurationHandlerLambda = configurationHandler;
+    m_configurationHandler.reset();
+    return *this;
+}
+
+wolkabout::WolkBuilder& WolkBuilder::configurationHandler(std::weak_ptr<ConfigurationHandler> configurationHandler)
+{
+    m_configurationHandler = configurationHandler;
+    m_configurationHandlerLambda = nullptr;
+    return *this;
+}
+    
+WolkBuilder& WolkBuilder::configurationProvider(
+  std::function<const std::map<std::string, std::string>&()> configurationProvider)
+{
+    m_configurationProviderLambda = configurationProvider;
+    m_configurationProvider.reset();
+    return *this;
+}
+
+wolkabout::WolkBuilder &WolkBuilder::configurationProvider(std::weak_ptr<ConfigurationProvider> configurationProvider)
+{
+    m_configurationProvider = configurationProvider;
+    m_configurationProviderLambda = nullptr;
+    return *this;
+}
+    
 WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persistence)
 {
     m_persistence = persistence;
@@ -129,6 +159,18 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
     auto outboundMessageFactory =
       std::make_shared<JsonSingleOutboundMessageFactory>(m_device.getDeviceKey(), m_device.getSensorDelimiters());
 
+    if ((m_configurationHandlerLambda == nullptr && m_configurationProviderLambda != nullptr) ||
+        (m_configurationHandlerLambda != nullptr && m_configurationProviderLambda == nullptr))
+    {
+        throw std::logic_error("Both ConfigurationPRovider and ConfigurationHandler must be set.");
+    }
+
+    if ((m_configurationHandler.expired() && !m_configurationProvider.expired()) ||
+        (!m_configurationHandler.expired() && m_configurationProvider.expired()))
+    {
+        throw std::logic_error("Both ConfigurationPRovider and ConfigurationHandler must be set.");
+    }
+
     auto mqttClient = std::make_shared<PahoMqttClient>();
     auto connectivityService = std::make_shared<MqttConnectivityService>(mqttClient, m_device, m_host);
 
@@ -143,6 +185,12 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 
     wolk->m_actuationHandlerLambda = m_actuationHandlerLambda;
     wolk->m_actuationHandler = m_actuationHandler;
+
+    wolk->m_configurationHandlerLambda = m_configurationHandlerLambda;
+    wolk->m_configurationHandler = m_configurationHandler;
+    
+    wolk->m_configurationProviderLambda = m_configurationProviderLambda;
+    wolk->m_configurationProvider = m_configurationProvider;
 
     wolk->m_actuatorStatusProviderLambda = m_actuatorStatusProviderLambda;
     wolk->m_actuatorStatusProvider = m_actuatorStatusProvider;
@@ -160,6 +208,10 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 
     inboundMessageHandler->setActuatorCommandHandler(
       [&](const ActuatorCommand& actuatorCommand) -> void { wolk->handleActuatorCommand(actuatorCommand); });
+
+    inboundMessageHandler->setConfigurationHandler([&](const ConfigurationCommand& configurationCommand) -> void {
+        wolk->handleConfigurationCommand(configurationCommand);
+    });
 
     std::weak_ptr<FileDownloadService> fileDownloadService_weak{wolk->m_fileDownloadService};
     inboundMessageHandler->setBinaryDataHandler([=](const BinaryData& binaryData) -> void {

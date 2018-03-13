@@ -16,11 +16,19 @@
 
 #include "InboundMessageHandler.h"
 #include "connectivity/json/JsonDtoParser.h"
+#include "model/ActuatorCommand.h"
+#include "model/BinaryData.h"
+#include "model/ConfigurationCommand.h"
+#include "model/Device.h"
+#include "model/FirmwareUpdateCommand.h"
 #include "utilities/ByteUtils.h"
 #include "utilities/StringUtils.h"
 
 #include <iostream>
+#include <map>
 #include <sstream>
+#include <string>
+#include <vector>
 
 namespace wolkabout
 {
@@ -42,12 +50,15 @@ InboundMessageHandler::InboundMessageHandler(Device device) : m_device{device}, 
     std::stringstream binaryTopic("");
     binaryTopic << BINARY_TOPIC_ROOT << m_device.getDeviceKey();
     m_subscriptionList.emplace_back(binaryTopic.str());
+
+    // configuration
+    std::stringstream configurationCommandsTopic("");
+    configurationCommandsTopic << CONFIGURATION_COMMAND_TOPIC_ROOT << m_device.getDeviceKey();
+    m_subscriptionList.emplace_back(configurationCommandsTopic.str());
 }
 
 void InboundMessageHandler::messageReceived(const std::string& topic, const std::string& message)
 {
-    // std::cout << "Message received: " << topic << ", " << message << std::endl;
-
     if (StringUtils::startsWith(topic, ACTUATION_REQUEST_TOPIC_ROOT))
     {
         const size_t referencePosition = topic.find_last_of('/');
@@ -99,9 +110,31 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
                 }
             });
         }
-        catch (const std::invalid_argument& e)
+        catch (const std::invalid_argument&)
         {
-            std::cout << e.what();
+            // TODO: Log
+        }
+    }
+    else if (StringUtils::startsWith(topic, CONFIGURATION_COMMAND_TOPIC_ROOT))
+    {
+        try
+        {
+            ConfigurationCommand configurationCommand;
+            if (!JsonParser::fromJson(message, configurationCommand))
+            {
+                return;
+            }
+
+            addToCommandBuffer([=]() -> void {
+                if (m_configurationHandler)
+                {
+                    m_configurationHandler(configurationCommand);
+                }
+            });
+        }
+        catch (const std::invalid_argument&)
+        {
+            // TODO: Log
         }
     }
 }
@@ -111,17 +144,23 @@ const std::vector<std::string>& InboundMessageHandler::getTopics() const
     return m_subscriptionList;
 }
 
-void InboundMessageHandler::setActuatorCommandHandler(std::function<void(ActuatorCommand)> handler)
+void InboundMessageHandler::setActuatorCommandHandler(std::function<void(const ActuatorCommand&)> handler)
 {
     m_actuationHandler = handler;
 }
 
-void InboundMessageHandler::setBinaryDataHandler(std::function<void(BinaryData)> handler)
+void InboundMessageHandler::setConfigurationHandler(
+  std::function<void(const ConfigurationCommand&)> configurationHandler)
+{
+    m_configurationHandler = configurationHandler;
+}
+
+void InboundMessageHandler::setBinaryDataHandler(std::function<void(const BinaryData&)> handler)
 {
     m_binaryDataHandler = handler;
 }
 
-void InboundMessageHandler::setFirmwareUpdateCommandHandler(std::function<void(FirmwareUpdateCommand)> handler)
+void InboundMessageHandler::setFirmwareUpdateCommandHandler(std::function<void(const FirmwareUpdateCommand&)> handler)
 {
     m_firmwareUpdateHandler = handler;
 }
@@ -130,5 +169,4 @@ void InboundMessageHandler::addToCommandBuffer(std::function<void()> command)
 {
     m_commandBuffer->pushCommand(std::make_shared<std::function<void()>>(command));
 }
-
 }    // namespace wolkabout

@@ -44,7 +44,7 @@ public:
     static std::string base64Encode(const char* bytesToEncode, unsigned int len);
 
     static std::string base64Decode(const std::string& encodedString);
-    
+
     static const std::string EMPTY_STRING;
 };
 }    // namespace wolkabout

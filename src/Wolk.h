@@ -19,15 +19,19 @@
 
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
+#include "ConfigurationHandler.h"
+#include "ConfigurationProvider.h"
 #include "WolkBuilder.h"
 #include "connectivity/json/JsonSingleOutboundMessageFactory.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
+#include "model/ConfigurationCommand.h"
 #include "model/Device.h"
 #include "utilities/CommandBuffer.h"
 
 #include <functional>
 #include <initializer_list>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -137,24 +141,30 @@ public:
     void addAlarm(const std::string& reference, const std::string& value, unsigned long long int rtc = 0);
 
     /**
-     * @brief Invokes ActuatorStatusProvider callback to obtain actuator status<br>
+     * @brief Invokes ActuatorStatusProvider to obtain actuator status, and the publishes it.<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param Actuator reference
      */
     void publishActuatorStatus(const std::string& reference);
 
     /**
-     * @brief connect Establishes connection with WolkAbout IoT platform
+     * @brief Invokes ConfigurationProvider to obtain device configuration, and the publishes it.<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     */
+    void publishConfiguration();
+
+    /**
+     * @brief Establishes connection with WolkAbout IoT platform
      */
     void connect();
 
     /**
-     * @brief disconnect Disconnects from WolkAbout IoT platform
+     * @brief Disconnects from WolkAbout IoT platform
      */
     void disconnect();
 
     /**
-     * @brief publish Publishes data
+     * @brief Publishes data
      */
     void publish();
 
@@ -169,14 +179,18 @@ private:
 
     static unsigned long long int currentRtc();
 
-    void publishActuatorStatuses();
-    void publishAlarms();
-    void publishSensorReadings();
+    void flushActuatorStatuses();
+    void flushAlarms();
+    void flushSensorReadings();
+    void flushConfiguration();
 
     void addActuatorStatus(std::shared_ptr<ActuatorStatus> actuatorStatus);
 
     void handleActuatorCommand(const ActuatorCommand& actuatorCommand);
     void handleSetActuator(const ActuatorCommand& actuatorCommand);
+
+    void handleConfigurationCommand(const ConfigurationCommand& configurationCommand);
+    void handleSetConfiguration(const std::map<std::string, std::string>& configuration);
 
     void publishFirmwareVersion();
 
@@ -195,6 +209,12 @@ private:
 
     std::function<void(std::string, std::string)> m_actuationHandlerLambda;
     std::weak_ptr<ActuationHandler> m_actuationHandler;
+
+    std::function<void(const std::map<std::string, std::string>& configuration)> m_configurationHandlerLambda;
+    std::weak_ptr<ConfigurationHandler> m_configurationHandler;
+
+    std::function<const std::map<std::string, std::string>&()> m_configurationProviderLambda;
+    std::weak_ptr<ConfigurationProvider> m_configurationProvider;
 
     std::function<ActuatorStatus(std::string)> m_actuatorStatusProviderLambda;
     std::weak_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;

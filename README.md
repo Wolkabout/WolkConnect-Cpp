@@ -51,6 +51,13 @@ std::unique_ptr<wolkabout::Wolk> wolk =
 
         return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
     })
+    .configurationHandler([](const std::map<std::string, std::string> configuration) -> void {
+        // TODO invoke code which sets device configuration
+    })
+    .configurationProvider([]() -> const std::map<std::string, std::string>& {
+        // TODO invoke code which reads device configuration
+        return std::map<std::string, std::string>();
+    })
     .build();
 
     wolk->connect();
@@ -68,6 +75,11 @@ wolk->publishActuatorStatus("ACTUATOR_REFERENCE_ONE ");
 ```
 This will invoke the ActuationStatusProvider to read the actuator status,
 and publish actuator status.
+
+**Publish device configuration to platform:**
+```cpp
+wolk->publishConfiguration();
+```
 
 **Publishing events:**
 ```cpp

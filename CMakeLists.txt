@@ -54,19 +54,21 @@ include_directories("mqtt")
 include_directories("src")
 include_directories(SYSTEM "${OPENSSL_INCLUDE_DIR}")
 
-file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
+file(GLOB_RECURSE LIB_HEADER_FILES "src/*.h" "src/*.hpp")
+file(GLOB_RECURSE LIB_SOURCE_FILES "src/*.cpp")
 
 link_directories(${PROJECT_SOURCE_DIR}/out/lib)
 
-add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} ssl paho-mqtt pthread)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
 # Example
+file(GLOB_RECURSE EXAMPLE_HEADER_FILES "example/*.h")
 file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "example/*.cpp")
-add_executable(example ${EXAMPLE_SOURCE_FILES})
+
+add_executable(example ${EXAMPLE_HEADER_FILES} ${EXAMPLE_SOURCE_FILES})
 target_link_libraries(example ${PROJECT_NAME})
 set_target_properties(example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 
