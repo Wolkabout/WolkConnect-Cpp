@@ -58,6 +58,6 @@ private:
     std::string m_password;
     std::vector<std::string> m_actuatorReferences;
 };
-}
+}    // namespace wolkabout
 
 #endif

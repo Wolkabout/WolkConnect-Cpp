@@ -41,4 +41,4 @@ const std::vector<std::string> Device::getActuatorReferences() const
 {
     return m_actuatorReferences;
 }
-}
+}    // namespace wolkabout

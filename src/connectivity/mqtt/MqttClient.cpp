@@ -24,4 +24,4 @@ void MqttClient::onMessageReceived(MqttClient::OnMessageReceivedCallback onMessa
 {
     m_onMessageReceived = std::move(onMessageReceived);
 }
-}
+}    // namespace wolkabout

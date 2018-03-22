@@ -18,9 +18,9 @@
 #define INBOUNDMESSAGEHANDLER_H
 
 #include "connectivity/ConnectivityService.h"
-#include "model/Device.h"
 #include "model/ActuatorCommand.h"
 #include "model/BinaryData.h"
+#include "model/Device.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "utilities/CommandBuffer.h"
 
@@ -29,38 +29,38 @@
 
 namespace wolkabout
 {
-class InboundMessageHandler: public ConnectivityServiceListener
+class InboundMessageHandler : public ConnectivityServiceListener
 {
 public:
-	InboundMessageHandler(Device device);
+    InboundMessageHandler(Device device);
 
-	void messageReceived(const std::string& topic, const std::string& message) override;
+    void messageReceived(const std::string& topic, const std::string& message) override;
 
-	const std::vector<std::string>& getTopics() const override;
+    const std::vector<std::string>& getTopics() const override;
 
-	void setActuatorCommandHandler(std::function<void(ActuatorCommand)> handler);
+    void setActuatorCommandHandler(std::function<void(ActuatorCommand)> handler);
 
-	void setBinaryDataHandler(std::function<void(BinaryData)> handler);
+    void setBinaryDataHandler(std::function<void(BinaryData)> handler);
 
-	void setFirmwareUpdateCommandHandler(std::function<void(FirmwareUpdateCommand)> handler);
+    void setFirmwareUpdateCommandHandler(std::function<void(FirmwareUpdateCommand)> handler);
 
 private:
-	void addToCommandBuffer(std::function<void()> command);
+    void addToCommandBuffer(std::function<void()> command);
 
-	Device m_device;
+    Device m_device;
 
-	std::unique_ptr<CommandBuffer> m_commandBuffer;
+    std::unique_ptr<CommandBuffer> m_commandBuffer;
 
-	std::vector<std::string> m_subscriptionList;
+    std::vector<std::string> m_subscriptionList;
 
-	std::function<void(ActuatorCommand)> m_actuationHandler;
-	std::function<void(BinaryData)> m_binaryDataHandler;
-	std::function<void(FirmwareUpdateCommand)> m_firmwareUpdateHandler;
+    std::function<void(ActuatorCommand)> m_actuationHandler;
+    std::function<void(BinaryData)> m_binaryDataHandler;
+    std::function<void(FirmwareUpdateCommand)> m_firmwareUpdateHandler;
 
-	static const constexpr char* ACTUATION_REQUEST_TOPIC_ROOT = "actuators/commands/";
-	static const constexpr char* FIRMWARE_UPDATE_TOPIC_ROOT = "service/commands/firmware/";
-	static const constexpr char* BINARY_TOPIC_ROOT = "service/binary/";
+    static const constexpr char* ACTUATION_REQUEST_TOPIC_ROOT = "actuators/commands/";
+    static const constexpr char* FIRMWARE_UPDATE_TOPIC_ROOT = "service/commands/firmware/";
+    static const constexpr char* BINARY_TOPIC_ROOT = "service/binary/";
 };
-}
+}    // namespace wolkabout
 
-#endif // INBOUNDMESSAGEHANDLER_H
+#endif    // INBOUNDMESSAGEHANDLER_H
