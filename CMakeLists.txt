@@ -64,9 +64,10 @@ target_link_libraries(${PROJECT_NAME} ssl paho-mqtt pthread)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
-add_subdirectory(cmake)
-
 # Example
-add_executable(example example/Application.cpp)
+file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "example/*.cpp")
+add_executable(example ${EXAMPLE_SOURCE_FILES})
 target_link_libraries(example ${PROJECT_NAME})
 set_target_properties(example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
+
+add_subdirectory(cmake)

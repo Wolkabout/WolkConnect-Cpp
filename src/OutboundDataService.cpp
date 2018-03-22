@@ -16,37 +16,36 @@
 
 #include "OutboundDataService.h"
 #include "connectivity/ConnectivityService.h"
-#include "connectivity/json/OutboundMessageFactory.h"
+#include "connectivity/json/JsonSingleOutboundMessageFactory.h"
 #include "model/FirmwareUpdateResponse.h"
 
 #include <iostream>
 
 namespace wolkabout
 {
-OutboundDataService::OutboundDataService(Device device, std::shared_ptr<ConnectivityService> connectivityService)
-: m_device{device}, m_connectivityService(std::move(connectivityService))
+OutboundDataService::OutboundDataService(Device device, OutboundMessageFactory& outboundMessageFactory,
+                                         ConnectivityService& connectivityService)
+: m_device{device}, m_outboundMessageFactory(outboundMessageFactory), m_connectivityService(connectivityService)
 {
 }
 
-void OutboundDataService::addFirmwareUpdateResponse(const FirmwareUpdateResponse& response)
+void OutboundDataService::addFirmwareUpdateResponse(const FirmwareUpdateResponse& firmwareUpdateResponse)
 {
-    const std::shared_ptr<OutboundMessage> outboundMessage =
-      OutboundMessageFactory::make(m_device.getDeviceKey(), response);
+    const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory.make(firmwareUpdateResponse);
 
-    if (outboundMessage && m_connectivityService->publish(outboundMessage))
+    if (outboundMessage && m_connectivityService.publish(outboundMessage))
     {
-        std::cout << "Message sent " << outboundMessage->getContent();
+        // TODO: Log
     }
 }
 
-void OutboundDataService::addFilePacketRequest(const FilePacketRequest& request)
+void OutboundDataService::addFilePacketRequest(const FilePacketRequest& filePacketRequest)
 {
-    const std::shared_ptr<OutboundMessage> outboundMessage =
-      OutboundMessageFactory::make(m_device.getDeviceKey(), request);
+    const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory.make(filePacketRequest);
 
-    if (outboundMessage && m_connectivityService->publish(outboundMessage))
+    if (outboundMessage && m_connectivityService.publish(outboundMessage))
     {
-        std::cout << "Message sent " << outboundMessage->getContent();
+        // TODO: Log
     }
 }
 

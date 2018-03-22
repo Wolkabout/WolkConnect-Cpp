@@ -20,12 +20,14 @@
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
 #include "WolkBuilder.h"
+#include "connectivity/json/JsonSingleOutboundMessageFactory.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Device.h"
 #include "utilities/CommandBuffer.h"
 
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -74,6 +76,15 @@ public:
      *            If omitted current POSIX time is adopted
      */
     template <typename T> void addSensorReading(const std::string& reference, T value, unsigned long long int rtc = 0);
+
+    // TODO: Document
+    template <typename T>
+    void addSensorReading(const std::string& reference, std::initializer_list<T> values,
+                          unsigned long long int rtc = 0);
+
+    // TODO: Document
+    template <typename T>
+    void addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
 
     /**
      * @brief Publishes alarm to WolkAbout IoT Cloud<br>
@@ -128,6 +139,8 @@ private:
     void handleSetActuator(const ActuatorCommand& actuatorCommand);
 
     void publishFirmwareVersion();
+
+    std::shared_ptr<OutboundMessageFactory> m_outboundMessageFactory;
 
     std::shared_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;

@@ -19,7 +19,7 @@
 #include "ActuatorStatusProvider.h"
 #include "WolkBuilder.h"
 #include "connectivity/ConnectivityService.h"
-#include "connectivity/json/OutboundMessageFactory.h"
+#include "connectivity/json/JsonSingleOutboundMessageFactory.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
@@ -27,14 +27,20 @@
 #include "model/SensorReading.h"
 #include "service/FirmwareUpdateService.h"
 
+#include <algorithm>
+#include <initializer_list>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <thread>
 #include <utility>
 
-#define INSTANTIATE_ADD_SENSOR_READING_FOR(x) \
-    template void Wolk::addSensorReading<x>(const std::string& reference, x value, unsigned long long rtc)
+#define INSTANTIATE_ADD_SENSOR_READING_FOR(x)                                                               \
+    template void Wolk::addSensorReading<x>(const std::string& reference, x value, unsigned long long rtc); \
+    template void Wolk::addSensorReading<x>(const std::string& reference, std::initializer_list<x> value,   \
+                                            unsigned long long int rtc);                                    \
+    template void Wolk::addSensorReading<x>(const std::string& reference, const std::vector<x> values,      \
+                                            unsigned long long int rtc)
 
 namespace wolkabout
 {
@@ -43,22 +49,52 @@ WolkBuilder Wolk::newBuilder(Device device)
     return WolkBuilder(device);
 }
 
+template <typename T> void Wolk::addSensorReading(const std::string& reference, T value, unsigned long long rtc)
+{
+    addSensorReading(reference, std::to_string(value), rtc);
+}
+
 template <> void Wolk::addSensorReading(const std::string& reference, std::string value, unsigned long long rtc)
 {
-    if (rtc == 0)
-    {
-        rtc = Wolk::currentRtc();
-    }
-
-    auto sensorReading = std::make_shared<SensorReading>(value, reference, rtc);
-
+    auto sensorReading = std::make_shared<SensorReading>(value, reference, rtc != 0 ? rtc : Wolk::currentRtc());
     addToCommandBuffer(
       [=]() -> void { m_persistence->putSensorReading(sensorReading->getReference(), sensorReading); });
 }
 
-template <typename T> void Wolk::addSensorReading(const std::string& reference, T value, unsigned long long rtc)
+template <typename T>
+void Wolk::addSensorReading(const std::string& reference, std::initializer_list<T> values, unsigned long long int rtc)
 {
-    addSensorReading(reference, std::to_string(value), rtc);
+    if (values.size() == 0)
+    {
+        return;
+    }
+
+    std::vector<std::string> stringifiedValues(values.size());
+    std::transform(values.begin(), values.end(), stringifiedValues.begin(),
+                   [&](const T& value) -> std::string { return std::to_string(value); });
+
+    auto sensorReading =
+      std::make_shared<SensorReading>(stringifiedValues, reference, rtc != 0 ? rtc : Wolk::currentRtc());
+    addToCommandBuffer(
+      [=]() -> void { m_persistence->putSensorReading(sensorReading->getReference(), sensorReading); });
+}
+
+template <typename T>
+void Wolk::addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
+{
+    if (values.empty())
+    {
+        return;
+    }
+
+    std::vector<std::string> stringifiedValues(values.size());
+    std::transform(values.begin(), values.end(), stringifiedValues.begin(),
+                   [&](const T& value) -> std::string { return std::to_string(value); });
+
+    auto sensorReading =
+      std::make_shared<SensorReading>(stringifiedValues, reference, rtc != 0 ? rtc : Wolk::currentRtc());
+    addToCommandBuffer(
+      [=]() -> void { m_persistence->putSensorReading(sensorReading->getReference(), sensorReading); });
 }
 
 template <> void Wolk::addSensorReading(const std::string& reference, bool value, unsigned long long rtc)
@@ -189,8 +225,7 @@ void Wolk::publishActuatorStatuses()
     for (const std::string& key : m_persistence->getGetActuatorStatusesKeys())
     {
         const auto actuatorStatus = m_persistence->getActuatorStatus(key);
-        const std::shared_ptr<OutboundMessage> outboundMessage =
-          OutboundMessageFactory::make(m_device.getDeviceKey(), {actuatorStatus});
+        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->make({actuatorStatus});
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
@@ -204,8 +239,7 @@ void Wolk::publishAlarms()
     for (const std::string& key : m_persistence->getAlarmsKeys())
     {
         const auto alarms = m_persistence->getAlarms(key, PUBLISH_BATCH_ITEMS_COUNT);
-        const std::shared_ptr<OutboundMessage> outboundMessage =
-          OutboundMessageFactory::make(m_device.getDeviceKey(), alarms);
+        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->make(alarms);
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
@@ -219,8 +253,7 @@ void Wolk::publishSensorReadings()
     for (const std::string& key : m_persistence->getSensorReadingsKeys())
     {
         const auto sensorReadings = m_persistence->getSensorReadings(key, PUBLISH_BATCH_ITEMS_COUNT);
-        const std::shared_ptr<OutboundMessage> outboundMessage =
-          OutboundMessageFactory::make(m_device.getDeviceKey(), sensorReadings);
+        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->make(sensorReadings);
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
@@ -265,7 +298,7 @@ void Wolk::publishFirmwareVersion()
     {
         const auto firmwareVerion = m_firmwareUpdateService->getFirmwareVersion();
         const std::shared_ptr<OutboundMessage> outboundMessage =
-          OutboundMessageFactory::makeFromFirmwareVersion(m_device.getDeviceKey(), firmwareVerion);
+          m_outboundMessageFactory->makeFromFirmwareVersion(firmwareVerion);
 
         if (!(outboundMessage && m_connectivityService->publish(outboundMessage)))
         {

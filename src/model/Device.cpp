@@ -27,6 +27,16 @@ Device::Device(std::string key, std::string password, std::vector<std::string> a
 {
 }
 
+void Device::addSensor(const std::string& reference, const std::string& delimiter)
+{
+    if (delimiter.empty())
+    {
+        return;
+    }
+
+    m_sensorDelimiters[reference] = delimiter;
+}
+
 const std::string& Device::getDeviceKey() const
 {
     return m_key;
@@ -40,5 +50,10 @@ const std::string& Device::getDevicePassword() const
 const std::vector<std::string> Device::getActuatorReferences() const
 {
     return m_actuatorReferences;
+}
+
+const std::map<std::string, std::string> Device::getSensorDelimiters() const
+{
+    return m_sensorDelimiters;
 }
 }    // namespace wolkabout

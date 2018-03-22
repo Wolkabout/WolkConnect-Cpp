@@ -22,6 +22,7 @@
 #include "OutboundDataService.h"
 #include "Wolk.h"
 #include "connectivity/ConnectivityService.h"
+#include "connectivity/json/JsonSingleOutboundMessageFactory.h"
 #include "connectivity/mqtt/MqttConnectivityService.h"
 #include "connectivity/mqtt/PahoMqttClient.h"
 #include "model/Device.h"
@@ -125,14 +126,20 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
         }
     }
 
+    auto outboundMessageFactory =
+      std::make_shared<JsonSingleOutboundMessageFactory>(m_device.getDeviceKey(), m_device.getSensorDelimiters());
+
     auto mqttClient = std::make_shared<PahoMqttClient>();
     auto connectivityService = std::make_shared<MqttConnectivityService>(mqttClient, m_device, m_host);
 
     auto inboundMessageHandler = std::make_shared<InboundMessageHandler>(m_device);
-    auto outboundServiceDataHandler = std::make_shared<OutboundDataService>(m_device, connectivityService);
+    auto outboundDataServiceHandler =
+      std::make_shared<OutboundDataService>(m_device, *outboundMessageFactory, *connectivityService);
 
     auto wolk = std::unique_ptr<Wolk>(
-      new Wolk(connectivityService, m_persistence, inboundMessageHandler, outboundServiceDataHandler, m_device));
+      new Wolk(connectivityService, m_persistence, inboundMessageHandler, outboundDataServiceHandler, m_device));
+
+    wolk->m_outboundMessageFactory = outboundMessageFactory;
 
     wolk->m_actuationHandlerLambda = m_actuationHandlerLambda;
     wolk->m_actuationHandler = m_actuationHandler;
@@ -142,12 +149,12 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 
     wolk->m_fileDownloadService = std::make_shared<FileDownloadService>(
       m_maxFirmwareFileSize, m_maxFirmwareFileChunkSize, std::unique_ptr<FileHandler>(new FileHandler()),
-      outboundServiceDataHandler);
+      outboundDataServiceHandler);
 
     if (m_firmwareInstaller.lock() != nullptr)
     {
         wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-          m_firmwareVersion, m_firmwareDownloadDirectory, m_maxFirmwareFileSize, outboundServiceDataHandler,
+          m_firmwareVersion, m_firmwareDownloadDirectory, m_maxFirmwareFileSize, outboundDataServiceHandler,
           wolk->m_fileDownloadService, m_urlFileDownloader, m_firmwareInstaller);
     }
 

@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef OUTBOUNDMESSAGEFACTORY_H
-#define OUTBOUNDMESSAGEFACTORY_H
+#ifndef JSONSINGLEOUTBOUNDMESSAGEFACTORY_H
+#define JSONSINGLEOUTBOUNDMESSAGEFACTORY_H
 
-#include "model/OutboundMessage.h"
+#include "connectivity/OutboundMessageFactory.h"
 
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace wolkabout
@@ -29,29 +31,27 @@ class Alarm;
 class SensorReading;
 class FirmwareUpdateResponse;
 class FilePacketRequest;
+class OutboundMessage;
 
-class OutboundMessageFactory
+class JsonSingleOutboundMessageFactory : public OutboundMessageFactory
 {
 public:
-    OutboundMessageFactory() = delete;
+    JsonSingleOutboundMessageFactory(std::string deviceKey, std::map<std::string, std::string> sensorDelimiters);
 
-    static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
-                                                 std::vector<std::shared_ptr<SensorReading>> sensorReadings);
-    static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
-                                                 std::vector<std::shared_ptr<Alarm>> alarms);
-    static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
-                                                 std::vector<std::shared_ptr<ActuatorStatus>> actuatorStatuses);
+    std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<SensorReading>> sensorReadings) override;
+    std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<Alarm>> alarms) override;
+    std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<ActuatorStatus>> actuatorStatuses) override;
 
-    static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
-                                                 const FirmwareUpdateResponse& firmwareUpdateResponse);
+    std::shared_ptr<OutboundMessage> make(const FirmwareUpdateResponse& firmwareUpdateResponse) override;
 
-    static std::shared_ptr<OutboundMessage> make(const std::string& deviceKey,
-                                                 const FilePacketRequest& filePacketRequest);
+    std::shared_ptr<OutboundMessage> make(const FilePacketRequest& filePacketRequest) override;
 
-    static std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& deviceKey,
-                                                                    const std::string& firmwareVerion);
+    std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& firmwareVerion) override;
 
 private:
+    std::string m_deviceKey;
+    std::map<std::string, std::string> m_sensorDelimiters;
+
     static const constexpr char* SENSOR_READINGS_TOPIC_ROOT = "readings/";
     static const constexpr char* ALARMS_TOPIC_ROOT = "events/";
     static const constexpr char* ACTUATOR_STATUS_TOPIC_ROOT = "actuators/status/";

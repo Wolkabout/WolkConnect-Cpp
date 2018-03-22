@@ -20,6 +20,7 @@
 #include "model/Reading.h"
 
 #include <string>
+#include <vector>
 
 namespace wolkabout
 {
@@ -28,11 +29,12 @@ class SensorReading : public Reading
 public:
     SensorReading();
     SensorReading(std::string value, std::string reference, unsigned long long int rtc = 0);
+    SensorReading(std::vector<std::string> values, std::string reference, unsigned long long int rtc = 0);
 
     virtual ~SensorReading() = default;
 
     void acceptVisit(ReadingVisitor& visitor) override;
 };
-}
+}    // namespace wolkabout
 
 #endif
