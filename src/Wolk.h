@@ -77,6 +77,15 @@ public:
      */
     template <typename T> void addSensorReading(const std::string& reference, T value, unsigned long long int rtc = 0);
 
+    // TODO: Document
+    template <typename T>
+    void addSensorReading(const std::string& reference, std::initializer_list<T> values,
+                          unsigned long long int rtc = 0);
+
+    // TODO: Document
+    template <typename T>
+    void addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
+
     /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
