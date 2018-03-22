@@ -19,7 +19,7 @@
 #include "ActuatorStatusProvider.h"
 #include "WolkBuilder.h"
 #include "connectivity/ConnectivityService.h"
-#include "connectivity/json/JsonSingleOutboundMessageFactory.h"
+#include "connectivity/json/OutboundMessageFactory.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"

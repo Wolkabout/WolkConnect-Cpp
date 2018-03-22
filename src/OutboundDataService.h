@@ -37,7 +37,7 @@ public:
 private:
     Device m_device;
 
-    OutboundMessageFactory& m_outboundMessageFactory;
+	OutboundMessageFactory& m_outboundMessageFactory;
 
     ConnectivityService& m_connectivityService;
 };
