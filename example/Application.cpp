@@ -90,11 +90,11 @@ int main(int /* argc */, char** /* argv */)
     wolk->connect();
 
     wolk->addAlarm("MA", "High Humidity");
-    
+
     wolk->addSensorReading("P", 25.6);
     wolk->addSensorReading("T", 1024);
     wolk->addSensorReading("H", 52);
-    
+
     wolk->addSensorReading("ACL", {1, 0, 0});
 
     wolk->publish();

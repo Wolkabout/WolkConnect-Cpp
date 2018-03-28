@@ -31,6 +31,7 @@
 #include "persistence/inmemory/InMemoryPersistence.h"
 #include "service/FileDownloadService.h"
 #include "service/FirmwareUpdateService.h"
+#include "service/KeepAliveService.h"
 
 #include <functional>
 #include <stdexcept>
@@ -158,6 +159,9 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
           wolk->m_fileDownloadService, m_urlFileDownloader, m_firmwareInstaller);
     }
 
+    wolk->m_keepAliveService = std::make_shared<KeepAliveService>(
+      *wolk->m_outboundMessageFactory, *wolk->m_connectivityService, Wolk::KEEP_ALIVE_INTERVAL);
+
     inboundMessageHandler->setActuatorCommandHandler(
       [&](const ActuatorCommand& actuatorCommand) -> void { wolk->handleActuatorCommand(actuatorCommand); });
 
@@ -177,6 +181,14 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
               handler->handleFirmwareUpdateCommand(firmwareUpdateCommand);
           }
       });
+
+    std::weak_ptr<KeepAliveService> keepAliveService_weak{wolk->m_keepAliveService};
+    inboundMessageHandler->setPongHandler([=]() -> void {
+        if (auto handler = keepAliveService_weak.lock())
+        {
+            handler->handlePong();
+        }
+    });
 
     connectivityService->setListener(std::dynamic_pointer_cast<ConnectivityServiceListener>(inboundMessageHandler));
 

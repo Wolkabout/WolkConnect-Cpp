@@ -45,6 +45,8 @@ public:
     virtual std::shared_ptr<OutboundMessage> make(const FilePacketRequest& filePacketRequest) = 0;
 
     virtual std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& firmwareVerion) = 0;
+
+    virtual std::shared_ptr<OutboundMessage> makePing() = 0;
 };
 }    // namespace wolkabout
 

@@ -48,6 +48,8 @@ public:
 
     std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& firmwareVerion) override;
 
+    std::shared_ptr<OutboundMessage> makePing() override;
+
 private:
     std::string m_deviceKey;
     std::map<std::string, std::string> m_sensorDelimiters;
@@ -58,6 +60,7 @@ private:
     static const constexpr char* FIRMWARE_UPDATE_STATUS_TOPIC_ROOT = "service/status/firmware/";
     static const constexpr char* FILE_HANDLING_STATUS_TOPIC_ROOT = "service/status/file/";
     static const constexpr char* FIRMWARE_VERSION_TOPIC_ROOT = "firmware/version/";
+    static const constexpr char* PING_TOPIC_ROOT = "ping/";
 };
 }    // namespace wolkabout
 

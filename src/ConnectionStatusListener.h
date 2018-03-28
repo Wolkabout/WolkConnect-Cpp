@@ -13,36 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef TIMER_H
-#define TIMER_H
-
-#include <atomic>
-#include <condition_variable>
-#include <functional>
-#include <memory>
-#include <thread>
+#ifndef CONNECTIONSTATUSLISTENER_H
+#define CONNECTIONSTATUSLISTENER_H
 
 namespace wolkabout
 {
-class Timer
+class ConnectionStatusListener
 {
 public:
-    Timer();
-    ~Timer();
+    virtual ~ConnectionStatusListener() = default;
 
-    void start(std::chrono::milliseconds interval, std::function<void()> callback);
-    void run(std::chrono::milliseconds interval, std::function<void()> callback);
-    void stop();
-    bool running() const;
-
-private:
-    std::atomic_bool m_isRunning;
-    std::mutex m_lock;
-    std::condition_variable m_condition;
-    std::unique_ptr<std::thread> m_worker;
+    virtual void connected() = 0;
+    virtual void disconnected() = 0;
 };
+}
 
-}    // namespace wolkabout
-
-#endif    // TIMER_H
+#endif    // CONNECTIONSTATUSLISTENER_H
