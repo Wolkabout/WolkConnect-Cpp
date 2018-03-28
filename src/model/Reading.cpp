@@ -15,6 +15,7 @@
  */
 
 #include "model/Reading.h"
+#include "utilities/StringUtils.h"
 
 namespace wolkabout
 {
@@ -30,6 +31,11 @@ const std::vector<std::string>& Reading::getValues() const
 
 const std::string& Reading::getValue() const
 {
+    if (m_values.empty())
+    {
+        return StringUtils::EMPTY_STRING;
+    }
+    
     return m_values.at(0);
 }
 

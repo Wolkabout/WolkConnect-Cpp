@@ -25,6 +25,8 @@ static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
                                         "abcdefghijklmnopqrstuvwxyz"
                                         "0123456789+/";
 
+const std::string StringUtils::EMPTY_STRING = "";
+    
 bool StringUtils::contains(const std::string& string, char c)
 {
     return string.find(c) != std::string::npos;
