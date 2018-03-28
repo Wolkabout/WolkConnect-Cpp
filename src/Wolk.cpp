@@ -64,19 +64,7 @@ template <> void Wolk::addSensorReading(const std::string& reference, std::strin
 template <typename T>
 void Wolk::addSensorReading(const std::string& reference, std::initializer_list<T> values, unsigned long long int rtc)
 {
-    if (values.size() == 0)
-    {
-        return;
-    }
-
-    std::vector<std::string> stringifiedValues(values.size());
-    std::transform(values.begin(), values.end(), stringifiedValues.begin(),
-                   [&](const T& value) -> std::string { return std::to_string(value); });
-
-    auto sensorReading =
-      std::make_shared<SensorReading>(stringifiedValues, reference, rtc != 0 ? rtc : Wolk::currentRtc());
-    addToCommandBuffer(
-      [=]() -> void { m_persistence->putSensorReading(sensorReading->getReference(), sensorReading); });
+    addSensorReading(reference, std::vector<T>(values), rtc);
 }
 
 template <typename T>
