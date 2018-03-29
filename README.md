@@ -51,7 +51,7 @@ std::unique_ptr<wolkabout::Wolk> wolk =
 
         return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
     })
-    .configurationHandler([](const std::map<std::string, std::string> configuration) -> void {
+    .configurationHandler([](const std::map<std::string, std::string>& configuration) -> void {
         // TODO invoke code which sets device configuration
     })
     .configurationProvider([]() -> const std::map<std::string, std::string>& {

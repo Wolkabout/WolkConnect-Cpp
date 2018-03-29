@@ -201,7 +201,8 @@ std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromSenso
     return std::make_shared<OutboundMessage>(jPayload.dump(), topic, sensorReadings.size());
 }
 
-std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromAlarms(std::vector<std::shared_ptr<Alarm>> alarms)
+std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromAlarms(
+  std::vector<std::shared_ptr<Alarm>> alarms)
 {
     if (alarms.size() == 0)
     {
@@ -242,7 +243,8 @@ std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromFirmw
     return std::make_shared<OutboundMessage>(payload, topic, 1);
 }
 
-std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromFilePacketRequest(const FilePacketRequest& filePacketRequest)
+std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromFilePacketRequest(
+  const FilePacketRequest& filePacketRequest)
 {
     const json jPayload(filePacketRequest);
     const std::string payload = jPayload.dump();
@@ -258,12 +260,13 @@ std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromFirmw
     return std::make_shared<OutboundMessage>(firmwareVerion, topic, 1);
 }
 
-std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromConfiguration(const std::map<std::string, std::string>& configuration)
+std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromConfiguration(
+  const std::map<std::string, std::string>& configuration)
 {
     const json jPayload(configuration);
     const std::string payload = jPayload.dump();
     const std::string topic = CURRENT_CONFIGURATION_TOPIC_ROOT + m_deviceKey;
-    
+
     return std::make_shared<OutboundMessage>(payload, topic, 1);
 }
 }    // namespace wolkabout

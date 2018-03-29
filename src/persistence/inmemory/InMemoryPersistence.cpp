@@ -181,7 +181,7 @@ std::shared_ptr<std::map<std::string, std::string>> InMemoryPersistence::getConf
     {
         return nullptr;
     }
-    
+
     return std::make_shared<std::map<std::string, std::string>>(*m_configuration);
 }
 

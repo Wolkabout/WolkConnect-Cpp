@@ -59,25 +59,25 @@ int main(int /* argc */, char** /* argv */)
             m_configuration["config1"] = "configValue1";
             m_configuration["config2"] = "configValue2";
         }
-        
+
         const std::map<std::string, std::string>& getConfiguration() override
         {
-            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex); // Must be thread safe
+            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
             return m_configuration;
         }
-        
+
         void handleConfiguration(const std::map<std::string, std::string>& configuration) override
         {
-            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex); // Must be thread safe
+            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
             m_configuration = configuration;
         }
-        
+
     private:
         std::mutex m_ConfigurationMutex;
         std::map<std::string, std::string> m_configuration;
     };
     auto deviceConfiguration = std::make_shared<DeviceConfiguration>();
-    
+
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device)
         .actuationHandler([&](const std::string& reference, const std::string& value) -> void {
@@ -120,11 +120,11 @@ int main(int /* argc */, char** /* argv */)
     wolk->connect();
 
     wolk->addAlarm("MA", "High Humidity");
-    
+
     wolk->addSensorReading("P", 25.6);
     wolk->addSensorReading("T", 1024);
     wolk->addSensorReading("H", 52);
-    
+
     wolk->addSensorReading("ACL", {1, 0, 0});
 
     wolk->publish();

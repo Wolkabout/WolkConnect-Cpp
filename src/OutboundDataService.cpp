@@ -31,7 +31,8 @@ OutboundDataService::OutboundDataService(Device device, OutboundMessageFactory& 
 
 void OutboundDataService::addFirmwareUpdateResponse(const FirmwareUpdateResponse& firmwareUpdateResponse)
 {
-    const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory.makeFromFirmwareUpdateResponse(firmwareUpdateResponse);
+    const std::shared_ptr<OutboundMessage> outboundMessage =
+      m_outboundMessageFactory.makeFromFirmwareUpdateResponse(firmwareUpdateResponse);
 
     if (outboundMessage && m_connectivityService.publish(outboundMessage))
     {
@@ -41,7 +42,8 @@ void OutboundDataService::addFirmwareUpdateResponse(const FirmwareUpdateResponse
 
 void OutboundDataService::addFilePacketRequest(const FilePacketRequest& filePacketRequest)
 {
-    const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory.makeFromFilePacketRequest(filePacketRequest);
+    const std::shared_ptr<OutboundMessage> outboundMessage =
+      m_outboundMessageFactory.makeFromFilePacketRequest(filePacketRequest);
 
     if (outboundMessage && m_connectivityService.publish(outboundMessage))
     {

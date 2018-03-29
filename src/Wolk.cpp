@@ -182,7 +182,7 @@ void Wolk::connect()
         }
 
         publishConfiguration();
-        
+
         publish();
     });
 }
@@ -237,7 +237,8 @@ void Wolk::flushActuatorStatuses()
     for (const std::string& key : m_persistence->getGetActuatorStatusesKeys())
     {
         const auto actuatorStatus = m_persistence->getActuatorStatus(key);
-        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->makeFromActuatorStatuses({actuatorStatus});
+        const std::shared_ptr<OutboundMessage> outboundMessage =
+          m_outboundMessageFactory->makeFromActuatorStatuses({actuatorStatus});
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
@@ -265,7 +266,8 @@ void Wolk::flushSensorReadings()
     for (const std::string& key : m_persistence->getSensorReadingsKeys())
     {
         const auto sensorReadings = m_persistence->getSensorReadings(key, PUBLISH_BATCH_ITEMS_COUNT);
-        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->makeFromSensorReadings(sensorReadings);
+        const std::shared_ptr<OutboundMessage> outboundMessage =
+          m_outboundMessageFactory->makeFromSensorReadings(sensorReadings);
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
@@ -283,7 +285,7 @@ void Wolk::flushConfiguration()
     }
 
     std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->makeFromConfiguration(*configuration);
-    
+
     if (outboundMessage && m_connectivityService->publish(outboundMessage))
     {
         m_persistence->removeConfiguration();

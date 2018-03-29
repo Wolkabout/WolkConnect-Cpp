@@ -88,7 +88,7 @@ wolkabout::WolkBuilder& WolkBuilder::configurationHandler(std::weak_ptr<Configur
     m_configurationHandlerLambda = nullptr;
     return *this;
 }
-    
+
 WolkBuilder& WolkBuilder::configurationProvider(
   std::function<const std::map<std::string, std::string>&()> configurationProvider)
 {
@@ -97,13 +97,13 @@ WolkBuilder& WolkBuilder::configurationProvider(
     return *this;
 }
 
-wolkabout::WolkBuilder &WolkBuilder::configurationProvider(std::weak_ptr<ConfigurationProvider> configurationProvider)
+wolkabout::WolkBuilder& WolkBuilder::configurationProvider(std::weak_ptr<ConfigurationProvider> configurationProvider)
 {
     m_configurationProvider = configurationProvider;
     m_configurationProviderLambda = nullptr;
     return *this;
 }
-    
+
 WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persistence)
 {
     m_persistence = persistence;
@@ -188,7 +188,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 
     wolk->m_configurationHandlerLambda = m_configurationHandlerLambda;
     wolk->m_configurationHandler = m_configurationHandler;
-    
+
     wolk->m_configurationProviderLambda = m_configurationProviderLambda;
     wolk->m_configurationProvider = m_configurationProvider;
 
