@@ -128,55 +128,6 @@ public:
     void addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
 
     /**
-     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
-     *        This method is thread safe, and can be called from multiple thread simultaneously
-     * @param reference Sensor reference
-     * @param values Multi-value sensor values<br>
-     *              Supported types:<br>
-     *               - bool<br>
-     *               - float<br>
-     *               - double<br>
-     *               - signed int<br>
-     *               - signed long int<br>
-     *               - signed long long int<br>
-     *               - unsigned int<br>
-     *               - unsigned long int<br>
-     *               - unsigned long long int<br>
-     *               - string<br>
-     *               - char*<br>
-     *               - const char*<br>
-     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
-     *            If omitted current POSIX time is adopted
-     */
-    template <typename T>
-    void addSensorReading(const std::string& reference, std::initializer_list<T> values,
-                          unsigned long long int rtc = 0);
-
-    /**
-     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
-     *        This method is thread safe, and can be called from multiple thread simultaneously
-     * @param reference Sensor reference
-     * @param values Multi-value sensor values<br>
-     *              Supported types:<br>
-     *               - bool<br>
-     *               - float<br>
-     *               - double<br>
-     *               - signed int<br>
-     *               - signed long int<br>
-     *               - signed long long int<br>
-     *               - unsigned int<br>
-     *               - unsigned long int<br>
-     *               - unsigned long long int<br>
-     *               - string<br>
-     *               - char*<br>
-     *               - const char*<br>
-     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
-     *            If omitted current POSIX time is adopted
-     */
-    template <typename T>
-    void addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
-
-    /**
      * @brief Publishes alarm to WolkAbout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param reference Alarm reference
