@@ -107,6 +107,12 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withoutInternalPing()
+{
+    m_pingEnabled = false;
+    return *this;
+}
+
 std::unique_ptr<Wolk> WolkBuilder::build() const
 {
     if (m_device.getDeviceKey().empty())
@@ -159,9 +165,6 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
           wolk->m_fileDownloadService, m_urlFileDownloader, m_firmwareInstaller);
     }
 
-    wolk->m_keepAliveService = std::make_shared<KeepAliveService>(
-      *wolk->m_outboundMessageFactory, *wolk->m_connectivityService, Wolk::KEEP_ALIVE_INTERVAL);
-
     inboundMessageHandler->setActuatorCommandHandler(
       [&](const ActuatorCommand& actuatorCommand) -> void { wolk->handleActuatorCommand(actuatorCommand); });
 
@@ -182,13 +185,19 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
           }
       });
 
-    std::weak_ptr<KeepAliveService> keepAliveService_weak{wolk->m_keepAliveService};
-    inboundMessageHandler->setPongHandler([=]() -> void {
-        if (auto handler = keepAliveService_weak.lock())
-        {
-            handler->handlePong();
-        }
-    });
+    if (m_pingEnabled)
+    {
+        wolk->m_keepAliveService = std::make_shared<KeepAliveService>(
+          *wolk->m_outboundMessageFactory, *wolk->m_connectivityService, Wolk::KEEP_ALIVE_INTERVAL);
+
+        std::weak_ptr<KeepAliveService> keepAliveService_weak{wolk->m_keepAliveService};
+        inboundMessageHandler->setPongHandler([=]() -> void {
+            if (auto handler = keepAliveService_weak.lock())
+            {
+                handler->handlePong();
+            }
+        });
+    }
 
     connectivityService->setListener(std::dynamic_pointer_cast<ConnectivityServiceListener>(inboundMessageHandler));
 
@@ -208,6 +217,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_firmwareDownloadDirectory{""}
 , m_maxFirmwareFileSize{0}
 , m_maxFirmwareFileChunkSize{0}
+, m_pingEnabled{true}
 {
 }
 }    // namespace wolkabout

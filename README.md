@@ -179,3 +179,22 @@ std::unique_ptr<wolkabout::Wolk> wolk =
 
     wolk->connect();
 ```
+
+**Ping Mechanism:**
+
+WolkAbout C++ Connector by default uses ping mechanism to notify Wolkabout IOT Platform that device is still connected.
+Ping message is sent to Wolkabout IOT Platform every 10 minutes.
+
+To reduce network usage ping mechanism can be disabled in following manner:
+
+```cpp
+wolkabout::Device device("DEVICE_KEY", "DEVICE_PASSWORD", {"ACTUATOR_REFERENCE_ONE", "ACTUATOR_REFERENCE_TWO"});
+
+std::unique_ptr<wolkabout::Wolk> wolk =
+  wolkabout::Wolk::newBuilder(device)
+    // actuation handlers setup
+    .withoutInternalPing() // Disable ping mechanism
+    .build();
+
+    wolk->connect();
+```

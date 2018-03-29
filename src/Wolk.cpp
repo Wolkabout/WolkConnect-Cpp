@@ -155,7 +155,7 @@ void Wolk::connect()
             return;
         }
 
-        m_keepAliveService->connected();
+        notifyConnected();
 
         publishFirmwareVersion();
         m_firmwareUpdateService->reportFirmwareUpdateResult();
@@ -173,7 +173,7 @@ void Wolk::disconnect()
 {
     addToCommandBuffer([=]() -> void {
         m_connectivityService->disconnect();
-        m_keepAliveService->disconnected();
+        notifyDisonnected();
     });
 }
 
@@ -300,6 +300,22 @@ void Wolk::publishFirmwareVersion()
         {
             // TODO Log error
         }
+    }
+}
+
+void Wolk::notifyConnected()
+{
+    if (m_keepAliveService)
+    {
+        m_keepAliveService->connected();
+    }
+}
+
+void Wolk::notifyDisonnected()
+{
+    if (m_keepAliveService)
+    {
+        m_keepAliveService->disconnected();
     }
 }
 }    // namespace wolkabout
