@@ -19,13 +19,15 @@
 
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
-#include "utilities/CommandBuffer.h"
 #include "WolkBuilder.h"
+#include "connectivity/json/JsonSingleOutboundMessageFactory.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Device.h"
+#include "utilities/CommandBuffer.h"
 
 #include <functional>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
@@ -76,6 +78,55 @@ public:
     template <typename T> void addSensorReading(const std::string& reference, T value, unsigned long long int rtc = 0);
 
     /**
+     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     * @param reference Sensor reference
+     * @param values Multi-value sensor values<br>
+     *              Supported types:<br>
+     *               - bool<br>
+     *               - float<br>
+     *               - double<br>
+     *               - signed int<br>
+     *               - signed long int<br>
+     *               - signed long long int<br>
+     *               - unsigned int<br>
+     *               - unsigned long int<br>
+     *               - unsigned long long int<br>
+     *               - string<br>
+     *               - char*<br>
+     *               - const char*<br>
+     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
+     *            If omitted current POSIX time is adopted
+     */
+    template <typename T>
+    void addSensorReading(const std::string& reference, std::initializer_list<T> values,
+                          unsigned long long int rtc = 0);
+
+    /**
+     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     * @param reference Sensor reference
+     * @param values Multi-value sensor values<br>
+     *              Supported types:<br>
+     *               - bool<br>
+     *               - float<br>
+     *               - double<br>
+     *               - signed int<br>
+     *               - signed long int<br>
+     *               - signed long long int<br>
+     *               - unsigned int<br>
+     *               - unsigned long int<br>
+     *               - unsigned long long int<br>
+     *               - string<br>
+     *               - char*<br>
+     *               - const char*<br>
+     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
+     *            If omitted current POSIX time is adopted
+     */
+    template <typename T>
+    void addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
+
+    /**
      * @brief Publishes alarm to WolkAbout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param reference Alarm reference
@@ -111,8 +162,8 @@ private:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 
     Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-		 std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
-		 std::shared_ptr<OutboundServiceDataHandler> outboundServiceDataHandler, Device device);
+         std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
+         std::shared_ptr<OutboundServiceDataHandler> outboundServiceDataHandler, Device device);
 
     void addToCommandBuffer(std::function<void()> command);
 
@@ -127,18 +178,20 @@ private:
     void handleActuatorCommand(const ActuatorCommand& actuatorCommand);
     void handleSetActuator(const ActuatorCommand& actuatorCommand);
 
-	void publishFirmwareVersion();
+    void publishFirmwareVersion();
+
+    std::shared_ptr<OutboundMessageFactory> m_outboundMessageFactory;
 
     std::shared_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
 
-	std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
-	std::shared_ptr<OutboundServiceDataHandler> m_outboundServiceDataHandler;
+    std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
+    std::shared_ptr<OutboundServiceDataHandler> m_outboundServiceDataHandler;
 
-	std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
-	std::shared_ptr<FileDownloadService> m_fileDownloadService;
+    std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
+    std::shared_ptr<FileDownloadService> m_fileDownloadService;
 
-	Device m_device;
+    Device m_device;
 
     std::function<void(std::string, std::string)> m_actuationHandlerLambda;
     std::weak_ptr<ActuationHandler> m_actuationHandler;
@@ -148,6 +201,6 @@ private:
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
 };
-}
+}    // namespace wolkabout
 
 #endif

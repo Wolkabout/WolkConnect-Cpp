@@ -36,6 +36,6 @@ private:
     std::string m_topic;
     unsigned long long int m_itemsCount;
 };
-}
+}    // namespace wolkabout
 
 #endif

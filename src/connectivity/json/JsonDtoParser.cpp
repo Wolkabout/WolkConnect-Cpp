@@ -20,8 +20,8 @@
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
-#include "model/SensorReading.h"
 #include "model/FirmwareUpdateCommand.h"
+#include "model/SensorReading.h"
 #include "utilities/StringUtils.h"
 
 #include <string>
@@ -45,7 +45,7 @@ void from_json(const json& j, ActuatorCommand& p)
             return j.at("value").get<std::string>();
         }
 
-		return "";
+        return "";
     }();
 
     p = ActuatorCommand(type == "SET" ? ActuatorCommand::Type::SET : ActuatorCommand::Type::STATUS, "", value);
@@ -70,133 +70,133 @@ bool JsonParser::fromJson(const std::string& jsonString, ActuatorCommand& actuat
 /*** FIRMWARE UPDATE COMMAND ***/
 void from_json(const json& j, FirmwareUpdateCommand& p)
 {
-	const std::string typeStr = j.at("command").get<std::string>();
+    const std::string typeStr = j.at("command").get<std::string>();
 
-	FirmwareUpdateCommand::Type type;
-	if(typeStr == "INSTALL")
-	{
-		type = FirmwareUpdateCommand::Type::INSTALL;
-	}
-	else if(typeStr == "ABORT")
-	{
-		type = FirmwareUpdateCommand::Type::ABORT;
-	}
-	else if(typeStr == "FILE_UPLOAD")
-	{
-		type = FirmwareUpdateCommand::Type::FILE_UPLOAD;
-	}
-	else if(typeStr == "URL_DOWNLOAD")
-	{
-		type = FirmwareUpdateCommand::Type::URL_DOWNLOAD;
-	}
-	else
-	{
-		type = FirmwareUpdateCommand::Type::UNKNOWN;
-	}
+    FirmwareUpdateCommand::Type type;
+    if (typeStr == "INSTALL")
+    {
+        type = FirmwareUpdateCommand::Type::INSTALL;
+    }
+    else if (typeStr == "ABORT")
+    {
+        type = FirmwareUpdateCommand::Type::ABORT;
+    }
+    else if (typeStr == "FILE_UPLOAD")
+    {
+        type = FirmwareUpdateCommand::Type::FILE_UPLOAD;
+    }
+    else if (typeStr == "URL_DOWNLOAD")
+    {
+        type = FirmwareUpdateCommand::Type::URL_DOWNLOAD;
+    }
+    else
+    {
+        type = FirmwareUpdateCommand::Type::UNKNOWN;
+    }
 
-	const bool autoInstall = [&]() -> bool {
-		if (j.find("autoInstall") != j.end())
-		{
-			return j.at("autoInstall").get<bool>();
-		}
+    const bool autoInstall = [&]() -> bool {
+        if (j.find("autoInstall") != j.end())
+        {
+            return j.at("autoInstall").get<bool>();
+        }
 
-		return false;
-	}();
+        return false;
+    }();
 
-	if(type == FirmwareUpdateCommand::Type::FILE_UPLOAD)
-	{
-		const std::string name = [&]() -> std::string {
-			if (j.find("fileName") != j.end())
-			{
-				return j.at("fileName").get<std::string>();
-			}
+    if (type == FirmwareUpdateCommand::Type::FILE_UPLOAD)
+    {
+        const std::string name = [&]() -> std::string {
+            if (j.find("fileName") != j.end())
+            {
+                return j.at("fileName").get<std::string>();
+            }
 
-			return "";
-		}();
+            return "";
+        }();
 
-		const uint_fast64_t size = [&]() -> uint_fast64_t {
-			if (j.find("fileSize") != j.end())
-			{
-				return j.at("fileSize").get<uint_fast64_t>();
-			}
+        const uint_fast64_t size = [&]() -> uint_fast64_t {
+            if (j.find("fileSize") != j.end())
+            {
+                return j.at("fileSize").get<uint_fast64_t>();
+            }
 
-			return 0;
-		}();
+            return 0;
+        }();
 
-		const std::string hash = [&]() -> std::string {
-			if (j.find("fileHash") != j.end())
-			{
-				return j.at("fileHash").get<std::string>();
-			}
+        const std::string hash = [&]() -> std::string {
+            if (j.find("fileHash") != j.end())
+            {
+                return j.at("fileHash").get<std::string>();
+            }
 
-			return "";
-		}();
+            return "";
+        }();
 
-		p = FirmwareUpdateCommand(type, name, size, hash, autoInstall);
-		return;
-	}
-	else if(type == FirmwareUpdateCommand::Type::URL_DOWNLOAD)
-	{
-		const std::string url = [&]() -> std::string {
-			if (j.find("fileUrl") != j.end())
-			{
-				return j.at("fileUrl").get<std::string>();
-			}
+        p = FirmwareUpdateCommand(type, name, size, hash, autoInstall);
+        return;
+    }
+    else if (type == FirmwareUpdateCommand::Type::URL_DOWNLOAD)
+    {
+        const std::string url = [&]() -> std::string {
+            if (j.find("fileUrl") != j.end())
+            {
+                return j.at("fileUrl").get<std::string>();
+            }
 
-			return "";
-		}();
+            return "";
+        }();
 
-		p = FirmwareUpdateCommand(type, url, autoInstall);
-		return;
-	}
-	else
-	{
-		p = FirmwareUpdateCommand(type);
-	}
+        p = FirmwareUpdateCommand(type, url, autoInstall);
+        return;
+    }
+    else
+    {
+        p = FirmwareUpdateCommand(type);
+    }
 }
 
 bool JsonParser::fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommandDto)
 {
-	try
-	{
-		if(StringUtils::startsWith(jsonString, "{"))
-		{
-			json j = json::parse(jsonString);
-			firmwareUpdateCommandDto = j;
-		}
-		else
-		{
-			FirmwareUpdateCommand::Type type;
-			if(jsonString == "INSTALL")
-			{
-				type = FirmwareUpdateCommand::Type::INSTALL;
-			}
-			else if(jsonString == "ABORT")
-			{
-				type = FirmwareUpdateCommand::Type::ABORT;
-			}
-			else if(jsonString == "FILE_UPLOAD")
-			{
-				type = FirmwareUpdateCommand::Type::FILE_UPLOAD;
-			}
-			else if(jsonString == "URL_DOWNLOAD")
-			{
-				type = FirmwareUpdateCommand::Type::URL_DOWNLOAD;
-			}
-			else
-			{
-				type = FirmwareUpdateCommand::Type::UNKNOWN;
-			}
+    try
+    {
+        if (StringUtils::startsWith(jsonString, "{"))
+        {
+            json j = json::parse(jsonString);
+            firmwareUpdateCommandDto = j;
+        }
+        else
+        {
+            FirmwareUpdateCommand::Type type;
+            if (jsonString == "INSTALL")
+            {
+                type = FirmwareUpdateCommand::Type::INSTALL;
+            }
+            else if (jsonString == "ABORT")
+            {
+                type = FirmwareUpdateCommand::Type::ABORT;
+            }
+            else if (jsonString == "FILE_UPLOAD")
+            {
+                type = FirmwareUpdateCommand::Type::FILE_UPLOAD;
+            }
+            else if (jsonString == "URL_DOWNLOAD")
+            {
+                type = FirmwareUpdateCommand::Type::URL_DOWNLOAD;
+            }
+            else
+            {
+                type = FirmwareUpdateCommand::Type::UNKNOWN;
+            }
 
-			firmwareUpdateCommandDto = FirmwareUpdateCommand(type);
-		}
-	}
-	catch (...)
-	{
-		return false;
-	}
+            firmwareUpdateCommandDto = FirmwareUpdateCommand(type);
+        }
+    }
+    catch (...)
+    {
+        return false;
+    }
 
-	return true;
+    return true;
 }
 /*** FIRMWARE UPDATE COMMAND ***/
-}
+}    // namespace wolkabout

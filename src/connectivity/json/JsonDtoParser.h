@@ -33,8 +33,8 @@ public:
     JsonParser() = delete;
 
     static bool fromJson(const std::string& jsonString, ActuatorCommand& actuatorCommand);
-	static bool fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommand);
+    static bool fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommand);
 };
-}
+}    // namespace wolkabout
 
 #endif

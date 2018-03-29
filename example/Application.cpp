@@ -17,71 +17,89 @@
 #include "Wolk.h"
 #include "service/FirmwareInstaller.h"
 
+#include <chrono>
 #include <iostream>
 #include <memory>
-#include <chrono>
-#include <thread>
 #include <string>
+#include <thread>
 
 int main(int /* argc */, char** /* argv */)
 {
-	wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
+    wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
+
+    device.addSensor("P");
+    device.addSensor("T");
+    device.addSensor("H");
+    device.addSensor("ACL", "_");
 
     static bool switchValue = false;
     static int sliderValue = 0;
 
-	class CustomFirmwareInstaller: public wolkabout::FirmwareInstaller
-	{
-	public:
-		bool install(const std::string& firmwareFile) override
-		{
-			// Mock install
-			std::cout << "Updating firmware with file " << firmwareFile << std::endl;
+    class CustomFirmwareInstaller : public wolkabout::FirmwareInstaller
+    {
+    public:
+        bool install(const std::string& firmwareFile) override
+        {
+            // Mock install
+            std::cout << "Updating firmware with file " << firmwareFile << std::endl;
 
-			// Optionally delete 'firmwareFile
-			return true;
-		}
-	};
+            // Optionally delete 'firmwareFile
+            return true;
+        }
+    };
 
-	auto installer = std::make_shared<CustomFirmwareInstaller>();
+    auto installer = std::make_shared<CustomFirmwareInstaller>();
 
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device)
-            .actuationHandler([&](const std::string& reference, const std::string& value) -> void {
-        std::cout << "Actuation request received - Reference: " << reference << " value: " << value << std::endl;
+        .actuationHandler([&](const std::string& reference, const std::string& value) -> void {
+            std::cout << "Actuation request received - Reference: " << reference << " value: " << value << std::endl;
 
-        if (reference == "SW") {
-            switchValue = value == "true" ? true : false;
-        }
-        else if (reference == "SL") {
-            try {
-                sliderValue = std::stoi(value);
-            } catch (...) {
-                sliderValue = 0;
-			}
-		}
-	})
-            .actuatorStatusProvider([&](const std::string& reference) -> wolkabout::ActuatorStatus {
-        if (reference == "SW") {
-            return wolkabout::ActuatorStatus(switchValue ? "true" : "false", wolkabout::ActuatorStatus::State::READY);
-        } else if (reference == "SL") {
-            return wolkabout::ActuatorStatus(std::to_string(sliderValue), wolkabout::ActuatorStatus::State::READY);
-        }
-
-        return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
+            if (reference == "SW")
+            {
+                switchValue = value == "true" ? true : false;
+            }
+            else if (reference == "SL")
+            {
+                try
+                {
+                    sliderValue = std::stoi(value);
+                }
+                catch (...)
+                {
+                    sliderValue = 0;
+                }
+            }
         })
-		.withFirmwareUpdate("2.1.0", installer, ".", 100 * 1024 * 1024, 1024 * 1024)
+        .actuatorStatusProvider([&](const std::string& reference) -> wolkabout::ActuatorStatus {
+            if (reference == "SW")
+            {
+                return wolkabout::ActuatorStatus(switchValue ? "true" : "false",
+                                                 wolkabout::ActuatorStatus::State::READY);
+            }
+            else if (reference == "SL")
+            {
+                return wolkabout::ActuatorStatus(std::to_string(sliderValue), wolkabout::ActuatorStatus::State::READY);
+            }
+
+            return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
+        })
+        .withFirmwareUpdate("2.1.0", installer, ".", 100 * 1024 * 1024, 1024 * 1024)
         .build();
 
     wolk->connect();
 
-    wolk->addSensorReading("P", 1024);
-    wolk->addSensorReading("T", 25.6);
+    wolk->addAlarm("MA", "High Humidity");
+    
+    wolk->addSensorReading("P", 25.6);
+    wolk->addSensorReading("T", 1024);
     wolk->addSensorReading("H", 52);
+    
+    wolk->addSensorReading("ACL", {1, 0, 0});
 
-    wolk->addAlarm("HH", "High Humidity");
+    wolk->publish();
 
-    while(true)
+    while (true)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
     }

@@ -66,7 +66,7 @@ public:
      * have requested number of elements
      */
     virtual std::vector<std::shared_ptr<SensorReading>> getSensorReadings(const std::string& key,
-																		  std::uint_fast64_t count) = 0;
+                                                                          std::uint_fast64_t count) = 0;
 
     /**
      * @brief Removes first {@code count} wolkabout::SensorReadings of this storage, associated with given {@code key}.
@@ -74,7 +74,7 @@ public:
      * @param key   of the wolkabout::SensorReadings
      * @param count number of items to remove
      */
-	virtual void removeSensorReadings(const std::string& key, std::uint_fast64_t count) = 0;
+    virtual void removeSensorReadings(const std::string& key, std::uint_fast64_t count) = 0;
 
     /**
      * Returns {@code std::vector<std::string>>} of wolkabout::SensorReadings keys contained in this storage.
@@ -104,7 +104,7 @@ public:
      * starting from the head, or returns less than {@code count} wolkabout::SensorReadings if this storage does not
      * have requested number of elements
      */
-	virtual std::vector<std::shared_ptr<Alarm>> getAlarms(const std::string& key, std::uint_fast64_t count) = 0;
+    virtual std::vector<std::shared_ptr<Alarm>> getAlarms(const std::string& key, std::uint_fast64_t count) = 0;
 
     /**
      * @brief Removes first {@code count} wolkabout::Alarms of this storage, associated with given {@code key}.
@@ -112,7 +112,7 @@ public:
      * @param key   of the wolkabout::Alarms
      * @param count number of items to remove
      */
-	virtual void removeAlarms(const std::string& key, std::uint_fast64_t count) = 0;
+    virtual void removeAlarms(const std::string& key, std::uint_fast64_t count) = 0;
 
     /**
      * @brief Returns {@code std::vector<std::string>>} of wolkabout::Alarm keys contained in this storage
@@ -164,6 +164,6 @@ public:
      */
     virtual bool isEmpty() = 0;
 };
-}
+}    // namespace wolkabout
 
 #endif

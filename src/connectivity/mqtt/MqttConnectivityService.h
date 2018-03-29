@@ -36,7 +36,7 @@ public:
     bool connect() override;
     void disconnect() override;
 
-	bool isConnected() override;
+    bool isConnected() override;
 
     bool publish(std::shared_ptr<OutboundMessage> outboundMessage) override;
 
@@ -50,6 +50,6 @@ private:
     static const constexpr char* LAST_WILL_TOPIC_ROOT = "lastwill/";
     static const constexpr char* TRUST_STORE = "ca.crt";
 };
-}
+}    // namespace wolkabout
 
 #endif

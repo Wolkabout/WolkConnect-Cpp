@@ -17,6 +17,7 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -32,6 +33,14 @@ public:
      * @param actuatorReferences List of actuator references
      */
     Device(std::string key, std::string password, std::vector<std::string> actuatorReferences = {});
+
+    /**
+     * @brief Add sensor to device
+     * @param reference Sensor reference
+     * @param delimiter Sensor delimiter
+     *
+     */
+    void addSensor(const std::string& reference, const std::string& delimiter = "");
 
     /**
      * @brief Returns device key
@@ -51,13 +60,18 @@ public:
      */
     const std::vector<std::string> getActuatorReferences() const;
 
-    virtual ~Device() = default;
+    /**
+     * @brief Returns sensor delimiters
+     * @return std::map with sensor reference as key, and sensor delimiter as value
+     */
+    const std::map<std::string, std::string> getSensorDelimiters() const;
 
 private:
     std::string m_key;
     std::string m_password;
     std::vector<std::string> m_actuatorReferences;
+    std::map<std::string, std::string> m_sensorDelimiters;
 };
-}
+}    // namespace wolkabout
 
 #endif

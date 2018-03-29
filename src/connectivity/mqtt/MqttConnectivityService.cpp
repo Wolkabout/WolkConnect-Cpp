@@ -21,17 +21,14 @@ namespace wolkabout
 {
 MqttConnectivityService::MqttConnectivityService(std::shared_ptr<MqttClient> mqttClient, Device device,
                                                  std::string host)
-: m_mqttClient(std::move(mqttClient))
-, m_device(std::move(device))
-, m_host(std::move(host))
-, m_connected(false)
+: m_mqttClient(std::move(mqttClient)), m_device(std::move(device)), m_host(std::move(host)), m_connected(false)
 {
-	m_mqttClient->onMessageReceived([this](std::string topic, std::string message) -> void {
-		if(auto handler = m_listener.lock())
-		{
-			handler->messageReceived(topic, message);
-		}
-	});
+    m_mqttClient->onMessageReceived([this](std::string topic, std::string message) -> void {
+        if (auto handler = m_listener.lock())
+        {
+            handler->messageReceived(topic, message);
+        }
+    });
 }
 
 bool MqttConnectivityService::connect()
@@ -41,14 +38,14 @@ bool MqttConnectivityService::connect()
                                              m_device.getDeviceKey());
     if (isConnected)
     {
-		if(auto handler = m_listener.lock())
-		{
-			const auto& topics = handler->getTopics();
-			for (const std::string& topic : topics)
-			{
-				m_mqttClient->subscribe(topic);
-			}
-		}
+        if (auto handler = m_listener.lock())
+        {
+            const auto& topics = handler->getTopics();
+            for (const std::string& topic : topics)
+            {
+                m_mqttClient->subscribe(topic);
+            }
+        }
     }
 
     return isConnected;
@@ -68,4 +65,4 @@ bool MqttConnectivityService::publish(std::shared_ptr<OutboundMessage> outboundM
 {
     return m_mqttClient->publish(outboundMessage->getTopic(), outboundMessage->getContent());
 }
-}
+}    // namespace wolkabout

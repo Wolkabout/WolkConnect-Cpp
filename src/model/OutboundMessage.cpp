@@ -40,4 +40,4 @@ unsigned long long OutboundMessage::getItemsCount() const
 {
     return m_itemsCount;
 }
-}
+}    // namespace wolkabout
