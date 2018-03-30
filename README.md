@@ -182,8 +182,8 @@ std::unique_ptr<wolkabout::Wolk> wolk =
 
 **Keep Alive Mechanism:**
 
-WolkAbout C++ Connector by default uses Keep Alive mechanism to notify Wolkabout IoT Platform that device is still connected.
-Keep alive message is sent to Wolkabout IoT Platform every 10 minutes.
+WolkAbout C++ Connector by default uses Keep Alive mechanism to notify WolkAbout IoT Platform that device is still connected.
+Keep alive message is sent to WolkAbout IoT Platform every 10 minutes.
 
 To reduce network usage Keep Alive mechanism can be disabled in following manner:
 
