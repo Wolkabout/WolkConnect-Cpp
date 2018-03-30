@@ -107,9 +107,9 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withoutInternalPing()
+WolkBuilder& WolkBuilder::withoutKeepAlive()
 {
-    m_pingEnabled = false;
+    m_keepAliveEnabled = false;
     return *this;
 }
 
@@ -185,7 +185,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
           }
       });
 
-    if (m_pingEnabled)
+    if (m_keepAliveEnabled)
     {
         wolk->m_keepAliveService = std::make_shared<KeepAliveService>(
           *wolk->m_outboundMessageFactory, *wolk->m_connectivityService, Wolk::KEEP_ALIVE_INTERVAL);
@@ -217,7 +217,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_firmwareDownloadDirectory{""}
 , m_maxFirmwareFileSize{0}
 , m_maxFirmwareFileChunkSize{0}
-, m_pingEnabled{true}
+, m_keepAliveEnabled{true}
 {
 }
 }    // namespace wolkabout
