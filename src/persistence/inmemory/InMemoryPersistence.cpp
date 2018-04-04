@@ -55,6 +55,7 @@ void InMemoryPersistence::removeSensorReadings(const std::string& key, uint_fast
     std::vector<std::shared_ptr<SensorReading>>& readings = getOrCreateSensorReadingsByKey(key);
     auto size = static_cast<uint_fast64_t>(readings.size());
     readings.erase(readings.begin(), readings.begin() + (count < size ? count : size));
+    readings.shrink_to_fit();
 }
 
 std::vector<std::string> InMemoryPersistence::getSensorReadingsKeys()
@@ -99,6 +100,7 @@ void InMemoryPersistence::removeAlarms(const std::string& key, uint_fast64_t cou
     std::vector<std::shared_ptr<Alarm>>& alarms = getOrCreateAlarmsByKey(key);
     auto size = static_cast<uint_fast64_t>(alarms.size());
     alarms.erase(alarms.begin(), alarms.begin() + (count < size ? count : size));
+    alarms.shrink_to_fit();
 }
 
 std::vector<std::string> InMemoryPersistence::getAlarmsKeys()
@@ -165,5 +167,26 @@ std::vector<std::shared_ptr<Alarm>>& InMemoryPersistence::getOrCreateAlarmsByKey
     }
 
     return m_alarms.at(key);
+}
+
+bool InMemoryPersistence::putConfiguration(const std::map<std::string, std::string>& configuration)
+{
+    m_configuration = std::make_shared<std::map<std::string, std::string>>(configuration);
+    return true;
+}
+
+std::shared_ptr<std::map<std::string, std::string>> InMemoryPersistence::getConfiguration()
+{
+    if (m_configuration == nullptr)
+    {
+        return nullptr;
+    }
+
+    return std::make_shared<std::map<std::string, std::string>>(*m_configuration);
+}
+
+void InMemoryPersistence::removeConfiguration()
+{
+    m_configuration = nullptr;
 }
 }    // namespace wolkabout

@@ -20,10 +20,12 @@
 #include "connectivity/ConnectivityService.h"
 #include "model/ActuatorCommand.h"
 #include "model/BinaryData.h"
+#include "model/ConfigurationCommand.h"
 #include "model/Device.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "utilities/CommandBuffer.h"
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -38,11 +40,13 @@ public:
 
     const std::vector<std::string>& getTopics() const override;
 
-    void setActuatorCommandHandler(std::function<void(ActuatorCommand)> handler);
+    void setActuatorCommandHandler(std::function<void(const ActuatorCommand&)> handler);
 
-    void setBinaryDataHandler(std::function<void(BinaryData)> handler);
+    void setConfigurationHandler(std::function<void(const ConfigurationCommand&)> configurationHandler);
 
-    void setFirmwareUpdateCommandHandler(std::function<void(FirmwareUpdateCommand)> handler);
+    void setBinaryDataHandler(std::function<void(const BinaryData&)> handler);
+
+    void setFirmwareUpdateCommandHandler(std::function<void(const FirmwareUpdateCommand&)> handler);
 
 private:
     void addToCommandBuffer(std::function<void()> command);
@@ -53,11 +57,13 @@ private:
 
     std::vector<std::string> m_subscriptionList;
 
-    std::function<void(ActuatorCommand)> m_actuationHandler;
-    std::function<void(BinaryData)> m_binaryDataHandler;
-    std::function<void(FirmwareUpdateCommand)> m_firmwareUpdateHandler;
+    std::function<void(const ActuatorCommand&)> m_actuationHandler;
+    std::function<void(const ConfigurationCommand&)> m_configurationHandler;
+    std::function<void(const BinaryData&)> m_binaryDataHandler;
+    std::function<void(const FirmwareUpdateCommand&)> m_firmwareUpdateHandler;
 
     static const constexpr char* ACTUATION_REQUEST_TOPIC_ROOT = "actuators/commands/";
+    static const constexpr char* CONFIGURATION_COMMAND_TOPIC_ROOT = "configurations/commands/";
     static const constexpr char* FIRMWARE_UPDATE_TOPIC_ROOT = "service/commands/firmware/";
     static const constexpr char* BINARY_TOPIC_ROOT = "service/binary/";
 };

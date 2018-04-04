@@ -35,7 +35,7 @@ const std::string& Reading::getValue() const
     {
         return StringUtils::EMPTY_STRING;
     }
-    
+
     return m_values.at(0);
 }
 

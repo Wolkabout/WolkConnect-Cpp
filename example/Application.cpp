@@ -19,7 +19,9 @@
 
 #include <chrono>
 #include <iostream>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 
@@ -47,8 +49,34 @@ int main(int /* argc */, char** /* argv */)
             return true;
         }
     };
-
     auto installer = std::make_shared<CustomFirmwareInstaller>();
+
+    class DeviceConfiguration : public wolkabout::ConfigurationProvider, public wolkabout::ConfigurationHandler
+    {
+    public:
+        DeviceConfiguration()
+        {
+            m_configuration["config1"] = "configValue1";
+            m_configuration["config2"] = "configValue2";
+        }
+
+        const std::map<std::string, std::string>& getConfiguration() override
+        {
+            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
+            return m_configuration;
+        }
+
+        void handleConfiguration(const std::map<std::string, std::string>& configuration) override
+        {
+            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
+            m_configuration = configuration;
+        }
+
+    private:
+        std::mutex m_ConfigurationMutex;
+        std::map<std::string, std::string> m_configuration;
+    };
+    auto deviceConfiguration = std::make_shared<DeviceConfiguration>();
 
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device)
@@ -84,18 +112,22 @@ int main(int /* argc */, char** /* argv */)
 
             return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
         })
+        .configurationHandler(deviceConfiguration)
+        .configurationProvider(deviceConfiguration)
         .withFirmwareUpdate("2.1.0", installer, ".", 100 * 1024 * 1024, 1024 * 1024)
         .build();
 
     wolk->connect();
 
     wolk->addAlarm("MA", "High Humidity");
-    
+
     wolk->addSensorReading("P", 25.6);
     wolk->addSensorReading("T", 1024);
     wolk->addSensorReading("H", 52);
-    
+
     wolk->addSensorReading("ACL", {1, 0, 0});
+
+    wolk->publish();
 
     wolk->publish();
 
