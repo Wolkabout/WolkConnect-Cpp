@@ -143,7 +143,28 @@ void Wolk::publishActuatorStatus(const std::string& reference)
       std::make_shared<ActuatorStatus>(actuatorStatus.getValue(), reference, actuatorStatus.getState());
     addToCommandBuffer([=]() -> void {
         addActuatorStatus(actuatorStatusWithRef);
-        publishActuatorStatuses();
+        flushActuatorStatuses();
+    });
+}
+
+void Wolk::publishConfiguration()
+{
+    addToCommandBuffer([=]() -> void {
+        const auto configuration = [=]() -> std::map<std::string, std::string> {
+            if (auto provider = m_configurationProvider.lock())
+            {
+                return provider->getConfiguration();
+            }
+            else if (m_configurationProviderLambda)
+            {
+                return m_configurationProviderLambda();
+            }
+
+            return std::map<std::string, std::string>();
+        }();
+
+        m_persistence->putConfiguration(configuration);
+        flushConfiguration();
     });
 }
 
@@ -165,6 +186,8 @@ void Wolk::connect()
             publishActuatorStatus(actuatorReference);
         }
 
+        publishConfiguration();
+
         publish();
     });
 }
@@ -180,9 +203,10 @@ void Wolk::disconnect()
 void Wolk::publish()
 {
     addToCommandBuffer([=]() -> void {
-        publishActuatorStatuses();
-        publishAlarms();
-        publishSensorReadings();
+        flushActuatorStatuses();
+        flushAlarms();
+        flushSensorReadings();
+        flushConfiguration();
 
         if (!m_persistence->isEmpty())
         {
@@ -216,12 +240,13 @@ unsigned long long Wolk::currentRtc()
     return static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
 }
 
-void Wolk::publishActuatorStatuses()
+void Wolk::flushActuatorStatuses()
 {
     for (const std::string& key : m_persistence->getGetActuatorStatusesKeys())
     {
         const auto actuatorStatus = m_persistence->getActuatorStatus(key);
-        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->make({actuatorStatus});
+        const std::shared_ptr<OutboundMessage> outboundMessage =
+          m_outboundMessageFactory->makeFromActuatorStatuses({actuatorStatus});
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
@@ -230,12 +255,12 @@ void Wolk::publishActuatorStatuses()
     }
 }
 
-void Wolk::publishAlarms()
+void Wolk::flushAlarms()
 {
     for (const std::string& key : m_persistence->getAlarmsKeys())
     {
         const auto alarms = m_persistence->getAlarms(key, PUBLISH_BATCH_ITEMS_COUNT);
-        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->make(alarms);
+        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->makeFromAlarms(alarms);
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
@@ -244,17 +269,34 @@ void Wolk::publishAlarms()
     }
 }
 
-void Wolk::publishSensorReadings()
+void Wolk::flushSensorReadings()
 {
     for (const std::string& key : m_persistence->getSensorReadingsKeys())
     {
         const auto sensorReadings = m_persistence->getSensorReadings(key, PUBLISH_BATCH_ITEMS_COUNT);
-        const std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->make(sensorReadings);
+        const std::shared_ptr<OutboundMessage> outboundMessage =
+          m_outboundMessageFactory->makeFromSensorReadings(sensorReadings);
 
         if (outboundMessage && m_connectivityService->publish(outboundMessage))
         {
             m_persistence->removeSensorReadings(key, PUBLISH_BATCH_ITEMS_COUNT);
         }
+    }
+}
+
+void Wolk::flushConfiguration()
+{
+    const std::shared_ptr<std::map<std::string, std::string>> configuration = m_persistence->getConfiguration();
+    if (!configuration)
+    {
+        return;
+    }
+
+    std::shared_ptr<OutboundMessage> outboundMessage = m_outboundMessageFactory->makeFromConfiguration(*configuration);
+
+    if (outboundMessage && m_connectivityService->publish(outboundMessage))
+    {
+        m_persistence->removeConfiguration();
     }
 }
 
@@ -273,6 +315,31 @@ void Wolk::handleActuatorCommand(const ActuatorCommand& actuatorCommand)
     {
         handleSetActuator(actuatorCommand);
         publishActuatorStatus(actuatorCommand.getReference());
+    }
+}
+
+void Wolk::handleConfigurationCommand(const ConfigurationCommand& configurationCommand)
+{
+    if (configurationCommand.getType() == ConfigurationCommand::Type::CURRENT)
+    {
+        publishConfiguration();
+    }
+    else if (configurationCommand.getType() == ConfigurationCommand::Type::SET)
+    {
+        handleSetConfiguration(configurationCommand.getValues());
+        publishConfiguration();
+    }
+}
+
+void Wolk::handleSetConfiguration(const std::map<std::string, std::string>& configuration)
+{
+    if (auto handler = m_configurationHandler.lock())
+    {
+        handler->handleConfiguration(configuration);
+    }
+    else if (m_configurationHandlerLambda)
+    {
+        m_configurationHandlerLambda(configuration);
     }
 }
 

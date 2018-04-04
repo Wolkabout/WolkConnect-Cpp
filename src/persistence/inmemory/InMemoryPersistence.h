@@ -52,6 +52,10 @@ public:
     void removeActuatorStatus(const std::string& key) override;
     std::vector<std::string> getGetActuatorStatusesKeys() override;
 
+    bool putConfiguration(const std::map<std::string, std::string>& configuration) override;
+    std::shared_ptr<std::map<std::string, std::string>> getConfiguration() override;
+    void removeConfiguration() override;
+
     bool isEmpty() override;
 
 private:
@@ -61,6 +65,8 @@ private:
     std::map<std::string, std::vector<std::shared_ptr<SensorReading>>> m_readings;
     std::map<std::string, std::vector<std::shared_ptr<Alarm>>> m_alarms;
     std::map<std::string, std::shared_ptr<ActuatorStatus>> m_actuatorStatuses;
+
+    std::shared_ptr<std::map<std::string, std::string>> m_configuration;
 };
 }    // namespace wolkabout
 

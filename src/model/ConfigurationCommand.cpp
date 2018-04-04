@@ -14,29 +14,26 @@
  * limitations under the License.
  */
 
-#ifndef JSONDTOPARSER_H
-#define JSONDTOPARSER_H
+#include "model/ConfigurationCommand.h"
 
+#include <map>
 #include <string>
+#include <utility>
 
 namespace wolkabout
 {
-class SensorReading;
-class Alarm;
-class ActuatorStatus;
-class ActuatorCommand;
-class ConfigurationCommand;
-class FirmwareUpdateCommand;
-
-class JsonParser
+ConfigurationCommand::ConfigurationCommand(ConfigurationCommand::Type type, std::map<std::string, std::string> values)
+: m_type(type), m_values(std::move(values))
 {
-public:
-    JsonParser() = delete;
+}
 
-    static bool fromJson(const std::string& jsonString, ActuatorCommand& actuatorCommand);
-    static bool fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommand);
-    static bool fromJson(const std::string& jsonString, ConfigurationCommand& configurationCommand);
-};
+ConfigurationCommand::Type ConfigurationCommand::getType() const
+{
+    return m_type;
+}
+
+const std::map<std::string, std::string>& ConfigurationCommand::getValues() const
+{
+    return m_values;
+}
 }    // namespace wolkabout
-
-#endif

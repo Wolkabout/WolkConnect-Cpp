@@ -19,12 +19,15 @@
 
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
+#include "ConfigurationHandler.h"
+#include "ConfigurationProvider.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/Device.h"
 #include "persistence/Persistence.h"
 
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -83,6 +86,36 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& actuatorStatusProvider(std::weak_ptr<ActuatorStatusProvider> actuatorStatusProvider);
+
+    /**
+     * @brief Sets device configuration handler
+     * @param configurationHandler Lambda that handles setting of configuration
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& configurationHandler(
+      std::function<void(const std::map<std::string, std::string>& configuration)> configurationHandler);
+
+    /**
+     * @brief Sets device configuration handler
+     * @param configurationHandler Instance of wolkabout::ConfigurationHandler that handles setting of configuration
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& configurationHandler(std::weak_ptr<ConfigurationHandler> configurationHandler);
+
+    /**
+     * @brief Sets device configuration provider
+     * @param configurationProvider Lambda that provides device configuration
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& configurationProvider(
+      std::function<const std::map<std::string, std::string>&()> configurationProvider);
+
+    /**
+     * @brief Sets device configuration provider
+     * @param configurationProvider Instance of wolkabout::ConfigurationProvider that provides device configuration
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& configurationProvider(std::weak_ptr<ConfigurationProvider> configurationProvider);
 
     /**
      * @brief Sets underlying persistence mechanism to be used<br>
@@ -151,6 +184,12 @@ private:
 
     std::function<ActuatorStatus(std::string)> m_actuatorStatusProviderLambda;
     std::weak_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;
+
+    std::function<void(const std::map<std::string, std::string>& configuration)> m_configurationHandlerLambda;
+    std::weak_ptr<ConfigurationHandler> m_configurationHandler;
+
+    std::function<const std::map<std::string, std::string>&()> m_configurationProviderLambda;
+    std::weak_ptr<ConfigurationProvider> m_configurationProvider;
 
     std::shared_ptr<Persistence> m_persistence;
 

@@ -38,17 +38,23 @@ class JsonSingleOutboundMessageFactory : public OutboundMessageFactory
 public:
     JsonSingleOutboundMessageFactory(std::string deviceKey, std::map<std::string, std::string> sensorDelimiters);
 
-    std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<SensorReading>> sensorReadings) override;
-    std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<Alarm>> alarms) override;
-    std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<ActuatorStatus>> actuatorStatuses) override;
+    std::shared_ptr<OutboundMessage> makeFromSensorReadings(
+      std::vector<std::shared_ptr<SensorReading>> sensorReadings) override;
+    std::shared_ptr<OutboundMessage> makeFromAlarms(std::vector<std::shared_ptr<Alarm>> alarms) override;
+    std::shared_ptr<OutboundMessage> makeFromActuatorStatuses(
+      std::vector<std::shared_ptr<ActuatorStatus>> actuatorStatuses) override;
 
-    std::shared_ptr<OutboundMessage> make(const FirmwareUpdateResponse& firmwareUpdateResponse) override;
+    std::shared_ptr<OutboundMessage> makeFromFirmwareUpdateResponse(
+      const FirmwareUpdateResponse& firmwareUpdateResponse) override;
 
-    std::shared_ptr<OutboundMessage> make(const FilePacketRequest& filePacketRequest) override;
+    std::shared_ptr<OutboundMessage> makeFromFilePacketRequest(const FilePacketRequest& filePacketRequest) override;
 
     std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& firmwareVerion) override;
 
     std::shared_ptr<OutboundMessage> makePing() override;
+
+    std::shared_ptr<OutboundMessage> makeFromConfiguration(
+      const std::map<std::string, std::string>& configuration) override;
 
 private:
     std::string m_deviceKey;
@@ -61,6 +67,7 @@ private:
     static const constexpr char* FILE_HANDLING_STATUS_TOPIC_ROOT = "service/status/file/";
     static const constexpr char* FIRMWARE_VERSION_TOPIC_ROOT = "firmware/version/";
     static const constexpr char* PING_TOPIC_ROOT = "ping/";
+    static const constexpr char* CURRENT_CONFIGURATION_TOPIC_ROOT = "configurations/current/";
 };
 }    // namespace wolkabout
 

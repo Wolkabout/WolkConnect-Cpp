@@ -20,10 +20,12 @@
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
+#include "model/ConfigurationCommand.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "model/SensorReading.h"
 #include "utilities/StringUtils.h"
 
+#include <map>
 #include <string>
 
 namespace wolkabout
@@ -199,4 +201,38 @@ bool JsonParser::fromJson(const std::string& jsonString, FirmwareUpdateCommand& 
     return true;
 }
 /*** FIRMWARE UPDATE COMMAND ***/
+
+/*** CONFIGURATION COMMAND ***/
+void from_json(const json& j, ConfigurationCommand& p)
+{
+    const std::string type = j.at("command").get<std::string>();
+
+    std::map<std::string, std::string> values;
+    if (j.find("values") != j.end() && j.at("values").is_object())
+    {
+        for (const auto& configurationEntry : j["values"].get<json::object_t>())
+        {
+            values[configurationEntry.first] = configurationEntry.second.get<std::string>();
+        }
+    }
+
+    p = ConfigurationCommand(type == "SET" ? ConfigurationCommand::Type::SET : ConfigurationCommand::Type::CURRENT,
+                             values);
+}
+
+bool JsonParser::fromJson(const std::string& jsonString, wolkabout::ConfigurationCommand& configurationCommand)
+{
+    try
+    {
+        json j = json::parse(jsonString);
+        configurationCommand = j;
+    }
+    catch (...)
+    {
+        return false;
+    }
+
+    return true;
+}
+/*** CONFIGURATION COMMAND ***/
 }    // namespace wolkabout

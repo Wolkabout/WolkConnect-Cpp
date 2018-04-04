@@ -17,6 +17,7 @@
 #ifndef OUTBOUNDMESSAGEFACTORY_H
 #define OUTBOUNDMESSAGEFACTORY_H
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -34,19 +35,25 @@ class OutboundMessageFactory
 public:
     virtual ~OutboundMessageFactory() = default;
 
-    virtual std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<SensorReading>> sensorReadings) = 0;
+    virtual std::shared_ptr<OutboundMessage> makeFromSensorReadings(
+      std::vector<std::shared_ptr<SensorReading>> sensorReadings) = 0;
 
-    virtual std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<Alarm>> alarms) = 0;
+    virtual std::shared_ptr<OutboundMessage> makeFromAlarms(std::vector<std::shared_ptr<Alarm>> alarms) = 0;
 
-    virtual std::shared_ptr<OutboundMessage> make(std::vector<std::shared_ptr<ActuatorStatus>> actuatorStatuses) = 0;
+    virtual std::shared_ptr<OutboundMessage> makeFromActuatorStatuses(
+      std::vector<std::shared_ptr<ActuatorStatus>> actuatorStatuses) = 0;
 
-    virtual std::shared_ptr<OutboundMessage> make(const FirmwareUpdateResponse& firmwareUpdateResponse) = 0;
+    virtual std::shared_ptr<OutboundMessage> makeFromFirmwareUpdateResponse(
+      const FirmwareUpdateResponse& firmwareUpdateResponse) = 0;
 
-    virtual std::shared_ptr<OutboundMessage> make(const FilePacketRequest& filePacketRequest) = 0;
+    virtual std::shared_ptr<OutboundMessage> makeFromFilePacketRequest(const FilePacketRequest& filePacketRequest) = 0;
 
     virtual std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& firmwareVerion) = 0;
 
     virtual std::shared_ptr<OutboundMessage> makePing() = 0;
+
+    virtual std::shared_ptr<OutboundMessage> makeFromConfiguration(
+      const std::map<std::string, std::string>& configuration) = 0;
 };
 }    // namespace wolkabout
 

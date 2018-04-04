@@ -14,28 +14,30 @@
  * limitations under the License.
  */
 
-#ifndef JSONDTOPARSER_H
-#define JSONDTOPARSER_H
+#ifndef CONFIGURATIONPROVIDER_H
+#define CONFIGURATIONPROVIDER_H
 
+#include <map>
 #include <string>
 
 namespace wolkabout
 {
-class SensorReading;
-class Alarm;
-class ActuatorStatus;
-class ActuatorCommand;
-class ConfigurationCommand;
-class FirmwareUpdateCommand;
-
-class JsonParser
+class ConfigurationProvider
 {
 public:
-    JsonParser() = delete;
+    /**
+     * @brief Device configuration provider callback
+     *        Reads device configuration and returns it as Map<String, String>
+     *        with device configuration reference as map key,
+     *        and device configuration value as map value.<br>
+     *
+     *        Must be implemented as non blocking<br>
+     *        Must be implemented as thread safe
+     * @return Device configuration as std::map<std::string, std::string>
+     */
+    virtual const std::map<std::string, std::string>& getConfiguration() = 0;
 
-    static bool fromJson(const std::string& jsonString, ActuatorCommand& actuatorCommand);
-    static bool fromJson(const std::string& jsonString, FirmwareUpdateCommand& firmwareUpdateCommand);
-    static bool fromJson(const std::string& jsonString, ConfigurationCommand& configurationCommand);
+    virtual ~ConfigurationProvider() = default;
 };
 }    // namespace wolkabout
 
