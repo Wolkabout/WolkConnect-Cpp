@@ -153,6 +153,13 @@ public:
                                     std::weak_ptr<UrlFileDownloader> urlDownloader);
 
     /**
+     * @brief withoutKeepAlive Disables ping mechanism used to notify WolkAbout IOT Platform
+     * that device is still connected
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withoutKeepAlive();
+
+    /**
      * @brief Builds Wolk instance
      * @return Wolk instance as std::unique_ptr<Wolk>
      *
@@ -192,6 +199,8 @@ private:
     std::uint_fast64_t m_maxFirmwareFileChunkSize;
     std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
     std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
+
+    bool m_keepAliveEnabled;
 
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
 };

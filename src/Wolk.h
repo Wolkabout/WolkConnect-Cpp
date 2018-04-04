@@ -43,6 +43,7 @@ class InboundMessageHandler;
 class FirmwareUpdateService;
 class FileDownloadService;
 class OutboundServiceDataHandler;
+class KeepAliveService;
 
 class Wolk
 {
@@ -170,6 +171,7 @@ public:
 
 private:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
+    static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{600};
 
     Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
          std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
@@ -194,6 +196,9 @@ private:
 
     void publishFirmwareVersion();
 
+    void notifyConnected();
+    void notifyDisonnected();
+
     std::shared_ptr<OutboundMessageFactory> m_outboundMessageFactory;
 
     std::shared_ptr<ConnectivityService> m_connectivityService;
@@ -204,6 +209,8 @@ private:
 
     std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
     std::shared_ptr<FileDownloadService> m_fileDownloadService;
+
+    std::shared_ptr<KeepAliveService> m_keepAliveService;
 
     Device m_device;
 

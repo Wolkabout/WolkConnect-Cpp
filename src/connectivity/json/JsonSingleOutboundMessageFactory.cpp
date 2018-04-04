@@ -260,6 +260,12 @@ std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromFirmw
     return std::make_shared<OutboundMessage>(firmwareVerion, topic, 1);
 }
 
+std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makePing()
+{
+    const std::string topic = PING_TOPIC_ROOT + m_deviceKey;
+    return std::make_shared<OutboundMessage>("", topic, 1);
+}
+
 std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromConfiguration(
   const std::map<std::string, std::string>& configuration)
 {

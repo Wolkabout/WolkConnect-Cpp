@@ -26,6 +26,7 @@
 #include "model/Device.h"
 #include "model/SensorReading.h"
 #include "service/FirmwareUpdateService.h"
+#include "service/KeepAliveService.h"
 
 #include <algorithm>
 #include <initializer_list>
@@ -44,6 +45,8 @@
 
 namespace wolkabout
 {
+const constexpr std::chrono::seconds Wolk::KEEP_ALIVE_INTERVAL;
+
 WolkBuilder Wolk::newBuilder(Device device)
 {
     return WolkBuilder(device);
@@ -173,6 +176,8 @@ void Wolk::connect()
             return;
         }
 
+        notifyConnected();
+
         publishFirmwareVersion();
         m_firmwareUpdateService->reportFirmwareUpdateResult();
 
@@ -189,7 +194,10 @@ void Wolk::connect()
 
 void Wolk::disconnect()
 {
-    addToCommandBuffer([=]() -> void { m_connectivityService->disconnect(); });
+    addToCommandBuffer([=]() -> void {
+        m_connectivityService->disconnect();
+        notifyDisonnected();
+    });
 }
 
 void Wolk::publish()
@@ -359,6 +367,22 @@ void Wolk::publishFirmwareVersion()
         {
             // TODO Log error
         }
+    }
+}
+
+void Wolk::notifyConnected()
+{
+    if (m_keepAliveService)
+    {
+        m_keepAliveService->connected();
+    }
+}
+
+void Wolk::notifyDisonnected()
+{
+    if (m_keepAliveService)
+    {
+        m_keepAliveService->disconnected();
     }
 }
 }    // namespace wolkabout

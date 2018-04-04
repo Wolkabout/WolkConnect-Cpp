@@ -48,6 +48,8 @@ public:
 
     void setFirmwareUpdateCommandHandler(std::function<void(const FirmwareUpdateCommand&)> handler);
 
+    void setPongHandler(std::function<void()> handler);
+
 private:
     void addToCommandBuffer(std::function<void()> command);
 
@@ -61,11 +63,13 @@ private:
     std::function<void(const ConfigurationCommand&)> m_configurationHandler;
     std::function<void(const BinaryData&)> m_binaryDataHandler;
     std::function<void(const FirmwareUpdateCommand&)> m_firmwareUpdateHandler;
+    std::function<void()> m_pongHandler;
 
     static const constexpr char* ACTUATION_REQUEST_TOPIC_ROOT = "actuators/commands/";
     static const constexpr char* CONFIGURATION_COMMAND_TOPIC_ROOT = "configurations/commands/";
     static const constexpr char* FIRMWARE_UPDATE_TOPIC_ROOT = "service/commands/firmware/";
     static const constexpr char* BINARY_TOPIC_ROOT = "service/binary/";
+    static const constexpr char* PONG_TOPIC_ROOT = "pong/";
 };
 }    // namespace wolkabout
 

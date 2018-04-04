@@ -51,6 +51,11 @@ InboundMessageHandler::InboundMessageHandler(Device device) : m_device{device}, 
     binaryTopic << BINARY_TOPIC_ROOT << m_device.getDeviceKey();
     m_subscriptionList.emplace_back(binaryTopic.str());
 
+    // pong handling
+    std::stringstream pongTopic("");
+    pongTopic << PONG_TOPIC_ROOT << m_device.getDeviceKey();
+    m_subscriptionList.emplace_back(pongTopic.str());
+
     // configuration
     std::stringstream configurationCommandsTopic("");
     configurationCommandsTopic << CONFIGURATION_COMMAND_TOPIC_ROOT << m_device.getDeviceKey();
@@ -137,6 +142,15 @@ void InboundMessageHandler::messageReceived(const std::string& topic, const std:
             // TODO: Log
         }
     }
+    else if (StringUtils::startsWith(topic, PONG_TOPIC_ROOT))
+    {
+        addToCommandBuffer([=]() -> void {
+            if (m_pongHandler)
+            {
+                m_pongHandler();
+            }
+        });
+    }
 }
 
 const std::vector<std::string>& InboundMessageHandler::getTopics() const
@@ -163,6 +177,11 @@ void InboundMessageHandler::setBinaryDataHandler(std::function<void(const Binary
 void InboundMessageHandler::setFirmwareUpdateCommandHandler(std::function<void(const FirmwareUpdateCommand&)> handler)
 {
     m_firmwareUpdateHandler = handler;
+}
+
+void InboundMessageHandler::setPongHandler(std::function<void()> handler)
+{
+    m_pongHandler = handler;
 }
 
 void InboundMessageHandler::addToCommandBuffer(std::function<void()> command)

@@ -50,6 +50,8 @@ public:
 
     virtual std::shared_ptr<OutboundMessage> makeFromFirmwareVersion(const std::string& firmwareVerion) = 0;
 
+    virtual std::shared_ptr<OutboundMessage> makePing() = 0;
+
     virtual std::shared_ptr<OutboundMessage> makeFromConfiguration(
       const std::map<std::string, std::string>& configuration) = 0;
 };

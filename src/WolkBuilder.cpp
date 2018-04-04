@@ -31,6 +31,7 @@
 #include "persistence/inmemory/InMemoryPersistence.h"
 #include "service/FileDownloadService.h"
 #include "service/FirmwareUpdateService.h"
+#include "service/KeepAliveService.h"
 
 #include <functional>
 #include <stdexcept>
@@ -136,6 +137,12 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withoutKeepAlive()
+{
+    m_keepAliveEnabled = false;
+    return *this;
+}
+
 std::unique_ptr<Wolk> WolkBuilder::build() const
 {
     if (m_device.getDeviceKey().empty())
@@ -230,6 +237,20 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
           }
       });
 
+    if (m_keepAliveEnabled)
+    {
+        wolk->m_keepAliveService = std::make_shared<KeepAliveService>(
+          *wolk->m_outboundMessageFactory, *wolk->m_connectivityService, Wolk::KEEP_ALIVE_INTERVAL);
+
+        std::weak_ptr<KeepAliveService> keepAliveService_weak{wolk->m_keepAliveService};
+        inboundMessageHandler->setPongHandler([=]() -> void {
+            if (auto handler = keepAliveService_weak.lock())
+            {
+                handler->handlePong();
+            }
+        });
+    }
+
     connectivityService->setListener(std::dynamic_pointer_cast<ConnectivityServiceListener>(inboundMessageHandler));
 
     return wolk;
@@ -248,6 +269,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_firmwareDownloadDirectory{""}
 , m_maxFirmwareFileSize{0}
 , m_maxFirmwareFileChunkSize{0}
+, m_keepAliveEnabled{true}
 {
 }
 }    // namespace wolkabout
