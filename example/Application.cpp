@@ -129,8 +129,6 @@ int main(int /* argc */, char** /* argv */)
 
     wolk->publish();
 
-    wolk->publish();
-
     while (true)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
