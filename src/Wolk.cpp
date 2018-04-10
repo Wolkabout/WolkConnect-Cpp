@@ -27,6 +27,7 @@
 #include "model/SensorReading.h"
 #include "service/FirmwareUpdateService.h"
 #include "service/KeepAliveService.h"
+#include "utilities/StringUtils.h"
 
 #include <algorithm>
 #include <initializer_list>
@@ -54,7 +55,7 @@ WolkBuilder Wolk::newBuilder(Device device)
 
 template <typename T> void Wolk::addSensorReading(const std::string& reference, T value, unsigned long long rtc)
 {
-    addSensorReading(reference, std::to_string(value), rtc);
+    addSensorReading(reference, StringUtils::toString(value), rtc);
 }
 
 template <> void Wolk::addSensorReading(const std::string& reference, std::string value, unsigned long long rtc)
@@ -80,7 +81,7 @@ void Wolk::addSensorReading(const std::string& reference, const std::vector<T> v
 
     std::vector<std::string> stringifiedValues(values.size());
     std::transform(values.begin(), values.end(), stringifiedValues.begin(),
-                   [&](const T& value) -> std::string { return std::to_string(value); });
+                   [&](const T& value) -> std::string { return StringUtils::toString(value); });
 
     auto sensorReading =
       std::make_shared<SensorReading>(stringifiedValues, reference, rtc != 0 ? rtc : Wolk::currentRtc());
@@ -88,21 +89,10 @@ void Wolk::addSensorReading(const std::string& reference, const std::vector<T> v
       [=]() -> void { m_persistence->putSensorReading(sensorReading->getReference(), sensorReading); });
 }
 
-template <> void Wolk::addSensorReading(const std::string& reference, bool value, unsigned long long rtc)
-{
-    addSensorReading(reference, std::string(value ? "true" : "false"), rtc);
-}
-
-template <> void Wolk::addSensorReading(const std::string& reference, char* value, unsigned long long rtc)
-{
-    addSensorReading(reference, std::string(value), rtc);
-}
-
-template <> void Wolk::addSensorReading(const std::string& reference, const char* value, unsigned long long rtc)
-{
-    addSensorReading(reference, std::string(value), rtc);
-}
-
+INSTANTIATE_ADD_SENSOR_READING_FOR(char);
+INSTANTIATE_ADD_SENSOR_READING_FOR(char*);
+INSTANTIATE_ADD_SENSOR_READING_FOR(const char*);
+INSTANTIATE_ADD_SENSOR_READING_FOR(bool);
 INSTANTIATE_ADD_SENSOR_READING_FOR(float);
 INSTANTIATE_ADD_SENSOR_READING_FOR(double);
 INSTANTIATE_ADD_SENSOR_READING_FOR(signed int);
