@@ -269,7 +269,7 @@ std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makePing()
 std::shared_ptr<OutboundMessage> JsonSingleOutboundMessageFactory::makeFromConfiguration(
   const std::map<std::string, std::string>& configuration)
 {
-    const json jPayload(configuration);
+    const json jPayload{{"values", configuration}};
     const std::string payload = jPayload.dump();
     const std::string topic = CURRENT_CONFIGURATION_TOPIC_ROOT + m_deviceKey;
 
