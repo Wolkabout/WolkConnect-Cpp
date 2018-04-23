@@ -75,7 +75,7 @@ template <typename T>
 void Wolk::addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
 {
     std::vector<std::string> stringifiedValues(values.size());
-    std::transform(values.begin(), values.end(), stringifiedValues.begin(),
+    std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
                    [&](const T& value) -> std::string { return StringUtils::toString(value); });
 
     addSensorReading(reference, stringifiedValues, rtc);
