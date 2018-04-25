@@ -56,8 +56,9 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            m_configuration["config1"] = "configValue1";
-            m_configuration["config2"] = "configValue2";
+            m_configuration["config_1"] = "0";
+            m_configuration["config_2"] = "false";
+            m_configuration["config_3"] = "";
         }
 
         const std::map<std::string, std::string>& getConfiguration() override
@@ -119,7 +120,7 @@ int main(int /* argc */, char** /* argv */)
 
     wolk->connect();
 
-    wolk->addAlarm("MA", "High Humidity");
+    wolk->addAlarm("HH", "High Humidity");
 
     wolk->addSensorReading("P", 25.6);
     wolk->addSensorReading("T", 1024);

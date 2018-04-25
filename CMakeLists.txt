@@ -64,12 +64,22 @@ target_link_libraries(${PROJECT_NAME} ssl paho-mqtt pthread)
 set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
-# Example
-file(GLOB_RECURSE EXAMPLE_HEADER_FILES "example/*.h")
-file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "example/*.cpp")
+# Examples
 
-add_executable(example ${EXAMPLE_HEADER_FILES} ${EXAMPLE_SOURCE_FILES})
-target_link_libraries(example ${PROJECT_NAME})
-set_target_properties(example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
+# Full example
+file(GLOB_RECURSE FULL_EXAMPLE_HEADER_FILES "examples/full_feature_set/*.h")
+file(GLOB_RECURSE FULL_EXAMPLE_SOURCE_FILES "examples/full_feature_set/*.cpp")
+
+add_executable(full_example ${FULL_EXAMPLE_HEADER_FILES} ${FULL_EXAMPLE_SOURCE_FILES})
+target_link_libraries(full_example ${PROJECT_NAME})
+set_target_properties(full_example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
+
+# Simple example
+file(GLOB_RECURSE SIMPLE_EXAMPLE_HEADER_FILES "examples/simple_example/*.h")
+file(GLOB_RECURSE SIMPLE_EXAMPLE_SOURCE_FILES "examples/simple_example/*.cpp")
+
+add_executable(simple_example ${SIMPLE_EXAMPLE_HEADER_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES})
+target_link_libraries(simple_example ${PROJECT_NAME})
+set_target_properties(simple_example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 
 add_subdirectory(cmake)
