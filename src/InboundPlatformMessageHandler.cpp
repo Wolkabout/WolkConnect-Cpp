@@ -36,7 +36,7 @@ InboundPlatformMessageHandler::~InboundPlatformMessageHandler()
 
 void InboundPlatformMessageHandler::messageReceived(const std::string& channel, const std::string& payload)
 {
-    LOG(TRACE) << "Message received on channel: '" << channel << "' : '" << payload << "'";
+    LOG(DEBUG) << "Message received on channel: '" << channel << "' : '" << payload << "'";
 
     std::lock_guard<std::mutex> lg{m_lock};
 
@@ -57,7 +57,7 @@ void InboundPlatformMessageHandler::messageReceived(const std::string& channel, 
     }
     else
     {
-        LOG(INFO) << "Handler for device channel not found: " << channel;
+        LOG(DEBUG) << "Handler for device channel not found: " << channel;
     }
 }
 
@@ -75,6 +75,7 @@ void InboundPlatformMessageHandler::addListener(std::weak_ptr<MessageListener> l
     {
         for (const auto& channel : handler->getProtocol().getInboundChannelsForDevice(m_deviceKey))
         {
+            LOG(DEBUG) << "Adding listener for channel: " << channel;
             m_channelHandlers[channel] = listener;
             m_subscriptionList.push_back(channel);
         }

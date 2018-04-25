@@ -22,9 +22,9 @@
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
+#include "model/BasicDevice.h"
 #include "model/ConfigurationItem.h"
 #include "model/ConfigurationSetCommand.h"
-#include "model/Device.h"
 #include "model/Message.h"
 #include "model/SensorReading.h"
 #include "service/DataService.h"
@@ -51,7 +51,7 @@ namespace wolkabout
 {
 const constexpr std::chrono::seconds Wolk::KEEP_ALIVE_INTERVAL;
 
-WolkBuilder Wolk::newBuilder(Device device)
+WolkBuilder Wolk::newBuilder(BasicDevice device)
 {
     return WolkBuilder(device);
 }
@@ -161,6 +161,7 @@ void Wolk::connect()
     addToCommandBuffer([=]() -> void {
         if (!m_connectivityService->connect())
         {
+            connect();
             return;
         }
 
@@ -198,7 +199,7 @@ void Wolk::publish()
     });
 }
 
-Wolk::Wolk(Device device)
+Wolk::Wolk(BasicDevice device)
 : m_device(device)
 , m_actuationHandlerLambda(nullptr)
 , m_actuatorStatusProviderLambda(nullptr)
@@ -291,32 +292,20 @@ void Wolk::publishFirmwareVersion()
 
 std::string Wolk::getSensorDelimiter(const std::string& reference)
 {
-    const auto sensors = m_device.getManifest().getSensors();
-    auto sensorIt = std::find_if(sensors.cbegin(), sensors.cend(),
-                                 [&](const SensorManifest& manifest) { return manifest.getReference() == reference; });
+    auto delimiters = m_device.getSensorDelimiters();
 
-    if (sensorIt == sensors.end())
+    auto it = delimiters.find(reference);
+    if (it != delimiters.end())
     {
-        return "";
+        return it->second;
     }
 
-    return sensorIt->getDelimiter();
+    return "";
 }
 
 std::map<std::string, std::string> Wolk::getConfigurationDelimiters()
 {
-    std::map<std::string, std::string> delimiters;
-
-    const auto configurationItems = m_device.getManifest().getConfigurations();
-    for (const auto& item : configurationItems)
-    {
-        if (!item.getDelimiter().empty())
-        {
-            delimiters[item.getReference()] = item.getDelimiter();
-        }
-    }
-
-    return delimiters;
+    return m_device.getConfigurationDelimiters();
 }
 
 void Wolk::notifyConnected()

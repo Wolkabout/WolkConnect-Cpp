@@ -16,6 +16,7 @@
 
 #include "Wolk.h"
 #include "service/FirmwareInstaller.h"
+#include "utilities/ConsoleLogger.h"
 
 #include <chrono>
 #include <iostream>
@@ -27,57 +28,19 @@
 
 int main(int /* argc */, char** /* argv */)
 {
-    wolkabout::SensorManifest temperatureSensor{"Temperature",
-                                                "T",
-                                                "Temperature sensor",
-                                                "℃",
-                                                "TEMPERATURE",
-                                                wolkabout::SensorManifest::DataType::NUMERIC,
-                                                1,
-                                                -273.15,
-                                                100000000};
-    wolkabout::SensorManifest pressureSensor{
-      "Pressure", "P", "Pressure sensor", "mb", "PRESSURE", wolkabout::SensorManifest::DataType::NUMERIC, 1, 0, 1100};
-    wolkabout::SensorManifest humiditySensor{
-      "Humidity", "H", "Humidity sensor", "%", "HUMIDITY", wolkabout::SensorManifest::DataType::NUMERIC, 1, 0, 100};
+    auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
+    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
+    wolkabout::Logger::setInstance(std::move(logger));
 
-    wolkabout::SensorManifest accelerationSensor{"Acceleration",
-                                                 "ACL",
-                                                 "Acceleration sensor",
-                                                 "m/s²",
-                                                 "ACCELEROMETER",
-                                                 wolkabout::SensorManifest::DataType::NUMERIC,
-                                                 1,
-                                                 0,
-                                                 1000,
-                                                 "_",
-                                                 {"x", "y", "z"}};
+    wolkabout::BasicDevice device("device_key", "some_password", {"SW", "SL"});
 
-    wolkabout::ActuatorManifest switchActuator{
-      "Switch", "SW", "Switch actuator", "", "SW", wolkabout::ActuatorManifest::DataType::BOOLEAN, 1, 0, 1};
-    wolkabout::ActuatorManifest sliderActuator{
-      "Slider", "SL", "Slider actuator", "", "SL", wolkabout::ActuatorManifest::DataType::NUMERIC, 1, 0, 100};
+    device.addSensor("P");
+    device.addSensor("T");
+    device.addSensor("H");
+    device.addSensor("ACL", 3, "_");
 
-    wolkabout::AlarmManifest highHumidityAlarm{"High Humidity", wolkabout::AlarmManifest::AlarmSeverity::ALERT, "MA",
-                                               "High Humidity", ""};
-
-    wolkabout::ConfigurationManifest configurationItem1{
-      "Item1", "KEY_1", "", "", wolkabout::ConfigurationManifest::DataType::STRING, 0, 0, "value1"};
-
-    wolkabout::ConfigurationManifest configurationItem2{
-      "Item2", "KEY_2",        "", "", wolkabout::ConfigurationManifest::DataType::NUMERIC, 0, 100, "50", 3,
-      ":",     {"x", "y", "z"}};
-
-    wolkabout::DeviceManifest deviceManifest{"manifest_name",
-                                             "",
-                                             "JsonProtocol",
-                                             "",
-                                             {configurationItem1, configurationItem2},
-                                             {temperatureSensor, pressureSensor, humiditySensor, accelerationSensor},
-                                             {highHumidityAlarm},
-                                             {switchActuator, sliderActuator}};
-
-    wolkabout::Device device("device_key", "some_password", deviceManifest);
+    device.addConfiguration("KEY_1");
+    device.addConfiguration("KEY_2", 3, ":");
 
     static bool switchValue = false;
     static int sliderValue = 0;
@@ -88,7 +51,7 @@ int main(int /* argc */, char** /* argv */)
         bool install(const std::string& firmwareFile) override
         {
             // Mock install
-            std::cout << "Updating firmware with file " << firmwareFile << std::endl;
+            LOG(INFO) << "Updating firmware with file " << firmwareFile;
 
             // Optionally delete 'firmwareFile
             return true;
@@ -102,7 +65,7 @@ int main(int /* argc */, char** /* argv */)
         DeviceConfiguration()
         {
             m_configuration.push_back(wolkabout::ConfigurationItem({"configValue1"}, "KEY_1"));
-            m_configuration.push_back(wolkabout::ConfigurationItem({"configValue2"}, "KEY_2"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"5", "6", "15"}, "KEY_2"));
         }
 
         std::vector<wolkabout::ConfigurationItem> getConfiguration() override
@@ -126,7 +89,7 @@ int main(int /* argc */, char** /* argv */)
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device)
         .actuationHandler([&](const std::string& reference, const std::string& value) -> void {
-            std::cout << "Actuation request received - Reference: " << reference << " value: " << value << std::endl;
+            LOG(DEBUG) << "Actuation request received - Reference: " << reference << " value: " << value;
 
             if (reference == "SW")
             {
