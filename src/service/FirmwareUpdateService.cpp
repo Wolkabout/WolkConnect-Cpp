@@ -19,26 +19,34 @@
 
 #include "FirmwareUpdateService.h"
 #include "FirmwareInstaller.h"
-#include "OutboundDataService.h"
 #include "UrlFileDownloader.h"
 #include "WolkaboutFileDownloader.h"
+#include "connectivity/ConnectivityService.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "model/FirmwareUpdateResponse.h"
+#include "model/Message.h"
+#include "protocol/FirmwareUpdateProtocol.h"
+#include "utilities/ConsoleLogger.h"
 #include "utilities/FileSystemUtils.h"
 #include "utilities/StringUtils.h"
 
+#include <cassert>
+
 namespace wolkabout
 {
-FirmwareUpdateService::FirmwareUpdateService(const std::string& firmwareVersion, const std::string& downloadDirectory,
-                                             uint_fast64_t maximumFirmwareSize,
-                                             std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
+FirmwareUpdateService::FirmwareUpdateService(std::string deviceKey, FirmwareUpdateProtocol& protocol,
+                                             const std::string& firmwareVersion, const std::string& downloadDirectory,
+                                             std::uint_fast64_t maximumFirmwareSize,
+                                             ConnectivityService& connectivityService,
                                              std::weak_ptr<WolkaboutFileDownloader> wolkDownloader,
                                              std::weak_ptr<UrlFileDownloader> urlDownloader,
                                              std::weak_ptr<FirmwareInstaller> firmwareInstaller)
-: m_currentFirmwareVersion{firmwareVersion}
+: m_deviceKey{std::move(deviceKey)}
+, m_protocol{protocol}
+, m_currentFirmwareVersion{firmwareVersion}
 , m_firmwareDownloadDirectory{downloadDirectory}
 , m_maximumFirmwareSize{maximumFirmwareSize}
-, m_outboundDataHandler{std::move(outboundDataHandler)}
+, m_connectivityService{connectivityService}
 , m_wolkFileDownloader{wolkDownloader}
 , m_urlFileDownloader{urlDownloader}
 , m_firmwareInstaller{firmwareInstaller}
@@ -60,6 +68,45 @@ FirmwareUpdateService::~FirmwareUpdateService()
     {
         m_executor->join();
     }
+}
+
+void FirmwareUpdateService::messageReceived(std::shared_ptr<Message> message)
+{
+    assert(message);
+
+    const std::string deviceKey = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
+    if (deviceKey.empty())
+    {
+        LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
+        return;
+    }
+
+    if (deviceKey != m_deviceKey)
+    {
+        LOG(WARN) << "Device key mismatch: " << message->getChannel();
+        return;
+    }
+
+    if (m_protocol.isFirmwareUpdateMessage(message->getChannel()))
+    {
+        auto command = m_protocol.makeFirmwareUpdateCommand(*message);
+        if (!command)
+        {
+            LOG(WARN) << "Unable to parse message contents: " << message->getContent();
+            return;
+        }
+
+        handleFirmwareUpdateCommand(*command);
+    }
+    else
+    {
+        LOG(WARN) << "Unable to parse message channel: " << message->getChannel();
+    }
+}
+
+const Protocol& FirmwareUpdateService::getProtocol()
+{
+    return m_protocol;
 }
 
 void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
@@ -95,6 +142,23 @@ void FirmwareUpdateService::reportFirmwareUpdateResult()
     }
 
     FileSystemUtils::deleteFile(FIRMWARE_VERSION_FILE);
+}
+
+void FirmwareUpdateService::publishFirmwareVersion()
+{
+    const std::shared_ptr<Message> message = m_protocol.makeFromFirmwareVersion(m_deviceKey, m_currentFirmwareVersion);
+
+    if (!message)
+    {
+        LOG(WARN) << "Failed to create firmware version message";
+        return;
+    }
+
+    if (!m_connectivityService.publish(message))
+    {
+        LOG(WARN) << "Failed to publish firmware version message";
+        return;
+    }
 }
 
 void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
@@ -338,7 +402,19 @@ void FirmwareUpdateService::addToCommandBuffer(std::function<void()> command)
 
 void FirmwareUpdateService::sendResponse(const FirmwareUpdateResponse& response)
 {
-    m_outboundDataHandler->addFirmwareUpdateResponse(response);
+    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, response);
+
+    if (!message)
+    {
+        LOG(WARN) << "Failed to create firmware update response";
+        return;
+    }
+
+    if (!m_connectivityService.publish(message))
+    {
+        LOG(WARN) << "Failed to publish firmware update response";
+        return;
+    }
 }
 
 void FirmwareUpdateService::onFirmwareFileDownloadSuccess(const std::string& filePath)

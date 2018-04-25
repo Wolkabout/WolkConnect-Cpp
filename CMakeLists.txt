@@ -15,6 +15,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(WolkAboutConnector C CXX)
 
+set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
+
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -Weffc++ -pedantic                                           \
@@ -47,21 +49,24 @@ IF (NOT IS_ABSOLUTE ${OPENSSL_INCLUDE_DIR})
 ENDIF (NOT IS_ABSOLUTE ${OPENSSL_INCLUDE_DIR})
 
 add_definitions(-DOPENSSL)
-add_subdirectory(mqtt lib)
+
+# library output
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+link_directories(${CMAKE_BINARY_DIR}/lib)
+
+# WolkAbout c++ SDK
+add_subdirectory(WolkSDK-Cpp)
 
 # WolkAbout c++ Connector
-include_directories("mqtt")
 include_directories("src")
-include_directories(SYSTEM "${OPENSSL_INCLUDE_DIR}")
+include_directories("WolkSDK-Cpp/mqtt")
+include_directories("WolkSDK-Cpp/src")
 
 file(GLOB_RECURSE LIB_HEADER_FILES "src/*.h" "src/*.hpp")
 file(GLOB_RECURSE LIB_SOURCE_FILES "src/*.cpp")
 
-link_directories(${PROJECT_SOURCE_DIR}/out/lib)
-
 add_library(${PROJECT_NAME} SHARED ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} ssl paho-mqtt pthread)
-set_target_properties(${PROJECT_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
 # Example

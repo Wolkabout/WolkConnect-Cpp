@@ -16,22 +16,30 @@
 
 #include "FileDownloadService.h"
 #include "FileHandler.h"
-#include "OutboundServiceDataHandler.h"
+#include "connectivity/ConnectivityService.h"
 #include "model/BinaryData.h"
 #include "model/FilePacketRequest.h"
+#include "model/Message.h"
+#include "protocol/FileDownloadProtocol.h"
+#include "utilities/ConsoleLogger.h"
+
+#include <cassert>
 #include <cmath>
 
 namespace wolkabout
 {
 const constexpr std::chrono::milliseconds FileDownloadService::PACKET_REQUEST_TIMEOUT;
 
-FileDownloadService::FileDownloadService(uint_fast64_t maxFileSize, uint_fast64_t maxPacketSize,
+FileDownloadService::FileDownloadService(std::string deviceKey, FileDownloadProtocol& protocol,
+                                         uint_fast64_t maxFileSize, uint_fast64_t maxPacketSize,
                                          std::unique_ptr<FileHandler> fileHandler,
-                                         std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler)
-: m_maxFileSize{maxFileSize}
+                                         ConnectivityService& connectivityService)
+: m_deviceKey{std::move(deviceKey)}
+, m_protocol{protocol}
+, m_maxFileSize{maxFileSize}
 , m_maxPacketSize{maxPacketSize}
 , m_fileHandler{std::move(fileHandler)}
-, m_outboundDataHandler{outboundDataHandler}
+, m_connectivityService{connectivityService}
 , m_commandBuffer{new CommandBuffer()}
 , m_idleState{new FileDownloadService::IdleState(*this)}
 , m_downloadState{new FileDownloadService::DownloadState(*this)}
@@ -62,6 +70,45 @@ void FileDownloadService::abort()
     addToCommandBuffer([=] { m_currentState->abort(); });
 }
 
+void FileDownloadService::messageReceived(std::shared_ptr<Message> message)
+{
+    assert(message);
+
+    const std::string deviceKey = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
+    if (deviceKey.empty())
+    {
+        LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
+        return;
+    }
+
+    if (deviceKey != m_deviceKey)
+    {
+        LOG(WARN) << "Device key mismatch: " << message->getChannel();
+        return;
+    }
+
+    if (m_protocol.isBinary(message->getChannel()))
+    {
+        auto binary = m_protocol.makeBinaryData(*message);
+        if (!binary)
+        {
+            LOG(WARN) << "Unable to parse message contents: " << message->getContent();
+            return;
+        }
+
+        handleBinaryData(*binary);
+    }
+    else
+    {
+        LOG(WARN) << "Unable to parse message channel: " << message->getChannel();
+    }
+}
+
+const Protocol& FileDownloadService::getProtocol()
+{
+    return m_protocol;
+}
+
 void FileDownloadService::handleBinaryData(const BinaryData& binaryData)
 {
     addToCommandBuffer([=] { m_currentState->handleBinaryData(binaryData); });
@@ -75,15 +122,33 @@ void FileDownloadService::addToCommandBuffer(std::function<void()> command)
 void FileDownloadService::requestPacket(unsigned index, uint_fast64_t size)
 {
     ++m_retryCount;
-    m_outboundDataHandler->addFilePacketRequest(FilePacketRequest{m_currentFileName, index, size});
 
-    m_timer.start(PACKET_REQUEST_TIMEOUT, [=] {
+    auto cancel = [=] {
         abort();
         if (m_currentOnFailCallback)
         {
             m_currentOnFailCallback(WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR);
         }
-    });
+    };
+
+    std::shared_ptr<Message> message =
+      m_protocol.makeMessage(m_deviceKey, FilePacketRequest{m_currentFileName, index, size});
+
+    if (!message)
+    {
+        LOG(WARN) << "Failed to create file packet request";
+        cancel();
+        return;
+    }
+
+    if (!m_connectivityService.publish(message))
+    {
+        LOG(WARN) << "Failed to publish file packet request";
+        cancel();
+        return;
+    }
+
+    m_timer.start(PACKET_REQUEST_TIMEOUT, cancel);
 }
 
 void FileDownloadService::packetFailed()

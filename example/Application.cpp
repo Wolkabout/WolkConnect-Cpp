@@ -27,12 +27,57 @@
 
 int main(int /* argc */, char** /* argv */)
 {
-    wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
+    wolkabout::SensorManifest temperatureSensor{"Temperature",
+                                                "T",
+                                                "Temperature sensor",
+                                                "℃",
+                                                "TEMPERATURE",
+                                                wolkabout::SensorManifest::DataType::NUMERIC,
+                                                1,
+                                                -273.15,
+                                                100000000};
+    wolkabout::SensorManifest pressureSensor{
+      "Pressure", "P", "Pressure sensor", "mb", "PRESSURE", wolkabout::SensorManifest::DataType::NUMERIC, 1, 0, 1100};
+    wolkabout::SensorManifest humiditySensor{
+      "Humidity", "H", "Humidity sensor", "%", "HUMIDITY", wolkabout::SensorManifest::DataType::NUMERIC, 1, 0, 100};
 
-    device.addSensor("P");
-    device.addSensor("T");
-    device.addSensor("H");
-    device.addSensor("ACL", "_");
+    wolkabout::SensorManifest accelerationSensor{"Acceleration",
+                                                 "ACL",
+                                                 "Acceleration sensor",
+                                                 "m/s²",
+                                                 "ACCELEROMETER",
+                                                 wolkabout::SensorManifest::DataType::NUMERIC,
+                                                 1,
+                                                 0,
+                                                 1000,
+                                                 "_",
+                                                 {"x", "y", "z"}};
+
+    wolkabout::ActuatorManifest switchActuator{
+      "Switch", "SW", "Switch actuator", "", "SW", wolkabout::ActuatorManifest::DataType::BOOLEAN, 1, 0, 1};
+    wolkabout::ActuatorManifest sliderActuator{
+      "Slider", "SL", "Slider actuator", "", "SL", wolkabout::ActuatorManifest::DataType::NUMERIC, 1, 0, 100};
+
+    wolkabout::AlarmManifest highHumidityAlarm{"High Humidity", wolkabout::AlarmManifest::AlarmSeverity::ALERT, "MA",
+                                               "High Humidity", ""};
+
+    wolkabout::ConfigurationManifest configurationItem1{
+      "Item1", "KEY_1", "", "", wolkabout::ConfigurationManifest::DataType::STRING, 0, 0, "value1"};
+
+    wolkabout::ConfigurationManifest configurationItem2{
+      "Item2", "KEY_2",        "", "", wolkabout::ConfigurationManifest::DataType::NUMERIC, 0, 100, "50", 3,
+      ":",     {"x", "y", "z"}};
+
+    wolkabout::DeviceManifest deviceManifest{"manifest_name",
+                                             "",
+                                             "JsonProtocol",
+                                             "",
+                                             {configurationItem1, configurationItem2},
+                                             {temperatureSensor, pressureSensor, humiditySensor, accelerationSensor},
+                                             {highHumidityAlarm},
+                                             {switchActuator, sliderActuator}};
+
+    wolkabout::Device device("device_key", "some_password", deviceManifest);
 
     static bool switchValue = false;
     static int sliderValue = 0;
@@ -56,17 +101,17 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            m_configuration["config1"] = "configValue1";
-            m_configuration["config2"] = "configValue2";
+            m_configuration.push_back(wolkabout::ConfigurationItem({"configValue1"}, "KEY_1"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"configValue2"}, "KEY_2"));
         }
 
-        const std::map<std::string, std::string>& getConfiguration() override
+        std::vector<wolkabout::ConfigurationItem> getConfiguration() override
         {
             std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
             return m_configuration;
         }
 
-        void handleConfiguration(const std::map<std::string, std::string>& configuration) override
+        void handleConfiguration(const std::vector<wolkabout::ConfigurationItem>& configuration) override
         {
             std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
             m_configuration = configuration;
@@ -74,7 +119,7 @@ int main(int /* argc */, char** /* argv */)
 
     private:
         std::mutex m_ConfigurationMutex;
-        std::map<std::string, std::string> m_configuration;
+        std::vector<wolkabout::ConfigurationItem> m_configuration;
     };
     auto deviceConfiguration = std::make_shared<DeviceConfiguration>();
 

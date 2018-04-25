@@ -22,11 +22,13 @@
 #include "ConfigurationHandler.h"
 #include "ConfigurationProvider.h"
 #include "WolkBuilder.h"
-#include "connectivity/json/JsonSingleOutboundMessageFactory.h"
 #include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
-#include "model/ConfigurationCommand.h"
 #include "model/Device.h"
+#include "protocol/DataProtocol.h"
+#include "protocol/FileDownloadProtocol.h"
+#include "protocol/FirmwareUpdateProtocol.h"
+#include "protocol/StatusProtocol.h"
 #include "utilities/CommandBuffer.h"
 
 #include <functional>
@@ -42,8 +44,8 @@ class ConnectivityService;
 class InboundMessageHandler;
 class FirmwareUpdateService;
 class FileDownloadService;
-class OutboundServiceDataHandler;
 class KeepAliveService;
+class DataService;
 
 class Wolk
 {
@@ -170,12 +172,12 @@ public:
     void publish();
 
 private:
+    class ConnectivityFacade;
+
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
     static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{600};
 
-    Wolk(std::shared_ptr<ConnectivityService> connectivityService, std::shared_ptr<Persistence> persistence,
-         std::shared_ptr<InboundMessageHandler> inboundMessageHandler,
-         std::shared_ptr<OutboundServiceDataHandler> outboundServiceDataHandler, Device device);
+    Wolk(Device device);
 
     void addToCommandBuffer(std::function<void()> command);
 
@@ -186,47 +188,68 @@ private:
     void flushSensorReadings();
     void flushConfiguration();
 
-    void addActuatorStatus(std::shared_ptr<ActuatorStatus> actuatorStatus);
+    void handleActuatorSetCommand(const std::string& reference, const std::string& value);
+    void handleActuatorGetCommand(const std::string& reference);
 
-    void handleActuatorCommand(const ActuatorCommand& actuatorCommand);
-    void handleSetActuator(const ActuatorCommand& actuatorCommand);
-
-    void handleConfigurationCommand(const ConfigurationCommand& configurationCommand);
-    void handleSetConfiguration(const std::map<std::string, std::string>& configuration);
+    void handleConfigurationSetCommand(const ConfigurationSetCommand& command);
+    void handleConfigurationGetCommand();
 
     void publishFirmwareVersion();
+
+    std::string getSensorDelimiter(const std::string& reference);
+    std::map<std::string, std::string> getConfigurationDelimiters();
 
     void notifyConnected();
     void notifyDisonnected();
 
-    std::shared_ptr<OutboundMessageFactory> m_outboundMessageFactory;
+    Device m_device;
 
-    std::shared_ptr<ConnectivityService> m_connectivityService;
+    std::unique_ptr<DataProtocol> m_dataProtocol;
+    std::unique_ptr<StatusProtocol> m_statusProtocol;
+    std::unique_ptr<FileDownloadProtocol> m_fileDownloadProtocol;
+    std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
+
+    std::unique_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
 
-    std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
-    std::shared_ptr<OutboundServiceDataHandler> m_outboundServiceDataHandler;
+    std::unique_ptr<InboundMessageHandler> m_inboundMessageHandler;
 
-    std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
+    std::shared_ptr<ConnectivityFacade> m_connectivityManager;
+
+    std::shared_ptr<DataService> m_dataService;
+
     std::shared_ptr<FileDownloadService> m_fileDownloadService;
+    std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
 
     std::shared_ptr<KeepAliveService> m_keepAliveService;
-
-    Device m_device;
 
     std::function<void(std::string, std::string)> m_actuationHandlerLambda;
     std::weak_ptr<ActuationHandler> m_actuationHandler;
 
-    std::function<void(const std::map<std::string, std::string>& configuration)> m_configurationHandlerLambda;
-    std::weak_ptr<ConfigurationHandler> m_configurationHandler;
-
-    std::function<const std::map<std::string, std::string>&()> m_configurationProviderLambda;
-    std::weak_ptr<ConfigurationProvider> m_configurationProvider;
-
     std::function<ActuatorStatus(std::string)> m_actuatorStatusProviderLambda;
     std::weak_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;
 
+    std::function<void(const std::vector<ConfigurationItem>& configuration)> m_configurationHandlerLambda;
+    std::weak_ptr<ConfigurationHandler> m_configurationHandler;
+
+    std::function<std::vector<ConfigurationItem>()> m_configurationProviderLambda;
+    std::weak_ptr<ConfigurationProvider> m_configurationProvider;
+
     std::unique_ptr<CommandBuffer> m_commandBuffer;
+
+    class ConnectivityFacade : public ConnectivityServiceListener
+    {
+    public:
+        ConnectivityFacade(InboundMessageHandler& handler, std::function<void()> connectionLostHandler);
+
+        void messageReceived(const std::string& channel, const std::string& message) override;
+        void connectionLost() override;
+        std::vector<std::string> getChannels() const override;
+
+    private:
+        InboundMessageHandler& m_messageHandler;
+        std::function<void()> m_connectionLostHandler;
+    };
 };
 }    // namespace wolkabout
 

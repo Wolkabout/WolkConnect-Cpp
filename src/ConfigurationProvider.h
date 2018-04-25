@@ -17,8 +17,10 @@
 #ifndef CONFIGURATIONPROVIDER_H
 #define CONFIGURATIONPROVIDER_H
 
-#include <map>
+#include "model/ConfigurationItem.h"
+
 #include <string>
+#include <vector>
 
 namespace wolkabout
 {
@@ -35,7 +37,7 @@ public:
      *        Must be implemented as thread safe
      * @return Device configuration as std::map<std::string, std::string>
      */
-    virtual const std::map<std::string, std::string>& getConfiguration() = 0;
+    virtual std::vector<ConfigurationItem> getConfiguration() = 0;
 
     virtual ~ConfigurationProvider() = default;
 };

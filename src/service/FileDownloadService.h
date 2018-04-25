@@ -17,25 +17,28 @@
 #ifndef FILEDOWNLOADSERVICE_H
 #define FILEDOWNLOADSERVICE_H
 
-#include "BinaryDataListener.h"
+#include "InboundMessageHandler.h"
 #include "WolkaboutFileDownloader.h"
 #include "utilities/ByteUtils.h"
 #include "utilities/CommandBuffer.h"
 #include "utilities/Timer.h"
 #include <cstdint>
 #include <memory>
+#include <string>
 
 namespace wolkabout
 {
-class OutboundServiceDataHandler;
+class BinaryData;
+class ConnectivityService;
 class FileHandler;
+class FileDownloadProtocol;
 
-class FileDownloadService : public WolkaboutFileDownloader, public BinaryDataListener
+class FileDownloadService : public WolkaboutFileDownloader, public MessageListener
 {
 public:
-    FileDownloadService(uint_fast64_t maxFileSize, std::uint_fast64_t maxPacketSize,
-                        std::unique_ptr<FileHandler> fileHandler,
-                        std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler);
+    FileDownloadService(std::string deviceKey, FileDownloadProtocol& protocol, uint_fast64_t maxFileSize,
+                        std::uint_fast64_t maxPacketSize, std::unique_ptr<FileHandler> fileHandler,
+                        ConnectivityService& connectivityService);
 
     FileDownloadService(const FileDownloadService&) = delete;
     FileDownloadService& operator=(const FileDownloadService&) = delete;
@@ -47,9 +50,13 @@ public:
 
     void abort() override;
 
-    void handleBinaryData(const BinaryData& binaryData) override;
+    void messageReceived(std::shared_ptr<Message> message) override;
+
+    const Protocol& getProtocol() override;
 
 private:
+    void handleBinaryData(const BinaryData& binaryData);
+
     void addToCommandBuffer(std::function<void()> command);
 
     void requestPacket(unsigned index, std::uint_fast64_t size);
@@ -101,10 +108,14 @@ private:
     friend class IdleState;
     friend class DownloadState;
 
+    const std::string m_deviceKey;
+
+    FileDownloadProtocol& m_protocol;
+
     std::uint_fast64_t m_maxFileSize;
     std::uint_fast64_t m_maxPacketSize;
     std::unique_ptr<FileHandler> m_fileHandler;
-    std::shared_ptr<OutboundServiceDataHandler> m_outboundDataHandler;
+    ConnectivityService& m_connectivityService;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
 

@@ -17,8 +17,10 @@
 #ifndef CONFIGURATIONHANDLER_H
 #define CONFIGURATIONHANDLER_H
 
-#include <map>
+#include "model/ConfigurationItem.h"
+
 #include <string>
+#include <vector>
 
 namespace wolkabout
 {
@@ -34,7 +36,7 @@ public:
      * @param configuration std::map<std::string, std::string> with device configuration reference as map key,
      *                      and device configuration value as map value
      */
-    virtual void handleConfiguration(const std::map<std::string, std::string>& configuration) = 0;
+    virtual void handleConfiguration(const std::vector<ConfigurationItem>& configuration) = 0;
 
     virtual ~ConfigurationHandler() = default;
 };
