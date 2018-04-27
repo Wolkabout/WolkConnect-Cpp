@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <memory>
+#include <random>
 #include <thread>
 
 int main(int /* argc */, char** /* argv */)
@@ -27,14 +28,21 @@ int main(int /* argc */, char** /* argv */)
     std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder(device).build();
 
     wolk->connect();
+
+    static std::default_random_engine engine;
+    static std::uniform_real_distribution<> distribution(-20, 80);
     
-    wolk->addSensorReading("T", 23);
+    wolk->addSensorReading("T", distribution(engine));
     
     wolk->publish();
 
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+        wolk->addSensorReading("T", distribution(engine));
+    
+        wolk->publish();
     }
 
     return 0;
