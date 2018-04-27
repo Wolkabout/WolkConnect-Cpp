@@ -30,6 +30,7 @@
 #include "protocol/json/DFUProtocol.h"
 #include "protocol/json/DownloadProtocol.h"
 #include "protocol/json/JsonProtocol.h"
+#include "protocol/json/JsonSingleReferenceProtocol.h"
 #include "protocol/json/JsonStatusProtocol.h"
 #include "service/DataService.h"
 #include "service/FileDownloadService.h"
@@ -179,7 +180,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 
     auto wolk = std::unique_ptr<Wolk>(new Wolk(m_device));
 
-    wolk->m_dataProtocol = std::unique_ptr<DataProtocol>(new JsonProtocol());
+    wolk->m_dataProtocol = std::unique_ptr<DataProtocol>(new JsonSingleReferenceProtocol());
     wolk->m_fileDownloadProtocol = std::unique_ptr<FileDownloadProtocol>(new DownloadProtocol());
     wolk->m_firmwareUpdateProtocol = std::unique_ptr<FirmwareUpdateProtocol>(new DFUProtocol());
     wolk->m_statusProtocol = std::unique_ptr<StatusProtocol>(new JsonStatusProtocol());
@@ -259,7 +260,7 @@ wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>() const
     return build();
 }
 
-WolkBuilder::WolkBuilder(BasicDevice device)
+WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}

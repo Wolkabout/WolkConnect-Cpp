@@ -18,6 +18,7 @@
 #include "connectivity/ConnectivityService.h"
 #include "model/Message.h"
 #include "protocol/StatusProtocol.h"
+#include "utilities/Logger.h"
 
 namespace wolkabout
 {
@@ -28,6 +29,11 @@ KeepAliveService::KeepAliveService(std::string deviceKey, StatusProtocol& protoc
 , m_connectivityService{connectivityService}
 , m_keepAliveInterval{std::move(keepAliveInterval)}
 {
+    std::shared_ptr<Message> lastWillMessage = m_protocol.makeLastWillMessage({m_deviceKey});
+    if (lastWillMessage)
+    {
+        m_connectivityService.setUncontrolledDisonnectMessage(lastWillMessage);
+    }
 }
 
 void KeepAliveService::connected()

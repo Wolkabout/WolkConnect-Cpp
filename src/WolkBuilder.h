@@ -23,7 +23,7 @@
 #include "ConfigurationProvider.h"
 #include "InboundMessageHandler.h"
 #include "connectivity/ConnectivityService.h"
-#include "model/BasicDevice.h"
+#include "model/Device.h"
 #include "persistence/Persistence.h"
 
 #include <cstdint>
@@ -49,7 +49,7 @@ public:
      * @brief WolkBuilder Initiates wolkabout::Wolk builder
      * @param device Device for which wolkabout::WolkBuilder is instantiated
      */
-    WolkBuilder(BasicDevice device);
+    WolkBuilder(Device device);
 
     /**
      * @brief Allows passing of URI to custom WolkAbout IoT platform instance
@@ -177,7 +177,7 @@ public:
 
 private:
     std::string m_host;
-    BasicDevice m_device;
+    Device m_device;
 
     std::function<void(std::string, std::string)> m_actuationHandlerLambda;
     std::weak_ptr<ActuationHandler> m_actuationHandler;

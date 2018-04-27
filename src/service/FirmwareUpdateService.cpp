@@ -87,7 +87,7 @@ void FirmwareUpdateService::messageReceived(std::shared_ptr<Message> message)
         return;
     }
 
-    if (m_protocol.isFirmwareUpdateMessage(message->getChannel()))
+    if (m_protocol.isFirmwareUpdateMessage(*message))
     {
         auto command = m_protocol.makeFirmwareUpdateCommand(*message);
         if (!command)

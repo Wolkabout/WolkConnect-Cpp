@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "model/BasicDevice.h"
+#include "model/Device.h"
 
 namespace wolkabout
 {
-BasicDevice::BasicDevice(std::string key, std::string password, std::vector<std::string> actuatorReferences)
-: Device{"", key, password, DeviceManifest{"", "", "", ""}}
+Device::Device(std::string key, std::string password, std::vector<std::string> actuatorReferences)
+: DetailedDevice{"", key, password, DeviceManifest{"", "", "", ""}}
 {
     for (const auto& reference : actuatorReferences)
     {
@@ -28,31 +28,31 @@ BasicDevice::BasicDevice(std::string key, std::string password, std::vector<std:
     }
 }
 
-void BasicDevice::addSensor(const std::string& reference, unsigned size, const std::string& delimiter)
+void Device::addSensor(const std::string& reference, unsigned size, const std::string& delimiter)
 {
     m_deviceManifest.addSensor(SensorManifest{"", reference, "", "", "", SensorManifest::DataType::STRING, 1, 0, 1,
                                               delimiter, std::vector<std::string>(size, "")});
 }
 
-void BasicDevice::addConfiguration(const std::string& reference, unsigned size, const std::string& delimiter)
+void Device::addConfiguration(const std::string& reference, unsigned size, const std::string& delimiter)
 {
     m_deviceManifest.addConfiguration(ConfigurationManifest{"", reference, "", "",
                                                             ConfigurationManifest::DataType::STRING, 0, 1, "", size,
                                                             delimiter, std::vector<std::string>(size, "")});
 }
 
-std::vector<std::string> BasicDevice::getActuatorReferences() const
+std::vector<std::string> Device::getActuatorReferences() const
 {
-    return Device::getActuatorReferences();
+    return DetailedDevice::getActuatorReferences();
 }
 
-std::map<std::string, std::string> BasicDevice::getSensorDelimiters() const
+std::map<std::string, std::string> Device::getSensorDelimiters() const
 {
-    return Device::getSensorDelimiters();
+    return DetailedDevice::getSensorDelimiters();
 }
 
-std::map<std::string, std::string> BasicDevice::getConfigurationDelimiters() const
+std::map<std::string, std::string> Device::getConfigurationDelimiters() const
 {
-    return Device::getConfigurationDelimiters();
+    return DetailedDevice::getConfigurationDelimiters();
 }
 }    // namespace wolkabout

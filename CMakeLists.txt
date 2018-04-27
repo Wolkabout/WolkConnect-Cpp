@@ -60,20 +60,22 @@ add_subdirectory(WolkSDK-Cpp)
 # WolkAbout c++ Connector
 include_directories("src")
 include_directories("WolkSDK-Cpp/mqtt")
-include_directories("WolkSDK-Cpp/src")
+include_directories("WolkSDK-Cpp/core")
 
 file(GLOB_RECURSE LIB_HEADER_FILES "src/*.h" "src/*.hpp")
 file(GLOB_RECURSE LIB_SOURCE_FILES "src/*.cpp")
 
-add_library(${PROJECT_NAME} SHARED ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} WolkAboutCore)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
 # Example
+include_directories("example")
+
 file(GLOB_RECURSE EXAMPLE_HEADER_FILES "example/*.h")
 file(GLOB_RECURSE EXAMPLE_SOURCE_FILES "example/*.cpp")
 
-add_executable(example ${EXAMPLE_HEADER_FILES} ${EXAMPLE_SOURCE_FILES})
+add_executable(example ${EXAMPLE_SOURCE_FILES})
 target_link_libraries(example ${PROJECT_NAME})
 set_target_properties(example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 

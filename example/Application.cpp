@@ -32,7 +32,7 @@ int main(int /* argc */, char** /* argv */)
     logger->setLogLevel(wolkabout::LogLevel::DEBUG);
     wolkabout::Logger::setInstance(std::move(logger));
 
-    wolkabout::BasicDevice device("device_key", "some_password", {"SW", "SL"});
+    wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
 
     device.addSensor("P");
     device.addSensor("T");

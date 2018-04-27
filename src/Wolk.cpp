@@ -19,17 +19,17 @@
 #include "ActuatorStatusProvider.h"
 #include "WolkBuilder.h"
 #include "connectivity/ConnectivityService.h"
-#include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
-#include "model/BasicDevice.h"
 #include "model/ConfigurationItem.h"
 #include "model/ConfigurationSetCommand.h"
+#include "model/Device.h"
 #include "model/Message.h"
 #include "model/SensorReading.h"
 #include "service/DataService.h"
 #include "service/FirmwareUpdateService.h"
 #include "service/KeepAliveService.h"
+#include "utilities/Logger.h"
 #include "utilities/StringUtils.h"
 
 #include <algorithm>
@@ -51,7 +51,7 @@ namespace wolkabout
 {
 const constexpr std::chrono::seconds Wolk::KEEP_ALIVE_INTERVAL;
 
-WolkBuilder Wolk::newBuilder(BasicDevice device)
+WolkBuilder Wolk::newBuilder(Device device)
 {
     return WolkBuilder(device);
 }
@@ -199,7 +199,7 @@ void Wolk::publish()
     });
 }
 
-Wolk::Wolk(BasicDevice device)
+Wolk::Wolk(Device device)
 : m_device(device)
 , m_actuationHandlerLambda(nullptr)
 , m_actuatorStatusProviderLambda(nullptr)

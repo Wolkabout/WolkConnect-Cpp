@@ -22,9 +22,8 @@
 #include "ConfigurationHandler.h"
 #include "ConfigurationProvider.h"
 #include "WolkBuilder.h"
-#include "model/ActuatorCommand.h"
 #include "model/ActuatorStatus.h"
-#include "model/BasicDevice.h"
+#include "model/Device.h"
 #include "protocol/DataProtocol.h"
 #include "protocol/FileDownloadProtocol.h"
 #include "protocol/FirmwareUpdateProtocol.h"
@@ -56,10 +55,10 @@ public:
 
     /**
      * @brief Initiates wolkabout::WolkBuilder that configures device to connect to WolkAbout IoT Cloud
-     * @param device wolkabout::BasicDevice
+     * @param device wolkabout::Device
      * @return wolkabout::WolkBuilder instance
      */
-    static WolkBuilder newBuilder(BasicDevice device);
+    static WolkBuilder newBuilder(Device device);
 
     /**
      * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
@@ -177,7 +176,7 @@ private:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
     static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{600};
 
-    Wolk(BasicDevice device);
+    Wolk(Device device);
 
     void addToCommandBuffer(std::function<void()> command);
 
@@ -202,7 +201,7 @@ private:
     void notifyConnected();
     void notifyDisonnected();
 
-    BasicDevice m_device;
+    Device m_device;
 
     std::unique_ptr<DataProtocol> m_dataProtocol;
     std::unique_ptr<StatusProtocol> m_statusProtocol;

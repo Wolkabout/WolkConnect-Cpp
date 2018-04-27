@@ -87,7 +87,7 @@ void FileDownloadService::messageReceived(std::shared_ptr<Message> message)
         return;
     }
 
-    if (m_protocol.isBinary(message->getChannel()))
+    if (m_protocol.isBinary(*message))
     {
         auto binary = m_protocol.makeBinaryData(*message);
         if (!binary)

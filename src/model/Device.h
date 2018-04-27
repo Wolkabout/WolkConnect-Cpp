@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef BASICDEVICE_H
-#define BASICDEVICE_H
+#ifndef DEVICE_H
+#define DEVICE_H
 
-#include "model/Device.h"
+#include "model/DetailedDevice.h"
 
 #include <map>
 #include <string>
@@ -25,7 +25,7 @@
 
 namespace wolkabout
 {
-class BasicDevice : public Device
+class Device : public DetailedDevice
 {
 public:
     /**
@@ -34,7 +34,7 @@ public:
      * @param password Device password provided by WolkAbout IoT Platform
      * @param actuatorReferences List of actuator references
      */
-    BasicDevice(std::string key, std::string password, std::vector<std::string> actuatorReferences = {});
+    Device(std::string key, std::string password, std::vector<std::string> actuatorReferences = {});
 
     /**
      * @brief Add sensor to device
@@ -70,4 +70,4 @@ public:
 };
 }    // namespace wolkabout
 
-#endif    // BASICDEVICE_H
+#endif    // DEVICE_H
