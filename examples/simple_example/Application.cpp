@@ -29,20 +29,16 @@ int main(int /* argc */, char** /* argv */)
 
     wolk->connect();
 
-    static std::default_random_engine engine;
-    static std::uniform_real_distribution<> distribution(-20, 80);
-    
-    wolk->addSensorReading("T", distribution(engine));
-    
-    wolk->publish();
+    std::default_random_engine engine;
+    std::uniform_real_distribution<> distribution(-20, 80);
 
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-
         wolk->addSensorReading("T", distribution(engine));
-    
+
         wolk->publish();
+    
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
 
     return 0;
