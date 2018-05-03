@@ -1,13 +1,13 @@
 {
-  "id": 296,
-  "name": "Example manifest",
+  "id": 573,
+  "name": "Full example manifest",
   "protocol": "JsonSingleReferenceProtocol",
-  "firmwareUpdateProtocol":"DFUProtocol",
+  "firmwareUpdateProtocol": "DFUProtocol",
   "description": "This device manifest covers all the functionality provided by WolkConnectors",
   "published": false,
   "feeds": [
     {
-      "id": 489,
+      "id": 946,
       "name": "Temperature",
       "reference": "T",
       "unit": "℃",
@@ -22,7 +22,7 @@
       "maximum": 85
     },
     {
-      "id": 490,
+      "id": 947,
       "name": "Pressure",
       "reference": "P",
       "unit": "mb",
@@ -37,7 +37,7 @@
       "maximum": 1100
     },
     {
-      "id": 491,
+      "id": 948,
       "name": "Humidity",
       "reference": "H",
       "unit": "%",
@@ -52,7 +52,7 @@
       "maximum": 100
     },
     {
-      "id": 506,
+      "id": 949,
       "name": "Accelerometer",
       "reference": "ACL",
       "unit": "m/s²",
@@ -69,7 +69,7 @@
   ],
   "actuators": [
     {
-      "id": 359,
+      "id": 329,
       "name": "Switch",
       "reference": "SW",
       "unit": "",
@@ -84,7 +84,7 @@
       "maximum": 1
     },
     {
-      "id": 360,
+      "id": 330,
       "name": "Slider",
       "reference": "SL",
       "unit": "",
@@ -101,7 +101,7 @@
   ],
   "alarms": [
     {
-      "id": 84,
+      "id": 161,
       "name": "High Humidity",
       "description": "This alarm will trigger if humidity is over a certain threshold",
       "message": "High humidity has been detected",
@@ -109,7 +109,56 @@
       "reference": "HH"
     }
   ],
-  "configs": [],
+  "configs": [
+    {
+      "id": 145,
+      "name": "configuration_1",
+      "reference": "config_1",
+      "collapseKey": null,
+      "unit": "A",
+      "dataType": "NUMERIC",
+      "size": 1,
+      "delimiter": null,
+      "defaultValue": "",
+      "nullValue": null,
+      "description": null,
+      "minimum": 0,
+      "maximum": 100,
+      "labels": null
+    },
+    {
+      "id": 146,
+      "name": "configuration_2",
+      "reference": "config_2",
+      "collapseKey": null,
+      "unit": "B",
+      "dataType": "BOOLEAN",
+      "size": 1,
+      "delimiter": null,
+      "defaultValue": "",
+      "nullValue": null,
+      "description": null,
+      "minimum": null,
+      "maximum": null,
+      "labels": null
+    },
+    {
+      "id": 147,
+      "name": "configuration_3",
+      "reference": "config_3",
+      "collapseKey": null,
+      "unit": "C",
+      "dataType": "STRING",
+      "size": 1,
+      "delimiter": null,
+      "defaultValue": "",
+      "nullValue": null,
+      "description": null,
+      "minimum": null,
+      "maximum": null,
+      "labels": null
+    }
+  ],
   "inUse": false,
   "generallyAvailable": false
 }

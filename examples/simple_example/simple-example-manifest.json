@@ -1,0 +1,29 @@
+{
+  "id": 326,
+  "name": "Simple example manifest",
+  "protocol": "JsonSingleReferenceProtocol",
+  "description": "A minimal manifest with one sensor",
+  "published": false,
+  "feeds": [
+    {
+      "id": 532,
+      "name": "Temperature",
+      "reference": "T",
+      "unit": "℃",
+      "dataType": "NUMERIC",
+      "precision": 1,
+      "size": 1,
+      "delimiter": "",
+      "description": "",
+      "labels": "",
+      "readingType": "TEMPERATURE",
+      "minimum": -20,
+      "maximum": 80
+    }
+  ],
+  "actuators": [],
+  "alarms": [],
+  "configs": [],
+  "inUse": false,
+  "generallyAvailable": false
+}
