@@ -30,7 +30,7 @@ WolkAbout C++ Connector library, and example are built from 'out' directory by i
 Example Usage
 -------------
 
-Create a device manifest on the platform by importing `simple-example-manifest.json` located in `examples/simple/`.
+Create a device on WolkAbout IoT platform by importing manifest file `simple-example-manifest.json` located in `examples/simple/`
 This manifest fits `simple` example and demonstrates the sending of a temperature sensor reading.
 
 **Establishing connection with WolkAbout IoT platform:**
@@ -45,7 +45,6 @@ wolk->connect();
 **Publishing sensor readings:**
 ```cpp
 wolk->addSensorReading("TEMPERATURE_REF", 23.4);
-wolk->addSensorReading("BOOL_SENSOR_REF", true);
 ```
 
 **Data publish strategy:**
@@ -61,4 +60,4 @@ wolk->disconnect();
 ```
 **Additional functionality**
 
-WolkConnect-C++ has many additional features, read more [here](./examples/full_feature_set/README.md).
+WolkConnect-C++ library has integrated additional features which can perform full WolkAbout IoT platform potential. Read more about full feature set example [HERE](./examples/full_feature_set/).
