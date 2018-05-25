@@ -37,10 +37,10 @@ int main(int /* argc */, char** /* argv */)
     device.addSensor("P");
     device.addSensor("T");
     device.addSensor("H");
-    device.addSensor("ACL", 3, "_");
+    device.addSensor("ACL", 3);
 
     device.addConfiguration("KEY_1");
-    device.addConfiguration("KEY_2", 3, ":");
+    device.addConfiguration("KEY_2", 3);
 
     static bool switchValue = false;
     static int sliderValue = 0;

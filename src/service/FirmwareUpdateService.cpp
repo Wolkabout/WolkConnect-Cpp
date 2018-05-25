@@ -168,7 +168,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
     case FirmwareUpdateCommand::Type::FILE_UPLOAD:
     {
         auto name = firmwareUpdateCommand.getName();
-        if (name.null() || static_cast<std::string>(name).empty())
+        if (!name || name.value().empty())
         {
             m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
                                                           FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
@@ -176,8 +176,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
         }
 
         const auto size = firmwareUpdateCommand.getSize();
-        if (size.null() || static_cast<uint_fast64_t>(size) > m_service.m_maximumFirmwareSize ||
-            static_cast<uint_fast64_t>(size) == 0)
+        if (!size || size.value() > m_service.m_maximumFirmwareSize || static_cast<uint_fast64_t>(size) == 0)
         {
             m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
                                                           FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
@@ -185,7 +184,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
         }
 
         const auto hash = firmwareUpdateCommand.getHash();
-        if (hash.null() || static_cast<std::string>(hash).empty())
+        if (!hash || hash.value().empty())
         {
             m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
                                                           FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
@@ -197,10 +196,10 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
             m_service.m_currentState = m_service.m_wolkDownloadState.get();
 
             const auto autoInstall = firmwareUpdateCommand.getAutoInstall();
-            m_service.m_autoInstall = !autoInstall.null() && static_cast<bool>(autoInstall);
+            m_service.m_autoInstall = autoInstall && autoInstall.value();
 
-            const auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(hash));
-            m_service.downloadFirmware(name, size, byteHash);
+            const auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(hash.value()));
+            m_service.downloadFirmware(name.value(), size.value(), byteHash);
         }
         else
         {
@@ -213,7 +212,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
     case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
     {
         const auto url = firmwareUpdateCommand.getUrl();
-        if (url.null() || static_cast<std::string>(url).empty())
+        if (!url || url.value().empty())
         {
             m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
                                                           FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
@@ -225,9 +224,9 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
             m_service.m_currentState = m_service.m_urlDownloadState.get();
 
             const auto autoInstall = firmwareUpdateCommand.getAutoInstall();
-            m_service.m_autoInstall = !autoInstall.null() && static_cast<bool>(autoInstall);
+            m_service.m_autoInstall = autoInstall && autoInstall.value();
 
-            m_service.downloadFirmware(url);
+            m_service.downloadFirmware(url.value());
         }
         else
         {

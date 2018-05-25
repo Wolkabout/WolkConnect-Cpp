@@ -23,22 +23,20 @@ Device::Device(std::string key, std::string password, std::vector<std::string> a
 {
     for (const auto& reference : actuatorReferences)
     {
-        m_deviceManifest.addActuator(
-          ActuatorManifest{"", reference, "", "", "", ActuatorManifest::DataType::STRING, 1, 0, 1});
+        m_deviceManifest.addActuator(ActuatorManifest{"", reference, DataType::STRING, ""});
     }
 }
 
-void Device::addSensor(const std::string& reference, unsigned size, const std::string& delimiter)
+void Device::addSensor(const std::string& reference, unsigned size)
 {
-    m_deviceManifest.addSensor(SensorManifest{"", reference, "", "", "", SensorManifest::DataType::STRING, 1, 0, 1,
-                                              delimiter, std::vector<std::string>(size, "")});
+    m_deviceManifest.addSensor(
+      SensorManifest{"", reference, "", "", DataType::STRING, 1, "", std::vector<std::string>(size, "")});
 }
 
-void Device::addConfiguration(const std::string& reference, unsigned size, const std::string& delimiter)
+void Device::addConfiguration(const std::string& reference, unsigned size)
 {
-    m_deviceManifest.addConfiguration(ConfigurationManifest{"", reference, "", "",
-                                                            ConfigurationManifest::DataType::STRING, 0, 1, "", size,
-                                                            delimiter, std::vector<std::string>(size, "")});
+    m_deviceManifest.addConfiguration(
+      ConfigurationManifest{"", reference, DataType::STRING, "", "", std::vector<std::string>(size, "")});
 }
 
 std::vector<std::string> Device::getActuatorReferences() const

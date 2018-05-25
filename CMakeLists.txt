@@ -39,14 +39,16 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -Weffc++ -pedantic    
                                             -Wwrite-strings")
 
 # Paho MQTT
-IF (NOT OPENSSL_INCLUDE_DIR)
+IF (NOT SSL_INCLUDE_DIR)
     message(FATAL_ERROR
-            "OpenSSL include dir must be specified with: -DOPENSSL_INCLUDE_DIR=...")
-ENDIF (NOT OPENSSL_INCLUDE_DIR)
+            "SSL include dir must be specified with: -DSSL_INCLUDE_DIR=...")
+ENDIF (NOT SSL_INCLUDE_DIR)
 
-IF (NOT IS_ABSOLUTE ${OPENSSL_INCLUDE_DIR})
-    set(OPENSSL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/${OPENSSL_INCLUDE_DIR}")
-ENDIF (NOT IS_ABSOLUTE ${OPENSSL_INCLUDE_DIR})
+IF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
+    set(SSL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/${SSL_INCLUDE_DIR}")
+ENDIF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
+
+set(SSL_LIBS ssl crypto)
 
 add_definitions(-DOPENSSL)
 

@@ -41,14 +41,14 @@ public:
      * @param reference Sensor reference
      * @param delimiter Sensor delimiter
      */
-    void addSensor(const std::string& reference, unsigned size = 1, const std::string& delimiter = "");
+    void addSensor(const std::string& reference, unsigned size = 1);
 
     /**
      * @brief Add configuration to device
      * @param reference Configuration reference
      * @param delimiter Configuration delimiter
      */
-    void addConfiguration(const std::string& reference, unsigned size = 1, const std::string& delimiter = "");
+    void addConfiguration(const std::string& reference, unsigned size = 1);
 
     /**
      * @brief Returns actuator references for device
