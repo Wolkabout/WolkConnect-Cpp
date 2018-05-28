@@ -75,8 +75,8 @@ target_link_libraries(full_example ${PROJECT_NAME})
 set_target_properties(full_example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
 
 # Simple example
-file(GLOB_RECURSE SIMPLE_EXAMPLE_HEADER_FILES "examples/simple_example/*.h")
-file(GLOB_RECURSE SIMPLE_EXAMPLE_SOURCE_FILES "examples/simple_example/*.cpp")
+file(GLOB_RECURSE SIMPLE_EXAMPLE_HEADER_FILES "examples/simple/*.h")
+file(GLOB_RECURSE SIMPLE_EXAMPLE_SOURCE_FILES "examples/simple/*.cpp")
 
 add_executable(simple_example ${SIMPLE_EXAMPLE_HEADER_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES})
 target_link_libraries(simple_example ${PROJECT_NAME})
