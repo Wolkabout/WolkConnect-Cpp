@@ -1,5 +1,5 @@
 {
-  "id": 573,
+  "id": 305,
   "name": "Full example manifest",
   "protocol": "JsonSingleReferenceProtocol",
   "firmwareUpdateProtocol": "DFUProtocol",
@@ -7,101 +7,153 @@
   "published": false,
   "feeds": [
     {
-      "id": 946,
+      "id": 517,
       "name": "Temperature",
       "reference": "T",
-      "unit": "℃",
-      "dataType": "NUMERIC",
-      "precision": 1,
-      "size": 1,
-      "delimiter": "",
       "description": "",
-      "labels": "",
-      "readingType": "TEMPERATURE",
+      "unit": {
+        "id": 31,
+        "name": "CELSIUS",
+        "symbol": "℃",
+        "readingTypeId": 2,
+        "system": "SI"
+      },
       "minimum": -40,
-      "maximum": 85
+      "maximum": 85,
+      "readingType": {
+        "id": 2,
+        "name": "TEMPERATURE",
+        "dataType": "NUMERIC",
+        "size": 1,
+        "precision": 1,
+        "labels": null
+      }
     },
     {
-      "id": 947,
+      "id": 518,
       "name": "Pressure",
       "reference": "P",
-      "unit": "mb",
-      "dataType": "NUMERIC",
-      "precision": 1,
-      "size": 1,
-      "delimiter": "",
       "description": "",
-      "labels": "",
-      "readingType": "PRESSURE",
+      "unit": {
+        "id": 112,
+        "name": "MILLIBAR",
+        "symbol": "mb",
+        "readingTypeId": 3,
+        "system": "NON_SI"
+      },
       "minimum": 300,
-      "maximum": 1100
+      "maximum": 1100,
+      "readingType": {
+        "id": 3,
+        "name": "PRESSURE",
+        "dataType": "NUMERIC",
+        "size": 1,
+        "precision": 1,
+        "labels": null
+      }
     },
     {
-      "id": 948,
+      "id": 519,
       "name": "Humidity",
       "reference": "H",
-      "unit": "%",
-      "dataType": "NUMERIC",
-      "precision": 1,
-      "size": 1,
-      "delimiter": "",
       "description": "",
-      "labels": "",
-      "readingType": "HUMIDITY",
+      "unit": {
+        "id": 124,
+        "name": "HUMIDITY_PERCENT",
+        "symbol": "%",
+        "readingTypeId": 4,
+        "system": "NON_SI"
+      },
       "minimum": 0,
-      "maximum": 100
+      "maximum": 100,
+      "readingType": {
+        "id": 4,
+        "name": "HUMIDITY",
+        "dataType": "NUMERIC",
+        "size": 1,
+        "precision": 1,
+        "labels": null
+      }
     },
     {
-      "id": 949,
+      "id": 520,
       "name": "Accelerometer",
       "reference": "ACL",
-      "unit": "m/s²",
-      "dataType": "NUMERIC",
-      "precision": 1,
-      "size": 3,
-      "delimiter": "_",
       "description": "",
-      "labels": "x_y_z",
-      "readingType": "ACCELEROMETER",
+      "unit": {
+        "id": 24,
+        "name": "METRES_PER_SQUARE_SECOND",
+        "symbol": "m/s²",
+        "readingTypeId": 8,
+        "system": "SI"
+      },
       "minimum": 0,
-      "maximum": 100
+      "maximum": 100,
+      "readingType": {
+        "id": 8,
+        "name": "ACCELEROMETER",
+        "dataType": "NUMERIC",
+        "size": 3,
+        "precision": 1,
+        "labels": [
+          "x",
+          "y",
+          "z"
+        ]
+      }
     }
   ],
   "actuators": [
     {
-      "id": 329,
+      "id": 365,
       "name": "Switch",
       "reference": "SW",
-      "unit": "",
-      "dataType": "BOOLEAN",
-      "precision": 1,
-      "size": 1,
-      "delimiter": "",
       "description": "",
-      "labels": "",
-      "readingType": "SW",
+      "unit": {
+        "id": 145,
+        "name": "BOOLEAN(ACTUATOR)",
+        "symbol": null,
+        "readingTypeId": 31,
+        "system": "CUSTOM"
+      },
       "minimum": 0,
-      "maximum": 1
+      "maximum": 1,
+      "readingType": {
+        "id": 31,
+        "name": "SWITCH(ACTUATOR)",
+        "dataType": "BOOLEAN",
+        "size": 1,
+        "precision": 1,
+        "labels": null
+      }
     },
     {
-      "id": 330,
+      "id": 366,
       "name": "Slider",
       "reference": "SL",
-      "unit": "",
-      "dataType": "NUMERIC",
-      "precision": 1,
-      "size": 1,
-      "delimiter": "",
       "description": "",
-      "labels": "",
-      "readingType": "SL",
+      "unit": {
+        "id": 141,
+        "name": "COUNT(ACTUATOR)",
+        "symbol": "count",
+        "readingTypeId": 13,
+        "system": "CUSTOM"
+      },
       "minimum": 0,
-      "maximum": 100
+      "maximum": 100,
+      "readingType": {
+        "id": 13,
+        "name": "COUNT(ACTUATOR)",
+        "dataType": "NUMERIC",
+        "size": 1,
+        "precision": 1,
+        "labels": null
+      }
     }
   ],
   "alarms": [
     {
-      "id": 161,
+      "id": 88,
       "name": "High Humidity",
       "description": "This alarm will trigger if humidity is over a certain threshold",
       "message": "High humidity has been detected",
@@ -111,52 +163,60 @@
   ],
   "configs": [
     {
-      "id": 145,
+      "id": 54,
       "name": "configuration_1",
       "reference": "config_1",
-      "collapseKey": null,
-      "unit": "A",
-      "dataType": "NUMERIC",
-      "size": 1,
-      "delimiter": null,
       "defaultValue": "",
       "nullValue": null,
       "description": null,
       "minimum": 0,
       "maximum": 100,
+      "dataType": "NUMERIC",
+      "size": 1,
       "labels": null
     },
     {
-      "id": 146,
+      "id": 55,
       "name": "configuration_2",
       "reference": "config_2",
-      "collapseKey": null,
-      "unit": "B",
-      "dataType": "BOOLEAN",
-      "size": 1,
-      "delimiter": null,
       "defaultValue": "",
       "nullValue": null,
-      "description": null,
+      "description": "",
       "minimum": null,
       "maximum": null,
+      "dataType": "BOOLEAN",
+      "size": 1,
       "labels": null
     },
     {
-      "id": 147,
+      "id": 56,
       "name": "configuration_3",
-      "reference": "config_3",
-      "collapseKey": null,
-      "unit": "C",
-      "dataType": "STRING",
-      "size": 1,
-      "delimiter": null,
+      "reference": "configuration_3",
       "defaultValue": "",
       "nullValue": null,
       "description": null,
       "minimum": null,
       "maximum": null,
+      "dataType": "STRING",
+      "size": 1,
       "labels": null
+    },
+    {
+      "id": 57,
+      "name": "configuration_4",
+      "reference": "config_4",
+      "defaultValue": "",
+      "nullValue": null,
+      "description": null,
+      "minimum": null,
+      "maximum": null,
+      "dataType": "STRING",
+      "size": 3,
+      "labels": [
+        "a",
+        "b",
+        "c"
+      ]
     }
   ],
   "inUse": false,
