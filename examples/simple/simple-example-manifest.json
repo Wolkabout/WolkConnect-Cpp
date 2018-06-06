@@ -9,16 +9,24 @@
       "id": 532,
       "name": "Temperature",
       "reference": "T",
-      "unit": "℃",
-      "dataType": "NUMERIC",
-      "precision": 1,
-      "size": 1,
-      "delimiter": "",
       "description": "",
-      "labels": "",
-      "readingType": "TEMPERATURE",
+      "unit": {
+        "id": 31,
+        "name": "CELSIUS",
+        "symbol": "℃",
+        "readingTypeId": 2,
+        "system": "SI"
+      },
       "minimum": -20,
-      "maximum": 80
+      "maximum": 80,
+      "readingType": {
+        "id": 2,
+        "name": "TEMPERATURE",
+        "dataType": "NUMERIC",
+        "size": 1,
+        "precision": 1,
+        "labels": null
+      }
     }
   ],
   "actuators": [],
