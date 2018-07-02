@@ -17,7 +17,7 @@
 #ifndef FIRMWAREUPDATESERVICE_H
 #define FIRMWAREUPDATESERVICE_H
 
-#include "FirmwareUpdateCommandListener.h"
+#include "InboundMessageHandler.h"
 #include "UrlFileDownloader.h"
 #include "WolkaboutFileDownloader.h"
 #include "utilities/ByteUtils.h"
@@ -28,16 +28,18 @@
 
 namespace wolkabout
 {
-class OutboundServiceDataHandler;
+class ConnectivityService;
+class FirmwareUpdateProtocol;
 class FirmwareInstaller;
 class FirmwareUpdateResponse;
+class FirmwareUpdateCommand;
 
-class FirmwareUpdateService : public FirmwareUpdateCommandListener
+class FirmwareUpdateService : public MessageListener
 {
 public:
-    FirmwareUpdateService(const std::string& firmwareVersion, const std::string& downloadDirectory,
-                          std::uint_fast64_t maximumFirmwareSize,
-                          std::shared_ptr<OutboundServiceDataHandler> outboundDataHandler,
+    FirmwareUpdateService(std::string deviceKey, FirmwareUpdateProtocol& protocol, const std::string& firmwareVersion,
+                          const std::string& downloadDirectory, std::uint_fast64_t maximumFirmwareSize,
+                          ConnectivityService& connectivityService,
                           std::weak_ptr<WolkaboutFileDownloader> wolkDownloader,
                           std::weak_ptr<UrlFileDownloader> urlDownloader,
                           std::weak_ptr<FirmwareInstaller> firmwareInstaller);
@@ -47,13 +49,19 @@ public:
     FirmwareUpdateService(const FirmwareUpdateService&) = delete;
     FirmwareUpdateService& operator=(const FirmwareUpdateService&) = delete;
 
-    void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand) override;
+    void messageReceived(std::shared_ptr<Message> message) override;
+
+    const Protocol& getProtocol() override;
 
     const std::string& getFirmwareVersion() const;
 
     void reportFirmwareUpdateResult();
 
+    void publishFirmwareVersion();
+
 private:
+    void handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand);
+
     void addToCommandBuffer(std::function<void()> command);
 
     void sendResponse(const FirmwareUpdateResponse& response);
@@ -123,11 +131,15 @@ private:
     friend class UrlDownloadState;
     friend class ReadyState;
 
+    const std::string m_deviceKey;
+
+    FirmwareUpdateProtocol& m_protocol;
+
     const std::string m_currentFirmwareVersion;
     const std::string m_firmwareDownloadDirectory;
     const std::uint_fast64_t m_maximumFirmwareSize;
 
-    std::shared_ptr<OutboundServiceDataHandler> m_outboundDataHandler;
+    ConnectivityService& m_connectivityService;
     std::weak_ptr<WolkaboutFileDownloader> m_wolkFileDownloader;
     std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
     std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;

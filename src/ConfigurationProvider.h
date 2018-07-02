@@ -17,8 +17,9 @@
 #ifndef CONFIGURATIONPROVIDER_H
 #define CONFIGURATIONPROVIDER_H
 
-#include <map>
-#include <string>
+#include "model/ConfigurationItem.h"
+
+#include <vector>
 
 namespace wolkabout
 {
@@ -27,15 +28,14 @@ class ConfigurationProvider
 public:
     /**
      * @brief Device configuration provider callback
-     *        Reads device configuration and returns it as Map<String, String>
-     *        with device configuration reference as map key,
-     *        and device configuration value as map value.<br>
+     *        Reads device configuration and returns it as
+     *        vector of wolkabout::ConfigurationItem.<br>
      *
      *        Must be implemented as non blocking<br>
      *        Must be implemented as thread safe
-     * @return Device configuration as std::map<std::string, std::string>
+     * @return Device configuration as std::vector<ConfigurationItem>
      */
-    virtual const std::map<std::string, std::string>& getConfiguration() = 0;
+    virtual std::vector<ConfigurationItem> getConfiguration() = 0;
 
     virtual ~ConfigurationProvider() = default;
 };

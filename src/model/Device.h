@@ -17,13 +17,15 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
+#include "model/DetailedDevice.h"
+
 #include <map>
 #include <string>
 #include <vector>
 
 namespace wolkabout
 {
-class Device
+class Device : public DetailedDevice
 {
 public:
     /**
@@ -38,40 +40,34 @@ public:
      * @brief Add sensor to device
      * @param reference Sensor reference
      * @param delimiter Sensor delimiter
-     *
      */
-    void addSensor(const std::string& reference, const std::string& delimiter = "");
+    void addSensor(const std::string& reference, unsigned size = 1);
 
     /**
-     * @brief Returns device key
-     * @return device key
+     * @brief Add configuration to device
+     * @param reference Configuration reference
+     * @param delimiter Configuration delimiter
      */
-    const std::string& getDeviceKey() const;
-
-    /**
-     * @brief Returns device password
-     * @return device password
-     */
-    const std::string& getDevicePassword() const;
+    void addConfiguration(const std::string& reference, unsigned size = 1);
 
     /**
      * @brief Returns actuator references for device
      * @return actuator references for device
      */
-    const std::vector<std::string> getActuatorReferences() const;
+    std::vector<std::string> getActuatorReferences() const;
 
     /**
      * @brief Returns sensor delimiters
      * @return std::map with sensor reference as key, and sensor delimiter as value
      */
-    const std::map<std::string, std::string> getSensorDelimiters() const;
+    std::map<std::string, std::string> getSensorDelimiters() const;
 
-private:
-    std::string m_key;
-    std::string m_password;
-    std::vector<std::string> m_actuatorReferences;
-    std::map<std::string, std::string> m_sensorDelimiters;
+    /**
+     * @brief Returns configuration delimiters
+     * @return std::map with configuration reference as key, and configuration delimiter as value
+     */
+    std::map<std::string, std::string> getConfigurationDelimiters() const;
 };
 }    // namespace wolkabout
 
-#endif
+#endif    // DEVICE_H

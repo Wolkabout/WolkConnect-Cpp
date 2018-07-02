@@ -37,7 +37,7 @@ int main(int /* argc */, char** /* argv */)
         wolk->addSensorReading("T", distribution(engine));
 
         wolk->publish();
-    
+
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
 
