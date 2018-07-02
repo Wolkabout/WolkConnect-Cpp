@@ -104,14 +104,14 @@ INSTANTIATE_ADD_SENSOR_READING_FOR(unsigned int);
 INSTANTIATE_ADD_SENSOR_READING_FOR(unsigned long int);
 INSTANTIATE_ADD_SENSOR_READING_FOR(unsigned long long int);
 
-void Wolk::addAlarm(const std::string& reference, const std::string& value, unsigned long long rtc)
+void Wolk::addAlarm(const std::string& reference, bool active, unsigned long long rtc)
 {
     if (rtc == 0)
     {
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addAlarm(reference, value, rtc); });
+    addToCommandBuffer([=]() -> void { m_dataService->addAlarm(reference, active, rtc); });
 }
 
 void Wolk::publishActuatorStatus(const std::string& reference)

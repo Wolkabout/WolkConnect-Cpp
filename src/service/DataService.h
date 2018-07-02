@@ -54,7 +54,7 @@ public:
     void addSensorReading(const std::string& reference, const std::vector<std::string>& values,
                           const std::string& delimiter, unsigned long long int rtc);
 
-    void addAlarm(const std::string& reference, const std::string& value, unsigned long long int rtc);
+    void addAlarm(const std::string& reference, bool active, unsigned long long int rtc);
 
     void addActuatorStatus(const std::string& reference, const std::string& value, ActuatorStatus::State state);
 

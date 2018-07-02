@@ -140,9 +140,9 @@ void DataService::addSensorReading(const std::string& reference, const std::vect
     m_persistence.putSensorReading(reference, sensorReading);
 }
 
-void DataService::addAlarm(const std::string& reference, const std::string& value, unsigned long long int rtc)
+void DataService::addAlarm(const std::string& reference, bool active, unsigned long long int rtc)
 {
-    auto alarm = std::make_shared<Alarm>(value, reference, rtc);
+    auto alarm = std::make_shared<Alarm>(active, reference, rtc);
 
     m_persistence.putAlarm(reference, alarm);
 }

@@ -19,7 +19,7 @@ set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -Weffc++ -pedantic                                           \
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
                                             -Wdisabled-optimization                                                    \
@@ -33,8 +33,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -Weffc++ -pedantic    
                                             -Wno-packed  -Wno-padded -Wredundant-decls                                 \
                                             -Wshadow -Wstack-protector                                                 \
                                             -Wstrict-aliasing=2                                                        \
-                                            -Wunreachable-code -Wunused                                                \
-                                            -Wunused-parameter                                                         \
+                                            -Wunreachable-code -Wno-unused                                             \
                                             -Wvariadic-macros                                                          \
                                             -Wwrite-strings")
 
