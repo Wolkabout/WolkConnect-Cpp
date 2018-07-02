@@ -14,7 +14,8 @@
 
 add_custom_target(format
                   COMMAND "clang-format" -i -sort-includes -style=file ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES}
-                                                                       ${EXAMPLE_HEADER_FILES} ${EXAMPLE_SOURCE_FILES}
+                                                                       ${FULL_EXAMPLE_HEADER_FILES} ${FULL_EXAMPLE_SOURCE_FILES}
+                                                                       ${SIMPLE_EXAMPLE_HEADER_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES}
                   WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
                   COMMENT "[Formatting source code]"
                   VERBATIM)

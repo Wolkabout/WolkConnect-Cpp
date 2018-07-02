@@ -76,21 +76,29 @@ void Wolk::addSensorReading(const std::string& reference, std::initializer_list<
 template <typename T>
 void Wolk::addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
 {
+    std::vector<std::string> stringifiedValues(values.size());
+    std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
+                   [&](const T& value) -> std::string { return StringUtils::toString(value); });
+
+    addSensorReading(reference, stringifiedValues, rtc);
+}
+
+template <>
+void Wolk::addSensorReading(const std::string& reference, const std::vector<std::string> values,
+                            unsigned long long int rtc)
+{
     if (values.empty())
     {
         return;
     }
 
-    std::vector<std::string> stringifiedValues(values.size());
-    std::transform(values.begin(), values.end(), stringifiedValues.begin(),
-                   [&](const T& value) -> std::string { return StringUtils::toString(value); });
-
     addToCommandBuffer([=]() -> void {
-        m_dataService->addSensorReading(reference, stringifiedValues, getSensorDelimiter(reference),
+        m_dataService->addSensorReading(reference, values, getSensorDelimiter(reference),
                                         rtc != 0 ? rtc : Wolk::currentRtc());
     });
 }
 
+INSTANTIATE_ADD_SENSOR_READING_FOR(std::string);
 INSTANTIATE_ADD_SENSOR_READING_FOR(char);
 INSTANTIATE_ADD_SENSOR_READING_FOR(char*);
 INSTANTIATE_ADD_SENSOR_READING_FOR(const char*);

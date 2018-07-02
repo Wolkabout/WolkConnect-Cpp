@@ -64,8 +64,9 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            m_configuration.push_back(wolkabout::ConfigurationItem({"configValue1"}, "KEY_1"));
-            m_configuration.push_back(wolkabout::ConfigurationItem({"5", "6", "15"}, "KEY_2"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"0"}, "config_1"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"false"}, "config_2"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({""}, "config_3"));
         }
 
         std::vector<wolkabout::ConfigurationItem> getConfiguration() override
@@ -127,7 +128,7 @@ int main(int /* argc */, char** /* argv */)
 
     wolk->connect();
 
-    wolk->addAlarm("MA", "High Humidity");
+    wolk->addAlarm("HH", "High Humidity");
 
     wolk->addSensorReading("P", 25.6);
     wolk->addSensorReading("T", 1024);
