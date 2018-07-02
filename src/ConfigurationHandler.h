@@ -17,8 +17,9 @@
 #ifndef CONFIGURATIONHANDLER_H
 #define CONFIGURATIONHANDLER_H
 
-#include <map>
-#include <string>
+#include "model/ConfigurationItem.h"
+
+#include <vector>
 
 namespace wolkabout
 {
@@ -31,10 +32,9 @@ public:
 
      *        Must be implemented as non blocking<br>
      *        Must be implemented as thread safe
-     * @param configuration std::map<std::string, std::string> with device configuration reference as map key,
-     *                      and device configuration value as map value
+     * @param configuration as vector of wolkabout::ConfigurationItem
      */
-    virtual void handleConfiguration(const std::map<std::string, std::string>& configuration) = 0;
+    virtual void handleConfiguration(const std::vector<ConfigurationItem>& configuration) = 0;
 
     virtual ~ConfigurationHandler() = default;
 };

@@ -18,26 +18,30 @@
 #define KEEPALIVESERVICE_H
 
 #include "ConnectionStatusListener.h"
+#include "InboundMessageHandler.h"
 #include "utilities/Timer.h"
 
 namespace wolkabout
 {
 class ConnectivityService;
-class OutboundMessageFactory;
+class StatusProtocol;
 
-class KeepAliveService : public ConnectionStatusListener
+class KeepAliveService : public ConnectionStatusListener, public MessageListener
 {
 public:
-    KeepAliveService(OutboundMessageFactory& outboundMessageFactory, ConnectivityService& connectivityService,
+    KeepAliveService(std::string deviceKey, StatusProtocol& protocol, ConnectivityService& connectivityService,
                      std::chrono::seconds keepAliveInterval);
-
-    void handlePong();
 
     void connected() override;
     void disconnected() override;
 
+    void messageReceived(std::shared_ptr<Message> message) override;
+    const Protocol& getProtocol() override;
+
 private:
-    OutboundMessageFactory& m_outboundMessageFactory;
+    std::string m_deviceKey;
+
+    StatusProtocol& m_protocol;
     ConnectivityService& m_connectivityService;
 
     const std::chrono::seconds m_keepAliveInterval;

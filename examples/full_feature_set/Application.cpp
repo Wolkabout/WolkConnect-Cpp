@@ -16,6 +16,7 @@
 
 #include "Wolk.h"
 #include "service/FirmwareInstaller.h"
+#include "utilities/ConsoleLogger.h"
 
 #include <chrono>
 #include <iostream>
@@ -27,12 +28,19 @@
 
 int main(int /* argc */, char** /* argv */)
 {
+    auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
+    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
+    wolkabout::Logger::setInstance(std::move(logger));
+
     wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
 
     device.addSensor("P");
     device.addSensor("T");
     device.addSensor("H");
-    device.addSensor("ACL", "_");
+    device.addSensor("ACL", 3);
+
+    device.addConfiguration("KEY_1");
+    device.addConfiguration("KEY_2", 3);
 
     static bool switchValue = false;
     static int sliderValue = 0;
@@ -43,7 +51,7 @@ int main(int /* argc */, char** /* argv */)
         bool install(const std::string& firmwareFile) override
         {
             // Mock install
-            std::cout << "Updating firmware with file " << firmwareFile << std::endl;
+            LOG(INFO) << "Updating firmware with file " << firmwareFile;
 
             // Optionally delete 'firmwareFile
             return true;
@@ -56,18 +64,18 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            m_configuration["config_1"] = "0";
-            m_configuration["config_2"] = "false";
-            m_configuration["config_3"] = "";
+            m_configuration.push_back(wolkabout::ConfigurationItem({"0"}, "config_1"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"false"}, "config_2"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({""}, "config_3"));
         }
 
-        const std::map<std::string, std::string>& getConfiguration() override
+        std::vector<wolkabout::ConfigurationItem> getConfiguration() override
         {
             std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
             return m_configuration;
         }
 
-        void handleConfiguration(const std::map<std::string, std::string>& configuration) override
+        void handleConfiguration(const std::vector<wolkabout::ConfigurationItem>& configuration) override
         {
             std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
             m_configuration = configuration;
@@ -75,14 +83,14 @@ int main(int /* argc */, char** /* argv */)
 
     private:
         std::mutex m_ConfigurationMutex;
-        std::map<std::string, std::string> m_configuration;
+        std::vector<wolkabout::ConfigurationItem> m_configuration;
     };
     auto deviceConfiguration = std::make_shared<DeviceConfiguration>();
 
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device)
         .actuationHandler([&](const std::string& reference, const std::string& value) -> void {
-            std::cout << "Actuation request received - Reference: " << reference << " value: " << value << std::endl;
+            LOG(DEBUG) << "Actuation request received - Reference: " << reference << " value: " << value;
 
             if (reference == "SW")
             {
