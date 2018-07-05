@@ -87,7 +87,7 @@ wolk->publishConfiguration();
 
 **Publishing events:**
 ```cpp
-wolk->addAlarm("ALARM_REF", "ALARM_MESSAGE_FROM_CONNECTOR");
+wolk->addAlarm("ALARM_REF", true);
 ```
 
 **Data publish strategy:**
