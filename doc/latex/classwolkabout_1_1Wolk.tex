@@ -1,0 +1,278 @@
+\hypertarget{classwolkabout_1_1Wolk}{}\section{wolkabout\+:\+:Wolk Class Reference}
+\label{classwolkabout_1_1Wolk}\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classwolkabout_1_1Wolk_a8b0e5e82c95c206361bc555091581721}{add\+Sensor\+Reading} (const std\+::string \&reference, T value, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classwolkabout_1_1Wolk_a107e97d09b14a9ec270834b084aa57c0}{add\+Sensor\+Reading} (const std\+::string \&reference, std\+::initializer\+\_\+list$<$ T $>$ values, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classwolkabout_1_1Wolk_a312f30b081b6d4a8f1bb7e2215de0e5d}{add\+Sensor\+Reading} (const std\+::string \&reference, const std\+::vector$<$ T $>$ values, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1Wolk_a8bcc9b4aab0fde2de3483d5d2e09e557}{add\+Alarm} (const std\+::string \&reference, bool active, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes alarm to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1Wolk_a44615f58380fb36be1f2c21c5423469a}{publish\+Actuator\+Status} (const std\+::string \&reference)
+\begin{DoxyCompactList}\small\item\em Invokes Actuator\+Status\+Provider to obtain actuator status, and the publishes it.~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1Wolk_a07c1144ebaf09975fa8e9d2cdc908fe5}{publish\+Configuration} ()\hypertarget{classwolkabout_1_1Wolk_a07c1144ebaf09975fa8e9d2cdc908fe5}{}\label{classwolkabout_1_1Wolk_a07c1144ebaf09975fa8e9d2cdc908fe5}
+
+\begin{DoxyCompactList}\small\item\em Invokes Configuration\+Provider to obtain device configuration, and the publishes it.~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1Wolk_ae78f0c33b71e8d33861de8547de1c311}{connect} ()\hypertarget{classwolkabout_1_1Wolk_ae78f0c33b71e8d33861de8547de1c311}{}\label{classwolkabout_1_1Wolk_ae78f0c33b71e8d33861de8547de1c311}
+
+\begin{DoxyCompactList}\small\item\em Establishes connection with Wolk\+About IoT platform. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1Wolk_a805c8f842b1e4a480ac1a8bc1b6add06}{disconnect} ()\hypertarget{classwolkabout_1_1Wolk_a805c8f842b1e4a480ac1a8bc1b6add06}{}\label{classwolkabout_1_1Wolk_a805c8f842b1e4a480ac1a8bc1b6add06}
+
+\begin{DoxyCompactList}\small\item\em Disconnects from Wolk\+About IoT platform. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1Wolk_a692525b11e983643eb12b2bdfc54d4cd}{publish} ()\hypertarget{classwolkabout_1_1Wolk_a692525b11e983643eb12b2bdfc54d4cd}{}\label{classwolkabout_1_1Wolk_a692525b11e983643eb12b2bdfc54d4cd}
+
+\begin{DoxyCompactList}\small\item\em Publishes data. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\void {\bfseries add\+Sensor\+Reading} (const std\+::string \&reference, T value, unsigned long long rtc)\hypertarget{classwolkabout_1_1Wolk_a882dcff4a9d9d51fd9d0e76edfd03d9e}{}\label{classwolkabout_1_1Wolk_a882dcff4a9d9d51fd9d0e76edfd03d9e}
+
+\item 
+{\footnotesize template$<$$>$ }\\void {\bfseries add\+Sensor\+Reading} (const std\+::string \&reference, std\+::string value, unsigned long long rtc)\hypertarget{classwolkabout_1_1Wolk_a4704e782ac13a380a6d7ccdbabb3847e}{}\label{classwolkabout_1_1Wolk_a4704e782ac13a380a6d7ccdbabb3847e}
+
+\item 
+{\footnotesize template$<$$>$ }\\void {\bfseries add\+Sensor\+Reading} (const std\+::string \&reference, const std\+::vector$<$ std\+::string $>$ values, unsigned long long int rtc)\hypertarget{classwolkabout_1_1Wolk_ac55d5659566c66a513cdbb2e29833028}{}\label{classwolkabout_1_1Wolk_ac55d5659566c66a513cdbb2e29833028}
+
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \hyperlink{classwolkabout_1_1WolkBuilder}{Wolk\+Builder} \hyperlink{classwolkabout_1_1Wolk_a91270bb8552c2dee634e552111db4bb0}{new\+Builder} (Device device)
+\begin{DoxyCompactList}\small\item\em Initiates \hyperlink{classwolkabout_1_1WolkBuilder}{wolkabout\+::\+Wolk\+Builder} that configures device to connect to Wolk\+About IoT Cloud. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+class {\bfseries Wolk\+Builder}\hypertarget{classwolkabout_1_1Wolk_aa7f95cb7914ddd6cb902a924d947cc1d}{}\label{classwolkabout_1_1Wolk_aa7f95cb7914ddd6cb902a924d947cc1d}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Alarm@{add\+Alarm}}
+\index{add\+Alarm@{add\+Alarm}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Alarm(const std\+::string \&reference, bool active, unsigned long long int rtc=0)}{addAlarm(const std::string &reference, bool active, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::add\+Alarm (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{bool}]{active, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1Wolk_a8bcc9b4aab0fde2de3483d5d2e09e557}{}\label{classwolkabout_1_1Wolk_a8bcc9b4aab0fde2de3483d5d2e09e557}
+
+
+Publishes alarm to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Alarm reference \\
+\hline
+{\em active} & Is alarm active or not \\
+\hline
+{\em rtc} & P\+O\+S\+IX time at which event occurred -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, T value, unsigned long long int rtc=0)}{addSensorReading(const std::string &reference, T value, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{T}]{value, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1Wolk_a8b0e5e82c95c206361bc555091581721}{}\label{classwolkabout_1_1Wolk_a8b0e5e82c95c206361bc555091581721}
+
+
+Publishes sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Sensor reference \\
+\hline
+{\em value} & Sensor value~\newline
+ Supported types\+:~\newline
+
+\begin{DoxyItemize}
+\item bool~\newline
+
+\item float~\newline
+
+\item double~\newline
+
+\item signed int~\newline
+
+\item signed long int~\newline
+
+\item signed long long int~\newline
+
+\item unsigned int~\newline
+
+\item unsigned long int~\newline
+
+\item unsigned long long int~\newline
+
+\item string~\newline
+
+\item char$\ast$~\newline
+
+\item const char$\ast$~\newline
+ 
+\end{DoxyItemize}\\
+\hline
+{\em rtc} & Reading P\+O\+S\+IX time -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, std\+::initializer\+\_\+list$<$ T $>$ values, unsigned long long int rtc=0)}{addSensorReading(const std::string &reference, std::initializer_list< T > values, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{std\+::initializer\+\_\+list$<$ T $>$}]{values, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1Wolk_a107e97d09b14a9ec270834b084aa57c0}{}\label{classwolkabout_1_1Wolk_a107e97d09b14a9ec270834b084aa57c0}
+
+
+Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Sensor reference \\
+\hline
+{\em values} & Multi-\/value sensor values~\newline
+ Supported types\+:~\newline
+
+\begin{DoxyItemize}
+\item bool~\newline
+
+\item float~\newline
+
+\item double~\newline
+
+\item signed int~\newline
+
+\item signed long int~\newline
+
+\item signed long long int~\newline
+
+\item unsigned int~\newline
+
+\item unsigned long int~\newline
+
+\item unsigned long long int~\newline
+
+\item string~\newline
+
+\item char$\ast$~\newline
+
+\item const char$\ast$~\newline
+ 
+\end{DoxyItemize}\\
+\hline
+{\em rtc} & Reading P\+O\+S\+IX time -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, const std\+::vector$<$ T $>$ values, unsigned long long int rtc=0)}{addSensorReading(const std::string &reference, const std::vector< T > values, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{const std\+::vector$<$ T $>$}]{values, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1Wolk_a312f30b081b6d4a8f1bb7e2215de0e5d}{}\label{classwolkabout_1_1Wolk_a312f30b081b6d4a8f1bb7e2215de0e5d}
+
+
+Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Sensor reference \\
+\hline
+{\em values} & Multi-\/value sensor values~\newline
+ Supported types\+:~\newline
+
+\begin{DoxyItemize}
+\item bool~\newline
+
+\item float~\newline
+
+\item double~\newline
+
+\item signed int~\newline
+
+\item signed long int~\newline
+
+\item signed long long int~\newline
+
+\item unsigned int~\newline
+
+\item unsigned long int~\newline
+
+\item unsigned long long int~\newline
+
+\item string~\newline
+
+\item char$\ast$~\newline
+
+\item const char$\ast$~\newline
+ 
+\end{DoxyItemize}\\
+\hline
+{\em rtc} & Reading P\+O\+S\+IX time -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!new\+Builder@{new\+Builder}}
+\index{new\+Builder@{new\+Builder}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{new\+Builder(\+Device device)}{newBuilder(Device device)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} wolkabout\+::\+Wolk\+::new\+Builder (
+\begin{DoxyParamCaption}
+\item[{Device}]{device}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\hypertarget{classwolkabout_1_1Wolk_a91270bb8552c2dee634e552111db4bb0}{}\label{classwolkabout_1_1Wolk_a91270bb8552c2dee634e552111db4bb0}
+
+
+Initiates \hyperlink{classwolkabout_1_1WolkBuilder}{wolkabout\+::\+Wolk\+Builder} that configures device to connect to Wolk\+About IoT Cloud. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em device} & wolkabout\+::\+Device \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+\hyperlink{classwolkabout_1_1WolkBuilder}{wolkabout\+::\+Wolk\+Builder} instance 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!publish\+Actuator\+Status@{publish\+Actuator\+Status}}
+\index{publish\+Actuator\+Status@{publish\+Actuator\+Status}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{publish\+Actuator\+Status(const std\+::string \&reference)}{publishActuatorStatus(const std::string &reference)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::publish\+Actuator\+Status (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1Wolk_a44615f58380fb36be1f2c21c5423469a}{}\label{classwolkabout_1_1Wolk_a44615f58380fb36be1f2c21c5423469a}
+
+
+Invokes Actuator\+Status\+Provider to obtain actuator status, and the publishes it.~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Actuator} & reference \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/Wolk.\+h\item 
+src/Wolk.\+cpp\end{DoxyCompactItemize}
