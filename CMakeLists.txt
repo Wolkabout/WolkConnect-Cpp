@@ -25,8 +25,7 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic             
                                             -Wdisabled-optimization                                                    \
                                             -Wfloat-equal -Wformat=2                                                   \
                                             -Wformat-nonliteral -Wformat-security                                      \
-                                            -Wformat-y2k                                                               \
-                                            -Wimport  -Winit-self                                                      \
+                                            -Wformat-y2k -Winit-self                                                   \
                                             -Wmissing-field-initializers -Wmissing-format-attribute                    \
                                             -Wmissing-include-dirs -Wmissing-noreturn                                  \
                                             -Wpointer-arith                                                            \
