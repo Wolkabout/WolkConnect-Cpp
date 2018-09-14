@@ -37,6 +37,7 @@ namespace wolkabout
 class Wolk;
 class UrlFileDownloader;
 class FirmwareInstaller;
+class DataProtocol;
 
 class WolkBuilder final
 {
@@ -126,6 +127,14 @@ public:
     WolkBuilder& withPersistence(std::shared_ptr<Persistence> persistence);
 
     /**
+     * @brief withDataProtocol Defines which data protocol to use
+     * @param Protocol unique_ptr to wolkabout::DataProtocol implementation
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides
+     * fluent interface)
+     */
+    WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol);
+
+    /**
      * @brief withFirmwareUpdate Enables firmware update for device
      * @param firmwareVersion Current version of the firmware
      * @param installer Instance of wolkabout::FirmwareInstaller used to install firmware
@@ -167,13 +176,13 @@ public:
      * @throws std::logic_error if actuator status provider is not set, and wolkabout::Device has actuator references
      * @throws std::logic_error if actuation handler is not set, and wolkabout::Device has actuator references
      */
-    std::unique_ptr<Wolk> build() const;
+    std::unique_ptr<Wolk> build();
 
     /**
      * @brief operator std::unique_ptr<Wolk> Conversion to wolkabout::wolk as result returns std::unique_ptr to built
      * wolkabout::Wolk instance
      */
-    operator std::unique_ptr<Wolk>() const;
+    operator std::unique_ptr<Wolk>();
 
 private:
     std::string m_host;
@@ -192,6 +201,7 @@ private:
     std::weak_ptr<ConfigurationProvider> m_configurationProvider;
 
     std::shared_ptr<Persistence> m_persistence;
+    std::unique_ptr<DataProtocol> m_dataProtocol;
 
     std::string m_firmwareVersion;
     std::string m_firmwareDownloadDirectory;
