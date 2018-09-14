@@ -195,7 +195,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     auto mqttClient = std::make_shared<PahoMqttClient>();
     wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(
-      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host));
+      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, TRUST_STORE));
 
     wolk->m_inboundMessageHandler =
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
