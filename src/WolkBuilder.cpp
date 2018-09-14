@@ -114,6 +114,12 @@ WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persisten
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protocol)
+{
+    m_dataProtocol.reset(protocol.release());
+    return *this;
+}
+
 WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
                                              std::weak_ptr<FirmwareInstaller> installer,
                                              const std::string& firmwareDownloadDirectory,
@@ -146,7 +152,7 @@ WolkBuilder& WolkBuilder::withoutKeepAlive()
     return *this;
 }
 
-std::unique_ptr<Wolk> WolkBuilder::build() const
+std::unique_ptr<Wolk> WolkBuilder::build()
 {
     if (m_device.getKey().empty())
     {
@@ -180,7 +186,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 
     auto wolk = std::unique_ptr<Wolk>(new Wolk(m_device));
 
-    wolk->m_dataProtocol = std::unique_ptr<DataProtocol>(new JsonSingleReferenceProtocol());
+    wolk->m_dataProtocol.reset(m_dataProtocol.release());
     wolk->m_fileDownloadProtocol = std::unique_ptr<FileDownloadProtocol>(new DownloadProtocol());
     wolk->m_firmwareUpdateProtocol = std::unique_ptr<FirmwareUpdateProtocol>(new DFUProtocol());
     wolk->m_statusProtocol = std::unique_ptr<StatusProtocol>(new JsonStatusProtocol());
@@ -189,7 +195,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
 
     auto mqttClient = std::make_shared<PahoMqttClient>();
     wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(
-      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host));
+      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, TRUST_STORE));
 
     wolk->m_inboundMessageHandler =
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
@@ -255,7 +261,7 @@ std::unique_ptr<Wolk> WolkBuilder::build() const
     return wolk;
 }
 
-wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>() const
+wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>()
 {
     return build();
 }
@@ -264,6 +270,7 @@ WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}
+, m_dataProtocol{new JsonSingleReferenceProtocol()}
 , m_firmwareVersion{""}
 , m_firmwareDownloadDirectory{""}
 , m_maxFirmwareFileSize{0}
