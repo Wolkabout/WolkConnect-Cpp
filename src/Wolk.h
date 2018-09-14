@@ -29,7 +29,9 @@
 #include "protocol/FirmwareUpdateProtocol.h"
 #include "protocol/StatusProtocol.h"
 #include "utilities/CommandBuffer.h"
+#include "utilities/StringUtils.h"
 
+#include <algorithm>
 #include <functional>
 #include <initializer_list>
 #include <map>
@@ -84,6 +86,16 @@ public:
     template <typename T> void addSensorReading(const std::string& reference, T value, unsigned long long int rtc = 0);
 
     /**
+     * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     * @param reference Sensor reference
+     * @param value Sensor value
+     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
+     *            If omitted current POSIX time is adopted
+     */
+    void addSensorReading(const std::string& reference, std::string value, unsigned long long int rtc = 0);
+
+    /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param reference Sensor reference
@@ -131,6 +143,16 @@ public:
      */
     template <typename T>
     void addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
+
+    /**
+     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
+     *        This method is thread safe, and can be called from multiple thread simultaneously
+     * @param reference Sensor reference
+     * @param values Multi-value sensor values
+     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
+     *            If omitted current POSIX time is adopted
+     */
+    void addSensorReading(const std::string& reference, const std::vector<std::string> values, unsigned long long int rtc = 0);
 
     /**
      * @brief Publishes alarm to WolkAbout IoT Cloud<br>
@@ -250,6 +272,27 @@ private:
         std::function<void()> m_connectionLostHandler;
     };
 };
+
+template <typename T> void Wolk::addSensorReading(const std::string& reference, T value, unsigned long long rtc)
+{
+    addSensorReading(reference, StringUtils::toString(value), rtc);
+}
+
+template <typename T>
+void Wolk::addSensorReading(const std::string& reference, std::initializer_list<T> values, unsigned long long int rtc)
+{
+    addSensorReading(reference, std::vector<T>(values), rtc);
+}
+
+template <typename T>
+void Wolk::addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
+{
+    std::vector<std::string> stringifiedValues(values.size());
+    std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
+                   [&](const T& value) -> std::string { return StringUtils::toString(value); });
+
+    addSensorReading(reference, stringifiedValues, rtc);
+}
 }    // namespace wolkabout
 
 #endif

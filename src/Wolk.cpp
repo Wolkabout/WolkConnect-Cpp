@@ -30,22 +30,13 @@
 #include "service/FirmwareUpdateService.h"
 #include "service/KeepAliveService.h"
 #include "utilities/Logger.h"
-#include "utilities/StringUtils.h"
 
-#include <algorithm>
 #include <initializer_list>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <thread>
 #include <utility>
-
-#define INSTANTIATE_ADD_SENSOR_READING_FOR(x)                                                               \
-    template void Wolk::addSensorReading<x>(const std::string& reference, x value, unsigned long long rtc); \
-    template void Wolk::addSensorReading<x>(const std::string& reference, std::initializer_list<x> value,   \
-                                            unsigned long long int rtc);                                    \
-    template void Wolk::addSensorReading<x>(const std::string& reference, const std::vector<x> values,      \
-                                            unsigned long long int rtc)
 
 namespace wolkabout
 {
@@ -56,34 +47,16 @@ WolkBuilder Wolk::newBuilder(Device device)
     return WolkBuilder(device);
 }
 
-template <typename T> void Wolk::addSensorReading(const std::string& reference, T value, unsigned long long rtc)
+void Wolk::addSensorReading(const std::string& reference, std::string value, unsigned long long rtc)
 {
-    addSensorReading(reference, StringUtils::toString(value), rtc);
-}
+    if (rtc == 0) {
+        rtc = Wolk::currentRtc();
+    }
 
-template <> void Wolk::addSensorReading(const std::string& reference, std::string value, unsigned long long rtc)
-{
     addToCommandBuffer(
-      [=]() -> void { m_dataService->addSensorReading(reference, value, rtc != 0 ? rtc : Wolk::currentRtc()); });
+      [=]() -> void { m_dataService->addSensorReading(reference, value, rtc); });
 }
 
-template <typename T>
-void Wolk::addSensorReading(const std::string& reference, std::initializer_list<T> values, unsigned long long int rtc)
-{
-    addSensorReading(reference, std::vector<T>(values), rtc);
-}
-
-template <typename T>
-void Wolk::addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
-{
-    std::vector<std::string> stringifiedValues(values.size());
-    std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
-                   [&](const T& value) -> std::string { return StringUtils::toString(value); });
-
-    addSensorReading(reference, stringifiedValues, rtc);
-}
-
-template <>
 void Wolk::addSensorReading(const std::string& reference, const std::vector<std::string> values,
                             unsigned long long int rtc)
 {
@@ -92,30 +65,18 @@ void Wolk::addSensorReading(const std::string& reference, const std::vector<std:
         return;
     }
 
+    if (rtc == 0) {
+        rtc = Wolk::currentRtc();
+    }
+
     addToCommandBuffer([=]() -> void {
-        m_dataService->addSensorReading(reference, values, getSensorDelimiter(reference),
-                                        rtc != 0 ? rtc : Wolk::currentRtc());
+        m_dataService->addSensorReading(reference, values, getSensorDelimiter(reference), rtc);
     });
 }
 
-INSTANTIATE_ADD_SENSOR_READING_FOR(std::string);
-INSTANTIATE_ADD_SENSOR_READING_FOR(char);
-INSTANTIATE_ADD_SENSOR_READING_FOR(char*);
-INSTANTIATE_ADD_SENSOR_READING_FOR(const char*);
-INSTANTIATE_ADD_SENSOR_READING_FOR(bool);
-INSTANTIATE_ADD_SENSOR_READING_FOR(float);
-INSTANTIATE_ADD_SENSOR_READING_FOR(double);
-INSTANTIATE_ADD_SENSOR_READING_FOR(signed int);
-INSTANTIATE_ADD_SENSOR_READING_FOR(signed long int);
-INSTANTIATE_ADD_SENSOR_READING_FOR(signed long long int);
-INSTANTIATE_ADD_SENSOR_READING_FOR(unsigned int);
-INSTANTIATE_ADD_SENSOR_READING_FOR(unsigned long int);
-INSTANTIATE_ADD_SENSOR_READING_FOR(unsigned long long int);
-
 void Wolk::addAlarm(const std::string& reference, bool active, unsigned long long rtc)
 {
-    if (rtc == 0)
-    {
+    if (rtc == 0) {
         rtc = Wolk::currentRtc();
     }
 
@@ -224,8 +185,8 @@ void Wolk::addToCommandBuffer(std::function<void()> command)
 
 unsigned long long Wolk::currentRtc()
 {
-    auto duration = std::chrono::system_clock::now().time_since_epoch();
-    return static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::seconds>(duration).count());
+    auto duration = std::chrono::high_resolution_clock::now().time_since_epoch();
+    return static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 }
 
 void Wolk::flushActuatorStatuses()
