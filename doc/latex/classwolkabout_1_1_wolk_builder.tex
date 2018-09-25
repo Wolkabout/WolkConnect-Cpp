@@ -1,0 +1,492 @@
+\hypertarget{classwolkabout_1_1_wolk_builder}{}\section{wolkabout\+:\+:Wolk\+Builder Class Reference}
+\label{classwolkabout_1_1_wolk_builder}\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+
+
+{\ttfamily \#include $<$Wolk\+Builder.\+h$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classwolkabout_1_1_wolk_builder_a7507855f5fcb9f8d7eefc15b6daa63e6}{$\sim$\+Wolk\+Builder} ()=default
+\item 
+\hyperlink{classwolkabout_1_1_wolk_builder_a9ecf16fb262b7b703ceaeb735ca1aaf7}{Wolk\+Builder} (\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \&\&)=default
+\item 
+\hyperlink{classwolkabout_1_1_wolk_builder_a4bd7227f1e389a34e18cc77030dd7d84}{Wolk\+Builder} (Device device)
+\begin{DoxyCompactList}\small\item\em \hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} Initiates \hyperlink{classwolkabout_1_1_wolk}{wolkabout\+::\+Wolk} builder. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_a208c0a0d397efd615863ec1ea4f38f71}{host} (const std\+::string \&host)
+\begin{DoxyCompactList}\small\item\em Allows passing of U\+RI to custom Wolk\+About IoT platform instance. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_a5c8799ad21b6bb0f0c866af3295a69b7}{actuation\+Handler} (const std\+::function$<$ void(const std\+::string \&reference, const std\+::string \&value)$>$ \&actuation\+Handler)
+\begin{DoxyCompactList}\small\item\em Sets actuation handler. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_a0680cbb1e0cd4c12841be304d9faa869}{actuation\+Handler} (std\+::weak\+\_\+ptr$<$ Actuation\+Handler $>$ actuation\+Handler)
+\begin{DoxyCompactList}\small\item\em Sets actuation handler. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_ad85a6b424fc553e0fd044b0e8f61d95d}{actuator\+Status\+Provider} (const std\+::function$<$ Actuator\+Status(const std\+::string \&reference)$>$ \&actuator\+Status\+Provider)
+\begin{DoxyCompactList}\small\item\em Sets actuation status provider. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_aa6884d08e743c7f2d0a173aa2a0cf529}{actuator\+Status\+Provider} (std\+::weak\+\_\+ptr$<$ Actuator\+Status\+Provider $>$ actuator\+Status\+Provider)
+\begin{DoxyCompactList}\small\item\em Sets actuation status provider. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_a70278ae29af4f3be9f903394491ddd3c}{configuration\+Handler} (std\+::function$<$ void(const std\+::vector$<$ Configuration\+Item $>$ \&configuration)$>$ configuration\+Handler)
+\begin{DoxyCompactList}\small\item\em Sets device configuration handler. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_ad3862b32ac54bbd90958a4be94ef301a}{configuration\+Handler} (std\+::weak\+\_\+ptr$<$ Configuration\+Handler $>$ configuration\+Handler)
+\begin{DoxyCompactList}\small\item\em Sets device configuration handler. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_ab8935ff2f79d2d16e4fb2d34a5e7f7c2}{configuration\+Provider} (std\+::function$<$ std\+::vector$<$ Configuration\+Item $>$()$>$ configuration\+Provider)
+\begin{DoxyCompactList}\small\item\em Sets device configuration provider. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_afb551712f0966a4bf6a6cb86e2c7f37b}{configuration\+Provider} (std\+::weak\+\_\+ptr$<$ Configuration\+Provider $>$ configuration\+Provider)
+\begin{DoxyCompactList}\small\item\em Sets device configuration provider. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_ab802dd28b9ad64d62b100ca475776446}{with\+Persistence} (std\+::shared\+\_\+ptr$<$ Persistence $>$ persistence)
+\begin{DoxyCompactList}\small\item\em Sets underlying persistence mechanism to be used~\newline
+ Sample in-\/memory persistence is used as default. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_ae441661b8a61c4aaf8b7d9a794f0debc}{with\+Firmware\+Update} (const std\+::string \&firmware\+Version, std\+::weak\+\_\+ptr$<$ Firmware\+Installer $>$ installer, const std\+::string \&firmware\+Download\+Directory, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Size, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Chunk\+Size)
+\begin{DoxyCompactList}\small\item\em with\+Firmware\+Update Enables firmware update for device \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_a72920612045d4ee812931320a13410c7}{with\+Firmware\+Update} (const std\+::string \&firmware\+Version, std\+::weak\+\_\+ptr$<$ Firmware\+Installer $>$ installer, const std\+::string \&firmware\+Download\+Directory, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Size, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Chunk\+Size, std\+::weak\+\_\+ptr$<$ Url\+File\+Downloader $>$ url\+Downloader)
+\begin{DoxyCompactList}\small\item\em with\+Firmware\+Update Enables firmware update for device \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \& \hyperlink{classwolkabout_1_1_wolk_builder_a22893971f31f5dccb5dec0690324a038}{without\+Keep\+Alive} ()
+\begin{DoxyCompactList}\small\item\em without\+Keep\+Alive Disables ping mechanism used to notify Wolk\+About I\+OT Platform that device is still connected \end{DoxyCompactList}\item 
+std\+::unique\+\_\+ptr$<$ \hyperlink{classwolkabout_1_1_wolk}{Wolk} $>$ \hyperlink{classwolkabout_1_1_wolk_builder_aad4c9b0c925a023cf670dc2fdc6631f3}{build} () const 
+\begin{DoxyCompactList}\small\item\em Builds \hyperlink{classwolkabout_1_1_wolk}{Wolk} instance. \end{DoxyCompactList}\item 
+\hyperlink{classwolkabout_1_1_wolk_builder_a878d41186bd310862e90eecde01a6a1b}{operator std\+::unique\+\_\+ptr$<$ Wolk $>$} () const 
+\begin{DoxyCompactList}\small\item\em operator std\+::unique\+\_\+ptr$<$\+Wolk$>$ Conversion to wolkabout\+::wolk as result returns std\+::unique\+\_\+ptr to built \hyperlink{classwolkabout_1_1_wolk}{wolkabout\+::\+Wolk} instance \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classwolkabout_1_1_wolk_builder_ad3b00189d917cc82cd557c8cf8062d10}{m\+\_\+host}
+\item 
+Device \hyperlink{classwolkabout_1_1_wolk_builder_a6e2dd1cd616595f362f8c43667c6998e}{m\+\_\+device}
+\item 
+std\+::function$<$ void(std\+::string, std\+::string)$>$ \hyperlink{classwolkabout_1_1_wolk_builder_acfce1c54da60e8dc9943b0ab45e27e20}{m\+\_\+actuation\+Handler\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Actuation\+Handler $>$ \hyperlink{classwolkabout_1_1_wolk_builder_a3631d60ed3c07bcf1ad46b28ddd3570a}{m\+\_\+actuation\+Handler}
+\item 
+std\+::function$<$ Actuator\+Status(std\+::string)$>$ \hyperlink{classwolkabout_1_1_wolk_builder_a004905693c244d1616f0ee9fc79f1e0d}{m\+\_\+actuator\+Status\+Provider\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Actuator\+Status\+Provider $>$ \hyperlink{classwolkabout_1_1_wolk_builder_a7de9ca5dcb65a67e9c245bc8d928a91f}{m\+\_\+actuator\+Status\+Provider}
+\item 
+std\+::function$<$ void(const std\+::vector$<$ Configuration\+Item $>$ \&configuration)$>$ \hyperlink{classwolkabout_1_1_wolk_builder_a1d8ed6ff181db71100a627520933fb4b}{m\+\_\+configuration\+Handler\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Configuration\+Handler $>$ \hyperlink{classwolkabout_1_1_wolk_builder_ae0103becc951fbb1da1364e9d6f34907}{m\+\_\+configuration\+Handler}
+\item 
+std\+::function$<$ std\+::vector$<$ Configuration\+Item $>$)$>$ \hyperlink{classwolkabout_1_1_wolk_builder_a524126a80e618c3a4e51b9f0fa249a5c}{m\+\_\+configuration\+Provider\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Configuration\+Provider $>$ \hyperlink{classwolkabout_1_1_wolk_builder_af2e250ac23c4c706aee4e4526efe3413}{m\+\_\+configuration\+Provider}
+\item 
+std\+::shared\+\_\+ptr$<$ Persistence $>$ \hyperlink{classwolkabout_1_1_wolk_builder_a11719e49b1cb83d0d94bf32bfd85af9a}{m\+\_\+persistence}
+\item 
+std\+::string \hyperlink{classwolkabout_1_1_wolk_builder_a4b70436b72943ab920d3c9400a66657c}{m\+\_\+firmware\+Version}
+\item 
+std\+::string \hyperlink{classwolkabout_1_1_wolk_builder_a142e4cb00ff1c54b3f49b44bb4e209d8}{m\+\_\+firmware\+Download\+Directory}
+\item 
+std\+::uint\+\_\+fast64\+\_\+t \hyperlink{classwolkabout_1_1_wolk_builder_aa75d2978dffaf90c5f035022067af06b}{m\+\_\+max\+Firmware\+File\+Size}
+\item 
+std\+::uint\+\_\+fast64\+\_\+t \hyperlink{classwolkabout_1_1_wolk_builder_a911964cc98bb6fcc6809fc8b1614fef4}{m\+\_\+max\+Firmware\+File\+Chunk\+Size}
+\item 
+std\+::weak\+\_\+ptr$<$ Firmware\+Installer $>$ \hyperlink{classwolkabout_1_1_wolk_builder_a18535bd3ef0f0b0281b01a6d29836dba}{m\+\_\+firmware\+Installer}
+\item 
+std\+::weak\+\_\+ptr$<$ Url\+File\+Downloader $>$ \hyperlink{classwolkabout_1_1_wolk_builder_aa39d6efb64ed5718138f49dd54b5cc97}{m\+\_\+url\+File\+Downloader}
+\item 
+bool \hyperlink{classwolkabout_1_1_wolk_builder_a5a7da163e93e3edebbb62e4ce782b8a1}{m\+\_\+keep\+Alive\+Enabled}
+\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const constexpr char $\ast$ \hyperlink{classwolkabout_1_1_wolk_builder_ab9b16b4491563b96dc96d90a7e541f5c}{W\+O\+L\+K\+\_\+\+D\+E\+M\+O\+\_\+\+H\+O\+ST} = \char`\"{}ssl\+://api-\/demo.\+wolkabout.\+com\+:8883\char`\"{}
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!````~Wolk\+Builder@{$\sim$\+Wolk\+Builder}}
+\index{````~Wolk\+Builder@{$\sim$\+Wolk\+Builder}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{$\sim$\+Wolk\+Builder()=default}{~WolkBuilder()=default}}]{\setlength{\rightskip}{0pt plus 5cm}wolkabout\+::\+Wolk\+Builder\+::$\sim$\+Wolk\+Builder (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [default]}}\hypertarget{classwolkabout_1_1_wolk_builder_a7507855f5fcb9f8d7eefc15b6daa63e6}{}\label{classwolkabout_1_1_wolk_builder_a7507855f5fcb9f8d7eefc15b6daa63e6}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!Wolk\+Builder@{Wolk\+Builder}}
+\index{Wolk\+Builder@{Wolk\+Builder}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{Wolk\+Builder(\+Wolk\+Builder \&\&)=default}{WolkBuilder(WolkBuilder &&)=default}}]{\setlength{\rightskip}{0pt plus 5cm}wolkabout\+::\+Wolk\+Builder\+::\+Wolk\+Builder (
+\begin{DoxyParamCaption}
+\item[{{\bf Wolk\+Builder} \&\&}]{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [default]}}\hypertarget{classwolkabout_1_1_wolk_builder_a9ecf16fb262b7b703ceaeb735ca1aaf7}{}\label{classwolkabout_1_1_wolk_builder_a9ecf16fb262b7b703ceaeb735ca1aaf7}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!Wolk\+Builder@{Wolk\+Builder}}
+\index{Wolk\+Builder@{Wolk\+Builder}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{Wolk\+Builder(\+Device device)}{WolkBuilder(Device device)}}]{\setlength{\rightskip}{0pt plus 5cm}wolkabout\+::\+Wolk\+Builder\+::\+Wolk\+Builder (
+\begin{DoxyParamCaption}
+\item[{Device}]{device}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_a4bd7227f1e389a34e18cc77030dd7d84}{}\label{classwolkabout_1_1_wolk_builder_a4bd7227f1e389a34e18cc77030dd7d84}
+
+
+\hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} Initiates \hyperlink{classwolkabout_1_1_wolk}{wolkabout\+::\+Wolk} builder. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em device} & Device for which \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} is instantiated \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!actuation\+Handler@{actuation\+Handler}}
+\index{actuation\+Handler@{actuation\+Handler}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{actuation\+Handler(const std\+::function$<$ void(const std\+::string \&reference, const std\+::string \&value)$>$ \&actuation\+Handler)}{actuationHandler(const std::function< void(const std::string &reference, const std::string &value)> &actuationHandler)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder}\& wolkabout\+::\+Wolk\+Builder\+::actuation\+Handler (
+\begin{DoxyParamCaption}
+\item[{const std\+::function$<$ void(const std\+::string \&reference, const std\+::string \&value)$>$ \&}]{actuation\+Handler}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_a5c8799ad21b6bb0f0c866af3295a69b7}{}\label{classwolkabout_1_1_wolk_builder_a5c8799ad21b6bb0f0c866af3295a69b7}
+
+
+Sets actuation handler. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em actuation\+Handler} & Lambda that handles actuation requests \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!actuation\+Handler@{actuation\+Handler}}
+\index{actuation\+Handler@{actuation\+Handler}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{actuation\+Handler(std\+::weak\+\_\+ptr$<$ Actuation\+Handler $>$ actuation\+Handler)}{actuationHandler(std::weak_ptr< ActuationHandler > actuationHandler)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::actuation\+Handler (
+\begin{DoxyParamCaption}
+\item[{std\+::weak\+\_\+ptr$<$ Actuation\+Handler $>$}]{actuation\+Handler}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_a0680cbb1e0cd4c12841be304d9faa869}{}\label{classwolkabout_1_1_wolk_builder_a0680cbb1e0cd4c12841be304d9faa869}
+
+
+Sets actuation handler. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em actuation\+Handler} & Instance of wolkabout\+::\+Actuation\+Handler \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!actuator\+Status\+Provider@{actuator\+Status\+Provider}}
+\index{actuator\+Status\+Provider@{actuator\+Status\+Provider}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{actuator\+Status\+Provider(const std\+::function$<$ Actuator\+Status(const std\+::string \&reference)$>$ \&actuator\+Status\+Provider)}{actuatorStatusProvider(const std::function< ActuatorStatus(const std::string &reference)> &actuatorStatusProvider)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder}\& wolkabout\+::\+Wolk\+Builder\+::actuator\+Status\+Provider (
+\begin{DoxyParamCaption}
+\item[{const std\+::function$<$ Actuator\+Status(const std\+::string \&reference)$>$ \&}]{actuator\+Status\+Provider}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_ad85a6b424fc553e0fd044b0e8f61d95d}{}\label{classwolkabout_1_1_wolk_builder_ad85a6b424fc553e0fd044b0e8f61d95d}
+
+
+Sets actuation status provider. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em actuator\+Status\+Provider} & Lambda that provides Actuator\+Status by reference of requested actuator \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!actuator\+Status\+Provider@{actuator\+Status\+Provider}}
+\index{actuator\+Status\+Provider@{actuator\+Status\+Provider}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{actuator\+Status\+Provider(std\+::weak\+\_\+ptr$<$ Actuator\+Status\+Provider $>$ actuator\+Status\+Provider)}{actuatorStatusProvider(std::weak_ptr< ActuatorStatusProvider > actuatorStatusProvider)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::actuator\+Status\+Provider (
+\begin{DoxyParamCaption}
+\item[{std\+::weak\+\_\+ptr$<$ Actuator\+Status\+Provider $>$}]{actuator\+Status\+Provider}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_aa6884d08e743c7f2d0a173aa2a0cf529}{}\label{classwolkabout_1_1_wolk_builder_aa6884d08e743c7f2d0a173aa2a0cf529}
+
+
+Sets actuation status provider. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em actuator\+Status\+Provider} & Instance of wolkabout\+::\+Actuator\+Status\+Provider \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!build@{build}}
+\index{build@{build}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{build() const }{build() const }}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$ {\bf Wolk} $>$ wolkabout\+::\+Wolk\+Builder\+::build (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\hypertarget{classwolkabout_1_1_wolk_builder_aad4c9b0c925a023cf670dc2fdc6631f3}{}\label{classwolkabout_1_1_wolk_builder_aad4c9b0c925a023cf670dc2fdc6631f3}
+
+
+Builds \hyperlink{classwolkabout_1_1_wolk}{Wolk} instance. 
+
+\begin{DoxyReturn}{Returns}
+\hyperlink{classwolkabout_1_1_wolk}{Wolk} instance as std\+::unique\+\_\+ptr$<$\+Wolk$>$
+\end{DoxyReturn}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em std\+::logic\+\_\+error} & if device key is not present in wolkabout\+::\+Device \\
+\hline
+{\em std\+::logic\+\_\+error} & if actuator status provider is not set, and wolkabout\+::\+Device has actuator references \\
+\hline
+{\em std\+::logic\+\_\+error} & if actuation handler is not set, and wolkabout\+::\+Device has actuator references \\
+\hline
+\end{DoxyExceptions}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!configuration\+Handler@{configuration\+Handler}}
+\index{configuration\+Handler@{configuration\+Handler}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{configuration\+Handler(std\+::function$<$ void(const std\+::vector$<$ Configuration\+Item $>$ \&configuration)$>$ configuration\+Handler)}{configurationHandler(std::function< void(const std::vector< ConfigurationItem > &configuration)> configurationHandler)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::configuration\+Handler (
+\begin{DoxyParamCaption}
+\item[{std\+::function$<$ void(const std\+::vector$<$ Configuration\+Item $>$ \&configuration)$>$}]{configuration\+Handler}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_a70278ae29af4f3be9f903394491ddd3c}{}\label{classwolkabout_1_1_wolk_builder_a70278ae29af4f3be9f903394491ddd3c}
+
+
+Sets device configuration handler. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em configuration\+Handler} & Lambda that handles setting of configuration \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!configuration\+Handler@{configuration\+Handler}}
+\index{configuration\+Handler@{configuration\+Handler}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{configuration\+Handler(std\+::weak\+\_\+ptr$<$ Configuration\+Handler $>$ configuration\+Handler)}{configurationHandler(std::weak_ptr< ConfigurationHandler > configurationHandler)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf wolkabout\+::\+Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::configuration\+Handler (
+\begin{DoxyParamCaption}
+\item[{std\+::weak\+\_\+ptr$<$ Configuration\+Handler $>$}]{configuration\+Handler}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_ad3862b32ac54bbd90958a4be94ef301a}{}\label{classwolkabout_1_1_wolk_builder_ad3862b32ac54bbd90958a4be94ef301a}
+
+
+Sets device configuration handler. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em configuration\+Handler} & Instance of wolkabout\+::\+Configuration\+Handler that handles setting of configuration \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!configuration\+Provider@{configuration\+Provider}}
+\index{configuration\+Provider@{configuration\+Provider}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{configuration\+Provider(std\+::function$<$ std\+::vector$<$ Configuration\+Item $>$()$>$ configuration\+Provider)}{configurationProvider(std::function< std::vector< ConfigurationItem >()> configurationProvider)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::configuration\+Provider (
+\begin{DoxyParamCaption}
+\item[{std\+::function$<$ std\+::vector$<$ Configuration\+Item $>$()$>$}]{configuration\+Provider}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_ab8935ff2f79d2d16e4fb2d34a5e7f7c2}{}\label{classwolkabout_1_1_wolk_builder_ab8935ff2f79d2d16e4fb2d34a5e7f7c2}
+
+
+Sets device configuration provider. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em configuration\+Provider} & Lambda that provides device configuration \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!configuration\+Provider@{configuration\+Provider}}
+\index{configuration\+Provider@{configuration\+Provider}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{configuration\+Provider(std\+::weak\+\_\+ptr$<$ Configuration\+Provider $>$ configuration\+Provider)}{configurationProvider(std::weak_ptr< ConfigurationProvider > configurationProvider)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf wolkabout\+::\+Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::configuration\+Provider (
+\begin{DoxyParamCaption}
+\item[{std\+::weak\+\_\+ptr$<$ Configuration\+Provider $>$}]{configuration\+Provider}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_afb551712f0966a4bf6a6cb86e2c7f37b}{}\label{classwolkabout_1_1_wolk_builder_afb551712f0966a4bf6a6cb86e2c7f37b}
+
+
+Sets device configuration provider. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em configuration\+Provider} & Instance of wolkabout\+::\+Configuration\+Provider that provides device configuration \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!host@{host}}
+\index{host@{host}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{host(const std\+::string \&host)}{host(const std::string &host)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::host (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{host}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_a208c0a0d397efd615863ec1ea4f38f71}{}\label{classwolkabout_1_1_wolk_builder_a208c0a0d397efd615863ec1ea4f38f71}
+
+
+Allows passing of U\+RI to custom Wolk\+About IoT platform instance. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em host} & Server U\+RI \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!operator std\+::unique\+\_\+ptr$<$ Wolk $>$@{operator std\+::unique\+\_\+ptr$<$ Wolk $>$}}
+\index{operator std\+::unique\+\_\+ptr$<$ Wolk $>$@{operator std\+::unique\+\_\+ptr$<$ Wolk $>$}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{operator std\+::unique\+\_\+ptr$<$ Wolk $>$() const }{operator std::unique_ptr< Wolk >() const }}]{\setlength{\rightskip}{0pt plus 5cm}wolkabout\+::\+Wolk\+Builder\+::operator std\+::unique\+\_\+ptr$<$ {\bf Wolk} $>$ (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\hypertarget{classwolkabout_1_1_wolk_builder_a878d41186bd310862e90eecde01a6a1b}{}\label{classwolkabout_1_1_wolk_builder_a878d41186bd310862e90eecde01a6a1b}
+
+
+operator std\+::unique\+\_\+ptr$<$\+Wolk$>$ Conversion to wolkabout\+::wolk as result returns std\+::unique\+\_\+ptr to built \hyperlink{classwolkabout_1_1_wolk}{wolkabout\+::\+Wolk} instance 
+
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!with\+Firmware\+Update@{with\+Firmware\+Update}}
+\index{with\+Firmware\+Update@{with\+Firmware\+Update}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{with\+Firmware\+Update(const std\+::string \&firmware\+Version, std\+::weak\+\_\+ptr$<$ Firmware\+Installer $>$ installer, const std\+::string \&firmware\+Download\+Directory, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Size, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Chunk\+Size)}{withFirmwareUpdate(const std::string &firmwareVersion, std::weak_ptr< FirmwareInstaller > installer, const std::string &firmwareDownloadDirectory, std::uint_fast64_t maxFirmwareFileSize, std::uint_fast64_t maxFirmwareFileChunkSize)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder}\& wolkabout\+::\+Wolk\+Builder\+::with\+Firmware\+Update (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{firmware\+Version, }
+\item[{std\+::weak\+\_\+ptr$<$ Firmware\+Installer $>$}]{installer, }
+\item[{const std\+::string \&}]{firmware\+Download\+Directory, }
+\item[{std\+::uint\+\_\+fast64\+\_\+t}]{max\+Firmware\+File\+Size, }
+\item[{std\+::uint\+\_\+fast64\+\_\+t}]{max\+Firmware\+File\+Chunk\+Size}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_ae441661b8a61c4aaf8b7d9a794f0debc}{}\label{classwolkabout_1_1_wolk_builder_ae441661b8a61c4aaf8b7d9a794f0debc}
+
+
+with\+Firmware\+Update Enables firmware update for device 
+
+
+\begin{DoxyParams}{Parameters}
+{\em firmware\+Version} & Current version of the firmware \\
+\hline
+{\em installer} & Instance of wolkabout\+::\+Firmware\+Installer used to install firmware \\
+\hline
+{\em firmware\+Download\+Directory} & Directory where to download firmware file \\
+\hline
+{\em max\+Firmware\+File\+Size} & Maximum size of firmware file that can be handled \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!with\+Firmware\+Update@{with\+Firmware\+Update}}
+\index{with\+Firmware\+Update@{with\+Firmware\+Update}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{with\+Firmware\+Update(const std\+::string \&firmware\+Version, std\+::weak\+\_\+ptr$<$ Firmware\+Installer $>$ installer, const std\+::string \&firmware\+Download\+Directory, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Size, std\+::uint\+\_\+fast64\+\_\+t max\+Firmware\+File\+Chunk\+Size, std\+::weak\+\_\+ptr$<$ Url\+File\+Downloader $>$ url\+Downloader)}{withFirmwareUpdate(const std::string &firmwareVersion, std::weak_ptr< FirmwareInstaller > installer, const std::string &firmwareDownloadDirectory, std::uint_fast64_t maxFirmwareFileSize, std::uint_fast64_t maxFirmwareFileChunkSize, std::weak_ptr< UrlFileDownloader > urlDownloader)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder}\& wolkabout\+::\+Wolk\+Builder\+::with\+Firmware\+Update (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{firmware\+Version, }
+\item[{std\+::weak\+\_\+ptr$<$ Firmware\+Installer $>$}]{installer, }
+\item[{const std\+::string \&}]{firmware\+Download\+Directory, }
+\item[{std\+::uint\+\_\+fast64\+\_\+t}]{max\+Firmware\+File\+Size, }
+\item[{std\+::uint\+\_\+fast64\+\_\+t}]{max\+Firmware\+File\+Chunk\+Size, }
+\item[{std\+::weak\+\_\+ptr$<$ Url\+File\+Downloader $>$}]{url\+Downloader}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_a72920612045d4ee812931320a13410c7}{}\label{classwolkabout_1_1_wolk_builder_a72920612045d4ee812931320a13410c7}
+
+
+with\+Firmware\+Update Enables firmware update for device 
+
+
+\begin{DoxyParams}{Parameters}
+{\em firmware\+Version} & Current version of the firmware \\
+\hline
+{\em installer} & Instance of wolkabout\+::\+Firmware\+Installer used to install firmware \\
+\hline
+{\em firmware\+Download\+Directory} & Directory where to download firmware file \\
+\hline
+{\em max\+Firmware\+File\+Size} & Maximum size of firmware file that can be handled \\
+\hline
+{\em url\+Downloader} & Instance of wolkabout\+::\+Url\+File\+Downloader used to downlad firmware from provided url \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!without\+Keep\+Alive@{without\+Keep\+Alive}}
+\index{without\+Keep\+Alive@{without\+Keep\+Alive}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{without\+Keep\+Alive()}{withoutKeepAlive()}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::without\+Keep\+Alive (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_a22893971f31f5dccb5dec0690324a038}{}\label{classwolkabout_1_1_wolk_builder_a22893971f31f5dccb5dec0690324a038}
+
+
+without\+Keep\+Alive Disables ping mechanism used to notify Wolk\+About I\+OT Platform that device is still connected 
+
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!with\+Persistence@{with\+Persistence}}
+\index{with\+Persistence@{with\+Persistence}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{with\+Persistence(std\+::shared\+\_\+ptr$<$ Persistence $>$ persistence)}{withPersistence(std::shared_ptr< Persistence > persistence)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} \& wolkabout\+::\+Wolk\+Builder\+::with\+Persistence (
+\begin{DoxyParamCaption}
+\item[{std\+::shared\+\_\+ptr$<$ Persistence $>$}]{persistence}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_builder_ab802dd28b9ad64d62b100ca475776446}{}\label{classwolkabout_1_1_wolk_builder_ab802dd28b9ad64d62b100ca475776446}
+
+
+Sets underlying persistence mechanism to be used~\newline
+ Sample in-\/memory persistence is used as default. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em persistence} & std\+::shared\+\_\+ptr to wolkabout\+::\+Persistence implementation \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Reference to current \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance (Provides fluent interface) 
+\end{DoxyReturn}
+
+
+\subsection{Member Data Documentation}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+actuation\+Handler@{m\+\_\+actuation\+Handler}}
+\index{m\+\_\+actuation\+Handler@{m\+\_\+actuation\+Handler}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuation\+Handler}{m_actuationHandler}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Actuation\+Handler$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+actuation\+Handler\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a3631d60ed3c07bcf1ad46b28ddd3570a}{}\label{classwolkabout_1_1_wolk_builder_a3631d60ed3c07bcf1ad46b28ddd3570a}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+actuation\+Handler\+Lambda@{m\+\_\+actuation\+Handler\+Lambda}}
+\index{m\+\_\+actuation\+Handler\+Lambda@{m\+\_\+actuation\+Handler\+Lambda}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuation\+Handler\+Lambda}{m_actuationHandlerLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$void(std\+::string, std\+::string)$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+actuation\+Handler\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_acfce1c54da60e8dc9943b0ab45e27e20}{}\label{classwolkabout_1_1_wolk_builder_acfce1c54da60e8dc9943b0ab45e27e20}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+actuator\+Status\+Provider@{m\+\_\+actuator\+Status\+Provider}}
+\index{m\+\_\+actuator\+Status\+Provider@{m\+\_\+actuator\+Status\+Provider}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuator\+Status\+Provider}{m_actuatorStatusProvider}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Actuator\+Status\+Provider$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+actuator\+Status\+Provider\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a7de9ca5dcb65a67e9c245bc8d928a91f}{}\label{classwolkabout_1_1_wolk_builder_a7de9ca5dcb65a67e9c245bc8d928a91f}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+actuator\+Status\+Provider\+Lambda@{m\+\_\+actuator\+Status\+Provider\+Lambda}}
+\index{m\+\_\+actuator\+Status\+Provider\+Lambda@{m\+\_\+actuator\+Status\+Provider\+Lambda}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuator\+Status\+Provider\+Lambda}{m_actuatorStatusProviderLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$Actuator\+Status(std\+::string)$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+actuator\+Status\+Provider\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a004905693c244d1616f0ee9fc79f1e0d}{}\label{classwolkabout_1_1_wolk_builder_a004905693c244d1616f0ee9fc79f1e0d}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+configuration\+Handler@{m\+\_\+configuration\+Handler}}
+\index{m\+\_\+configuration\+Handler@{m\+\_\+configuration\+Handler}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Handler}{m_configurationHandler}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Configuration\+Handler$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+configuration\+Handler\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_ae0103becc951fbb1da1364e9d6f34907}{}\label{classwolkabout_1_1_wolk_builder_ae0103becc951fbb1da1364e9d6f34907}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+configuration\+Handler\+Lambda@{m\+\_\+configuration\+Handler\+Lambda}}
+\index{m\+\_\+configuration\+Handler\+Lambda@{m\+\_\+configuration\+Handler\+Lambda}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Handler\+Lambda}{m_configurationHandlerLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$void(const std\+::vector$<$Configuration\+Item$>$\& configuration)$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+configuration\+Handler\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a1d8ed6ff181db71100a627520933fb4b}{}\label{classwolkabout_1_1_wolk_builder_a1d8ed6ff181db71100a627520933fb4b}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+configuration\+Provider@{m\+\_\+configuration\+Provider}}
+\index{m\+\_\+configuration\+Provider@{m\+\_\+configuration\+Provider}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Provider}{m_configurationProvider}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Configuration\+Provider$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+configuration\+Provider\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_af2e250ac23c4c706aee4e4526efe3413}{}\label{classwolkabout_1_1_wolk_builder_af2e250ac23c4c706aee4e4526efe3413}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+configuration\+Provider\+Lambda@{m\+\_\+configuration\+Provider\+Lambda}}
+\index{m\+\_\+configuration\+Provider\+Lambda@{m\+\_\+configuration\+Provider\+Lambda}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Provider\+Lambda}{m_configurationProviderLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$std\+::vector$<$Configuration\+Item$>$)$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+configuration\+Provider\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a524126a80e618c3a4e51b9f0fa249a5c}{}\label{classwolkabout_1_1_wolk_builder_a524126a80e618c3a4e51b9f0fa249a5c}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+device@{m\+\_\+device}}
+\index{m\+\_\+device@{m\+\_\+device}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+device}{m_device}}]{\setlength{\rightskip}{0pt plus 5cm}Device wolkabout\+::\+Wolk\+Builder\+::m\+\_\+device\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a6e2dd1cd616595f362f8c43667c6998e}{}\label{classwolkabout_1_1_wolk_builder_a6e2dd1cd616595f362f8c43667c6998e}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+firmware\+Download\+Directory@{m\+\_\+firmware\+Download\+Directory}}
+\index{m\+\_\+firmware\+Download\+Directory@{m\+\_\+firmware\+Download\+Directory}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+firmware\+Download\+Directory}{m_firmwareDownloadDirectory}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string wolkabout\+::\+Wolk\+Builder\+::m\+\_\+firmware\+Download\+Directory\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a142e4cb00ff1c54b3f49b44bb4e209d8}{}\label{classwolkabout_1_1_wolk_builder_a142e4cb00ff1c54b3f49b44bb4e209d8}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+firmware\+Installer@{m\+\_\+firmware\+Installer}}
+\index{m\+\_\+firmware\+Installer@{m\+\_\+firmware\+Installer}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+firmware\+Installer}{m_firmwareInstaller}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Firmware\+Installer$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+firmware\+Installer\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a18535bd3ef0f0b0281b01a6d29836dba}{}\label{classwolkabout_1_1_wolk_builder_a18535bd3ef0f0b0281b01a6d29836dba}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+firmware\+Version@{m\+\_\+firmware\+Version}}
+\index{m\+\_\+firmware\+Version@{m\+\_\+firmware\+Version}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+firmware\+Version}{m_firmwareVersion}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string wolkabout\+::\+Wolk\+Builder\+::m\+\_\+firmware\+Version\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a4b70436b72943ab920d3c9400a66657c}{}\label{classwolkabout_1_1_wolk_builder_a4b70436b72943ab920d3c9400a66657c}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+host@{m\+\_\+host}}
+\index{m\+\_\+host@{m\+\_\+host}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+host}{m_host}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string wolkabout\+::\+Wolk\+Builder\+::m\+\_\+host\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_ad3b00189d917cc82cd557c8cf8062d10}{}\label{classwolkabout_1_1_wolk_builder_ad3b00189d917cc82cd557c8cf8062d10}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+keep\+Alive\+Enabled@{m\+\_\+keep\+Alive\+Enabled}}
+\index{m\+\_\+keep\+Alive\+Enabled@{m\+\_\+keep\+Alive\+Enabled}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+keep\+Alive\+Enabled}{m_keepAliveEnabled}}]{\setlength{\rightskip}{0pt plus 5cm}bool wolkabout\+::\+Wolk\+Builder\+::m\+\_\+keep\+Alive\+Enabled\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a5a7da163e93e3edebbb62e4ce782b8a1}{}\label{classwolkabout_1_1_wolk_builder_a5a7da163e93e3edebbb62e4ce782b8a1}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+max\+Firmware\+File\+Chunk\+Size@{m\+\_\+max\+Firmware\+File\+Chunk\+Size}}
+\index{m\+\_\+max\+Firmware\+File\+Chunk\+Size@{m\+\_\+max\+Firmware\+File\+Chunk\+Size}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+max\+Firmware\+File\+Chunk\+Size}{m_maxFirmwareFileChunkSize}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::uint\+\_\+fast64\+\_\+t wolkabout\+::\+Wolk\+Builder\+::m\+\_\+max\+Firmware\+File\+Chunk\+Size\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a911964cc98bb6fcc6809fc8b1614fef4}{}\label{classwolkabout_1_1_wolk_builder_a911964cc98bb6fcc6809fc8b1614fef4}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+max\+Firmware\+File\+Size@{m\+\_\+max\+Firmware\+File\+Size}}
+\index{m\+\_\+max\+Firmware\+File\+Size@{m\+\_\+max\+Firmware\+File\+Size}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+max\+Firmware\+File\+Size}{m_maxFirmwareFileSize}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::uint\+\_\+fast64\+\_\+t wolkabout\+::\+Wolk\+Builder\+::m\+\_\+max\+Firmware\+File\+Size\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_aa75d2978dffaf90c5f035022067af06b}{}\label{classwolkabout_1_1_wolk_builder_aa75d2978dffaf90c5f035022067af06b}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+persistence@{m\+\_\+persistence}}
+\index{m\+\_\+persistence@{m\+\_\+persistence}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+persistence}{m_persistence}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$Persistence$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+persistence\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_a11719e49b1cb83d0d94bf32bfd85af9a}{}\label{classwolkabout_1_1_wolk_builder_a11719e49b1cb83d0d94bf32bfd85af9a}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!m\+\_\+url\+File\+Downloader@{m\+\_\+url\+File\+Downloader}}
+\index{m\+\_\+url\+File\+Downloader@{m\+\_\+url\+File\+Downloader}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{m\+\_\+url\+File\+Downloader}{m_urlFileDownloader}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Url\+File\+Downloader$>$ wolkabout\+::\+Wolk\+Builder\+::m\+\_\+url\+File\+Downloader\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_aa39d6efb64ed5718138f49dd54b5cc97}{}\label{classwolkabout_1_1_wolk_builder_aa39d6efb64ed5718138f49dd54b5cc97}
+\index{wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}!W\+O\+L\+K\+\_\+\+D\+E\+M\+O\+\_\+\+H\+O\+ST@{W\+O\+L\+K\+\_\+\+D\+E\+M\+O\+\_\+\+H\+O\+ST}}
+\index{W\+O\+L\+K\+\_\+\+D\+E\+M\+O\+\_\+\+H\+O\+ST@{W\+O\+L\+K\+\_\+\+D\+E\+M\+O\+\_\+\+H\+O\+ST}!wolkabout\+::\+Wolk\+Builder@{wolkabout\+::\+Wolk\+Builder}}
+\subsubsection[{\texorpdfstring{W\+O\+L\+K\+\_\+\+D\+E\+M\+O\+\_\+\+H\+O\+ST}{WOLK_DEMO_HOST}}]{\setlength{\rightskip}{0pt plus 5cm}const constexpr char$\ast$ wolkabout\+::\+Wolk\+Builder\+::\+W\+O\+L\+K\+\_\+\+D\+E\+M\+O\+\_\+\+H\+O\+ST = \char`\"{}ssl\+://api-\/demo.\+wolkabout.\+com\+:8883\char`\"{}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_builder_ab9b16b4491563b96dc96d90a7e541f5c}{}\label{classwolkabout_1_1_wolk_builder_ab9b16b4491563b96dc96d90a7e541f5c}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\hyperlink{_wolk_builder_8h}{Wolk\+Builder.\+h}\item 
+src/\hyperlink{_wolk_builder_8cpp}{Wolk\+Builder.\+cpp}\end{DoxyCompactItemize}

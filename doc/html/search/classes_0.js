@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['wolk',['Wolk',['../classwolkabout_1_1Wolk.html',1,'wolkabout']]],
-  ['wolkbuilder',['WolkBuilder',['../classwolkabout_1_1WolkBuilder.html',1,'wolkabout']]]
+  ['connectivityfacade',['ConnectivityFacade',['../classwolkabout_1_1_wolk_1_1_connectivity_facade.html',1,'wolkabout::Wolk']]]
 ];

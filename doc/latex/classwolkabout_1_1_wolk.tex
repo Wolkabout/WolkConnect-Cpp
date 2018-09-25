@@ -1,0 +1,649 @@
+\hypertarget{classwolkabout_1_1_wolk}{}\section{wolkabout\+:\+:Wolk Class Reference}
+\label{classwolkabout_1_1_wolk}\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+
+
+{\ttfamily \#include $<$Wolk.\+h$>$}
+
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \hyperlink{classwolkabout_1_1_wolk_1_1_connectivity_facade}{Connectivity\+Facade}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual \hyperlink{classwolkabout_1_1_wolk_a213707a5be879c29a5a32e7ae264e18e}{$\sim$\+Wolk} ()=default
+\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classwolkabout_1_1_wolk_a8b0e5e82c95c206361bc555091581721}{add\+Sensor\+Reading} (const std\+::string \&reference, T value, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classwolkabout_1_1_wolk_a107e97d09b14a9ec270834b084aa57c0}{add\+Sensor\+Reading} (const std\+::string \&reference, std\+::initializer\+\_\+list$<$ T $>$ values, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classwolkabout_1_1_wolk_a312f30b081b6d4a8f1bb7e2215de0e5d}{add\+Sensor\+Reading} (const std\+::string \&reference, const std\+::vector$<$ T $>$ values, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1_wolk_a8bcc9b4aab0fde2de3483d5d2e09e557}{add\+Alarm} (const std\+::string \&reference, bool active, unsigned long long int rtc=0)
+\begin{DoxyCompactList}\small\item\em Publishes alarm to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1_wolk_a44615f58380fb36be1f2c21c5423469a}{publish\+Actuator\+Status} (const std\+::string \&reference)
+\begin{DoxyCompactList}\small\item\em Invokes Actuator\+Status\+Provider to obtain actuator status, and the publishes it.~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1_wolk_a07c1144ebaf09975fa8e9d2cdc908fe5}{publish\+Configuration} ()
+\begin{DoxyCompactList}\small\item\em Invokes Configuration\+Provider to obtain device configuration, and the publishes it.~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1_wolk_ae78f0c33b71e8d33861de8547de1c311}{connect} ()
+\begin{DoxyCompactList}\small\item\em Establishes connection with Wolk\+About IoT platform. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1_wolk_a805c8f842b1e4a480ac1a8bc1b6add06}{disconnect} ()
+\begin{DoxyCompactList}\small\item\em Disconnects from Wolk\+About IoT platform. \end{DoxyCompactList}\item 
+void \hyperlink{classwolkabout_1_1_wolk_a692525b11e983643eb12b2bdfc54d4cd}{publish} ()
+\begin{DoxyCompactList}\small\item\em Publishes data. \end{DoxyCompactList}\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classwolkabout_1_1_wolk_a882dcff4a9d9d51fd9d0e76edfd03d9e}{add\+Sensor\+Reading} (const std\+::string \&reference, T value, unsigned long long rtc)
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classwolkabout_1_1_wolk_a4704e782ac13a380a6d7ccdbabb3847e}{add\+Sensor\+Reading} (const std\+::string \&reference, std\+::string value, unsigned long long rtc)
+\item 
+{\footnotesize template$<$$>$ }\\void \hyperlink{classwolkabout_1_1_wolk_ac55d5659566c66a513cdbb2e29833028}{add\+Sensor\+Reading} (const std\+::string \&reference, const std\+::vector$<$ std\+::string $>$ values, unsigned long long int rtc)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \hyperlink{classwolkabout_1_1_wolk_builder}{Wolk\+Builder} \hyperlink{classwolkabout_1_1_wolk_a91270bb8552c2dee634e552111db4bb0}{new\+Builder} (Device device)
+\begin{DoxyCompactList}\small\item\em Initiates \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} that configures device to connect to Wolk\+About IoT Cloud. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classwolkabout_1_1_wolk_a41022de71360a1b15a7ea31cd2fb2359}{Wolk} (Device device)
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_ae35585894387377feeb3a2733a9f97f2}{add\+To\+Command\+Buffer} (std\+::function$<$ void()$>$ command)
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_a19a43047e89446b79eda7e9c698fea23}{flush\+Actuator\+Statuses} ()
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_a1ec153b5a83bcd5ee6c0940963f8d104}{flush\+Alarms} ()
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_af8d94d21e60b2a9d68e7274d98194069}{flush\+Sensor\+Readings} ()
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_aadf1fc338b0c6f3e28b9c7285abce99b}{flush\+Configuration} ()
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_aa56ee9c2d0ce80c90ed9e15d5304947b}{handle\+Actuator\+Set\+Command} (const std\+::string \&reference, const std\+::string \&value)
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_a660c9c9ce35be66b1cedfb4a1e852858}{handle\+Actuator\+Get\+Command} (const std\+::string \&reference)
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_ad2f16682dda7d5fe9ad86d9fadf51cd2}{handle\+Configuration\+Set\+Command} (const Configuration\+Set\+Command \&command)
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_a1b64a9d38d23032da4e902ee8aa02bf5}{handle\+Configuration\+Get\+Command} ()
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_a7e210f7d659cc5d390396710ef128e89}{publish\+Firmware\+Version} ()
+\item 
+std\+::string \hyperlink{classwolkabout_1_1_wolk_a71be75b9c18efa4912aaede25c9f1f4f}{get\+Sensor\+Delimiter} (const std\+::string \&reference)
+\item 
+std\+::map$<$ std\+::string, std\+::string $>$ \hyperlink{classwolkabout_1_1_wolk_a700e5f1f34057233c90da1c0380c7e3f}{get\+Configuration\+Delimiters} ()
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_ae1876fe71977816804ce4ec857e95b31}{notify\+Connected} ()
+\item 
+void \hyperlink{classwolkabout_1_1_wolk_a86338fabbcc8a75991ce77786b23e118}{notify\+Disonnected} ()
+\end{DoxyCompactItemize}
+\subsection*{Static Private Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static unsigned long long int \hyperlink{classwolkabout_1_1_wolk_af089e5381e328eea215a99164062b1ef}{current\+Rtc} ()
+\end{DoxyCompactItemize}
+\subsection*{Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+Device \hyperlink{classwolkabout_1_1_wolk_a693a46fb484c06e1bf8ac771995420ef}{m\+\_\+device}
+\item 
+std\+::unique\+\_\+ptr$<$ Data\+Protocol $>$ \hyperlink{classwolkabout_1_1_wolk_a7a8acc5345a3d6fd3b7e92dca9d4649c}{m\+\_\+data\+Protocol}
+\item 
+std\+::unique\+\_\+ptr$<$ Status\+Protocol $>$ \hyperlink{classwolkabout_1_1_wolk_ab410d711778fd39cba66ebac0c6d1929}{m\+\_\+status\+Protocol}
+\item 
+std\+::unique\+\_\+ptr$<$ File\+Download\+Protocol $>$ \hyperlink{classwolkabout_1_1_wolk_a0cc964d56e1f921a29b99448c4b6af64}{m\+\_\+file\+Download\+Protocol}
+\item 
+std\+::unique\+\_\+ptr$<$ Firmware\+Update\+Protocol $>$ \hyperlink{classwolkabout_1_1_wolk_a7b180b579e0bdc7dd0d076c00feb886f}{m\+\_\+firmware\+Update\+Protocol}
+\item 
+std\+::unique\+\_\+ptr$<$ Connectivity\+Service $>$ \hyperlink{classwolkabout_1_1_wolk_a3b3f8b196063ea4808b7a374b225d97b}{m\+\_\+connectivity\+Service}
+\item 
+std\+::shared\+\_\+ptr$<$ Persistence $>$ \hyperlink{classwolkabout_1_1_wolk_a648fe96503a4f17efe4a6904d995633c}{m\+\_\+persistence}
+\item 
+std\+::unique\+\_\+ptr$<$ Inbound\+Message\+Handler $>$ \hyperlink{classwolkabout_1_1_wolk_a968a3f3c38c437876989c747d23d4c68}{m\+\_\+inbound\+Message\+Handler}
+\item 
+std\+::shared\+\_\+ptr$<$ \hyperlink{classwolkabout_1_1_wolk_1_1_connectivity_facade}{Connectivity\+Facade} $>$ \hyperlink{classwolkabout_1_1_wolk_a7f90b6701319c6a12d4519679e18f730}{m\+\_\+connectivity\+Manager}
+\item 
+std\+::shared\+\_\+ptr$<$ Data\+Service $>$ \hyperlink{classwolkabout_1_1_wolk_ae9dd0455d678445224ebbb7e73985577}{m\+\_\+data\+Service}
+\item 
+std\+::shared\+\_\+ptr$<$ File\+Download\+Service $>$ \hyperlink{classwolkabout_1_1_wolk_ab52986b0cbb0939f51f8f8d4d45dfab0}{m\+\_\+file\+Download\+Service}
+\item 
+std\+::shared\+\_\+ptr$<$ Firmware\+Update\+Service $>$ \hyperlink{classwolkabout_1_1_wolk_aa26f2abac76d31fd3a13f56cf5f8b20d}{m\+\_\+firmware\+Update\+Service}
+\item 
+std\+::shared\+\_\+ptr$<$ Keep\+Alive\+Service $>$ \hyperlink{classwolkabout_1_1_wolk_a03e41fa47eb856bfaab0adfc5e90770c}{m\+\_\+keep\+Alive\+Service}
+\item 
+std\+::function$<$ void(std\+::string, std\+::string)$>$ \hyperlink{classwolkabout_1_1_wolk_a0e261d8a574948ab3bed814de0a571da}{m\+\_\+actuation\+Handler\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Actuation\+Handler $>$ \hyperlink{classwolkabout_1_1_wolk_a5995d8743c22d508c4dbba6e652f1244}{m\+\_\+actuation\+Handler}
+\item 
+std\+::function$<$ Actuator\+Status(std\+::string)$>$ \hyperlink{classwolkabout_1_1_wolk_a357c76819475203ea44f0deceb82f3bf}{m\+\_\+actuator\+Status\+Provider\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Actuator\+Status\+Provider $>$ \hyperlink{classwolkabout_1_1_wolk_a77da2ea8914c67af1417b39b8c19b928}{m\+\_\+actuator\+Status\+Provider}
+\item 
+std\+::function$<$ void(const std\+::vector$<$ Configuration\+Item $>$ \&configuration)$>$ \hyperlink{classwolkabout_1_1_wolk_ae47e78eeb1e265a999014209d7bf15df}{m\+\_\+configuration\+Handler\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Configuration\+Handler $>$ \hyperlink{classwolkabout_1_1_wolk_a662b0a47eb325a676adaf7bdd07a9c4d}{m\+\_\+configuration\+Handler}
+\item 
+std\+::function$<$ std\+::vector$<$ Configuration\+Item $>$)$>$ \hyperlink{classwolkabout_1_1_wolk_a0b022ee57d9ae6101b2868828e24b8c1}{m\+\_\+configuration\+Provider\+Lambda}
+\item 
+std\+::weak\+\_\+ptr$<$ Configuration\+Provider $>$ \hyperlink{classwolkabout_1_1_wolk_a31588377251dadbb584911fb30e9fe5d}{m\+\_\+configuration\+Provider}
+\item 
+std\+::unique\+\_\+ptr$<$ Command\+Buffer $>$ \hyperlink{classwolkabout_1_1_wolk_a84181505958620f03aa65303362c4103}{m\+\_\+command\+Buffer}
+\end{DoxyCompactItemize}
+\subsection*{Static Private Attributes}
+\begin{DoxyCompactItemize}
+\item 
+static const constexpr unsigned int \hyperlink{classwolkabout_1_1_wolk_a4546eac23e520d87ab3e335740a044f3}{P\+U\+B\+L\+I\+S\+H\+\_\+\+B\+A\+T\+C\+H\+\_\+\+I\+T\+E\+M\+S\+\_\+\+C\+O\+U\+NT} = 50
+\item 
+static const constexpr std\+::chrono\+::seconds \hyperlink{classwolkabout_1_1_wolk_a0baa96b788266a9f9b164cd2e8799e73}{K\+E\+E\+P\+\_\+\+A\+L\+I\+V\+E\+\_\+\+I\+N\+T\+E\+R\+V\+AL} \{600\}
+\end{DoxyCompactItemize}
+\subsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+class \hyperlink{classwolkabout_1_1_wolk_aa7f95cb7914ddd6cb902a924d947cc1d}{Wolk\+Builder}
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!````~Wolk@{$\sim$\+Wolk}}
+\index{````~Wolk@{$\sim$\+Wolk}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{$\sim$\+Wolk()=default}{~Wolk()=default}}]{\setlength{\rightskip}{0pt plus 5cm}virtual wolkabout\+::\+Wolk\+::$\sim$\+Wolk (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}, {\ttfamily [default]}}\hypertarget{classwolkabout_1_1_wolk_a213707a5be879c29a5a32e7ae264e18e}{}\label{classwolkabout_1_1_wolk_a213707a5be879c29a5a32e7ae264e18e}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!Wolk@{Wolk}}
+\index{Wolk@{Wolk}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{Wolk(\+Device device)}{Wolk(Device device)}}]{\setlength{\rightskip}{0pt plus 5cm}wolkabout\+::\+Wolk\+::\+Wolk (
+\begin{DoxyParamCaption}
+\item[{Device}]{device}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a41022de71360a1b15a7ea31cd2fb2359}{}\label{classwolkabout_1_1_wolk_a41022de71360a1b15a7ea31cd2fb2359}
+
+
+\subsection{Member Function Documentation}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Alarm@{add\+Alarm}}
+\index{add\+Alarm@{add\+Alarm}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Alarm(const std\+::string \&reference, bool active, unsigned long long int rtc=0)}{addAlarm(const std::string &reference, bool active, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::add\+Alarm (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{bool}]{active, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a8bcc9b4aab0fde2de3483d5d2e09e557}{}\label{classwolkabout_1_1_wolk_a8bcc9b4aab0fde2de3483d5d2e09e557}
+
+
+Publishes alarm to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Alarm reference \\
+\hline
+{\em active} & Is alarm active or not \\
+\hline
+{\em rtc} & P\+O\+S\+IX time at which event occurred -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, T value, unsigned long long rtc)}{addSensorReading(const std::string &reference, T value, unsigned long long rtc)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{T}]{value, }
+\item[{unsigned long long}]{rtc}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a882dcff4a9d9d51fd9d0e76edfd03d9e}{}\label{classwolkabout_1_1_wolk_a882dcff4a9d9d51fd9d0e76edfd03d9e}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, std\+::string value, unsigned long long rtc)}{addSensorReading(const std::string &reference, std::string value, unsigned long long rtc)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$$>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{std\+::string}]{value, }
+\item[{unsigned long long}]{rtc}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a4704e782ac13a380a6d7ccdbabb3847e}{}\label{classwolkabout_1_1_wolk_a4704e782ac13a380a6d7ccdbabb3847e}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, T value, unsigned long long int rtc=0)}{addSensorReading(const std::string &reference, T value, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{T}]{value, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a8b0e5e82c95c206361bc555091581721}{}\label{classwolkabout_1_1_wolk_a8b0e5e82c95c206361bc555091581721}
+
+
+Publishes sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Sensor reference \\
+\hline
+{\em value} & Sensor value~\newline
+ Supported types\+:~\newline
+
+\begin{DoxyItemize}
+\item bool~\newline
+
+\item float~\newline
+
+\item double~\newline
+
+\item signed int~\newline
+
+\item signed long int~\newline
+
+\item signed long long int~\newline
+
+\item unsigned int~\newline
+
+\item unsigned long int~\newline
+
+\item unsigned long long int~\newline
+
+\item string~\newline
+
+\item char$\ast$~\newline
+
+\item const char$\ast$~\newline
+ 
+\end{DoxyItemize}\\
+\hline
+{\em rtc} & Reading P\+O\+S\+IX time -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, const std\+::vector$<$ std\+::string $>$ values, unsigned long long int rtc)}{addSensorReading(const std::string &reference, const std::vector< std::string > values, unsigned long long int rtc)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$$>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{const std\+::vector$<$ std\+::string $>$}]{values, }
+\item[{unsigned long long int}]{rtc}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_ac55d5659566c66a513cdbb2e29833028}{}\label{classwolkabout_1_1_wolk_ac55d5659566c66a513cdbb2e29833028}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, std\+::initializer\+\_\+list$<$ T $>$ values, unsigned long long int rtc=0)}{addSensorReading(const std::string &reference, std::initializer_list< T > values, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{std\+::initializer\+\_\+list$<$ T $>$}]{values, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a107e97d09b14a9ec270834b084aa57c0}{}\label{classwolkabout_1_1_wolk_a107e97d09b14a9ec270834b084aa57c0}
+
+
+Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Sensor reference \\
+\hline
+{\em values} & Multi-\/value sensor values~\newline
+ Supported types\+:~\newline
+
+\begin{DoxyItemize}
+\item bool~\newline
+
+\item float~\newline
+
+\item double~\newline
+
+\item signed int~\newline
+
+\item signed long int~\newline
+
+\item signed long long int~\newline
+
+\item unsigned int~\newline
+
+\item unsigned long int~\newline
+
+\item unsigned long long int~\newline
+
+\item string~\newline
+
+\item char$\ast$~\newline
+
+\item const char$\ast$~\newline
+ 
+\end{DoxyItemize}\\
+\hline
+{\em rtc} & Reading P\+O\+S\+IX time -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+Sensor\+Reading@{add\+Sensor\+Reading}}
+\index{add\+Sensor\+Reading@{add\+Sensor\+Reading}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+Sensor\+Reading(const std\+::string \&reference, const std\+::vector$<$ T $>$ values, unsigned long long int rtc=0)}{addSensorReading(const std::string &reference, const std::vector< T > values, unsigned long long int rtc=0)}}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void wolkabout\+::\+Wolk\+::add\+Sensor\+Reading (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{const std\+::vector$<$ T $>$}]{values, }
+\item[{unsigned long long int}]{rtc = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a312f30b081b6d4a8f1bb7e2215de0e5d}{}\label{classwolkabout_1_1_wolk_a312f30b081b6d4a8f1bb7e2215de0e5d}
+
+
+Publishes multi-\/value sensor reading to Wolk\+About IoT Cloud~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em reference} & Sensor reference \\
+\hline
+{\em values} & Multi-\/value sensor values~\newline
+ Supported types\+:~\newline
+
+\begin{DoxyItemize}
+\item bool~\newline
+
+\item float~\newline
+
+\item double~\newline
+
+\item signed int~\newline
+
+\item signed long int~\newline
+
+\item signed long long int~\newline
+
+\item unsigned int~\newline
+
+\item unsigned long int~\newline
+
+\item unsigned long long int~\newline
+
+\item string~\newline
+
+\item char$\ast$~\newline
+
+\item const char$\ast$~\newline
+ 
+\end{DoxyItemize}\\
+\hline
+{\em rtc} & Reading P\+O\+S\+IX time -\/ Number of seconds since 01/01/1970~\newline
+ If omitted current P\+O\+S\+IX time is adopted \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!add\+To\+Command\+Buffer@{add\+To\+Command\+Buffer}}
+\index{add\+To\+Command\+Buffer@{add\+To\+Command\+Buffer}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{add\+To\+Command\+Buffer(std\+::function$<$ void()$>$ command)}{addToCommandBuffer(std::function< void()> command)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::add\+To\+Command\+Buffer (
+\begin{DoxyParamCaption}
+\item[{std\+::function$<$ void()$>$}]{command}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_ae35585894387377feeb3a2733a9f97f2}{}\label{classwolkabout_1_1_wolk_ae35585894387377feeb3a2733a9f97f2}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!connect@{connect}}
+\index{connect@{connect}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{connect()}{connect()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::connect (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_ae78f0c33b71e8d33861de8547de1c311}{}\label{classwolkabout_1_1_wolk_ae78f0c33b71e8d33861de8547de1c311}
+
+
+Establishes connection with Wolk\+About IoT platform. 
+
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!current\+Rtc@{current\+Rtc}}
+\index{current\+Rtc@{current\+Rtc}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{current\+Rtc()}{currentRtc()}}]{\setlength{\rightskip}{0pt plus 5cm}unsigned long long wolkabout\+::\+Wolk\+::current\+Rtc (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_af089e5381e328eea215a99164062b1ef}{}\label{classwolkabout_1_1_wolk_af089e5381e328eea215a99164062b1ef}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!disconnect@{disconnect}}
+\index{disconnect@{disconnect}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{disconnect()}{disconnect()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::disconnect (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a805c8f842b1e4a480ac1a8bc1b6add06}{}\label{classwolkabout_1_1_wolk_a805c8f842b1e4a480ac1a8bc1b6add06}
+
+
+Disconnects from Wolk\+About IoT platform. 
+
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!flush\+Actuator\+Statuses@{flush\+Actuator\+Statuses}}
+\index{flush\+Actuator\+Statuses@{flush\+Actuator\+Statuses}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{flush\+Actuator\+Statuses()}{flushActuatorStatuses()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::flush\+Actuator\+Statuses (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a19a43047e89446b79eda7e9c698fea23}{}\label{classwolkabout_1_1_wolk_a19a43047e89446b79eda7e9c698fea23}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!flush\+Alarms@{flush\+Alarms}}
+\index{flush\+Alarms@{flush\+Alarms}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{flush\+Alarms()}{flushAlarms()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::flush\+Alarms (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a1ec153b5a83bcd5ee6c0940963f8d104}{}\label{classwolkabout_1_1_wolk_a1ec153b5a83bcd5ee6c0940963f8d104}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!flush\+Configuration@{flush\+Configuration}}
+\index{flush\+Configuration@{flush\+Configuration}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{flush\+Configuration()}{flushConfiguration()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::flush\+Configuration (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_aadf1fc338b0c6f3e28b9c7285abce99b}{}\label{classwolkabout_1_1_wolk_aadf1fc338b0c6f3e28b9c7285abce99b}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!flush\+Sensor\+Readings@{flush\+Sensor\+Readings}}
+\index{flush\+Sensor\+Readings@{flush\+Sensor\+Readings}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{flush\+Sensor\+Readings()}{flushSensorReadings()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::flush\+Sensor\+Readings (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_af8d94d21e60b2a9d68e7274d98194069}{}\label{classwolkabout_1_1_wolk_af8d94d21e60b2a9d68e7274d98194069}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!get\+Configuration\+Delimiters@{get\+Configuration\+Delimiters}}
+\index{get\+Configuration\+Delimiters@{get\+Configuration\+Delimiters}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{get\+Configuration\+Delimiters()}{getConfigurationDelimiters()}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::map$<$ std\+::string, std\+::string $>$ wolkabout\+::\+Wolk\+::get\+Configuration\+Delimiters (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a700e5f1f34057233c90da1c0380c7e3f}{}\label{classwolkabout_1_1_wolk_a700e5f1f34057233c90da1c0380c7e3f}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!get\+Sensor\+Delimiter@{get\+Sensor\+Delimiter}}
+\index{get\+Sensor\+Delimiter@{get\+Sensor\+Delimiter}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{get\+Sensor\+Delimiter(const std\+::string \&reference)}{getSensorDelimiter(const std::string &reference)}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string wolkabout\+::\+Wolk\+::get\+Sensor\+Delimiter (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a71be75b9c18efa4912aaede25c9f1f4f}{}\label{classwolkabout_1_1_wolk_a71be75b9c18efa4912aaede25c9f1f4f}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!handle\+Actuator\+Get\+Command@{handle\+Actuator\+Get\+Command}}
+\index{handle\+Actuator\+Get\+Command@{handle\+Actuator\+Get\+Command}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{handle\+Actuator\+Get\+Command(const std\+::string \&reference)}{handleActuatorGetCommand(const std::string &reference)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::handle\+Actuator\+Get\+Command (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a660c9c9ce35be66b1cedfb4a1e852858}{}\label{classwolkabout_1_1_wolk_a660c9c9ce35be66b1cedfb4a1e852858}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!handle\+Actuator\+Set\+Command@{handle\+Actuator\+Set\+Command}}
+\index{handle\+Actuator\+Set\+Command@{handle\+Actuator\+Set\+Command}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{handle\+Actuator\+Set\+Command(const std\+::string \&reference, const std\+::string \&value)}{handleActuatorSetCommand(const std::string &reference, const std::string &value)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::handle\+Actuator\+Set\+Command (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference, }
+\item[{const std\+::string \&}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_aa56ee9c2d0ce80c90ed9e15d5304947b}{}\label{classwolkabout_1_1_wolk_aa56ee9c2d0ce80c90ed9e15d5304947b}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!handle\+Configuration\+Get\+Command@{handle\+Configuration\+Get\+Command}}
+\index{handle\+Configuration\+Get\+Command@{handle\+Configuration\+Get\+Command}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{handle\+Configuration\+Get\+Command()}{handleConfigurationGetCommand()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::handle\+Configuration\+Get\+Command (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a1b64a9d38d23032da4e902ee8aa02bf5}{}\label{classwolkabout_1_1_wolk_a1b64a9d38d23032da4e902ee8aa02bf5}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!handle\+Configuration\+Set\+Command@{handle\+Configuration\+Set\+Command}}
+\index{handle\+Configuration\+Set\+Command@{handle\+Configuration\+Set\+Command}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{handle\+Configuration\+Set\+Command(const Configuration\+Set\+Command \&command)}{handleConfigurationSetCommand(const ConfigurationSetCommand &command)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::handle\+Configuration\+Set\+Command (
+\begin{DoxyParamCaption}
+\item[{const Configuration\+Set\+Command \&}]{command}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_ad2f16682dda7d5fe9ad86d9fadf51cd2}{}\label{classwolkabout_1_1_wolk_ad2f16682dda7d5fe9ad86d9fadf51cd2}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!new\+Builder@{new\+Builder}}
+\index{new\+Builder@{new\+Builder}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{new\+Builder(\+Device device)}{newBuilder(Device device)}}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Wolk\+Builder} wolkabout\+::\+Wolk\+::new\+Builder (
+\begin{DoxyParamCaption}
+\item[{Device}]{device}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\hypertarget{classwolkabout_1_1_wolk_a91270bb8552c2dee634e552111db4bb0}{}\label{classwolkabout_1_1_wolk_a91270bb8552c2dee634e552111db4bb0}
+
+
+Initiates \hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} that configures device to connect to Wolk\+About IoT Cloud. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em device} & wolkabout\+::\+Device \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+\hyperlink{classwolkabout_1_1_wolk_builder}{wolkabout\+::\+Wolk\+Builder} instance 
+\end{DoxyReturn}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!notify\+Connected@{notify\+Connected}}
+\index{notify\+Connected@{notify\+Connected}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{notify\+Connected()}{notifyConnected()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::notify\+Connected (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_ae1876fe71977816804ce4ec857e95b31}{}\label{classwolkabout_1_1_wolk_ae1876fe71977816804ce4ec857e95b31}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!notify\+Disonnected@{notify\+Disonnected}}
+\index{notify\+Disonnected@{notify\+Disonnected}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{notify\+Disonnected()}{notifyDisonnected()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::notify\+Disonnected (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a86338fabbcc8a75991ce77786b23e118}{}\label{classwolkabout_1_1_wolk_a86338fabbcc8a75991ce77786b23e118}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!publish@{publish}}
+\index{publish@{publish}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{publish()}{publish()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::publish (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a692525b11e983643eb12b2bdfc54d4cd}{}\label{classwolkabout_1_1_wolk_a692525b11e983643eb12b2bdfc54d4cd}
+
+
+Publishes data. 
+
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!publish\+Actuator\+Status@{publish\+Actuator\+Status}}
+\index{publish\+Actuator\+Status@{publish\+Actuator\+Status}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{publish\+Actuator\+Status(const std\+::string \&reference)}{publishActuatorStatus(const std::string &reference)}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::publish\+Actuator\+Status (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{reference}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a44615f58380fb36be1f2c21c5423469a}{}\label{classwolkabout_1_1_wolk_a44615f58380fb36be1f2c21c5423469a}
+
+
+Invokes Actuator\+Status\+Provider to obtain actuator status, and the publishes it.~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Actuator} & reference \\
+\hline
+\end{DoxyParams}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!publish\+Configuration@{publish\+Configuration}}
+\index{publish\+Configuration@{publish\+Configuration}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{publish\+Configuration()}{publishConfiguration()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::publish\+Configuration (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\hypertarget{classwolkabout_1_1_wolk_a07c1144ebaf09975fa8e9d2cdc908fe5}{}\label{classwolkabout_1_1_wolk_a07c1144ebaf09975fa8e9d2cdc908fe5}
+
+
+Invokes Configuration\+Provider to obtain device configuration, and the publishes it.~\newline
+ This method is thread safe, and can be called from multiple thread simultaneously. 
+
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!publish\+Firmware\+Version@{publish\+Firmware\+Version}}
+\index{publish\+Firmware\+Version@{publish\+Firmware\+Version}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{publish\+Firmware\+Version()}{publishFirmwareVersion()}}]{\setlength{\rightskip}{0pt plus 5cm}void wolkabout\+::\+Wolk\+::publish\+Firmware\+Version (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a7e210f7d659cc5d390396710ef128e89}{}\label{classwolkabout_1_1_wolk_a7e210f7d659cc5d390396710ef128e89}
+
+
+\subsection{Friends And Related Function Documentation}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!Wolk\+Builder@{Wolk\+Builder}}
+\index{Wolk\+Builder@{Wolk\+Builder}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{Wolk\+Builder}{WolkBuilder}}]{\setlength{\rightskip}{0pt plus 5cm}friend class {\bf Wolk\+Builder}\hspace{0.3cm}{\ttfamily [friend]}}\hypertarget{classwolkabout_1_1_wolk_aa7f95cb7914ddd6cb902a924d947cc1d}{}\label{classwolkabout_1_1_wolk_aa7f95cb7914ddd6cb902a924d947cc1d}
+
+
+\subsection{Member Data Documentation}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!K\+E\+E\+P\+\_\+\+A\+L\+I\+V\+E\+\_\+\+I\+N\+T\+E\+R\+V\+AL@{K\+E\+E\+P\+\_\+\+A\+L\+I\+V\+E\+\_\+\+I\+N\+T\+E\+R\+V\+AL}}
+\index{K\+E\+E\+P\+\_\+\+A\+L\+I\+V\+E\+\_\+\+I\+N\+T\+E\+R\+V\+AL@{K\+E\+E\+P\+\_\+\+A\+L\+I\+V\+E\+\_\+\+I\+N\+T\+E\+R\+V\+AL}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{K\+E\+E\+P\+\_\+\+A\+L\+I\+V\+E\+\_\+\+I\+N\+T\+E\+R\+V\+AL}{KEEP_ALIVE_INTERVAL}}]{\setlength{\rightskip}{0pt plus 5cm}const constexpr std\+::chrono\+::seconds wolkabout\+::\+Wolk\+::\+K\+E\+E\+P\+\_\+\+A\+L\+I\+V\+E\+\_\+\+I\+N\+T\+E\+R\+V\+AL \{600\}\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a0baa96b788266a9f9b164cd2e8799e73}{}\label{classwolkabout_1_1_wolk_a0baa96b788266a9f9b164cd2e8799e73}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+actuation\+Handler@{m\+\_\+actuation\+Handler}}
+\index{m\+\_\+actuation\+Handler@{m\+\_\+actuation\+Handler}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuation\+Handler}{m_actuationHandler}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Actuation\+Handler$>$ wolkabout\+::\+Wolk\+::m\+\_\+actuation\+Handler\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a5995d8743c22d508c4dbba6e652f1244}{}\label{classwolkabout_1_1_wolk_a5995d8743c22d508c4dbba6e652f1244}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+actuation\+Handler\+Lambda@{m\+\_\+actuation\+Handler\+Lambda}}
+\index{m\+\_\+actuation\+Handler\+Lambda@{m\+\_\+actuation\+Handler\+Lambda}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuation\+Handler\+Lambda}{m_actuationHandlerLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$void(std\+::string, std\+::string)$>$ wolkabout\+::\+Wolk\+::m\+\_\+actuation\+Handler\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a0e261d8a574948ab3bed814de0a571da}{}\label{classwolkabout_1_1_wolk_a0e261d8a574948ab3bed814de0a571da}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+actuator\+Status\+Provider@{m\+\_\+actuator\+Status\+Provider}}
+\index{m\+\_\+actuator\+Status\+Provider@{m\+\_\+actuator\+Status\+Provider}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuator\+Status\+Provider}{m_actuatorStatusProvider}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Actuator\+Status\+Provider$>$ wolkabout\+::\+Wolk\+::m\+\_\+actuator\+Status\+Provider\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a77da2ea8914c67af1417b39b8c19b928}{}\label{classwolkabout_1_1_wolk_a77da2ea8914c67af1417b39b8c19b928}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+actuator\+Status\+Provider\+Lambda@{m\+\_\+actuator\+Status\+Provider\+Lambda}}
+\index{m\+\_\+actuator\+Status\+Provider\+Lambda@{m\+\_\+actuator\+Status\+Provider\+Lambda}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+actuator\+Status\+Provider\+Lambda}{m_actuatorStatusProviderLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$Actuator\+Status(std\+::string)$>$ wolkabout\+::\+Wolk\+::m\+\_\+actuator\+Status\+Provider\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a357c76819475203ea44f0deceb82f3bf}{}\label{classwolkabout_1_1_wolk_a357c76819475203ea44f0deceb82f3bf}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+command\+Buffer@{m\+\_\+command\+Buffer}}
+\index{m\+\_\+command\+Buffer@{m\+\_\+command\+Buffer}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+command\+Buffer}{m_commandBuffer}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$Command\+Buffer$>$ wolkabout\+::\+Wolk\+::m\+\_\+command\+Buffer\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a84181505958620f03aa65303362c4103}{}\label{classwolkabout_1_1_wolk_a84181505958620f03aa65303362c4103}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+configuration\+Handler@{m\+\_\+configuration\+Handler}}
+\index{m\+\_\+configuration\+Handler@{m\+\_\+configuration\+Handler}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Handler}{m_configurationHandler}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Configuration\+Handler$>$ wolkabout\+::\+Wolk\+::m\+\_\+configuration\+Handler\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a662b0a47eb325a676adaf7bdd07a9c4d}{}\label{classwolkabout_1_1_wolk_a662b0a47eb325a676adaf7bdd07a9c4d}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+configuration\+Handler\+Lambda@{m\+\_\+configuration\+Handler\+Lambda}}
+\index{m\+\_\+configuration\+Handler\+Lambda@{m\+\_\+configuration\+Handler\+Lambda}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Handler\+Lambda}{m_configurationHandlerLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$void(const std\+::vector$<$Configuration\+Item$>$\& configuration)$>$ wolkabout\+::\+Wolk\+::m\+\_\+configuration\+Handler\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_ae47e78eeb1e265a999014209d7bf15df}{}\label{classwolkabout_1_1_wolk_ae47e78eeb1e265a999014209d7bf15df}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+configuration\+Provider@{m\+\_\+configuration\+Provider}}
+\index{m\+\_\+configuration\+Provider@{m\+\_\+configuration\+Provider}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Provider}{m_configurationProvider}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::weak\+\_\+ptr$<$Configuration\+Provider$>$ wolkabout\+::\+Wolk\+::m\+\_\+configuration\+Provider\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a31588377251dadbb584911fb30e9fe5d}{}\label{classwolkabout_1_1_wolk_a31588377251dadbb584911fb30e9fe5d}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+configuration\+Provider\+Lambda@{m\+\_\+configuration\+Provider\+Lambda}}
+\index{m\+\_\+configuration\+Provider\+Lambda@{m\+\_\+configuration\+Provider\+Lambda}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+configuration\+Provider\+Lambda}{m_configurationProviderLambda}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::function$<$std\+::vector$<$Configuration\+Item$>$)$>$ wolkabout\+::\+Wolk\+::m\+\_\+configuration\+Provider\+Lambda\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a0b022ee57d9ae6101b2868828e24b8c1}{}\label{classwolkabout_1_1_wolk_a0b022ee57d9ae6101b2868828e24b8c1}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+connectivity\+Manager@{m\+\_\+connectivity\+Manager}}
+\index{m\+\_\+connectivity\+Manager@{m\+\_\+connectivity\+Manager}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+connectivity\+Manager}{m_connectivityManager}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<${\bf Connectivity\+Facade}$>$ wolkabout\+::\+Wolk\+::m\+\_\+connectivity\+Manager\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a7f90b6701319c6a12d4519679e18f730}{}\label{classwolkabout_1_1_wolk_a7f90b6701319c6a12d4519679e18f730}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+connectivity\+Service@{m\+\_\+connectivity\+Service}}
+\index{m\+\_\+connectivity\+Service@{m\+\_\+connectivity\+Service}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+connectivity\+Service}{m_connectivityService}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$Connectivity\+Service$>$ wolkabout\+::\+Wolk\+::m\+\_\+connectivity\+Service\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a3b3f8b196063ea4808b7a374b225d97b}{}\label{classwolkabout_1_1_wolk_a3b3f8b196063ea4808b7a374b225d97b}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+data\+Protocol@{m\+\_\+data\+Protocol}}
+\index{m\+\_\+data\+Protocol@{m\+\_\+data\+Protocol}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+data\+Protocol}{m_dataProtocol}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$Data\+Protocol$>$ wolkabout\+::\+Wolk\+::m\+\_\+data\+Protocol\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a7a8acc5345a3d6fd3b7e92dca9d4649c}{}\label{classwolkabout_1_1_wolk_a7a8acc5345a3d6fd3b7e92dca9d4649c}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+data\+Service@{m\+\_\+data\+Service}}
+\index{m\+\_\+data\+Service@{m\+\_\+data\+Service}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+data\+Service}{m_dataService}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$Data\+Service$>$ wolkabout\+::\+Wolk\+::m\+\_\+data\+Service\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_ae9dd0455d678445224ebbb7e73985577}{}\label{classwolkabout_1_1_wolk_ae9dd0455d678445224ebbb7e73985577}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+device@{m\+\_\+device}}
+\index{m\+\_\+device@{m\+\_\+device}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+device}{m_device}}]{\setlength{\rightskip}{0pt plus 5cm}Device wolkabout\+::\+Wolk\+::m\+\_\+device\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a693a46fb484c06e1bf8ac771995420ef}{}\label{classwolkabout_1_1_wolk_a693a46fb484c06e1bf8ac771995420ef}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+file\+Download\+Protocol@{m\+\_\+file\+Download\+Protocol}}
+\index{m\+\_\+file\+Download\+Protocol@{m\+\_\+file\+Download\+Protocol}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+file\+Download\+Protocol}{m_fileDownloadProtocol}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$File\+Download\+Protocol$>$ wolkabout\+::\+Wolk\+::m\+\_\+file\+Download\+Protocol\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a0cc964d56e1f921a29b99448c4b6af64}{}\label{classwolkabout_1_1_wolk_a0cc964d56e1f921a29b99448c4b6af64}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+file\+Download\+Service@{m\+\_\+file\+Download\+Service}}
+\index{m\+\_\+file\+Download\+Service@{m\+\_\+file\+Download\+Service}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+file\+Download\+Service}{m_fileDownloadService}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$File\+Download\+Service$>$ wolkabout\+::\+Wolk\+::m\+\_\+file\+Download\+Service\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_ab52986b0cbb0939f51f8f8d4d45dfab0}{}\label{classwolkabout_1_1_wolk_ab52986b0cbb0939f51f8f8d4d45dfab0}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+firmware\+Update\+Protocol@{m\+\_\+firmware\+Update\+Protocol}}
+\index{m\+\_\+firmware\+Update\+Protocol@{m\+\_\+firmware\+Update\+Protocol}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+firmware\+Update\+Protocol}{m_firmwareUpdateProtocol}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$Firmware\+Update\+Protocol$>$ wolkabout\+::\+Wolk\+::m\+\_\+firmware\+Update\+Protocol\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a7b180b579e0bdc7dd0d076c00feb886f}{}\label{classwolkabout_1_1_wolk_a7b180b579e0bdc7dd0d076c00feb886f}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+firmware\+Update\+Service@{m\+\_\+firmware\+Update\+Service}}
+\index{m\+\_\+firmware\+Update\+Service@{m\+\_\+firmware\+Update\+Service}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+firmware\+Update\+Service}{m_firmwareUpdateService}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$Firmware\+Update\+Service$>$ wolkabout\+::\+Wolk\+::m\+\_\+firmware\+Update\+Service\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_aa26f2abac76d31fd3a13f56cf5f8b20d}{}\label{classwolkabout_1_1_wolk_aa26f2abac76d31fd3a13f56cf5f8b20d}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+inbound\+Message\+Handler@{m\+\_\+inbound\+Message\+Handler}}
+\index{m\+\_\+inbound\+Message\+Handler@{m\+\_\+inbound\+Message\+Handler}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+inbound\+Message\+Handler}{m_inboundMessageHandler}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$Inbound\+Message\+Handler$>$ wolkabout\+::\+Wolk\+::m\+\_\+inbound\+Message\+Handler\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a968a3f3c38c437876989c747d23d4c68}{}\label{classwolkabout_1_1_wolk_a968a3f3c38c437876989c747d23d4c68}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+keep\+Alive\+Service@{m\+\_\+keep\+Alive\+Service}}
+\index{m\+\_\+keep\+Alive\+Service@{m\+\_\+keep\+Alive\+Service}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+keep\+Alive\+Service}{m_keepAliveService}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$Keep\+Alive\+Service$>$ wolkabout\+::\+Wolk\+::m\+\_\+keep\+Alive\+Service\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a03e41fa47eb856bfaab0adfc5e90770c}{}\label{classwolkabout_1_1_wolk_a03e41fa47eb856bfaab0adfc5e90770c}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+persistence@{m\+\_\+persistence}}
+\index{m\+\_\+persistence@{m\+\_\+persistence}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+persistence}{m_persistence}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$Persistence$>$ wolkabout\+::\+Wolk\+::m\+\_\+persistence\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a648fe96503a4f17efe4a6904d995633c}{}\label{classwolkabout_1_1_wolk_a648fe96503a4f17efe4a6904d995633c}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!m\+\_\+status\+Protocol@{m\+\_\+status\+Protocol}}
+\index{m\+\_\+status\+Protocol@{m\+\_\+status\+Protocol}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{m\+\_\+status\+Protocol}{m_statusProtocol}}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unique\+\_\+ptr$<$Status\+Protocol$>$ wolkabout\+::\+Wolk\+::m\+\_\+status\+Protocol\hspace{0.3cm}{\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_ab410d711778fd39cba66ebac0c6d1929}{}\label{classwolkabout_1_1_wolk_ab410d711778fd39cba66ebac0c6d1929}
+\index{wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}!P\+U\+B\+L\+I\+S\+H\+\_\+\+B\+A\+T\+C\+H\+\_\+\+I\+T\+E\+M\+S\+\_\+\+C\+O\+U\+NT@{P\+U\+B\+L\+I\+S\+H\+\_\+\+B\+A\+T\+C\+H\+\_\+\+I\+T\+E\+M\+S\+\_\+\+C\+O\+U\+NT}}
+\index{P\+U\+B\+L\+I\+S\+H\+\_\+\+B\+A\+T\+C\+H\+\_\+\+I\+T\+E\+M\+S\+\_\+\+C\+O\+U\+NT@{P\+U\+B\+L\+I\+S\+H\+\_\+\+B\+A\+T\+C\+H\+\_\+\+I\+T\+E\+M\+S\+\_\+\+C\+O\+U\+NT}!wolkabout\+::\+Wolk@{wolkabout\+::\+Wolk}}
+\subsubsection[{\texorpdfstring{P\+U\+B\+L\+I\+S\+H\+\_\+\+B\+A\+T\+C\+H\+\_\+\+I\+T\+E\+M\+S\+\_\+\+C\+O\+U\+NT}{PUBLISH_BATCH_ITEMS_COUNT}}]{\setlength{\rightskip}{0pt plus 5cm}const constexpr unsigned int wolkabout\+::\+Wolk\+::\+P\+U\+B\+L\+I\+S\+H\+\_\+\+B\+A\+T\+C\+H\+\_\+\+I\+T\+E\+M\+S\+\_\+\+C\+O\+U\+NT = 50\hspace{0.3cm}{\ttfamily [static]}, {\ttfamily [private]}}\hypertarget{classwolkabout_1_1_wolk_a4546eac23e520d87ab3e335740a044f3}{}\label{classwolkabout_1_1_wolk_a4546eac23e520d87ab3e335740a044f3}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/\hyperlink{_wolk_8h}{Wolk.\+h}\item 
+src/\hyperlink{_wolk_8cpp}{Wolk.\+cpp}\end{DoxyCompactItemize}

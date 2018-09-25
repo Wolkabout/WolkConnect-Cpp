@@ -56,8 +56,8 @@ wolkabout::Device device(\textcolor{stringliteral}{"DEVICE\_KEY"}, \textcolor{st
       ACTUATOR\_REFERENCE\_TWO"}\});
 
 std::unique\_ptr<wolkabout::Wolk> wolk =
-  \hyperlink{classwolkabout_1_1Wolk_a91270bb8552c2dee634e552111db4bb0}{wolkabout::Wolk::newBuilder}(device)
-    .\hyperlink{classwolkabout_1_1WolkBuilder_a5c8799ad21b6bb0f0c866af3295a69b7}{actuationHandler}([](\textcolor{keyword}{const} std::string& reference, \textcolor{keyword}{const} std::string& value) -> \textcolor{keywordtype}{void} \{
+  \hyperlink{classwolkabout_1_1_wolk_a91270bb8552c2dee634e552111db4bb0}{wolkabout::Wolk::newBuilder}(device)
+    .\hyperlink{classwolkabout_1_1_wolk_builder_a5c8799ad21b6bb0f0c866af3295a69b7}{actuationHandler}([](\textcolor{keyword}{const} std::string& reference, \textcolor{keyword}{const} std::string& value) -> \textcolor{keywordtype}{void} \{
         \textcolor{comment}{// TODO Invoke your code which activates your actuator.}
 
         std::cout << \textcolor{stringliteral}{"Actuation request received - Reference: "} << reference << \textcolor{stringliteral}{" value: "} << value << 
@@ -148,8 +148,8 @@ wolkabout::Device device(\textcolor{stringliteral}{"DEVICE\_KEY"}, \textcolor{st
       ACTUATOR\_REFERENCE\_TWO"}\});
 
 std::unique\_ptr<wolkabout::Wolk> wolk =
-  \hyperlink{classwolkabout_1_1Wolk_a91270bb8552c2dee634e552111db4bb0}{wolkabout::Wolk::newBuilder}(device)
-    .\hyperlink{classwolkabout_1_1WolkBuilder_a5c8799ad21b6bb0f0c866af3295a69b7}{actuationHandler}([](\textcolor{keyword}{const} std::string& reference, \textcolor{keyword}{const} std::string& value) -> \textcolor{keywordtype}{void} \{
+  \hyperlink{classwolkabout_1_1_wolk_a91270bb8552c2dee634e552111db4bb0}{wolkabout::Wolk::newBuilder}(device)
+    .\hyperlink{classwolkabout_1_1_wolk_builder_a5c8799ad21b6bb0f0c866af3295a69b7}{actuationHandler}([](\textcolor{keyword}{const} std::string& reference, \textcolor{keyword}{const} std::string& value) -> \textcolor{keywordtype}{void} \{
         std::cout << \textcolor{stringliteral}{"Actuation request received - Reference: "} << reference << \textcolor{stringliteral}{" value: "} << value << 
       std::endl;
     \})
@@ -247,10 +247,10 @@ wolkabout::Device device(\textcolor{stringliteral}{"DEVICE\_KEY"}, \textcolor{st
       ACTUATOR\_REFERENCE\_TWO"}\});
 
 std::unique\_ptr<wolkabout::Wolk> wolk =
-  \hyperlink{classwolkabout_1_1Wolk_a91270bb8552c2dee634e552111db4bb0}{wolkabout::Wolk::newBuilder}(device)
+  \hyperlink{classwolkabout_1_1_wolk_a91270bb8552c2dee634e552111db4bb0}{wolkabout::Wolk::newBuilder}(device)
     \textcolor{comment}{// actuation handlers setup}
-    .\hyperlink{classwolkabout_1_1WolkBuilder_a22893971f31f5dccb5dec0690324a038}{withoutKeepAlive}() \textcolor{comment}{// Disable Keep Alive mechanism}
-    .\hyperlink{classwolkabout_1_1WolkBuilder_aad4c9b0c925a023cf670dc2fdc6631f3}{build}();
+    .\hyperlink{classwolkabout_1_1_wolk_builder_a22893971f31f5dccb5dec0690324a038}{withoutKeepAlive}() \textcolor{comment}{// Disable Keep Alive mechanism}
+    .\hyperlink{classwolkabout_1_1_wolk_builder_aad4c9b0c925a023cf670dc2fdc6631f3}{build}();
 
     wolk->connect();
 \end{DoxyCode}
