@@ -176,7 +176,7 @@ void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const Firmwar
         }
 
         const auto size = firmwareUpdateCommand.getSize();
-        if (!size || size.value() > m_service.m_maximumFirmwareSize || static_cast<uint_fast64_t>(size) == 0)
+        if (!size || size.value() > m_service.m_maximumFirmwareSize || static_cast<uint_fast64_t>(size.value()) == 0)
         {
             m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
                                                           FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
