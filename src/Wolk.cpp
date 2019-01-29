@@ -49,12 +49,12 @@ WolkBuilder Wolk::newBuilder(Device device)
 
 void Wolk::addSensorReading(const std::string& reference, std::string value, unsigned long long rtc)
 {
-    if (rtc == 0) {
+    if (rtc == 0)
+    {
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer(
-      [=]() -> void { m_dataService->addSensorReading(reference, value, rtc); });
+    addToCommandBuffer([=]() -> void { m_dataService->addSensorReading(reference, value, rtc); });
 }
 
 void Wolk::addSensorReading(const std::string& reference, const std::vector<std::string> values,
@@ -65,18 +65,19 @@ void Wolk::addSensorReading(const std::string& reference, const std::vector<std:
         return;
     }
 
-    if (rtc == 0) {
+    if (rtc == 0)
+    {
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void {
-        m_dataService->addSensorReading(reference, values, getSensorDelimiter(reference), rtc);
-    });
+    addToCommandBuffer(
+      [=]() -> void { m_dataService->addSensorReading(reference, values, getSensorDelimiter(reference), rtc); });
 }
 
 void Wolk::addAlarm(const std::string& reference, bool active, unsigned long long rtc)
 {
-    if (rtc == 0) {
+    if (rtc == 0)
+    {
         rtc = Wolk::currentRtc();
     }
 

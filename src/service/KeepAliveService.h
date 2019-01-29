@@ -48,6 +48,6 @@ private:
 
     Timer m_timer;
 };
-}
+}    // namespace wolkabout
 
 #endif    // KEEPALIVESERVICE_H
