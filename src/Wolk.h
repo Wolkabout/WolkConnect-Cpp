@@ -152,7 +152,8 @@ public:
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    void addSensorReading(const std::string& reference, const std::vector<std::string> values, unsigned long long int rtc = 0);
+    void addSensorReading(const std::string& reference, const std::vector<std::string> values,
+                          unsigned long long int rtc = 0);
 
     /**
      * @brief Publishes alarm to WolkAbout IoT Cloud<br>

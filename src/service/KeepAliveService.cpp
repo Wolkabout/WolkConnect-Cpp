@@ -64,4 +64,4 @@ const Protocol& KeepAliveService::getProtocol()
 {
     return m_protocol;
 }
-}
+}    // namespace wolkabout
