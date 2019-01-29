@@ -22,7 +22,7 @@
 #include "Wolk.h"
 #include "connectivity/ConnectivityService.h"
 #include "connectivity/mqtt/MqttConnectivityService.h"
-#include "connectivity/mqtt/PahoMqttClient.h"
+#include "connectivity/mqtt/WolkPahoMqttClient.h"
 #include "model/Device.h"
 #include "model/FirmwareUpdateCommand.h"
 #include "persistence/Persistence.h"
@@ -193,7 +193,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     wolk->m_persistence = m_persistence;
 
-    auto mqttClient = std::make_shared<PahoMqttClient>();
+    auto mqttClient = std::make_shared<WolkPahoMqttClient>();
     wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(
       new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, TRUST_STORE));
 
