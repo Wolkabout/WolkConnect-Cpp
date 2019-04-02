@@ -19,6 +19,14 @@ WolkAbout C++11 Connector library for connecting devices to [WolkAbout IoT Platf
 Supported protocol(s):
 * JSON_SINGLE
 
+Installing from source
+----------------------
+
+This repository must be cloned from the command line using:
+```sh
+git clone --recurse-submodules https://github.com/Wolkabout/WolkConnect-Cpp.git
+```
+
 Prerequisite
 ------
 Following tools/libraries are required in order to build WolkAbout C++ connector
