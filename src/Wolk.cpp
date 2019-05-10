@@ -131,6 +131,7 @@ void Wolk::connect()
     addToCommandBuffer([=]() -> void {
         if (!m_connectivityService->connect())
         {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             connect();
             return;
         }
