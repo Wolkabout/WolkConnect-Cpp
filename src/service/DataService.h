@@ -59,8 +59,7 @@ public:
 
     void addActuatorStatus(const std::string& reference, const std::string& value, ActuatorStatus::State state);
 
-    void addConfiguration(const std::vector<ConfigurationItem>& configuration,
-                          const std::map<std::string, std::string>& delimiters);
+    void addConfiguration(const std::vector<ConfigurationItem>& configuration);
 
     void publishSensorReadings();
 

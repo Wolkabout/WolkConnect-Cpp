@@ -270,7 +270,7 @@ WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}
-, m_dataProtocol{new JsonSingleReferenceProtocol()}
+, m_dataProtocol{new JsonProtocol()}
 , m_firmwareVersion{""}
 , m_firmwareDownloadDirectory{""}
 , m_maxFirmwareFileSize{0}
