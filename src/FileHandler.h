@@ -48,6 +48,8 @@ public:
 
     FileHandler::StatusCode saveFile(const std::string& filePath) const;
 
+    FileHandler::StatusCode saveFile(const std::string& fileName, const std::string& directory) const;
+
 private:
     ByteArray m_currentPacketData;
     ByteArray m_previousPacketHash;
