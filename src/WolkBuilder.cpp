@@ -146,12 +146,6 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withoutKeepAlive()
-{
-    m_keepAliveEnabled = false;
-    return *this;
-}
-
 std::unique_ptr<Wolk> WolkBuilder::build()
 {
     if (m_device.getKey().empty())
@@ -275,7 +269,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_firmwareDownloadDirectory{""}
 , m_maxFirmwareFileSize{0}
 , m_maxFirmwareFileChunkSize{0}
-, m_keepAliveEnabled{true}
+, m_keepAliveEnabled{false}
 {
 }
 }    // namespace wolkabout

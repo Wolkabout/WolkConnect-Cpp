@@ -162,13 +162,6 @@ public:
                                     std::weak_ptr<UrlFileDownloader> urlDownloader);
 
     /**
-     * @brief withoutKeepAlive Disables ping mechanism used to notify WolkAbout IOT Platform
-     * that device is still connected
-     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
-     */
-    WolkBuilder& withoutKeepAlive();
-
-    /**
      * @brief Builds Wolk instance
      * @return Wolk instance as std::unique_ptr<Wolk>
      *
