@@ -203,7 +203,8 @@ private:
     std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
     std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
 
-    bool m_keepAliveEnabled;
+    // json protocol does not currently support ping messages
+    bool m_keepAliveEnabled = false;
 
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
     static const constexpr char* TRUST_STORE = "ca.crt";
