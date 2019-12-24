@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2019 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,94 +14,57 @@
  * limitations under the License.
  */
 
-#ifndef FIRMWAREUPDATESERVICE_CPP
-#define FIRMWAREUPDATESERVICE_CPP
-
-#include "FirmwareUpdateService.h"
-#include "FirmwareInstaller.h"
-#include "UrlFileDownloader.h"
-#include "WolkaboutFileDownloader.h"
-#include "connectivity/ConnectivityService.h"
-#include "model/FirmwareUpdateCommand.h"
-#include "model/FirmwareUpdateResponse.h"
+#include "service/FirmwareUpdateService.h"
+#include "model/FirmwareUpdateAbort.h"
+#include "model/FirmwareUpdateInstall.h"
+#include "model/FirmwareVersion.h"
 #include "model/Message.h"
-#include "protocol/FirmwareUpdateProtocol.h"
-#include "utilities/ConsoleLogger.h"
+#include "protocol/json/JsonDFUProtocol.h"
+#include "repository/FileRepository.h"
+#include "service/FirmwareInstaller.h"
 #include "utilities/FileSystemUtils.h"
+#include "utilities/Logger.h"
 #include "utilities/StringUtils.h"
 
-#include <cassert>
+#include <utility>
 
 namespace wolkabout
 {
-FirmwareUpdateService::FirmwareUpdateService(std::string deviceKey, FirmwareUpdateProtocol& protocol,
-                                             const std::string& firmwareVersion, const std::string& downloadDirectory,
-                                             std::uint_fast64_t maximumFirmwareSize,
-                                             ConnectivityService& connectivityService,
-                                             std::weak_ptr<WolkaboutFileDownloader> wolkDownloader,
-                                             std::weak_ptr<UrlFileDownloader> urlDownloader,
-                                             std::weak_ptr<FirmwareInstaller> firmwareInstaller)
+FirmwareUpdateService::FirmwareUpdateService(std::string deviceKey, JsonDFUProtocol& protocol,
+                                             FileRepository& fileRepository, ConnectivityService& connectivityService,
+                                             std::weak_ptr<FirmwareInstaller> firmwareInstaller,
+                                             std::string currentFirmwareVersion)
 : m_deviceKey{std::move(deviceKey)}
 , m_protocol{protocol}
-, m_currentFirmwareVersion{firmwareVersion}
-, m_firmwareDownloadDirectory{downloadDirectory}
-, m_maximumFirmwareSize{maximumFirmwareSize}
+, m_fileRepository{fileRepository}
 , m_connectivityService{connectivityService}
-, m_wolkFileDownloader{wolkDownloader}
-, m_urlFileDownloader{urlDownloader}
-, m_firmwareInstaller{firmwareInstaller}
-, m_idleState{new FirmwareUpdateService::IdleState(*this)}
-, m_wolkDownloadState{new FirmwareUpdateService::WolkDownloadState(*this)}
-, m_urlDownloadState{new FirmwareUpdateService::UrlDownloadState(*this)}
-, m_readyState{new FirmwareUpdateService::ReadyState(*this)}
-, m_installationState{new FirmwareUpdateService::InstallationState(*this)}
-, m_firmwareFile{""}
-, m_autoInstall{false}
-, m_commandBuffer{new CommandBuffer()}
+, m_firmwareInstaller{std::move(firmwareInstaller)}
+, m_currentFirmwareVersion{std::move(currentFirmwareVersion)}
 {
-    m_currentState = m_idleState.get();
-}
-
-FirmwareUpdateService::~FirmwareUpdateService()
-{
-    if (m_executor && m_executor->joinable())
-    {
-        m_executor->join();
-    }
 }
 
 void FirmwareUpdateService::messageReceived(std::shared_ptr<Message> message)
 {
-    assert(message);
-
-    const std::string deviceKey = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
-    if (deviceKey.empty())
+    auto installCommand = m_protocol.makeFirmwareUpdateInstall(*message);
+    if (installCommand)
     {
-        LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
+        auto installDto = *installCommand;
+        addToCommandBuffer([=] { handleFirmwareUpdateCommand(installDto); });
+
         return;
     }
 
-    if (deviceKey != m_deviceKey)
+    auto abortCommand = m_protocol.makeFirmwareUpdateAbort(*message);
+    if (abortCommand)
     {
-        LOG(WARN) << "Device key mismatch: " << message->getChannel();
+        auto abortDto = *abortCommand;
+        addToCommandBuffer([=] { handleFirmwareUpdateCommand(abortDto); });
+
         return;
     }
 
-    if (m_protocol.isFirmwareUpdateMessage(*message))
-    {
-        auto command = m_protocol.makeFirmwareUpdateCommand(*message);
-        if (!command)
-        {
-            LOG(WARN) << "Unable to parse message contents: " << message->getContent();
-            return;
-        }
-
-        handleFirmwareUpdateCommand(*command);
-    }
-    else
-    {
-        LOG(WARN) << "Unable to parse message channel: " << message->getChannel();
-    }
+    LOG(WARN) << "Unable to parse message; channel: " << message->getChannel()
+              << ", content: " << message->getContent();
 }
 
 const Protocol& FirmwareUpdateService::getProtocol()
@@ -109,22 +72,19 @@ const Protocol& FirmwareUpdateService::getProtocol()
     return m_protocol;
 }
 
-void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
-{
-    addToCommandBuffer([=] { m_currentState->handleFirmwareUpdateCommand(firmwareUpdateCommand); });
-}
-
-const std::string& FirmwareUpdateService::getFirmwareVersion() const
-{
-    return m_currentFirmwareVersion;
-}
-
 void FirmwareUpdateService::reportFirmwareUpdateResult()
 {
+    if (m_firmwareInstaller.lock() == nullptr || m_currentFirmwareVersion.empty())
+    {
+        return;
+    }
+
     if (!FileSystemUtils::isFilePresent(FIRMWARE_VERSION_FILE))
     {
         return;
     }
+
+    LOG(INFO) << "Reporting firmware update result";
 
     std::string firmwareVersion;
     FileSystemUtils::readFileContent(FIRMWARE_VERSION_FILE, firmwareVersion);
@@ -133,473 +93,248 @@ void FirmwareUpdateService::reportFirmwareUpdateResult()
 
     if (m_currentFirmwareVersion != firmwareVersion)
     {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::COMPLETED});
+        LOG(INFO) << "Firmware versions differ";
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Status::COMPLETED});
     }
     else
     {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
+        LOG(ERROR) << "Firmware versions do not differ";
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::INSTALLATION_FAILED});
     }
 
+    LOG(INFO) << "Deleting firmware version file";
     FileSystemUtils::deleteFile(FIRMWARE_VERSION_FILE);
 }
 
 void FirmwareUpdateService::publishFirmwareVersion()
 {
-    const std::shared_ptr<Message> message = m_protocol.makeFromFirmwareVersion(m_deviceKey, m_currentFirmwareVersion);
+    if (m_firmwareInstaller.lock() == nullptr || m_currentFirmwareVersion.empty())
+    {
+        return;
+    }
+
+    sendVersion(FirmwareVersion{m_deviceKey, m_currentFirmwareVersion});
+}
+
+void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateInstall& command)
+{
+    if (command.getDeviceKeys().empty())
+    {
+        LOG(WARN) << "Missing device keys from firmware install command";
+        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    if (command.getFileName().empty())
+    {
+        LOG(WARN) << "Missing file name from firmware install command";
+        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::FILE_NOT_PRESENT});
+        return;
+    }
+
+    auto fileInfo = m_fileRepository.getFileInfo(command.getFileName());
+
+    if (!fileInfo)
+    {
+        LOG(WARN) << "Firmware file not present: " << command.getFileName();
+        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::FILE_NOT_PRESENT});
+    }
+    else
+    {
+        install(command.getDeviceKeys(), command.getFileName());
+    }
+}
+
+void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateAbort& command)
+{
+    if (command.getDeviceKeys().empty())
+    {
+        LOG(WARN) << "Missing device keys from firmware abort command";
+        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    abort(command.getDeviceKeys());
+}
+
+void FirmwareUpdateService::handleFirmwareUpdateStatus(const FirmwareUpdateStatus& status)
+{
+    if (status.getDeviceKeys().empty())
+    {
+        LOG(WARN) << "No keys specified in firmware update status";
+        return;
+    }
+
+    switch (status.getStatus())
+    {
+    case FirmwareUpdateStatus::Status::INSTALLATION:
+    {
+        installationInProgress(status.getDeviceKeys());
+        break;
+    }
+    case FirmwareUpdateStatus::Status::COMPLETED:
+    {
+        installationCompleted(status.getDeviceKeys());
+        break;
+    }
+    case FirmwareUpdateStatus::Status::ABORTED:
+    {
+        installationAborted(status.getDeviceKeys());
+        break;
+    }
+    case FirmwareUpdateStatus::Status::ERROR:
+    {
+        installationFailed(status.getDeviceKeys(), status.getErrorCode());
+        break;
+    }
+    }
+
+    // forward status to platform
+    sendStatus(status);
+}
+
+void FirmwareUpdateService::handleFirmwareVersion(const FirmwareVersion& version)
+{
+    if (version.getVersion().empty())
+    {
+        LOG(WARN) << "Empty firmware version";
+        return;
+    }
+
+    if (version.getDeviceKey().empty())
+    {
+        LOG(WARN) << "No key specified in firmware version";
+        return;
+    }
+
+    sendVersion(version);
+}
+
+void FirmwareUpdateService::install(const std::vector<std::string>& deviceKeys, const std::string& fileName)
+{
+    for (const auto& key : deviceKeys)
+    {
+        if (key == m_deviceKey)
+        {
+            auto fileInfo = m_fileRepository.getFileInfo(fileName);
+            if (!fileInfo)
+            {
+                LOG(ERROR) << "Missing file info: " << fileName;
+                return;
+            }
+
+            installDeviceFirmware(key, fileInfo->path);
+        }
+    }
+}
+
+void FirmwareUpdateService::installDeviceFirmware(const std::string& deviceKey, const std::string& filePath)
+{
+    LOG(INFO) << "Handling device firmware install";
+
+    if (m_firmwareInstaller.lock() == nullptr)
+    {
+        LOG(ERROR) << "Firmware installer not set for device";
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    if (!FileSystemUtils::createFileWithContent(FIRMWARE_VERSION_FILE, m_currentFirmwareVersion))
+    {
+        LOG(ERROR) << "Failed to create firmware version file";
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::FILE_SYSTEM_ERROR});
+        return;
+    }
+
+    sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Status::INSTALLATION});
+
+    if (!m_firmwareInstaller.lock()->install(filePath))
+    {
+        LOG(ERROR) << "Failed to install device firmware";
+
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::INSTALLATION_FAILED});
+    }
+}
+
+void FirmwareUpdateService::installationInProgress(const std::vector<std::string>& deviceKeys)
+{
+    for (const auto& key : deviceKeys)
+    {
+        LOG(INFO) << "Firmware installation in progress for device: " << key;
+    }
+}
+
+void FirmwareUpdateService::installationCompleted(const std::vector<std::string>& deviceKeys)
+{
+    for (const auto& key : deviceKeys)
+    {
+        LOG(INFO) << "Firmware installation completed for device: " << key;
+    }
+}
+
+void FirmwareUpdateService::installationAborted(const std::vector<std::string>& deviceKeys)
+{
+    for (const auto& key : deviceKeys)
+    {
+        LOG(INFO) << "Firmware installation aborted for device: " << key;
+    }
+}
+
+void FirmwareUpdateService::installationFailed(const std::vector<std::string>& deviceKeys,
+                                               WolkOptional<FirmwareUpdateStatus::Error> errorCode)
+{
+    for (const auto& key : deviceKeys)
+    {
+        LOG(INFO) << "Firmware installation failed for device: " << key
+                  << (errorCode ? std::to_string(static_cast<int>(errorCode.value())) : "");
+    }
+}
+
+void FirmwareUpdateService::abort(const std::vector<std::string>& deviceKeys)
+{
+    for (const auto& key : deviceKeys)
+    {
+        if (key == m_deviceKey)
+        {
+            abortDeviceFirmware(key);
+        }
+    }
+}
+
+void FirmwareUpdateService::abortDeviceFirmware(const std::string& deviceKey)
+{
+    LOG(INFO) << "Handling firmware update abort for device: " << deviceKey;
+    sendCommand(FirmwareUpdateAbort{{deviceKey}});
+}
+
+void FirmwareUpdateService::sendStatus(const FirmwareUpdateStatus& status)
+{
+    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, status);
 
     if (!message)
     {
-        LOG(WARN) << "Failed to create firmware version message";
+        LOG(WARN) << "Failed to create firmware update status";
         return;
     }
 
-    if (!m_connectivityService.publish(message))
+    m_connectivityService.publish(message);
+}
+
+void FirmwareUpdateService::sendVersion(const FirmwareVersion& version)
+{
+    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, version);
+
+    if (!message)
     {
-        LOG(WARN) << "Failed to publish firmware version message";
+        LOG(WARN) << "Failed to create firmware version";
         return;
     }
-}
 
-void FirmwareUpdateService::IdleState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
-{
-    switch (firmwareUpdateCommand.getType())
-    {
-    case FirmwareUpdateCommand::Type::FILE_UPLOAD:
-    {
-        auto name = firmwareUpdateCommand.getName();
-        if (!name || name.value().empty())
-        {
-            m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                          FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-            return;
-        }
-
-        const auto size = firmwareUpdateCommand.getSize();
-        if (!size || size.value() > m_service.m_maximumFirmwareSize || static_cast<uint_fast64_t>(size) == 0)
-        {
-            m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                          FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-            return;
-        }
-
-        const auto hash = firmwareUpdateCommand.getHash();
-        if (!hash || hash.value().empty())
-        {
-            m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                          FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-            return;
-        }
-
-        if (m_service.m_wolkFileDownloader.lock())
-        {
-            m_service.m_currentState = m_service.m_wolkDownloadState.get();
-
-            const auto autoInstall = firmwareUpdateCommand.getAutoInstall();
-            m_service.m_autoInstall = autoInstall && autoInstall.value();
-
-            const auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(hash.value()));
-            m_service.downloadFirmware(name.value(), size.value(), byteHash);
-        }
-        else
-        {
-            m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                          FirmwareUpdateResponse::ErrorCode::FILE_UPLOAD_DISABLED});
-        }
-
-        break;
-    }
-    case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-    {
-        const auto url = firmwareUpdateCommand.getUrl();
-        if (!url || url.value().empty())
-        {
-            m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                          FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-            return;
-        }
-
-        if (m_service.m_urlFileDownloader.lock())
-        {
-            m_service.m_currentState = m_service.m_urlDownloadState.get();
-
-            const auto autoInstall = firmwareUpdateCommand.getAutoInstall();
-            m_service.m_autoInstall = autoInstall && autoInstall.value();
-
-            m_service.downloadFirmware(url.value());
-        }
-        else
-        {
-            m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                          FirmwareUpdateResponse::ErrorCode::FILE_UPLOAD_DISABLED});
-        }
-
-        break;
-    }
-    case FirmwareUpdateCommand::Type::INSTALL:
-    case FirmwareUpdateCommand::Type::ABORT:
-    case FirmwareUpdateCommand::Type::UNKNOWN:
-    default:
-    {
-        m_service.clear();
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                      FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-    }
-    }
-}
-
-void FirmwareUpdateService::WolkDownloadState::handleFirmwareUpdateCommand(
-  const FirmwareUpdateCommand& firmwareUpdateCommand)
-{
-    switch (firmwareUpdateCommand.getType())
-    {
-    case FirmwareUpdateCommand::Type::ABORT:
-    {
-        if (auto downloader = m_service.m_wolkFileDownloader.lock())
-        {
-            downloader->abort();
-        }
-
-        m_service.clear();
-
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
-
-        break;
-    }
-    case FirmwareUpdateCommand::Type::INSTALL:
-    case FirmwareUpdateCommand::Type::FILE_UPLOAD:
-    case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-    case FirmwareUpdateCommand::Type::UNKNOWN:
-    default:
-    {
-        if (auto downloader = m_service.m_wolkFileDownloader.lock())
-        {
-            downloader->abort();
-        }
-
-        m_service.clear();
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                      FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-    }
-    }
-}
-
-void FirmwareUpdateService::UrlDownloadState::handleFirmwareUpdateCommand(
-  const FirmwareUpdateCommand& firmwareUpdateCommand)
-{
-    switch (firmwareUpdateCommand.getType())
-    {
-    case FirmwareUpdateCommand::Type::ABORT:
-    {
-        if (auto downloader = m_service.m_urlFileDownloader.lock())
-        {
-            downloader->abort();
-        }
-
-        m_service.clear();
-
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
-
-        break;
-    }
-    case FirmwareUpdateCommand::Type::INSTALL:
-    case FirmwareUpdateCommand::Type::FILE_UPLOAD:
-    case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-    case FirmwareUpdateCommand::Type::UNKNOWN:
-    default:
-    {
-        if (auto downloader = m_service.m_urlFileDownloader.lock())
-        {
-            downloader->abort();
-        }
-
-        m_service.clear();
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                      FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-    }
-    }
-}
-
-void FirmwareUpdateService::ReadyState::handleFirmwareUpdateCommand(const FirmwareUpdateCommand& firmwareUpdateCommand)
-{
-    switch (firmwareUpdateCommand.getType())
-    {
-    case FirmwareUpdateCommand::Type::INSTALL:
-    {
-        m_service.install();
-
-        break;
-    }
-    case FirmwareUpdateCommand::Type::ABORT:
-    {
-        if (!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
-        {
-            // TODO log error
-        }
-
-        m_service.clear();
-
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
-
-        break;
-    }
-    case FirmwareUpdateCommand::Type::FILE_UPLOAD:
-    case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-    case FirmwareUpdateCommand::Type::UNKNOWN:
-    default:
-    {
-        if (!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
-        {
-            // TODO log error
-        }
-
-        m_service.clear();
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                      FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-    }
-    }
-}
-
-void FirmwareUpdateService::InstallationState::handleFirmwareUpdateCommand(
-  const FirmwareUpdateCommand& firmwareUpdateCommand)
-{
-    switch (firmwareUpdateCommand.getType())
-    {
-    case FirmwareUpdateCommand::Type::ABORT:
-    {
-        if (m_service.m_executor && m_service.m_executor->joinable())
-        {
-            m_service.m_executor->join();
-        }
-
-        if (!FileSystemUtils::deleteFile(m_service.m_firmwareFile))
-        {
-            // TODO log error
-        }
-
-        m_service.clear();
-
-        m_service.sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ABORTED});
-
-        break;
-    }
-    case FirmwareUpdateCommand::Type::INSTALL:
-    case FirmwareUpdateCommand::Type::FILE_UPLOAD:
-    case FirmwareUpdateCommand::Type::URL_DOWNLOAD:
-    case FirmwareUpdateCommand::Type::UNKNOWN:
-    default:
-    {
-        break;
-    }
-    }
+    m_connectivityService.publish(message);
 }
 
 void FirmwareUpdateService::addToCommandBuffer(std::function<void()> command)
 {
-    m_commandBuffer->pushCommand(std::make_shared<std::function<void()>>(command));
+    m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(command));
 }
-
-void FirmwareUpdateService::sendResponse(const FirmwareUpdateResponse& response)
-{
-    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, response);
-
-    if (!message)
-    {
-        LOG(WARN) << "Failed to create firmware update response";
-        return;
-    }
-
-    if (!m_connectivityService.publish(message))
-    {
-        LOG(WARN) << "Failed to publish firmware update response";
-        return;
-    }
-}
-
-void FirmwareUpdateService::onFirmwareFileDownloadSuccess(const std::string& filePath)
-{
-    if (m_currentState == m_wolkDownloadState.get() || m_currentState == m_urlDownloadState.get())
-    {
-        m_currentState = m_readyState.get();
-        m_firmwareFile = filePath;
-
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_READY});
-
-        if (m_autoInstall)
-        {
-            install();
-        }
-    }
-}
-
-void FirmwareUpdateService::onFirmwareFileDownloadFail(WolkaboutFileDownloader::Error errorCode)
-{
-    switch (errorCode)
-    {
-    case WolkaboutFileDownloader::Error::FILE_SYSTEM_ERROR:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::FILE_SYSTEM_ERROR});
-        clear();
-        break;
-    }
-    case WolkaboutFileDownloader::Error::RETRY_COUNT_EXCEEDED:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::RETRY_COUNT_EXCEEDED});
-        clear();
-        break;
-    }
-    case WolkaboutFileDownloader::Error::UNSUPPORTED_FILE_SIZE:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::UNSUPPORTED_FILE_SIZE});
-        clear();
-        break;
-    }
-    case WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR:
-    default:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-        clear();
-        break;
-    }
-    }
-}
-
-void FirmwareUpdateService::onFirmwareFileDownloadFail(UrlFileDownloader::Error errorCode)
-{
-    switch (errorCode)
-    {
-    case UrlFileDownloader::Error::FILE_SYSTEM_ERROR:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::FILE_SYSTEM_ERROR});
-        clear();
-        break;
-    }
-    case UrlFileDownloader::Error::MALFORMED_URL:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::MALFORMED_URL});
-        clear();
-        break;
-    }
-    case UrlFileDownloader::Error::UNSUPPORTED_FILE_SIZE:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::UNSUPPORTED_FILE_SIZE});
-        clear();
-        break;
-    }
-    case UrlFileDownloader::Error::UNSPECIFIED_ERROR:
-    default:
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                            FirmwareUpdateResponse::ErrorCode::UNSPECIFIED_ERROR});
-        clear();
-        break;
-    }
-    }
-}
-
-void FirmwareUpdateService::downloadFirmware(const std::string& name, uint_fast64_t size, const ByteArray& hash)
-{
-    if (auto downloader = m_wolkFileDownloader.lock())
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_TRANSFER});
-
-        if (m_executor && m_executor->joinable())
-        {
-            m_executor->join();
-        }
-
-        m_executor.reset(new std::thread([=] {
-            downloader->download(name, size, hash, m_firmwareDownloadDirectory,
-                                 [=](const std::string& firmwareFile) {    // onSuccess
-                                     addToCommandBuffer([=] { onFirmwareFileDownloadSuccess(firmwareFile); });
-                                 },
-                                 [=](WolkaboutFileDownloader::Error errorCode) {    // onFail
-                                     addToCommandBuffer([=] { onFirmwareFileDownloadFail(errorCode); });
-                                 });
-        }));
-    }
-}
-
-void FirmwareUpdateService::downloadFirmware(const std::string& url)
-{
-    if (auto downloader = m_urlFileDownloader.lock())
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::FILE_TRANSFER});
-
-        if (m_executor && m_executor->joinable())
-        {
-            m_executor->join();
-        }
-
-        m_executor.reset(new std::thread([=] {
-            downloader->download(url, m_firmwareDownloadDirectory,
-                                 [=](const std::string& firmwareFile) {    // onSuccess
-                                     addToCommandBuffer([=] { onFirmwareFileDownloadSuccess(firmwareFile); });
-                                 },
-                                 [=](UrlFileDownloader::Error errorCode) {    // onFail
-                                     addToCommandBuffer([=] { onFirmwareFileDownloadFail(errorCode); });
-                                 });
-        }));
-    }
-}
-
-void FirmwareUpdateService::install()
-{
-    if (auto installer = m_firmwareInstaller.lock())
-    {
-        sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::INSTALLATION});
-
-        if (m_executor && m_executor->joinable())
-        {
-            m_executor->join();
-        }
-
-        m_executor.reset(new std::thread([=] {
-            if (!FileSystemUtils::createFileWithContent(FIRMWARE_VERSION_FILE, m_currentFirmwareVersion))
-            {
-                if (!FileSystemUtils::deleteFile(m_firmwareFile))
-                {
-                    // TODO log error
-                }
-
-                sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                    FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
-
-                clear();
-
-                return;
-            }
-
-            if (!installer->install(m_firmwareFile))
-            {
-                if (!FileSystemUtils::deleteFile(m_firmwareFile))
-                {
-                    // TODO log error
-                }
-
-                sendResponse(FirmwareUpdateResponse{FirmwareUpdateResponse::Status::ERROR,
-                                                    FirmwareUpdateResponse::ErrorCode::INSTALLATION_FAILED});
-
-                clear();
-            }
-        }));
-    }
-}
-
-void FirmwareUpdateService::clear()
-{
-    m_firmwareFile = "";
-    m_autoInstall = false;
-    m_currentState = m_idleState.get();
-}
-
 }    // namespace wolkabout
-
-#endif    // FIRMWAREUPDATESERVICE_CPP

@@ -39,6 +39,7 @@ Following tools/libraries are required in order to build WolkAbout C++ connector
 * zlib1g-dev
 
 Former can be installed on Debian based system from terminal by invoking
+TODO: conan setup
 
 `apt-get install autotools-dev autoconf m4 zlib1g-dev cmake`
 

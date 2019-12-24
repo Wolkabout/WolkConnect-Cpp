@@ -22,6 +22,7 @@
 #include "ConfigurationHandler.h"
 #include "ConfigurationProvider.h"
 #include "InboundMessageHandler.h"
+#include "InboundPlatformMessageHandler.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/Device.h"
 #include "persistence/Persistence.h"
@@ -197,7 +198,7 @@ private:
     std::unique_ptr<DataProtocol> m_dataProtocol;
 
     std::string m_firmwareVersion;
-    std::string m_firmwareDownloadDirectory;
+    std::string m_fileDownloadDirectory;
     std::uint_fast64_t m_maxFirmwareFileSize;
     std::uint_fast64_t m_maxFirmwareFileChunkSize;
     std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
@@ -208,6 +209,7 @@ private:
 
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
     static const constexpr char* TRUST_STORE = "ca.crt";
+    static const constexpr char* DATABASE = "fileRepository.db";
 };
 }    // namespace wolkabout
 

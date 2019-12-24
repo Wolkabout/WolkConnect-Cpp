@@ -18,7 +18,7 @@
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
 #include "FileHandler.h"
-#include "InboundPlatformMessageHandler.h"
+#include "InboundMessageHandler.h"
 #include "Wolk.h"
 #include "connectivity/ConnectivityService.h"
 #include "connectivity/mqtt/MqttConnectivityService.h"
@@ -32,6 +32,7 @@
 #include "protocol/json/JsonProtocol.h"
 #include "protocol/json/JsonSingleReferenceProtocol.h"
 #include "protocol/json/JsonStatusProtocol.h"
+#include "repository/SQLiteFileRepository.h"
 #include "service/DataService.h"
 #include "service/FileDownloadService.h"
 #include "service/FirmwareUpdateService.h"
@@ -138,7 +139,7 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
                                              std::weak_ptr<UrlFileDownloader> urlDownloader)
 {
     m_firmwareVersion = firmwareVersion;
-    m_firmwareDownloadDirectory = firmwareDownloadDirectory;
+    m_fileDownloadDirectory = firmwareDownloadDirectory;
     m_maxFirmwareFileSize = maxFirmwareFileSize;
     m_maxFirmwareFileChunkSize = maxFirmwareFileChunkSize;
     m_firmwareInstaller = installer;
@@ -181,8 +182,8 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     auto wolk = std::unique_ptr<Wolk>(new Wolk(m_device));
 
     wolk->m_dataProtocol.reset(m_dataProtocol.release());
-    wolk->m_fileDownloadProtocol = std::unique_ptr<FileDownloadProtocol>(new DownloadProtocol());
-    wolk->m_firmwareUpdateProtocol = std::unique_ptr<FirmwareUpdateProtocol>(new DFUProtocol());
+    wolk->m_fileDownloadProtocol = std::unique_ptr<JsonDownloadProtocol>(new JsonDownloadProtocol(false));
+    wolk->m_firmwareUpdateProtocol = std::unique_ptr<JsonDFUProtocol>(new JsonDFUProtocol(false));
     wolk->m_statusProtocol = std::unique_ptr<StatusProtocol>(new JsonStatusProtocol());
 
     wolk->m_persistence = m_persistence;
@@ -223,10 +224,13 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
+    // Setup file repository
+    wolk->m_fileRepository.reset(new SQLiteFileRepository(DATABASE));
+
     // File download service
     wolk->m_fileDownloadService = std::make_shared<FileDownloadService>(
-      wolk->m_device.getKey(), *wolk->m_fileDownloadProtocol, m_maxFirmwareFileSize, m_maxFirmwareFileChunkSize,
-      std::unique_ptr<FileHandler>(new FileHandler()), *wolk->m_connectivityService);
+      wolk->m_device.getKey(), *wolk->m_fileDownloadProtocol, m_fileDownloadDirectory, *wolk->m_connectivityService,
+      *wolk->m_fileRepository, nullptr);
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_fileDownloadService);
 
@@ -234,20 +238,10 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     if (m_firmwareInstaller.lock() != nullptr)
     {
         wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-          wolk->m_device.getKey(), *wolk->m_firmwareUpdateProtocol, m_firmwareVersion, m_firmwareDownloadDirectory,
-          m_maxFirmwareFileSize, *wolk->m_connectivityService, wolk->m_fileDownloadService, m_urlFileDownloader,
-          m_firmwareInstaller);
+          wolk->m_device.getKey(), *wolk->m_firmwareUpdateProtocol, *wolk->m_fileRepository,
+          *wolk->m_connectivityService, m_firmwareInstaller, m_firmwareVersion);
 
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
-    }
-
-    if (m_keepAliveEnabled)
-    {
-        wolk->m_keepAliveService = std::make_shared<KeepAliveService>(
-          wolk->m_device.getKey(), *wolk->m_statusProtocol, *wolk->m_connectivityService, Wolk::KEEP_ALIVE_INTERVAL);
-
-        // Do not add listener as pong message is not handled
-        // wolk->m_inboundMessageHandler->addListener(wolk->m_keepAliveService);
     }
 
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
@@ -266,7 +260,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_persistence{new InMemoryPersistence()}
 , m_dataProtocol{new JsonProtocol()}
 , m_firmwareVersion{""}
-, m_firmwareDownloadDirectory{""}
+, m_fileDownloadDirectory{""}
 , m_maxFirmwareFileSize{0}
 , m_maxFirmwareFileChunkSize{0}
 , m_keepAliveEnabled{false}

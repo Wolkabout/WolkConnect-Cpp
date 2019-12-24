@@ -17,6 +17,9 @@ project(WolkAboutConnector C CXX)
 
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
 
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup(NO_OUTPUT_DIRS KEEP_RPATHS)
+
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
@@ -46,13 +49,14 @@ IF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
     set(SSL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/${SSL_INCLUDE_DIR}")
 ENDIF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
 
-set(SSL_LIBS ssl crypto)
+set(SSL_LIBS ssl crypto "${CONAN_LIBS}")
 
 add_definitions(-DOPENSSL)
 
 # library output
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 link_directories(${CMAKE_BINARY_DIR}/lib)
+include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_POCO}")
 
 # WolkAbout c++ SDK
 add_subdirectory(WolkSDK-Cpp)
@@ -62,7 +66,7 @@ file(GLOB_RECURSE LIB_HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h" "${CMAKE_
 file(GLOB_RECURSE LIB_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore z PocoUtil PocoCrypto PocoData PocoDataSQLite PocoFoundation pthread)
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_LIST_DIR}/src")

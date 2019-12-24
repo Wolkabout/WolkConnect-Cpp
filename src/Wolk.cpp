@@ -175,6 +175,7 @@ Wolk::Wolk(Device device)
 , m_actuatorStatusProviderLambda(nullptr)
 , m_configurationHandlerLambda(nullptr)
 , m_configurationProviderLambda(nullptr)
+, m_fileRepository(nullptr)
 {
     m_commandBuffer = std::unique_ptr<CommandBuffer>(new CommandBuffer());
 }
