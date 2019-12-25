@@ -35,7 +35,8 @@ public:
      * @param onSuccess Function to call if install is successful
      * @param onFail Function to call if install has failed
      */
-    virtual void install(const std::string& firmwareFile, std::function<void()> onSuccess,
+    virtual void install(const std::string& firmwareFile,
+                         std::function<void()> onSuccess,
                          std::function<void()> onFail) = 0;
 
     /**

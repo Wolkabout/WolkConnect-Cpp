@@ -21,6 +21,8 @@
 #include "ActuatorStatusProvider.h"
 #include "ConfigurationHandler.h"
 #include "ConfigurationProvider.h"
+#include "FirmwareInstaller.h"
+#include "FirmwareVersionProvider.h"
 #include "InboundMessageHandler.h"
 #include "InboundPlatformMessageHandler.h"
 #include "connectivity/ConnectivityService.h"
@@ -37,7 +39,6 @@ namespace wolkabout
 {
 class Wolk;
 class UrlFileDownloader;
-class FirmwareInstaller;
 class DataProtocol;
 
 class WolkBuilder final
@@ -136,31 +137,23 @@ public:
     WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol);
 
     /**
-     * @brief withFirmwareUpdate Enables firmware update for device
-     * @param firmwareVersion Current version of the firmware
-     * @param installer Instance of wolkabout::FirmwareInstaller used to install firmware
-     * @param firmwareDownloadDirectory Directory where to download firmware file
-     * @param maxFirmwareFileSize Maximum size of firmware file that can be handled
-     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     * @brief withFileManagement enables file transfer with the platform
+     * @param fileDownloadDirectory path to folder where to store files
+     * @param maxPacketSize prefered file packet size in bytes
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides
+     * fluent interface)
      */
-    WolkBuilder& withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
-                                    const std::string& firmwareDownloadDirectory,
-                                    std::uint_fast64_t maxFirmwareFileSize,
-                                    std::uint_fast64_t maxFirmwareFileChunkSize);
+    WolkBuilder& withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize);
 
     /**
-     * @brief withFirmwareUpdate Enables firmware update for device
-     * @param firmwareVersion Current version of the firmware
+     * @brief withFirmwareUpdate Enables firmware update for device, requires file management
      * @param installer Instance of wolkabout::FirmwareInstaller used to install firmware
-     * @param firmwareDownloadDirectory Directory where to download firmware file
-     * @param maxFirmwareFileSize Maximum size of firmware file that can be handled
-     * @param urlDownloader Instance of wolkabout::UrlFileDownloader used to downlad firmware from provided url
-     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     * @param provider Instance of wolkabout::FirmwareVersionProvider used to provide
+     * firmware version of the device
+     * @return
      */
-    WolkBuilder& withFirmwareUpdate(const std::string& firmwareVersion, std::weak_ptr<FirmwareInstaller> installer,
-                                    const std::string& firmwareDownloadDirectory,
-                                    std::uint_fast64_t maxFirmwareFileSize, std::uint_fast64_t maxFirmwareFileChunkSize,
-                                    std::weak_ptr<UrlFileDownloader> urlDownloader);
+    WolkBuilder& withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> installer,
+                                    std::shared_ptr<FirmwareVersionProvider> provider);
 
     /**
      * @brief Builds Wolk instance
@@ -199,9 +192,9 @@ private:
 
     std::string m_firmwareVersion;
     std::string m_fileDownloadDirectory;
-    std::uint_fast64_t m_maxFirmwareFileSize;
-    std::uint_fast64_t m_maxFirmwareFileChunkSize;
-    std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
+    std::uint64_t m_maxPacketSize;
+    std::shared_ptr<FirmwareInstaller> m_firmwareInstaller;
+    std::shared_ptr<FirmwareVersionProvider> m_firmwareVersionProvider;
     std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
 
     // json protocol does not currently support ping messages

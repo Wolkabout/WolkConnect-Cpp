@@ -57,8 +57,8 @@ class FileDownloadService : public MessageListener
 {
 public:
     FileDownloadService(std::string deviceKey, JsonDownloadProtocol& protocol, std::string fileDownloadDirectory,
-                        ConnectivityService& connectivityService, FileRepository& fileRepository,
-                        std::shared_ptr<UrlFileDownloader> urlFileDownloader = nullptr);
+                        std::uint64_t maxPacketSize, ConnectivityService& connectivityService,
+                        FileRepository& fileRepository, std::shared_ptr<UrlFileDownloader> urlFileDownloader = nullptr);
 
     ~FileDownloadService();
 
@@ -106,6 +106,7 @@ private:
 
     const std::string m_deviceKey;
     const std::string m_fileDownloadDirectory;
+    const std::uint64_t m_maxPacketSize;
 
     JsonDownloadProtocol& m_protocol;
 
@@ -124,8 +125,6 @@ private:
     std::thread m_garbageCollector;
 
     CommandBuffer m_commandBuffer;
-
-    static const constexpr std::uint64_t MAX_PACKET_SIZE = 10 * 1024 * 1024;    // 10MB
 };
 }    // namespace wolkabout
 

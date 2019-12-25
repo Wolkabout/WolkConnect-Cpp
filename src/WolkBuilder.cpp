@@ -121,29 +121,18 @@ WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protoco
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
-                                             std::weak_ptr<FirmwareInstaller> installer,
-                                             const std::string& firmwareDownloadDirectory,
-                                             uint_fast64_t maxFirmwareFileSize,
-                                             std::uint_fast64_t maxFirmwareFileChunkSize)
+WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> installer,
+                                             std::shared_ptr<FirmwareVersionProvider> provider)
 {
-    return withFirmwareUpdate(firmwareVersion, installer, firmwareDownloadDirectory, maxFirmwareFileSize,
-                              maxFirmwareFileChunkSize, std::weak_ptr<UrlFileDownloader>());
+    m_firmwareInstaller = installer;
+    m_firmwareVersionProvider = provider;
+    return *this;
 }
 
-WolkBuilder& WolkBuilder::withFirmwareUpdate(const std::string& firmwareVersion,
-                                             std::weak_ptr<FirmwareInstaller> installer,
-                                             const std::string& firmwareDownloadDirectory,
-                                             uint_fast64_t maxFirmwareFileSize,
-                                             std::uint_fast64_t maxFirmwareFileChunkSize,
-                                             std::weak_ptr<UrlFileDownloader> urlDownloader)
+WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize)
 {
-    m_firmwareVersion = firmwareVersion;
-    m_fileDownloadDirectory = firmwareDownloadDirectory;
-    m_maxFirmwareFileSize = maxFirmwareFileSize;
-    m_maxFirmwareFileChunkSize = maxFirmwareFileChunkSize;
-    m_firmwareInstaller = installer;
-    m_urlFileDownloader = urlDownloader;
+    m_fileDownloadDirectory = fileDownloadDirectory;
+    m_maxPacketSize = maxPacketSize;
     return *this;
 }
 
@@ -229,17 +218,17 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     // File download service
     wolk->m_fileDownloadService = std::make_shared<FileDownloadService>(
-      wolk->m_device.getKey(), *wolk->m_fileDownloadProtocol, m_fileDownloadDirectory, *wolk->m_connectivityService,
-      *wolk->m_fileRepository, nullptr);
+      wolk->m_device.getKey(), *wolk->m_fileDownloadProtocol, m_fileDownloadDirectory, m_maxPacketSize,
+      *wolk->m_connectivityService, *wolk->m_fileRepository, nullptr);
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_fileDownloadService);
 
     // Firmware update service
-    if (m_firmwareInstaller.lock() != nullptr)
+    if (m_firmwareInstaller && m_firmwareVersionProvider)
     {
         wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-          wolk->m_device.getKey(), *wolk->m_firmwareUpdateProtocol, *wolk->m_fileRepository,
-          *wolk->m_connectivityService, m_firmwareInstaller, m_firmwareVersion);
+          wolk->m_device.getKey(), *wolk->m_firmwareUpdateProtocol, *wolk->m_fileRepository, m_firmwareInstaller,
+          m_firmwareVersionProvider, *wolk->m_connectivityService);
 
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
     }
@@ -259,10 +248,10 @@ WolkBuilder::WolkBuilder(Device device)
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}
 , m_dataProtocol{new JsonProtocol()}
-, m_firmwareVersion{""}
+, m_maxPacketSize{0}
 , m_fileDownloadDirectory{""}
-, m_maxFirmwareFileSize{0}
-, m_maxFirmwareFileChunkSize{0}
+, m_firmwareInstaller{nullptr}
+, m_firmwareVersionProvider{nullptr}
 , m_keepAliveEnabled{false}
 {
 }

@@ -47,12 +47,13 @@ static const size_t FLAG_INDEX = 2;
 namespace wolkabout
 {
 FileDownloadService::FileDownloadService(std::string deviceKey, JsonDownloadProtocol& protocol,
-                                         std::string fileDownloadDirectory, ConnectivityService& connectivityService,
-                                         FileRepository& fileRepository,
+                                         std::string fileDownloadDirectory, std::uint64_t maxPacketSize,
+                                         ConnectivityService& connectivityService, FileRepository& fileRepository,
                                          std::shared_ptr<UrlFileDownloader> urlFileDownloader)
 : m_deviceKey{std::move(deviceKey)}
 , m_protocol{protocol}
 , m_fileDownloadDirectory{std::move(fileDownloadDirectory)}
+, m_maxPacketSize{maxPacketSize}
 , m_connectivityService{connectivityService}
 , m_fileRepository{fileRepository}
 , m_urlFileDownloader{std::move(urlFileDownloader)}
@@ -177,6 +178,14 @@ void FileDownloadService::handle(const BinaryData& binaryData)
 
 void FileDownloadService::handle(const FileUploadInitiate& request)
 {
+    if (m_maxPacketSize == 0)
+    {
+        LOG(WARN) << "File transfer protocol disabled";
+
+        sendStatus(FileUploadStatus{request.getName(), FileTransferError::TRANSFER_PROTOCOL_DISABLED});
+        return;
+    }
+
     if (request.getName().empty())
     {
         LOG(WARN) << "Missing file name from file upload initiate";
@@ -309,7 +318,7 @@ void FileDownloadService::download(const std::string& fileName, uint64_t fileSiz
 
     const auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(fileHash));
 
-    auto downloader = std::unique_ptr<FileDownloader>(new FileDownloader(MAX_PACKET_SIZE));
+    auto downloader = std::unique_ptr<FileDownloader>(new FileDownloader(m_maxPacketSize));
     m_activeDownloads[fileName] = std::make_tuple(fileHash, std::move(downloader), false);
     m_activeDownload = fileName;
 

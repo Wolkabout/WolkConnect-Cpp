@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,76 +17,66 @@
 #define FIRMWAREUPDATESERVICE_H
 
 #include "InboundMessageHandler.h"
-#include "connectivity/ConnectivityService.h"
-#include "model/FirmwareUpdateStatus.h"
+#include "repository/FileRepository.h"
 #include "utilities/CommandBuffer.h"
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
-#include <vector>
 
 namespace wolkabout
 {
-class FileRepository;
+class ConnectivityService;
 class FirmwareInstaller;
+class FirmwareVersionProvider;
 class FirmwareUpdateAbort;
 class FirmwareUpdateInstall;
+class FirmwareUpdateResponse;
 class FirmwareUpdateStatus;
-class FirmwareVersion;
 class JsonDFUProtocol;
 
 class FirmwareUpdateService : public MessageListener
 {
 public:
     FirmwareUpdateService(std::string deviceKey, JsonDFUProtocol& protocol, FileRepository& fileRepository,
-                          ConnectivityService& connectivityService, std::weak_ptr<FirmwareInstaller> firmwareInstaller,
-                          std::string currentFirmwareVersion);
+                          std::shared_ptr<FirmwareInstaller> firmwareInstaller,
+                          std::shared_ptr<FirmwareVersionProvider> firmwareVersionProvider,
+                          ConnectivityService& connectivityService);
 
     void messageReceived(std::shared_ptr<Message> message) override;
-
     const Protocol& getProtocol() override;
 
-    virtual void reportFirmwareUpdateResult();
+    void publishFirmwareVersion();
 
-    virtual void publishFirmwareVersion();
+    void reportFirmwareUpdateResult();
 
 private:
     void handleFirmwareUpdateCommand(const FirmwareUpdateInstall& command);
     void handleFirmwareUpdateCommand(const FirmwareUpdateAbort& command);
 
-    void handleFirmwareUpdateStatus(const FirmwareUpdateStatus& status);
-    void handleFirmwareVersion(const FirmwareVersion& version);
+    void install(const std::string& firmwareFileName);
 
-    void install(const std::vector<std::string>& deviceKeys, const std::string& fileName);
-    void installDeviceFirmware(const std::string& deviceKey, const std::string& filePath);
+    void installSucceeded();
 
-    void installationInProgress(const std::vector<std::string>& deviceKeys);
-    void installationCompleted(const std::vector<std::string>& deviceKeys);
-    void installationAborted(const std::vector<std::string>& deviceKeys);
-    void installationFailed(const std::vector<std::string>& deviceKeys,
-                            WolkOptional<FirmwareUpdateStatus::Error> errorCode);
+    void installFailed();
 
-    void abort(const std::vector<std::string>& deviceKeys);
-    void abortDeviceFirmware(const std::string& deviceKey);
+    void abort();
 
     void sendStatus(const FirmwareUpdateStatus& status);
-    void sendVersion(const FirmwareVersion& version);
-
-    void sendCommand(const FirmwareUpdateInstall& command);
-    void sendCommand(const FirmwareUpdateAbort& command);
 
     void addToCommandBuffer(std::function<void()> command);
 
     const std::string m_deviceKey;
+
     JsonDFUProtocol& m_protocol;
 
     FileRepository& m_fileRepository;
 
-    ConnectivityService& m_connectivityService;
+    std::shared_ptr<FirmwareInstaller> m_firmwareInstaller;
+    std::shared_ptr<FirmwareVersionProvider> m_firmwareVersionProvider;
 
-    std::weak_ptr<FirmwareInstaller> m_firmwareInstaller;
-    const std::string m_currentFirmwareVersion;
+    ConnectivityService& m_connectivityService;
 
     CommandBuffer m_commandBuffer;
 

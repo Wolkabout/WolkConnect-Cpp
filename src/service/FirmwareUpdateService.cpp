@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 WolkAbout Technology s.r.o.
+ * Copyright 2018 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,31 +15,33 @@
  */
 
 #include "service/FirmwareUpdateService.h"
+#include "FirmwareInstaller.h"
+#include "FirmwareVersionProvider.h"
+#include "connectivity/ConnectivityService.h"
 #include "model/FirmwareUpdateAbort.h"
 #include "model/FirmwareUpdateInstall.h"
+#include "model/FirmwareUpdateResponse.h"
+#include "model/FirmwareUpdateStatus.h"
 #include "model/FirmwareVersion.h"
 #include "model/Message.h"
 #include "protocol/json/JsonDFUProtocol.h"
-#include "repository/FileRepository.h"
-#include "service/FirmwareInstaller.h"
 #include "utilities/FileSystemUtils.h"
 #include "utilities/Logger.h"
 #include "utilities/StringUtils.h"
 
-#include <utility>
-
 namespace wolkabout
 {
 FirmwareUpdateService::FirmwareUpdateService(std::string deviceKey, JsonDFUProtocol& protocol,
-                                             FileRepository& fileRepository, ConnectivityService& connectivityService,
-                                             std::weak_ptr<FirmwareInstaller> firmwareInstaller,
-                                             std::string currentFirmwareVersion)
+                                             FileRepository& fileRepository,
+                                             std::shared_ptr<FirmwareInstaller> firmwareInstaller,
+                                             std::shared_ptr<FirmwareVersionProvider> firmwareVersionProvider,
+                                             ConnectivityService& connectivityService)
 : m_deviceKey{std::move(deviceKey)}
 , m_protocol{protocol}
 , m_fileRepository{fileRepository}
+, m_firmwareInstaller{firmwareInstaller}
+, m_firmwareVersionProvider{firmwareVersionProvider}
 , m_connectivityService{connectivityService}
-, m_firmwareInstaller{std::move(firmwareInstaller)}
-, m_currentFirmwareVersion{std::move(currentFirmwareVersion)}
 {
 }
 
@@ -74,263 +76,206 @@ const Protocol& FirmwareUpdateService::getProtocol()
 
 void FirmwareUpdateService::reportFirmwareUpdateResult()
 {
-    if (m_firmwareInstaller.lock() == nullptr || m_currentFirmwareVersion.empty())
-    {
-        return;
-    }
-
     if (!FileSystemUtils::isFilePresent(FIRMWARE_VERSION_FILE))
     {
         return;
     }
 
-    LOG(INFO) << "Reporting firmware update result";
+    std::string storedFirmwareVersion;
+    FileSystemUtils::readFileContent(FIRMWARE_VERSION_FILE, storedFirmwareVersion);
 
-    std::string firmwareVersion;
-    FileSystemUtils::readFileContent(FIRMWARE_VERSION_FILE, firmwareVersion);
+    StringUtils::removeTrailingWhitespace(storedFirmwareVersion);
 
-    StringUtils::removeTrailingWhitespace(firmwareVersion);
+    const std::string currentFirmwareVersion = m_firmwareVersionProvider->getFirmwareVersion();
 
-    if (m_currentFirmwareVersion != firmwareVersion)
+    if (currentFirmwareVersion.empty())
     {
-        LOG(INFO) << "Firmware versions differ";
+        LOG(WARN) << "Failed to get device's firmware version";
+        return;
+    }
+
+    if (currentFirmwareVersion != storedFirmwareVersion)
+    {
         sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Status::COMPLETED});
     }
     else
     {
-        LOG(ERROR) << "Firmware versions do not differ";
         sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::INSTALLATION_FAILED});
     }
 
-    LOG(INFO) << "Deleting firmware version file";
     FileSystemUtils::deleteFile(FIRMWARE_VERSION_FILE);
 }
 
 void FirmwareUpdateService::publishFirmwareVersion()
 {
-    if (m_firmwareInstaller.lock() == nullptr || m_currentFirmwareVersion.empty())
-    {
-        return;
-    }
+    addToCommandBuffer([=] {
+        const std::string firmwareVersion = m_firmwareVersionProvider->getFirmwareVersion();
 
-    sendVersion(FirmwareVersion{m_deviceKey, m_currentFirmwareVersion});
+        if (firmwareVersion.empty())
+        {
+            LOG(WARN) << "Failed to get device's firmware version";
+            return;
+        }
+
+        const std::shared_ptr<Message> message =
+          m_protocol.makeMessage(m_deviceKey, FirmwareVersion{m_deviceKey, firmwareVersion});
+
+        if (!message)
+        {
+            LOG(WARN) << "Failed to create firmware version message";
+            return;
+        }
+
+        if (!m_connectivityService.publish(message))
+        {
+            LOG(WARN) << "Failed to publish firmware version message";
+            return;
+        }
+    });
 }
 
 void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateInstall& command)
 {
-    if (command.getDeviceKeys().empty())
+    if (command.getDeviceKeys().size() != 1 || command.getDeviceKeys().at(0).empty())
     {
-        LOG(WARN) << "Missing device keys from firmware install command";
-        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::UNSPECIFIED_ERROR});
+        LOG(WARN) << "Unable to extract device key from firmware install command";
         return;
     }
 
-    if (command.getFileName().empty())
+    auto deviceKey = command.getDeviceKeys().at(0);
+
+    if (deviceKey != m_deviceKey)
     {
-        LOG(WARN) << "Missing file name from firmware install command";
-        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::FILE_NOT_PRESENT});
+        LOG(WARN) << "Firmware update command contains unknown device key: " << deviceKey;
         return;
     }
 
-    auto fileInfo = m_fileRepository.getFileInfo(command.getFileName());
+    auto firmwareFile = command.getFileName();
 
-    if (!fileInfo)
+    if (firmwareFile.empty())
     {
-        LOG(WARN) << "Firmware file not present: " << command.getFileName();
-        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::FILE_NOT_PRESENT});
+        LOG(WARN) << "Missing file path in firmware install command";
+
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::FILE_SYSTEM_ERROR});
+        return;
     }
-    else
+
+    if (!FileSystemUtils::isFilePresent(firmwareFile))
     {
-        install(command.getDeviceKeys(), command.getFileName());
+        LOG(WARN) << "Missing firmware file: " << firmwareFile;
+
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::FILE_SYSTEM_ERROR});
+        return;
     }
+
+    install(firmwareFile);
 }
 
 void FirmwareUpdateService::handleFirmwareUpdateCommand(const FirmwareUpdateAbort& command)
 {
-    if (command.getDeviceKeys().empty())
+    if (command.getDeviceKeys().size() != 1 || command.getDeviceKeys().at(0).empty())
     {
-        LOG(WARN) << "Missing device keys from firmware abort command";
-        sendStatus(FirmwareUpdateStatus{command.getDeviceKeys(), FirmwareUpdateStatus::Error::UNSPECIFIED_ERROR});
+        LOG(WARN) << "Unable to extract device key from firmware abort command";
         return;
     }
 
-    abort(command.getDeviceKeys());
-}
+    auto deviceKey = command.getDeviceKeys().at(0);
 
-void FirmwareUpdateService::handleFirmwareUpdateStatus(const FirmwareUpdateStatus& status)
-{
-    if (status.getDeviceKeys().empty())
+    if (deviceKey != m_deviceKey)
     {
-        LOG(WARN) << "No keys specified in firmware update status";
+        LOG(WARN) << "Firmware update command contains unknown device key: " << deviceKey;
         return;
     }
 
-    switch (status.getStatus())
-    {
-    case FirmwareUpdateStatus::Status::INSTALLATION:
-    {
-        installationInProgress(status.getDeviceKeys());
-        break;
-    }
-    case FirmwareUpdateStatus::Status::COMPLETED:
-    {
-        installationCompleted(status.getDeviceKeys());
-        break;
-    }
-    case FirmwareUpdateStatus::Status::ABORTED:
-    {
-        installationAborted(status.getDeviceKeys());
-        break;
-    }
-    case FirmwareUpdateStatus::Status::ERROR:
-    {
-        installationFailed(status.getDeviceKeys(), status.getErrorCode());
-        break;
-    }
-    }
-
-    // forward status to platform
-    sendStatus(status);
+    abort();
 }
 
-void FirmwareUpdateService::handleFirmwareVersion(const FirmwareVersion& version)
-{
-    if (version.getVersion().empty())
-    {
-        LOG(WARN) << "Empty firmware version";
-        return;
-    }
-
-    if (version.getDeviceKey().empty())
-    {
-        LOG(WARN) << "No key specified in firmware version";
-        return;
-    }
-
-    sendVersion(version);
-}
-
-void FirmwareUpdateService::install(const std::vector<std::string>& deviceKeys, const std::string& fileName)
-{
-    for (const auto& key : deviceKeys)
-    {
-        if (key == m_deviceKey)
-        {
-            auto fileInfo = m_fileRepository.getFileInfo(fileName);
-            if (!fileInfo)
-            {
-                LOG(ERROR) << "Missing file info: " << fileName;
-                return;
-            }
-
-            installDeviceFirmware(key, fileInfo->path);
-        }
-    }
-}
-
-void FirmwareUpdateService::installDeviceFirmware(const std::string& deviceKey, const std::string& filePath)
+void FirmwareUpdateService::install(const std::string& firmwareFile)
 {
     LOG(INFO) << "Handling device firmware install";
 
-    if (m_firmwareInstaller.lock() == nullptr)
+    if (!m_firmwareInstaller)
     {
         LOG(ERROR) << "Firmware installer not set for device";
         sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::UNSPECIFIED_ERROR});
         return;
     }
 
-    if (!FileSystemUtils::createFileWithContent(FIRMWARE_VERSION_FILE, m_currentFirmwareVersion))
+    if (!m_firmwareVersionProvider)
+    {
+        LOG(ERROR) << "Firmware version provider not set for device";
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    const std::string firmwareVersion = m_firmwareVersionProvider->getFirmwareVersion();
+
+    if (firmwareVersion.empty())
+    {
+        LOG(WARN) << "Failed to get device's firmware version";
+        return;
+    }
+
+    if (!FileSystemUtils::createFileWithContent(FIRMWARE_VERSION_FILE, firmwareVersion))
     {
         LOG(ERROR) << "Failed to create firmware version file";
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::FILE_NOT_PRESENT});
+        return;
+    }
+
+    auto fileInfo = m_fileRepository.getFileInfo(firmwareFile);
+    if (!fileInfo)
+    {
+        LOG(ERROR) << "Missing file info: " << firmwareFile;
         sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::FILE_SYSTEM_ERROR});
         return;
     }
 
     sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Status::INSTALLATION});
 
-    if (!m_firmwareInstaller.lock()->install(filePath))
-    {
-        LOG(ERROR) << "Failed to install device firmware";
+    m_firmwareInstaller->install(fileInfo->path, [=]() { installSucceeded(); }, [=]() { installFailed(); });
+}
 
-        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::INSTALLATION_FAILED});
+void FirmwareUpdateService::installSucceeded()
+{
+    sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Status::COMPLETED});
+    publishFirmwareVersion();
+}
+
+void FirmwareUpdateService::installFailed()
+{
+    sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Error::INSTALLATION_FAILED});
+}
+
+void FirmwareUpdateService::abort()
+{
+    LOG(INFO) << "Abort device firmware installation";
+    if (m_firmwareInstaller->abort())
+    {
+        LOG(INFO) << "Device firmware installation aborted";
+        sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Status::ABORTED});
+    }
+    else
+    {
+        LOG(INFO) << "Device firmware installation cannot be aborted";
     }
 }
 
-void FirmwareUpdateService::installationInProgress(const std::vector<std::string>& deviceKeys)
+void FirmwareUpdateService::sendStatus(const FirmwareUpdateStatus& response)
 {
-    for (const auto& key : deviceKeys)
-    {
-        LOG(INFO) << "Firmware installation in progress for device: " << key;
-    }
-}
-
-void FirmwareUpdateService::installationCompleted(const std::vector<std::string>& deviceKeys)
-{
-    for (const auto& key : deviceKeys)
-    {
-        LOG(INFO) << "Firmware installation completed for device: " << key;
-    }
-}
-
-void FirmwareUpdateService::installationAborted(const std::vector<std::string>& deviceKeys)
-{
-    for (const auto& key : deviceKeys)
-    {
-        LOG(INFO) << "Firmware installation aborted for device: " << key;
-    }
-}
-
-void FirmwareUpdateService::installationFailed(const std::vector<std::string>& deviceKeys,
-                                               WolkOptional<FirmwareUpdateStatus::Error> errorCode)
-{
-    for (const auto& key : deviceKeys)
-    {
-        LOG(INFO) << "Firmware installation failed for device: " << key
-                  << (errorCode ? std::to_string(static_cast<int>(errorCode.value())) : "");
-    }
-}
-
-void FirmwareUpdateService::abort(const std::vector<std::string>& deviceKeys)
-{
-    for (const auto& key : deviceKeys)
-    {
-        if (key == m_deviceKey)
-        {
-            abortDeviceFirmware(key);
-        }
-    }
-}
-
-void FirmwareUpdateService::abortDeviceFirmware(const std::string& deviceKey)
-{
-    LOG(INFO) << "Handling firmware update abort for device: " << deviceKey;
-    sendCommand(FirmwareUpdateAbort{{deviceKey}});
-}
-
-void FirmwareUpdateService::sendStatus(const FirmwareUpdateStatus& status)
-{
-    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, status);
+    auto& deviceKey = response.getDeviceKeys().at(0);
+    std::shared_ptr<Message> message = m_protocol.makeMessage(deviceKey, response);
 
     if (!message)
     {
-        LOG(WARN) << "Failed to create firmware update status";
+        LOG(WARN) << "Failed to create firmware update response";
         return;
     }
 
-    m_connectivityService.publish(message);
-}
-
-void FirmwareUpdateService::sendVersion(const FirmwareVersion& version)
-{
-    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, version);
-
-    if (!message)
+    if (!m_connectivityService.publish(message))
     {
-        LOG(WARN) << "Failed to create firmware version";
-        return;
+        LOG(WARN) << "Firmware update response not published for device: " << deviceKey;
     }
-
-    m_connectivityService.publish(message);
 }
 
 void FirmwareUpdateService::addToCommandBuffer(std::function<void()> command)

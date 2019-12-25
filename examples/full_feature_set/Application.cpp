@@ -29,7 +29,7 @@
 int main(int /* argc */, char** /* argv */)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::DEBUG);
+    logger->setLogLevel(wolkabout::LogLevel::INFO);
     wolkabout::Logger::setInstance(std::move(logger));
 
     wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
@@ -37,19 +37,45 @@ int main(int /* argc */, char** /* argv */)
     static bool switchValue = false;
     static int sliderValue = 0;
 
-    class CustomFirmwareInstaller : public wolkabout::FirmwareInstaller
+    static int deviceFirmwareVersion = 1;
+
+    class FirmwareInstallerImpl : public wolkabout::FirmwareInstaller
     {
     public:
-        bool install(const std::string& firmwareFile) override
+        void install(const std::string& firmwareFile, std::function<void()> onSuccess,
+                     std::function<void()> onFail) override
         {
             // Mock install
             LOG(INFO) << "Updating firmware with file " << firmwareFile;
 
-            // Optionally delete 'firmwareFile
+            // Determine installation outcome and report it
+            if (true)
+            {
+                ++deviceFirmwareVersion;
+                onSuccess();
+            }
+            else
+            {
+                onFail();
+            }
+        }
+
+        bool abort() override
+        {
+            LOG(INFO) << "Abort device firmware installation";
+            // true if successfully aborted or false if abort can not be performed
             return true;
         }
     };
-    auto installer = std::make_shared<CustomFirmwareInstaller>();
+
+    class FirmwareVersionProviderImpl : public wolkabout::FirmwareVersionProvider
+    {
+    public:
+        std::string getFirmwareVersion() override { return std::to_string(deviceFirmwareVersion) + ".0.0"; }
+    };
+
+    auto installer = std::make_shared<FirmwareInstallerImpl>();
+    auto provider = std::make_shared<FirmwareVersionProviderImpl>();
 
     class DeviceConfiguration : public wolkabout::ConfigurationProvider, public wolkabout::ConfigurationHandler
     {
@@ -115,7 +141,8 @@ int main(int /* argc */, char** /* argv */)
         })
         .configurationHandler(deviceConfiguration)
         .configurationProvider(deviceConfiguration)
-        .withFirmwareUpdate("2.1.0", installer, ".", 100 * 1024 * 1024, 1024 * 1024)
+        .withFileManagement(".", 1024 * 1024)
+        .withFirmwareUpdate(installer, provider)
         .build();
 
     wolk->connect();
