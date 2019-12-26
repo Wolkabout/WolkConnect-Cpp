@@ -146,6 +146,17 @@ public:
     WolkBuilder& withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize);
 
     /**
+     * @brief withFileManagement enables file transfer with the platform
+     * @param fileDownloadDirectory path to folder where to store files
+     * @param maxPacketSize prefered file packet size in bytes
+     * @param urlDownloader Instance of wolkabout::UrlFileDownloader
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides
+     * fluent interface)
+     */
+    WolkBuilder& withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize,
+                                    std::shared_ptr<UrlFileDownloader> urlDownloader);
+
+    /**
      * @brief withFirmwareUpdate Enables firmware update for device, requires file management
      * @param installer Instance of wolkabout::FirmwareInstaller used to install firmware
      * @param provider Instance of wolkabout::FirmwareVersionProvider used to provide
@@ -195,7 +206,7 @@ private:
     std::uint64_t m_maxPacketSize;
     std::shared_ptr<FirmwareInstaller> m_firmwareInstaller;
     std::shared_ptr<FirmwareVersionProvider> m_firmwareVersionProvider;
-    std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
+    std::shared_ptr<UrlFileDownloader> m_urlFileDownloader = nullptr;
 
     bool m_fileManagementEnabled = false;
 

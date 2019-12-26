@@ -121,6 +121,21 @@ WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protoco
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize)
+{
+    return withFileManagement(fileDownloadDirectory, maxPacketSize, nullptr);
+}
+
+WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize, 
+                                             std::shared_ptr<UrlFileDownloader> urlDownloader)
+{
+    m_fileDownloadDirectory = fileDownloadDirectory;
+    m_maxPacketSize = maxPacketSize;
+    m_urlFileDownloader = urlDownloader;
+    m_fileManagementEnabled = true;
+    return *this;
+}
+
 WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> installer,
                                              std::shared_ptr<FirmwareVersionProvider> provider)
 {
@@ -129,13 +144,6 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> 
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize)
-{
-    m_fileDownloadDirectory = fileDownloadDirectory;
-    m_maxPacketSize = maxPacketSize;
-    m_fileManagementEnabled = true;
-    return *this;
-}
 
 std::unique_ptr<Wolk> WolkBuilder::build()
 {
@@ -220,7 +228,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // File download service
     wolk->m_fileDownloadService = std::make_shared<FileDownloadService>(
       wolk->m_device.getKey(), *wolk->m_fileDownloadProtocol, m_fileDownloadDirectory, m_maxPacketSize,
-      *wolk->m_connectivityService, *wolk->m_fileRepository, nullptr);
+      *wolk->m_connectivityService, *wolk->m_fileRepository, m_urlFileDownloader);
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_fileDownloadService);
 
