@@ -86,7 +86,7 @@ std::unique_ptr<wolkabout::Wolk> wolk =
     wolk->connect();
 ```
 
-**Publishing sensor readings:**
+**Adding sensor readings:**
 ```cpp
 wolk->addSensorReading("TEMPERATURE_REF", 23.4);
 wolk->addSensorReading("BOOL_SENSOR_REF", true);
@@ -96,15 +96,17 @@ wolk->addSensorReading("BOOL_SENSOR_REF", true);
 ```cpp
 wolk->publishActuatorStatus("ACTUATOR_REFERENCE_ONE ");
 ```
-This will invoke the ActuationStatusProvider to read the actuator status,
+This will invoke the `ActuationStatusProvider` to read the actuator status,  
 and publish actuator status.
 
 **Publish device configuration to platform:**
 ```cpp
 wolk->publishConfiguration();
 ```
+This will invoke the `ConfigurationProvider` to read the device's configuration options,  
+and publish them.
 
-**Publishing events:**
+**Adding events:**
 ```cpp
 wolk->addAlarm("ALARM_REF", true);
 ```
