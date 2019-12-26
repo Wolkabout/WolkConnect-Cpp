@@ -17,7 +17,7 @@
 WolkAbout C++11 Connector library for connecting devices to [WolkAbout IoT Platform](https://demo.wolkabout.com/#/login).
 
 Supported protocol(s):
-* JSON_SINGLE
+* JSON_PROTOCOL
 
 Prerequisite
 ------
