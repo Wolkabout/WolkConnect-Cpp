@@ -133,6 +133,7 @@ WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDire
 {
     m_fileDownloadDirectory = fileDownloadDirectory;
     m_maxPacketSize = maxPacketSize;
+    m_fileManagementEnabled = true;
     return *this;
 }
 
@@ -226,6 +227,11 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // Firmware update service
     if (m_firmwareInstaller && m_firmwareVersionProvider)
     {
+        if (!m_fileManagementEnabled)
+        {
+            throw std::logic_error("File management must be enabled in order to use firmware update.");
+        }
+
         wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
           wolk->m_device.getKey(), *wolk->m_firmwareUpdateProtocol, *wolk->m_fileRepository, m_firmwareInstaller,
           m_firmwareVersionProvider, *wolk->m_connectivityService);

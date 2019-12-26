@@ -197,6 +197,8 @@ private:
     std::shared_ptr<FirmwareVersionProvider> m_firmwareVersionProvider;
     std::weak_ptr<UrlFileDownloader> m_urlFileDownloader;
 
+    bool m_fileManagementEnabled = false;
+
     // json protocol does not currently support ping messages
     bool m_keepAliveEnabled = false;
 
