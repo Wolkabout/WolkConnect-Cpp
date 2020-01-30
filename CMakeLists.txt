@@ -1,4 +1,4 @@
-# Copyright 2018 WolkAbout Technology s.r.o.
+# Copyright 2020 WolkAbout Technology s.r.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +17,6 @@ project(WolkAboutConnector C CXX)
 
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
 
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-conan_basic_setup(NO_OUTPUT_DIRS KEEP_RPATHS)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -49,14 +47,15 @@ IF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
     set(SSL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/${SSL_INCLUDE_DIR}")
 ENDIF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
 
-set(SSL_LIBS ssl crypto "${CONAN_LIBS}")
+IF (NOT SSL_LIBS)
+     set(SSL_LIBS ssl crypto)
+ENDIF (NOT SSL_LIBS)
 
 add_definitions(-DOPENSSL)
 
 # library output
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 link_directories(${CMAKE_BINARY_DIR}/lib)
-include_directories(SYSTEM "${CONAN_INCLUDE_DIRS_POCO}")
 
 # WolkAbout c++ SDK
 add_subdirectory(WolkSDK-Cpp)
