@@ -126,7 +126,7 @@ WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDire
     return withFileManagement(fileDownloadDirectory, maxPacketSize, nullptr);
 }
 
-WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize, 
+WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadDirectory, std::uint64_t maxPacketSize,
                                              std::shared_ptr<UrlFileDownloader> urlDownloader)
 {
     m_fileDownloadDirectory = fileDownloadDirectory;
@@ -143,7 +143,6 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> 
     m_firmwareVersionProvider = provider;
     return *this;
 }
-
 
 std::unique_ptr<Wolk> WolkBuilder::build()
 {

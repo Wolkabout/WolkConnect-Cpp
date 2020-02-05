@@ -131,11 +131,9 @@ void DataService::addSensorReading(const std::string& reference, const std::stri
 }
 
 void DataService::addSensorReading(const std::string& reference, const std::vector<std::string>& values,
-                                   const std::string& delimiter, unsigned long long int rtc)
+                                   unsigned long long int rtc)
 {
     auto sensorReading = std::make_shared<SensorReading>(values, reference, rtc);
-
-    m_sensorDelimiters[reference] = delimiter;
 
     m_persistence.putSensorReading(reference, sensorReading);
 }
@@ -290,12 +288,5 @@ void DataService::publishConfigurationForPersistanceKey(const std::string& persi
     {
         m_persistence.removeConfiguration(persistanceKey);
     }
-}
-
-std::string DataService::getSensorDelimiter(const std::string& key) const
-{
-    const auto it = m_sensorDelimiters.find(key);
-
-    return it != m_sensorDelimiters.end() ? it->second : "";
 }
 }    // namespace wolkabout
