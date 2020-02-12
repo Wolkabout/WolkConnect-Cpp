@@ -17,7 +17,7 @@ project(WolkAboutConnector C CXX)
 
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
 
-
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
@@ -37,25 +37,11 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic             
                                             -Wvariadic-macros                                                          \
                                             -Wwrite-strings")
 
-# Paho MQTT
-IF (NOT SSL_INCLUDE_DIR)
-    message(FATAL_ERROR
-            "SSL include dir must be specified with: -DSSL_INCLUDE_DIR=...")
-ENDIF (NOT SSL_INCLUDE_DIR)
-
-IF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
-    set(SSL_INCLUDE_DIR "${PROJECT_SOURCE_DIR}/${SSL_INCLUDE_DIR}")
-ENDIF (NOT IS_ABSOLUTE ${SSL_INCLUDE_DIR})
-
-IF (NOT SSL_LIBS)
-     set(SSL_LIBS ssl crypto)
-ENDIF (NOT SSL_LIBS)
-
-add_definitions(-DOPENSSL)
-
 # library output
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 link_directories(${CMAKE_BINARY_DIR}/lib)
+
+find_package(Threads REQUIRED)
 
 # WolkAbout c++ SDK
 add_subdirectory(WolkSDK-Cpp)
@@ -65,8 +51,8 @@ file(GLOB_RECURSE LIB_HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h" "${CMAKE_
 file(GLOB_RECURSE LIB_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore z PocoUtil PocoCrypto PocoData PocoDataSQLite PocoFoundation pthread)
-set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-Wl,-rpath,./")
+target_link_libraries(${PROJECT_NAME} WolkAboutCore z PocoUtil PocoCrypto PocoData PocoDataSQLite PocoFoundation Threads::Threads)
+set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_LIST_DIR}/src")
 
@@ -78,7 +64,7 @@ file(GLOB_RECURSE FULL_EXAMPLE_SOURCE_FILES "examples/full_feature_set/*.cpp")
 
 add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
 target_link_libraries(full_example ${PROJECT_NAME})
-set_target_properties(full_example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
+set_target_properties(full_example ${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
 # Simple example
 file(GLOB_RECURSE SIMPLE_EXAMPLE_HEADER_FILES "examples/simple/*.h")
@@ -86,7 +72,7 @@ file(GLOB_RECURSE SIMPLE_EXAMPLE_SOURCE_FILES "examples/simple/*.cpp")
 
 add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
 target_link_libraries(simple_example ${PROJECT_NAME})
-set_target_properties(simple_example PROPERTIES LINK_FLAGS "-Wl,-rpath,./lib")
+set_target_properties(simple_example ${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
 
 
 add_subdirectory(cmake)
