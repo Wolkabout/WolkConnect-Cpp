@@ -16,18 +16,19 @@
 
 #define private public
 #define protected public
-#include "model/Device.h"
+#include "connectivity/mqtt/WolkPahoMqttClient.h"
 #undef private
 #undef protected
 
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
 
-class ExampleTest : public ::testing::Test
+//#include "mocks/MqttAsyncClientMock.h"
+
+class WolkPahoMqttClientTests : public ::testing::Test
 {
 };
 
-TEST_F(ExampleTest, ExampleTest1)
+TEST_F(WolkPahoMqttClientTests, DisconnectTests)
 {
-    const auto& device = std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD");
+//    const auto& client = wolkabout::WolkPahoMqttClient();
 }
