@@ -16,8 +16,8 @@ cmake_minimum_required(VERSION 3.5)
 project(WolkAboutConnector C CXX)
 
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
-
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
+
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
@@ -35,11 +35,14 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic             
                                             -Wstrict-aliasing=2                                                        \
                                             -Wunreachable-code -Wno-unused                                             \
                                             -Wvariadic-macros                                                          \
-                                            -Wwrite-strings")
+                                            -Wwrite-strings                                                            \
+                                            -fprofile-arcs -ftest-coverage -g")
 
 # library output
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-link_directories(${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build)
+set(CMAKE_LIBRARY_INCLUDE_DIRECTORY ${CMAKE_PREFIX_PATH}/include)
+link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 find_package(Threads REQUIRED)
 
@@ -47,14 +50,29 @@ find_package(Threads REQUIRED)
 add_subdirectory(WolkSDK-Cpp)
 
 # WolkAbout c++ Connector
-file(GLOB_RECURSE LIB_HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h" "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp")
-file(GLOB_RECURSE LIB_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
+include_directories("src")
 
-add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES})
+file(GLOB_RECURSE LIB_HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h" "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp")
+file(GLOB_RECURSE LIB_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.c" "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
+
+add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} WolkAboutCore z PocoUtil PocoCrypto PocoData PocoDataSQLite PocoFoundation Threads::Threads)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 
 target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_LIST_DIR}/src")
+
+# Tests
+include_directories("tests")
+
+file(GLOB_RECURSE TEST_HEADER_FILES "tests/*.h" "tests/*.hpp")
+file(GLOB_RECURSE TEST_SOURCE_FILES "tests/*.c" "tests/*.cpp")
+
+add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
+target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
+target_include_directories(${PROJECT_NAME}Tests PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY})
+set_target_properties(${PROJECT_NAME}Tests PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+
+add_test(gtest ${PROJECT_NAME}Tests)
 
 # Examples
 
@@ -73,6 +91,5 @@ file(GLOB_RECURSE SIMPLE_EXAMPLE_SOURCE_FILES "examples/simple/*.cpp")
 add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
 target_link_libraries(simple_example ${PROJECT_NAME})
 set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
-
 
 add_subdirectory(cmake)

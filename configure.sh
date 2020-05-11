@@ -14,6 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-pushd out
+pushd out || exit
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-popd
+popd || exit

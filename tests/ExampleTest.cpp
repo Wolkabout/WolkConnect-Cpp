@@ -13,3 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#define private public
+#define protected public
+#include "model/Device.h"
+#undef private
+#undef protected
+
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
+class ExampleTest : public ::testing::Test
+{
+};
+
+TEST_F(ExampleTest, ExampleTest1)
+{
+    const auto& device = std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD");
+}
