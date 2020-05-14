@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-#define private public
-#define protected public
-#include "connectivity/mqtt/WolkPahoMqttClient.h"
-#undef private
-#undef protected
-
 #include <gtest/gtest.h>
 
-//#include "mocks/MqttAsyncClientMock.h"
-
-class WolkPahoMqttClientTests : public ::testing::Test
+class SQLiteFileRepositoryTests: public ::testing::Test
 {
 };
 
-TEST_F(WolkPahoMqttClientTests, DisconnectTests)
+TEST_F(SQLiteFileRepositoryTests, SampleTest)
 {
-//    const auto& client = wolkabout::WolkPahoMqttClient();
 }
