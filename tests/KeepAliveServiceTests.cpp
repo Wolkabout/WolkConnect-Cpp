@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <iostream>
 
 #include "mocks/ConnectivityServiceMock.h"
 #include "mocks/StatusProtocolMock.h"
@@ -46,3 +47,50 @@ public:
     std::unique_ptr<ConnectivityServiceMock> connectivityServiceMock;
     std::unique_ptr<StatusProtocolMock> statusProtocolMock;
 };
+
+using namespace ::testing;
+
+TEST_F(KeepAliveServiceTests, SimpleCtorTest)
+{
+    std::unique_ptr<wolkabout::Message> message =
+      std::unique_ptr<wolkabout::Message>(new wolkabout::Message("TEST", "TEST"));
+
+    EXPECT_CALL(*statusProtocolMock, makeLastWillMessage({"TEST_KEY"})).WillOnce(Return(ByMove(std::move(message))));
+    EXPECT_CALL(*connectivityServiceMock, setUncontrolledDisonnectMessage).WillOnce(Return());
+
+    EXPECT_NO_THROW(const auto& keepAliveService = wolkabout::KeepAliveService(
+                      "TEST_KEY", *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(1)));
+}
+
+TEST_F(KeepAliveServiceTests, OtherMethodsTest)
+{
+    std::shared_ptr<wolkabout::KeepAliveService> keepAliveService;
+    ASSERT_NO_THROW(keepAliveService = std::make_shared<wolkabout::KeepAliveService>(
+                      "TEST_KEY", *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(1)));
+
+    const auto& message = std::make_shared<wolkabout::Message>("TEST", "TEST");
+    EXPECT_NO_THROW(keepAliveService->messageReceived(message));
+
+    //    std::cout << "KeepAliveServiceTests: " << &keepAliveService->getProtocol() << ", " << &(*statusProtocolMock)
+    //    << std::endl;
+    EXPECT_EQ(&keepAliveService->getProtocol(), &(*statusProtocolMock));
+}
+
+TEST_F(KeepAliveServiceTests, FunctionalityTest)
+{
+    std::shared_ptr<wolkabout::KeepAliveService> keepAliveService;
+    ASSERT_NO_THROW(keepAliveService = std::make_shared<wolkabout::KeepAliveService>(
+                      "TEST_KEY", *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(1)));
+
+    std::unique_ptr<wolkabout::Message> message =
+      std::unique_ptr<wolkabout::Message>(new wolkabout::Message("TEST", "TEST"));
+    EXPECT_CALL(*statusProtocolMock, makeFromPingRequest)
+      .WillOnce(Return(ByMove(std::move(message))));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillRepeatedly(Return(true));
+
+    EXPECT_NO_THROW(keepAliveService->connected());
+
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    EXPECT_NO_THROW(keepAliveService->disconnected());
+}
