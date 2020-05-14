@@ -17,6 +17,8 @@
 #define private public
 #define protected public
 #include "service/KeepAliveService.h"
+#include "model/DeviceStatus.h"
+#include "model/Message.h"
 #undef private
 #undef protected
 
@@ -37,7 +39,8 @@ public:
 
     void TearDown()
     {
-
+        connectivityServiceMock.reset();
+        statusProtocolMock.reset();
     }
 
     std::unique_ptr<ConnectivityServiceMock> connectivityServiceMock;

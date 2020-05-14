@@ -16,27 +16,28 @@
 #ifndef WOLKABOUTCONNECTOR_STATUSPROTOCOLMOCK_H
 #define WOLKABOUTCONNECTOR_STATUSPROTOCOLMOCK_H
 
+#include <gmock/gmock.h>
+
 #include "protocol/StatusProtocol.h"
 
-class StatusProtocolMock : public wolkabout::StatusProtocol
+class StatusProtocolMock: public wolkabout::StatusProtocol
 {
 public:
     StatusProtocolMock() = default;
 
-    MOCK_METHOD(bool, isStatusRequestMessage, (const wolkabout::Message& message), (override));
-    MOCK_METHOD(bool, isStatusConfirmMessage, (const wolkabout::Message& message), (override));
-    MOCK_METHOD(bool, isPongMessage, (const wolkabout::Message& message), (override));
-    MOCK_METHOD(std::unique_ptr<wolkabout::Message>, makeStatusResponseMessage,
-                (const std::string& deviceKey, const wolkabout::DeviceStatus& response), (override));
-    MOCK_METHOD(std::unique_ptr<wolkabout::Message>, makeStatusUpdateMessage,
-                (const std::string& deviceKey, const wolkabout::DeviceStatus& response), (override));
-    MOCK_METHOD(std::unique_ptr<wolkabout::Message>, makeLastWillMessage, (const std::string& deviceKey), (override));
-    MOCK_METHOD(std::unique_ptr<wolkabout::Message>, makeLastWillMessage, (const std::vector<std::string>& deviceKeys), (override));
-    MOCK_METHOD(std::unique_ptr<wolkabout::Message>, makeFromPingRequest, (const std::string& deviceKey), (override));
+    MOCK_CONST_METHOD1(isStatusRequestMessage, bool(const wolkabout::Message&));
+    MOCK_CONST_METHOD1(isStatusConfirmMessage, bool(const wolkabout::Message&));
+    MOCK_CONST_METHOD1(isPongMessage, bool(const wolkabout::Message&));
 
-    MOCK_METHOD(std::vector<std::string>, getInboundChannels, (), (override));
-    MOCK_METHOD(std::vector<std::string>, getInboundChannelsForDevice, (const std::string& deviceKey), (override));
-    MOCK_METHOD(std::string, extractDeviceKeyFromChannel, (const std::string& topic), (override));
+    MOCK_CONST_METHOD2(makeStatusResponseMessage, std::unique_ptr<wolkabout::Message>(const std::string&, const wolkabout::DeviceStatus&));
+    MOCK_CONST_METHOD2(makeStatusUpdateMessage, std::unique_ptr<wolkabout::Message>(const std::string&, const wolkabout::DeviceStatus&));
+    MOCK_CONST_METHOD1(makeLastWillMessage, std::unique_ptr<wolkabout::Message>(const std::string&));
+    MOCK_CONST_METHOD1(makeLastWillMessage, std::unique_ptr<wolkabout::Message>(const std::vector<std::string>&));
+    MOCK_CONST_METHOD1(makeFromPingRequest, std::unique_ptr<wolkabout::Message>(const std::string&));
+
+    MOCK_CONST_METHOD0(getInboundChannels, std::vector<std::string>());
+    MOCK_CONST_METHOD1(getInboundChannelsForDevice, std::vector<std::string>(const std::string&));
+    MOCK_CONST_METHOD1(extractDeviceKeyFromChannel, std::string(const std::string&));
 };
 
 #endif    // WOLKABOUTCONNECTOR_STATUSPROTOCOLMOCK_H
