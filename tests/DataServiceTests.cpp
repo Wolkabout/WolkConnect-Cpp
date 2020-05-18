@@ -67,9 +67,9 @@ TEST_F(DataServiceTests, MessageChecksTests)
 {
     const auto& key = "TEST_DEVICE_KEY";
     std::unique_ptr<wolkabout::DataService> dataService;
-    EXPECT_NO_THROW(dataService = std::unique_ptr<wolkabout::DataService>(
-                      new wolkabout::DataService(key, *dataProtocolMock, *persistenceMock,
-                                                 *connectivityServiceMock, nullptr, nullptr, nullptr, nullptr)));
+    EXPECT_NO_THROW(
+      dataService = std::unique_ptr<wolkabout::DataService>(new wolkabout::DataService(
+        key, *dataProtocolMock, *persistenceMock, *connectivityServiceMock, nullptr, nullptr, nullptr, nullptr)));
 
     auto message = std::make_shared<wolkabout::Message>("DATA", key);
 
@@ -81,4 +81,94 @@ TEST_F(DataServiceTests, MessageChecksTests)
 
     EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(key)).WillOnce(Return(key));
     EXPECT_NO_THROW(dataService->messageReceived(message));
+}
+
+TEST_F(DataServiceTests, ValidMessagesTests)
+{
+    const auto& deviceKey = "TEST_DEVICE_KEY";
+
+    bool success[4];
+
+    wolkabout::ActuatorGetHandler actuatorGetHandler = [&](const std::string& key) {
+        std::cout << "ActuatorGetHandler: " << key << std::endl;
+        success[0] = true;
+    };
+
+    wolkabout::ActuatorSetHandler actuatorSetHandler = [&](const std::string& key, const std::string& value) {
+        std::cout << "ActuatorSetHandler: " << key << ", " << value << std::endl;
+        success[1] = true;
+    };
+
+    wolkabout::ConfigurationGetHandler configurationGetHandler = [&]() {
+        std::cout << "ConfigurationGetHandler: Called!" << std::endl;
+        success[2] = true;
+    };
+
+    wolkabout::ConfigurationSetHandler configurationSetHandler = [&](const wolkabout::ConfigurationSetCommand& value) {
+        std::cout << "ConfigurationSetHandler: Size : " << value.getValues().size() << std::endl;
+        success[3] = true;
+    };
+
+    std::unique_ptr<wolkabout::DataService> dataService;
+    EXPECT_NO_THROW(dataService = std::unique_ptr<wolkabout::DataService>(new wolkabout::DataService(
+                      deviceKey, *dataProtocolMock, *persistenceMock, *connectivityServiceMock, actuatorSetHandler,
+                      actuatorGetHandler, configurationSetHandler, configurationGetHandler)));
+
+    const auto& message = std::make_shared<wolkabout::Message>("DATA", deviceKey);
+
+    EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(deviceKey)).WillOnce(Return(deviceKey));
+    EXPECT_CALL(*dataProtocolMock, isActuatorGetMessage).WillOnce(Return(true));
+    EXPECT_CALL(*dataProtocolMock, makeActuatorGetCommand).WillOnce(Return(ByMove(nullptr)));
+    EXPECT_NO_THROW(dataService->messageReceived(message));
+
+    EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(deviceKey)).WillOnce(Return(deviceKey));
+    EXPECT_CALL(*dataProtocolMock, isActuatorGetMessage).WillOnce(Return(true));
+    EXPECT_CALL(*dataProtocolMock, makeActuatorGetCommand)
+      .WillOnce(
+        Return(ByMove(std::unique_ptr<wolkabout::ActuatorGetCommand>(new wolkabout::ActuatorGetCommand("TEST_REF")))));
+    EXPECT_NO_THROW(dataService->messageReceived(message));
+
+    EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(deviceKey)).WillOnce(Return(deviceKey));
+    EXPECT_CALL(*dataProtocolMock, isActuatorGetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isActuatorSetMessage).WillOnce(Return(true));
+    EXPECT_CALL(*dataProtocolMock, makeActuatorSetCommand).WillOnce(Return(ByMove(nullptr)));
+    EXPECT_NO_THROW(dataService->messageReceived(message));
+
+    EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(deviceKey)).WillOnce(Return(deviceKey));
+    EXPECT_CALL(*dataProtocolMock, isActuatorGetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isActuatorSetMessage).WillOnce(Return(true));
+    EXPECT_CALL(*dataProtocolMock, makeActuatorSetCommand)
+      .WillOnce(Return(ByMove(
+        std::unique_ptr<wolkabout::ActuatorSetCommand>(new wolkabout::ActuatorSetCommand("TEST_REF", "TEST_VAL")))));
+    EXPECT_NO_THROW(dataService->messageReceived(message));
+
+    EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(deviceKey)).WillOnce(Return(deviceKey));
+    EXPECT_CALL(*dataProtocolMock, isActuatorGetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isActuatorSetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isConfigurationGetMessage).WillOnce(Return(true));
+    EXPECT_NO_THROW(dataService->messageReceived(message));
+
+    EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(deviceKey)).WillOnce(Return(deviceKey));
+    EXPECT_CALL(*dataProtocolMock, isActuatorGetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isActuatorSetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isConfigurationGetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isConfigurationSetMessage).WillOnce(Return(true));
+    EXPECT_CALL(*dataProtocolMock, makeConfigurationSetCommand)
+      .WillOnce(Return(ByMove(nullptr)));
+    EXPECT_NO_THROW(dataService->messageReceived(message));
+
+    EXPECT_CALL(*dataProtocolMock, extractDeviceKeyFromChannel(deviceKey)).WillOnce(Return(deviceKey));
+    EXPECT_CALL(*dataProtocolMock, isActuatorGetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isActuatorSetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isConfigurationGetMessage).WillOnce(Return(false));
+    EXPECT_CALL(*dataProtocolMock, isConfigurationSetMessage).WillOnce(Return(true));
+    EXPECT_CALL(*dataProtocolMock, makeConfigurationSetCommand)
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::ConfigurationSetCommand>(
+        new wolkabout::ConfigurationSetCommand(std::vector<wolkabout::ConfigurationItem>())))));
+    EXPECT_NO_THROW(dataService->messageReceived(message));
+
+    for (const auto& val : success)
+    {
+        EXPECT_TRUE(val);
+    }
 }
