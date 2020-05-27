@@ -90,7 +90,7 @@ TEST_F(KeepAliveServiceTests, FunctionalityTest)
 
     EXPECT_NO_THROW(keepAliveService->connected());
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds (999));
 
     EXPECT_NO_THROW(keepAliveService->disconnected());
 }
