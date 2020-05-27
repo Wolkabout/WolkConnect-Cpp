@@ -94,23 +94,15 @@ TEST_F(DataServiceTests, ValidMessagesTests)
     bool configurationGetCalled = false;
     bool configurationSetCalled = false;
 
-    wolkabout::ActuatorGetHandler actuatorGetHandler = [&](const std::string& key) {
-        //        std::cout << "ActuatorGetHandler: " << key << std::endl;
-        actuatorGetCalled = true;
-    };
+    wolkabout::ActuatorGetHandler actuatorGetHandler = [&](const std::string& key) { actuatorGetCalled = true; };
 
     wolkabout::ActuatorSetHandler actuatorSetHandler = [&](const std::string& key, const std::string& value) {
-        //        std::cout << "ActuatorSetHandler: " << key << ", " << value << std::endl;
         actuatorSetCalled = true;
     };
 
-    wolkabout::ConfigurationGetHandler configurationGetHandler = [&]() {
-        //        std::cout << "ConfigurationGetHandler: Called!" << std::endl;
-        configurationGetCalled = true;
-    };
+    wolkabout::ConfigurationGetHandler configurationGetHandler = [&]() { configurationGetCalled = true; };
 
     wolkabout::ConfigurationSetHandler configurationSetHandler = [&](const wolkabout::ConfigurationSetCommand& value) {
-        //        std::cout << "ConfigurationSetHandler: Size : " << value.getValues().size() << std::endl;
         configurationSetCalled = true;
     };
 
@@ -314,23 +306,20 @@ TEST_F(DataServiceTests, PublishingConfigurationsTests)
     EXPECT_CALL(*persistenceMock, getConfiguration).WillOnce(Return(ByMove(nullptr)));
     EXPECT_NO_THROW(dataService->publishConfiguration());
 
-//    const auto& configurationItems =
-//      std::make_shared<std::vector<wolkabout::ConfigurationItem>>(std::vector<wolkabout::ConfigurationItem>{
-//        wolkabout::ConfigurationItem(std::vector<std::string>{"VALUE1", "VALUE2"}, "REF")});
-//
-//    EXPECT_CALL(*persistenceMock, getConfiguration).WillOnce(Return(configurationItems));
-//    EXPECT_CALL(*dataProtocolMock,
-//                makeMessage(key, Matcher<const std::vector<wolkabout::ConfigurationItem>&>()))
-//      .WillOnce(Return(ByMove(nullptr)));
-//    EXPECT_NO_THROW(dataService->publishConfiguration());
+    const auto& configurationItems =
+      std::make_shared<std::vector<wolkabout::ConfigurationItem>>(std::vector<wolkabout::ConfigurationItem>{
+        wolkabout::ConfigurationItem(std::vector<std::string>{"VALUE1", "VALUE2"}, "REF")});
+
+    EXPECT_CALL(*persistenceMock, getConfiguration).WillOnce(Return(configurationItems));
+    EXPECT_CALL(*dataProtocolMock, makeMessage(key, A<const std::vector<wolkabout::ConfigurationItem>&>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    EXPECT_NO_THROW(dataService->publishConfiguration());
 
     // Happy flow
-//    EXPECT_CALL(*persistenceMock, getConfigurationKeys).WillOnce(Return(std::vector<std::string>{"KEY1"}));
-//    EXPECT_CALL(*persistenceMock, getConfiguration).WillOnce(Return(configurationItems));
-//    EXPECT_CALL(*dataProtocolMock,
-//                makeMessage(key, Matcher<const std::vector<wolkabout::ConfigurationItem>&>()))
-//      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>(new wolkabout::Message("HELLO", "HELLO")))));
-//    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
-//    EXPECT_CALL(*persistenceMock, removeConfiguration).WillOnce(Return());
-//    EXPECT_NO_THROW(dataService->publishConfiguration());
+    EXPECT_CALL(*persistenceMock, getConfiguration).WillOnce(Return(configurationItems));
+    EXPECT_CALL(*dataProtocolMock, makeMessage(key, A<const std::vector<wolkabout::ConfigurationItem>&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>(new wolkabout::Message("HELLO", "HELLO")))));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+    EXPECT_CALL(*persistenceMock, removeConfiguration).WillOnce(Return());
+    EXPECT_NO_THROW(dataService->publishConfiguration());
 }

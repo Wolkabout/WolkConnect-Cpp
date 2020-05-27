@@ -4,7 +4,7 @@ rm ./*.info
 rm -rf ./out/coverage
 
 lcov -b . -c -d out -o coverage.info
-lcov -e coverage.info "`pwd`/*" -o coverage_filtered.info
+lcov -e coverage.info "`pwd`/*" -o coverage_filtered.info || exit
 lcov -r coverage_filtered.info "`pwd`/out/*.*" -o coverage_filtered.info
 lcov -r coverage_filtered.info "`pwd`/tests/*.*" -o coverage_filtered.info
 lcov -r coverage_filtered.info "`pwd`/src/*.h" -o coverage_filtered.info
