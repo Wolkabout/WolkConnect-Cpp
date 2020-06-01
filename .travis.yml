@@ -3,16 +3,13 @@ sudo: false
 jobs:
   include:
     - stage: compile
-      dist: bionic
+      dist: xenial
       language: cpp
+      compiler:
+        - gcc
       addons:
         apt:
           packages:
-            - cmake
-            - gcc
-            - g++
-            - autotools-dev
-            - autoconf
             - m4
             - zlib1g-dev
             - cmake
@@ -23,26 +20,20 @@ jobs:
         - pushd out
         - make -j$(nproc)
     - stage: tests
-      dist: bionic
+      dist: xenial
       language: cpp
+      compiler:
+        - gcc
       addons:
         apt:
           packages:
-            - cmake
-            - gcc
-            - g++
-            - autotools-dev
-            - autoconf
             - m4
             - zlib1g-dev
-            - cmake
             - libpoco-dev
             - libssl-dev
       script:
-        - sudo apt-get install autotools-dev autoconf m4 zlib1g-dev cmake libpoco-dev libssl-dev
         - ./configure.sh
         - pushd out
-        - make -j$(nproc)
         - make tests -j$(nproc)
 #    - stage: deploy
 #      if: branch = master
