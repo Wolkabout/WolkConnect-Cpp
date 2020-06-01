@@ -34,6 +34,7 @@ jobs:
       script:
         - ./configure.sh
         - pushd out
+        - make -j$(nproc)
         - make tests -j$(nproc)
 #    - stage: deploy
 #      if: branch = master
