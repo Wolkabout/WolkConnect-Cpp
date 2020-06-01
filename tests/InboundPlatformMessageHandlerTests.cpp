@@ -29,14 +29,26 @@
 
 class InboundPlatformMessageHandlerTests : public ::testing::Test
 {
+public:
+    void SetUp()
+    {
+        protocolMock.reset(new ::testing::NiceMock<ProtocolMock>());
+        messageListenerMock.reset(new ::testing::NiceMock<MessageListenerMock>(*protocolMock));
+    }
+
+    void TearDown()
+    {
+        protocolMock.reset();
+        messageListenerMock.reset();
+    }
+
+    std::unique_ptr<ProtocolMock> protocolMock;
+    std::unique_ptr<MessageListenerMock> messageListenerMock;
 };
 
 TEST_F(InboundPlatformMessageHandlerTests, SimpleTest)
 {
-    const auto& messageListener = std::make_shared<MessageListenerMock>();
     const auto& messageHandler = std::make_shared<wolkabout::InboundPlatformMessageHandler>("TEST_DEVICE");
-
-    messageHandler->addListener(messageListener);
 }
 
 #endif    // WOLKABOUTCONNECTOR_INBOUNDPLATFORMMESSAGEHANDLERTESTS_CPP

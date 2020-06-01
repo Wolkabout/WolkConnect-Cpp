@@ -20,12 +20,18 @@
 
 #include <gmock/gmock.h>
 
-class ProtocolMock: public wolkabout::Protocol
+class ProtocolMock : public wolkabout::Protocol
 {
 public:
-    MOCK_METHOD0(getInboundChannels, std::vector<std::string>());
-    MOCK_METHOD1(getInboundChannelsForDevice, std::vector<std::string>(const std::string&));
-    MOCK_METHOD1(extractDeviceKeyFromChannel, std::string(const std::string&));
+    ProtocolMock() = default;
+    virtual ~ProtocolMock() {}
+
+    std::vector<std::string> getInboundChannels() const override { return std::vector<std::string>(); }
+    std::vector<std::string> getInboundChannelsForDevice(const std::string& deviceKey) const override
+    {
+        return std::vector<std::string>();
+    }
+    std::string extractDeviceKeyFromChannel(const std::string& topic) const override { return std::string(); }
 };
 
 #endif    // WOLKABOUTCONNECTOR_PROTOCOLMOCK_H

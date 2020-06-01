@@ -25,7 +25,7 @@
 class MessageListenerMock : public wolkabout::MessageListener
 {
 public:
-    MessageListenerMock() = default;
+    explicit MessageListenerMock(wolkabout::Protocol& protocol): m_protocol(protocol) {}
 
     void messageReceived(std::shared_ptr<wolkabout::Message> message) override
     {
@@ -35,12 +35,14 @@ public:
         }
     }
 
-    MOCK_METHOD0(getProtocol, const wolkabout::Protocol&());
+    const wolkabout::Protocol& getProtocol() override { return m_protocol; }
 
     void setHandler(const std::function<void(std::shared_ptr<wolkabout::Message>)>& handler) { m_handler = handler; }
 
 private:
     std::function<void(std::shared_ptr<wolkabout::Message>)> m_handler;
+
+    wolkabout::Protocol& m_protocol;
 };
 
 #endif    // WOLKABOUTCONNECTOR_MESSAGELISTENERMOKC_H
