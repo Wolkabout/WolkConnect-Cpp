@@ -3,7 +3,7 @@ sudo: false
 jobs:
   include:
     - stage: compile
-      dist: xenial
+      dist: bionic
       language: cpp
       compiler:
         - gcc
@@ -20,7 +20,7 @@ jobs:
         - pushd out
         - make -j$(nproc)
     - stage: tests
-      dist: xenial
+      dist: bionic
       language: cpp
       compiler:
         - gcc
