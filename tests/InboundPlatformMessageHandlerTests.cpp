@@ -46,7 +46,7 @@ public:
     std::unique_ptr<MessageListenerMock> messageListenerMock;
 };
 
-TEST_F(InboundPlatformMessageHandlerTests, SimpleTest)
+TEST_F(InboundPlatformMessageHandlerTests, CoveringTest)
 {
     const auto& key = "TEST_DEVICE";
     const auto& channels = std::vector<std::string>{"CHANNEL1", "CHANNEL2", "CHANNEL3"};
@@ -61,6 +61,7 @@ TEST_F(InboundPlatformMessageHandlerTests, SimpleTest)
     ASSERT_NO_THROW(messageHandler->addListener(pointer));
 
     // Won't enter in if, as there is no listeners for this channel.
+    // Sadly, there's no mechanism to see if the message I wanted to sent, has a listener that can handle it or not.
     EXPECT_NO_THROW(messageHandler->messageReceived(invalidChannel, testContent));
 
     // Will enter if
