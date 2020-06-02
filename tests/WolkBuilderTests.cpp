@@ -13,3 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#define private public
+#define protected public
+#include "WolkBuilder.h"
+#undef private
+#undef protected
+
+#include <gtest/gtest.h>
+
+class WolkBuilderTests : public ::testing::Test
+{
+};
+
+TEST_F(WolkBuilderTests, ExampleTest)
+{
+    const auto& testDevice =
+      std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD", std::vector<std::string>{"A1", "A2", "A3"});
+
+    const auto& builder = wolkabout::WolkBuilder(*testDevice);
+}
