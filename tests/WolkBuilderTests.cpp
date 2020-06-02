@@ -16,6 +16,7 @@
 
 #define private public
 #define protected public
+#include "protocol/DataProtocol.h"
 #include "WolkBuilder.h"
 #undef private
 #undef protected
