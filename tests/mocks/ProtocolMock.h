@@ -26,12 +26,9 @@ public:
     ProtocolMock() = default;
     virtual ~ProtocolMock() {}
 
-    std::vector<std::string> getInboundChannels() const override { return std::vector<std::string>(); }
-    std::vector<std::string> getInboundChannelsForDevice(const std::string& deviceKey) const override
-    {
-        return std::vector<std::string>();
-    }
-    std::string extractDeviceKeyFromChannel(const std::string& topic) const override { return std::string(); }
+    MOCK_METHOD(std::vector<std::string>, getInboundChannels, (), (override, const));
+    MOCK_METHOD(std::vector<std::string>, getInboundChannelsForDevice, (const std::string&), (override, const));
+    MOCK_METHOD(std::string, extractDeviceKeyFromChannel, (const std::string&), (override, const));
 };
 
 #endif    // WOLKABOUTCONNECTOR_PROTOCOLMOCK_H
