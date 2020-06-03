@@ -103,22 +103,23 @@ public:
 
 TEST_F(WolkTests, SensorReadingValue)
 {
-    std::cout << &(*(wolk->m_dataService)) << ", " << dataServiceMock << ", "
-              << (&(*(wolk->m_dataService)) == dataServiceMock) << std::endl;
+    //    std::cout << &(*(wolk->m_dataService)) << ", " << dataServiceMock << ", "
+    //              << (&(*(wolk->m_dataService)) == dataServiceMock) << std::endl;
 
-//    Can't somehow get the wolk instance to call the mock functions.
-//    EXPECT_CALL(*dataServiceMock, addSensorReading(testing::_, testing::A<const std::string&>(), testing::_))
-//      .Times(2)
-//      .WillRepeatedly([](const std::string& ref, const std::string& value, unsigned long long int rtc) {
-//          std::cout << ref << ", " << value << ", " << rtc << std::endl;
-//      });
-//
-//    EXPECT_CALL(*dataServiceMock,
-//                addSensorReading(testing::_, testing::A<const std::vector<std::string>&>(), testing::_))
-//      .Times(2)
-//      .WillRepeatedly([](const std::string& ref, const std::vector<std::string>& values, unsigned long long int rtc) {
-//          std::cout << ref << ", " << values.size() << ", " << rtc << std::endl;
-//      });
+    //    Can't somehow get the wolk instance to call the mock functions.
+    //    EXPECT_CALL(*dataServiceMock, addSensorReading(testing::_, testing::A<const std::string&>(), testing::_))
+    //      .Times(2)
+    //      .WillRepeatedly([](const std::string& ref, const std::string& value, unsigned long long int rtc) {
+    //          std::cout << ref << ", " << value << ", " << rtc << std::endl;
+    //      });
+    //
+    //    EXPECT_CALL(*dataServiceMock,
+    //                addSensorReading(testing::_, testing::A<const std::vector<std::string>&>(), testing::_))
+    //      .Times(2)
+    //      .WillRepeatedly([](const std::string& ref, const std::vector<std::string>& values, unsigned long long int
+    //      rtc) {
+    //          std::cout << ref << ", " << values.size() << ", " << rtc << std::endl;
+    //      });
 
     EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF1", "TEST_VALUE1"));
     EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF2", 2));
@@ -130,4 +131,48 @@ TEST_F(WolkTests, SensorReadingValue)
     EXPECT_NO_THROW(wolk->addSensorReading("EMPTY_TEST", std::vector<std::string>()));
 
     EXPECT_NO_FATAL_FAILURE(wolk->addAlarm("TEST_ALARM_REF1", false));
+}
+
+TEST_F(WolkTests, PublishesAndFlushes)
+{
+    //    Same, for some reason the mocks functions can't be called. :(
+    //    EXPECT_CALL(*dataServiceMock, publishSensorReadings).Times(1);
+    //    EXPECT_CALL(*dataServiceMock, publishActuatorStatuses).Times(1);
+    //    EXPECT_CALL(*dataServiceMock, publishAlarms).Times(1);
+    //    EXPECT_CALL(*dataServiceMock, publishConfiguration).Times(1);
+
+    EXPECT_NO_FATAL_FAILURE(wolk->flushSensorReadings());
+    EXPECT_NO_FATAL_FAILURE(wolk->flushActuatorStatuses());
+    EXPECT_NO_FATAL_FAILURE(wolk->flushAlarms());
+    EXPECT_NO_FATAL_FAILURE(wolk->flushConfiguration());
+
+    EXPECT_NO_FATAL_FAILURE(wolk->publish());
+    EXPECT_NO_FATAL_FAILURE(wolk->publishFirmwareVersion());
+}
+
+TEST_F(WolkTests, Handles)
+{
+    EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorGetCommand("TEST_REF1"));
+    EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorSetCommand("TEST_REF1", "TEST_VAL1"));
+    EXPECT_NO_FATAL_FAILURE(wolk->handleConfigurationGetCommand());
+    EXPECT_NO_FATAL_FAILURE(
+      wolk->handleConfigurationSetCommand(wolkabout::ConfigurationSetCommand(std::vector<wolkabout::ConfigurationItem>{
+        wolkabout::ConfigurationItem(std::vector<std::string>{"V1", "V2", "V3"}, "C1"),
+        wolkabout::ConfigurationItem(std::vector<std::string>{"V1", "V2"}, "C2"),
+        wolkabout::ConfigurationItem(std::vector<std::string>{"V1"}, "C3")})));
+}
+
+TEST_F(WolkTests, ConnectAndDisconnect)
+{
+    EXPECT_NO_FATAL_FAILURE(wolk->connect());
+    EXPECT_NO_FATAL_FAILURE(wolk->disconnect());
+}
+
+TEST_F(WolkTests, StatusNotification)
+{
+    EXPECT_CALL(*keepAliveServiceMock, connected).Times(1);
+    EXPECT_CALL(*keepAliveServiceMock, disconnected).Times(1);
+
+    EXPECT_NO_FATAL_FAILURE(wolk->notifyConnected());
+    EXPECT_NO_FATAL_FAILURE(wolk->notifyDisonnected());
 }

@@ -27,6 +27,9 @@ public:
     : KeepAliveService(deviceKey, protocol, connectivityService, keepAliveInterval)
     {
     }
+
+    MOCK_METHOD(void, connected, ());
+    MOCK_METHOD(void, disconnected, ());
 };
 
 #endif    // WOLKABOUTCONNECTOR_KEEPALIVESERVICEMOCK_H
