@@ -54,7 +54,10 @@ void Wolk::addSensorReading(const std::string& reference, std::string value, uns
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addSensorReading(reference, value, rtc); });
+    addToCommandBuffer([=]() -> void
+                       {
+                           m_dataService->addSensorReading(reference, value, rtc);
+                       });
 }
 
 void Wolk::addSensorReading(const std::string& reference, const std::vector<std::string> values,
@@ -70,7 +73,10 @@ void Wolk::addSensorReading(const std::string& reference, const std::vector<std:
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addSensorReading(reference, values, rtc); });
+    addToCommandBuffer([=]() -> void
+                       {
+                           m_dataService->addSensorReading(reference, values, rtc);
+                       });
 }
 
 void Wolk::addAlarm(const std::string& reference, bool active, unsigned long long rtc)
