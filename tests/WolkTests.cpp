@@ -133,6 +133,27 @@ TEST_F(WolkTests, AddingSensors)
 
     wolk->addSensorReading("TEST_REF1", 100);
     wolk->addSensorReading("TEST_REF2", std::vector<int>{1, 2, 3});
+    // Empty test
+    wolk->addSensorReading("TEST_REF3", std::vector<int>{});
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+TEST_F(WolkTests, AddAlarms)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    const auto& wolk = builder->build();
+
+    auto connectivityServiceMock =
+      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
+      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+
+    wolk->m_dataService = std::move(dataServiceMock);
+
+    wolk->addAlarm("TEST_ALARM_REF1", true);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
