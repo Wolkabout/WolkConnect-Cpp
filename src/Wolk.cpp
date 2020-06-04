@@ -138,7 +138,10 @@ void Wolk::connect()
         notifyConnected();
 
         publishFirmwareVersion();
-        m_firmwareUpdateService->reportFirmwareUpdateResult();
+        if (m_firmwareUpdateService)
+        {
+            m_firmwareUpdateService->reportFirmwareUpdateResult();
+        }
 
         for (const std::string& actuatorReference : m_device.getActuatorReferences())
         {
