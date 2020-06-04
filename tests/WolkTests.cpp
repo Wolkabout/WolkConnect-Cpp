@@ -21,9 +21,15 @@
 #undef protected
 
 #include "mocks/ConnectivityServiceMock.h"
+#include "mocks/DataProtocolMock.h"
+#include "mocks/DataServiceMock.h"
 #include "mocks/KeepAliveServiceMock.h"
+#include "mocks/PersistenceMock.h"
 #include "mocks/StatusProtocolMock.h"
 
+#include "model/ActuatorGetCommand.h"
+#include "model/ActuatorSetCommand.h"
+#include "model/ConfigurationSetCommand.h"
 #include "model/DeviceStatus.h"
 #include "model/Device.h"
 #include "model/Message.h"
@@ -44,7 +50,7 @@ public:
     std::shared_ptr<wolkabout::WolkBuilder> builder;
 };
 
-TEST_F(WolkTests, NotifiesConnectDisconnect)
+TEST_F(WolkTests, Notifies)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
     const auto& wolk = builder->build();
@@ -62,4 +68,71 @@ TEST_F(WolkTests, NotifiesConnectDisconnect)
 
     EXPECT_NO_FATAL_FAILURE(wolk->notifyConnected());
     EXPECT_NO_FATAL_FAILURE(wolk->notifyDisonnected());
+}
+
+TEST_F(WolkTests, ConnectTest)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    const auto& wolk = builder->build();
+
+    auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
+    auto connectivityServiceMock =
+      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
+    auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new ::testing::NiceMock<KeepAliveServiceMock>(
+      noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
+
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
+      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+
+    wolk->m_dataService = std::move(dataServiceMock);
+    wolk->m_connectivityService = std::move(connectivityServiceMock);
+
+    EXPECT_CALL(dynamic_cast<ConnectivityServiceMock&>(*(wolk->m_connectivityService)), connect)
+      .WillOnce(testing::Return(false))
+      .WillOnce(testing::Return(true));
+
+    EXPECT_NO_FATAL_FAILURE(wolk->connect());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+}
+
+TEST_F(WolkTests, DisconnectTest)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    const auto& wolk = builder->build();
+
+    auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
+    auto connectivityServiceMock =
+      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
+    auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new ::testing::NiceMock<KeepAliveServiceMock>(
+      noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
+
+    wolk->m_keepAliveService = std::move(keepAliveServiceMock);
+    wolk->m_connectivityService = std::move(connectivityServiceMock);
+
+    EXPECT_NO_FATAL_FAILURE(wolk->disconnect());
+}
+
+TEST_F(WolkTests, AddingSensors)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    const auto& wolk = builder->build();
+
+    auto connectivityServiceMock =
+      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
+      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+
+    wolk->m_dataService = std::move(dataServiceMock);
+
+    EXPECT_CALL(*persistenceMock, putSensorReading).Times(2).WillRepeatedly(testing::Return(true));
+
+    wolk->addSensorReading("TEST_REF1", 100);
+    wolk->addSensorReading("TEST_REF2", std::vector<int>{1, 2, 3});
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }

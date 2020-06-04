@@ -18,6 +18,8 @@
 
 #include "service/DataService.h"
 
+#include <gmock/gmock.h>
+
 class DataServiceMock : public wolkabout::DataService
 {
 public:
