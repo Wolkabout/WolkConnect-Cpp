@@ -31,6 +31,7 @@ class KeepAliveService : public ConnectionStatusListener, public MessageListener
 public:
     KeepAliveService(std::string deviceKey, StatusProtocol& protocol, ConnectivityService& connectivityService,
                      std::chrono::seconds keepAliveInterval);
+    KeepAliveService();
 
     void connected() override;
     void disconnected() override;

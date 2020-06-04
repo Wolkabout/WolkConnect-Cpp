@@ -18,6 +18,8 @@
 
 #include "service/KeepAliveService.h"
 
+#include <gmock/gmock.h>
+
 class KeepAliveServiceMock: public wolkabout::KeepAliveService
 {
 public:
