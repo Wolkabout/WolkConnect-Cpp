@@ -185,8 +185,45 @@ TEST_F(WolkTests, HandleActuatorCommands)
 
     wolk->m_dataService = std::move(dataServiceMock);
 
-    EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorSetCommand("TEST_REF1", "VALUE1"));
     EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorGetCommand("TEST_REF1"));
+    EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorSetCommand("TEST_REF1", "VALUE1"));
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+}
+
+TEST_F(WolkTests, HandleConfigurationCommands)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+
+    auto configurationHandler = [&](const std::vector<wolkabout::ConfigurationItem>& items) {
+        std::cout << "ConfigurationHandler: " << items.size() << std::endl;
+    };
+
+    auto configurationProvider = [&]() -> std::vector<wolkabout::ConfigurationItem> {
+        std::cout << "ConfigurationProvider: Invoked!" << std::endl;
+        return std::vector<wolkabout::ConfigurationItem>();
+    };
+
+    builder->configurationHandler(configurationHandler);
+    builder->configurationProvider(configurationProvider);
+
+    const auto& wolk = builder->build();
+
+    auto connectivityServiceMock =
+      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
+      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+
+    EXPECT_CALL(*persistenceMock, putConfiguration).Times(2).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(*persistenceMock, getConfiguration).Times(2).WillRepeatedly(testing::Return(nullptr));
+
+    wolk->m_dataService = std::move(dataServiceMock);
+
+    EXPECT_NO_FATAL_FAILURE(wolk->handleConfigurationGetCommand());
+    EXPECT_NO_FATAL_FAILURE(wolk->handleConfigurationSetCommand(
+      wolkabout::ConfigurationSetCommand(std::vector<wolkabout::ConfigurationItem>())));
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 }
