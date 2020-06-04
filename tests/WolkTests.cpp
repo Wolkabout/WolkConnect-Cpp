@@ -34,10 +34,6 @@
 class WolkTests : public ::testing::Test
 {
 public:
-    void SetUp() {}
-
-    void TearDown() {}
-
     std::shared_ptr<wolkabout::Device> noKeyDevice =
       std::make_shared<wolkabout::Device>("", "", std::vector<std::string>());
     std::shared_ptr<wolkabout::Device> noActuatorsDevice =
@@ -48,7 +44,7 @@ public:
     std::shared_ptr<wolkabout::WolkBuilder> builder;
 };
 
-TEST_F(WolkTests, ExampleTest)
+TEST_F(WolkTests, NotifiesConnectDisconnect)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
     const auto& wolk = builder->build();
