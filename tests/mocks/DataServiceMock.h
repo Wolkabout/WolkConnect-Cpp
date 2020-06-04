@@ -31,6 +31,7 @@ public:
 
     MOCK_METHOD(void, addSensorReading, (const std::string&, const std::string&, unsigned long long int));
     MOCK_METHOD(void, addSensorReading, (const std::string&, const std::vector<std::string>&, unsigned long long int));
+    MOCK_METHOD(void, addActuatorStatus, (const std::string&, const std::string&, wolkabout::ActuatorStatus::State));
 
     MOCK_METHOD(void, publishSensorReadings, ());
     MOCK_METHOD(void, publishActuatorStatuses, ());
