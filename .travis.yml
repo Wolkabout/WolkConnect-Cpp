@@ -49,10 +49,7 @@ jobs:
         - make -j$(nproc)
         - make tests -j$(nproc)
     - stage: deploy
-#      if: branch = master
-#      branches:
-#        only:
-#          - master
+      if: branch = master
       addons:
         apt:
           packages:
@@ -65,4 +62,4 @@ jobs:
         local_dir: docs
         github_token: $GH_REPO_TOKEN
         on:
-          branch: unit_tests
+          branch: master
