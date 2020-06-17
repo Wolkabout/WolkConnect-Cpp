@@ -16,4 +16,4 @@
 
 pushd out || exit
 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
-popd || exit
+
