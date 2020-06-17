@@ -71,8 +71,6 @@ TEST_F(KeepAliveServiceTests, OtherMethodsTest)
     const auto& message = std::make_shared<wolkabout::Message>("TEST", "TEST");
     EXPECT_NO_THROW(keepAliveService->messageReceived(message));
 
-    //    std::cout << "KeepAliveServiceTests: " << &keepAliveService->getProtocol() << ", " << &(*statusProtocolMock)
-    //    << std::endl;
     EXPECT_EQ(&keepAliveService->getProtocol(), &(*statusProtocolMock));
 }
 

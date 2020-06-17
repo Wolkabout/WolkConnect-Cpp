@@ -76,7 +76,7 @@ TEST_F(SQLiteFileRepositoryTests, HappyFlowsTests)
     EXPECT_EQ(repository->getAllFileNames()->size(), 0);
 }
 
-// I'm sorry, but this test is impossible to execute
+// Sorry, but this test is impossible to execute
 // All catches don't return anything by which I can verify it caught the error
 // And only way to induce a catch is to mess with the statement, which always results in SIGSEGV
 /*
