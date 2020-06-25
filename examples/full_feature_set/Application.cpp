@@ -183,14 +183,7 @@ int main(int /* argc */, char** /* argv */)
         {
             const auto& val = (rand() % 1000 * 0.1);
             wolk->addSensorReading("H", val);
-            if (val > 90)
-            {
-                wolk->addAlarm("HH", true);
-            }
-            else
-            {
-                wolk->addAlarm("HH", false);
-            }
+            wolk->addAlarm("HH", val > 90);
         }
 
         if (!validConfig || configString.find('T') != std::string::npos)
