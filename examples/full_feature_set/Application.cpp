@@ -29,10 +29,10 @@
 int main(int /* argc */, char** /* argv */)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
+    logger->setLogLevel(wolkabout::LogLevel::TRACE);
     wolkabout::Logger::setInstance(std::move(logger));
 
-    wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
+    wolkabout::Device device("ADC", "ITZ70HZGYB", {"SW", "SL"});
 
     static bool switchValue = false;
     static int sliderValue = 0;
@@ -82,9 +82,9 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            m_configuration.push_back(wolkabout::ConfigurationItem({"0"}, "config_1"));
-            m_configuration.push_back(wolkabout::ConfigurationItem({"false"}, "config_2"));
-            m_configuration.push_back(wolkabout::ConfigurationItem({""}, "config_3"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"10"}, "HB"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF"));
+            m_configuration.push_back(wolkabout::ConfigurationItem({"INFO"}, "LL"));
         }
 
         std::vector<wolkabout::ConfigurationItem> getConfiguration() override
@@ -112,7 +112,7 @@ int main(int /* argc */, char** /* argv */)
 
             if (reference == "SW")
             {
-                switchValue = value == "true" ? true : false;
+                switchValue = value == "true";
             }
             else if (reference == "SL")
             {
@@ -157,9 +157,29 @@ int main(int /* argc */, char** /* argv */)
 
     wolk->publish();
 
+    uint16_t heartbeat = 0;
+    for (const auto& config : deviceConfiguration->getConfiguration())
+    {
+        if (config.getReference() == "HB")
+        {
+            heartbeat = static_cast<uint16_t>(std::stoi(config.getValues()[0]));
+        }
+    }
+
+    LOG(DEBUG) << "Starting with Heartbeat: " << heartbeat;
+
     while (true)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        for (const auto& config : deviceConfiguration->getConfiguration())
+        {
+            if (config.getReference() == "HB")
+            {
+                heartbeat = static_cast<uint16_t>(std::stoi(config.getValues()[0]));
+            }
+        }
+        LOG(DEBUG) << "Heartbeat: " << heartbeat;
+
+        std::this_thread::sleep_for(std::chrono::seconds(heartbeat));
     }
 
     return 0;
