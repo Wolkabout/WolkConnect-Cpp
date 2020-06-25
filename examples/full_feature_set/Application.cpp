@@ -38,8 +38,33 @@ void sigintResponse(int signal)
 int main(int /* argc */, char** /* argv */)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::TRACE);
+    logger->setLogLevel(wolkabout::LogLevel::INFO);
     wolkabout::Logger::setInstance(std::move(logger));
+
+    std::function<void(std::string)> setLogLevel = [&](std::string level) {
+        std::transform(level.begin(), level.end(), level.begin(), [&](char c) { return std::tolower(c); });
+
+        if (level == "trace")
+        {
+            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::TRACE);
+        }
+        else if (level == "debug")
+        {
+            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::DEBUG);
+        }
+        else if (level == "info")
+        {
+            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::INFO);
+        }
+        else if (level == "warn")
+        {
+            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::WARN);
+        }
+        else if (level == "error")
+        {
+            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::ERROR);
+        }
+    };
 
     wolkabout::Device device("ADC", "ITZ70HZGYB", {"SW", "SL"});
 
@@ -157,6 +182,7 @@ int main(int /* argc */, char** /* argv */)
     wolk->connect();
 
     const auto& publishSensorsAndAlarm = [&]() {
+        // TODO gets SIGSEGV when new configs arrive
         const auto& index =
           std::find_if(deviceConfiguration->getConfiguration().begin(), deviceConfiguration->getConfiguration().end(),
                        [&](const wolkabout::ConfigurationItem& config) { return config.getReference() == "EF"; });
@@ -203,6 +229,11 @@ int main(int /* argc */, char** /* argv */)
         {
             heartbeat = static_cast<uint16_t>(std::stoi(config.getValues()[0]));
         }
+        if (config.getReference() == "LL")
+        {
+            if (setLogLevel)
+                setLogLevel(config.getValues()[0]);
+        }
     }
 
     bool running = true;
@@ -222,6 +253,11 @@ int main(int /* argc */, char** /* argv */)
             if (config.getReference() == "HB")
             {
                 heartbeat = static_cast<uint16_t>(std::stoi(config.getValues()[0]));
+            }
+            if (config.getReference() == "LL")
+            {
+                if (setLogLevel)
+                    setLogLevel(config.getValues()[0]);
             }
         }
         LOG(DEBUG) << "Heartbeat: " << heartbeat << ", ";
