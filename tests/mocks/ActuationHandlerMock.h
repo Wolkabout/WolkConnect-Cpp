@@ -13,3 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef WOLKABOUTCONNECTOR_ACTUATIONHANDLERMOCK_H
+#define WOLKABOUTCONNECTOR_ACTUATIONHANDLERMOCK_H
+
+#define private public
+#define protected public
+#include "ActuationHandler.h"
+#undef private
+#undef protected
+
+#include <gmock/gmock.h>
+
+class ActuationHandlerMock: public wolkabout::ActuationHandler
+{
+public:
+    MOCK_METHOD(void, handleActuation, (const std::string&, const std::string&), (override));
+};
+
+#endif    // WOLKABOUTCONNECTOR_ACTUATIONHANDLERMOCK_H

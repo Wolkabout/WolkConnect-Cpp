@@ -13,3 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef WOLKABOUTCONNECTOR_CONFIGURATIONPROVIDERMOCK_H
+#define WOLKABOUTCONNECTOR_CONFIGURATIONPROVIDERMOCK_H
+
+#include "ConfigurationProvider.h"
+
+#include <gmock/gmock.h>
+
+class ConfigurationProviderMock: public wolkabout::ConfigurationProvider
+{
+public:
+    MOCK_METHOD(std::vector<wolkabout::ConfigurationItem>, getConfiguration, (), (override));
+};
+
+#endif    // WOLKABOUTCONNECTOR_CONFIGURATIONPROVIDERMOCK_H

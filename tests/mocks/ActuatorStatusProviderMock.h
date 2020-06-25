@@ -13,3 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef WOLKABOUTCONNECTOR_ACTUATORSTATUSPROVIDERMOCK_H
+#define WOLKABOUTCONNECTOR_ACTUATORSTATUSPROVIDERMOCK_H
+
+#define private public
+#define protected public
+#include "ActuatorStatusProvider.h"
+#undef private
+#undef protected
+
+#include <gmock/gmock.h>
+
+class ActuatorStatusProviderMock : public wolkabout::ActuatorStatusProvider
+{
+public:
+    MOCK_METHOD(wolkabout::ActuatorStatus, getActuatorStatus, (const std::string&), (override));
+};
+
+#endif    // WOLKABOUTCONNECTOR_ACTUATORSTATUSPROVIDERMOCK_H

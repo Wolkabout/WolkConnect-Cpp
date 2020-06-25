@@ -11,3 +11,6 @@ dependencies
 
 # CLion
 .idea
+
+# Coverage info
+*.info
