@@ -48,7 +48,7 @@ WolkAbout C++ Connector library, and example are built from 'out' directory by i
 Example Usage
 -------------
 
-Create a device on WolkAbout IoT platform by importing manifest file `full-example-manifest.json` located in `examples/full_feature_set/`
+Create a device on WolkAbout IoT platform using the Device Type 'Full example'.
 This manifest fits `full_feature_set` example and demonstrates all the functionality of WolkConnect C++
 
 **Establishing connection with WolkAbout IoT platform:**
