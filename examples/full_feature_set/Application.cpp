@@ -19,12 +19,21 @@
 #include "utilities/ConsoleLogger.h"
 
 #include <chrono>
+#include <csignal>
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
+
+std::function<void(int)> sigintCall;
+
+void sigintResponse(int signal)
+{
+    if (sigintCall != nullptr)
+        sigintCall(signal);
+}
 
 int main(int /* argc */, char** /* argv */)
 {
@@ -147,15 +156,57 @@ int main(int /* argc */, char** /* argv */)
 
     wolk->connect();
 
-    wolk->addAlarm("HH", "High Humidity");
+    const auto& publishSensorsAndAlarm = [&]() {
+        // Analyze the EF configuration to send only specific readings to the platform
+        // if "P" is in "EF", send it
+        // also for all the others
+        // but if "H" is in "EF", send "H" and "HH"
 
-    wolk->addSensorReading("P", 25.6);
-    wolk->addSensorReading("T", 1024);
-    wolk->addSensorReading("H", 52);
+        const auto& index =
+          std::find_if(deviceConfiguration->getConfiguration().begin(), deviceConfiguration->getConfiguration().end(),
+                       [&](const wolkabout::ConfigurationItem& config) { return config.getReference() == "EF"; });
+        std::string configString;
+        bool validConfig = false;
 
-    wolk->addSensorReading("ACL", {1, 0, 0});
+        if (index != deviceConfiguration->getConfiguration().end())
+        {
+            validConfig = true;
+            configString = (*index).getValues()[0];
+        }
 
-    wolk->publish();
+        if (!validConfig || configString.find('P') != std::string::npos)
+        {
+            wolk->addSensorReading("P", (rand() % 1000 * 0.1));
+        }
+
+        if (!validConfig || configString.find('H') != std::string::npos)
+        {
+            const auto& val = (rand() % 1000 * 0.1);
+            wolk->addSensorReading("H", val);
+            if (val > 90)
+            {
+                wolk->addAlarm("HH", true);
+            }
+            else
+            {
+                wolk->addAlarm("HH", false);
+            }
+        }
+
+        if (!validConfig || configString.find('T') != std::string::npos)
+        {
+            wolk->addSensorReading("T", (rand() % 1500));
+        }
+
+        if (!validConfig || configString.find("ACL") != std::string::npos)
+        {
+            wolk->addSensorReading("ACL", {rand() % 10000 * 0.001, rand() % 10000 * 0.001, rand() % 10000 * 0.001});
+        }
+
+        wolk->publish();
+    };
+
+    publishSensorsAndAlarm();
 
     uint16_t heartbeat = 0;
     for (const auto& config : deviceConfiguration->getConfiguration())
@@ -166,9 +217,17 @@ int main(int /* argc */, char** /* argv */)
         }
     }
 
-    LOG(DEBUG) << "Starting with Heartbeat: " << heartbeat;
+    bool running = true;
+    sigintCall = [&](int signal) {
+        LOG(WARN) << "Application: Received stop signal, disconnecting...";
+        running = false;
+        if (wolk)
+            wolk->disconnect();
+        exit(signal);
+    };
+    signal(SIGINT, sigintResponse);
 
-    while (true)
+    while (running)
     {
         for (const auto& config : deviceConfiguration->getConfiguration())
         {
@@ -177,10 +236,14 @@ int main(int /* argc */, char** /* argv */)
                 heartbeat = static_cast<uint16_t>(std::stoi(config.getValues()[0]));
             }
         }
-        LOG(DEBUG) << "Heartbeat: " << heartbeat;
+        LOG(DEBUG) << "Heartbeat: " << heartbeat << ", ";
 
-        std::this_thread::sleep_for(std::chrono::seconds(heartbeat));
+        if (running)
+            std::this_thread::sleep_for(std::chrono::seconds(heartbeat));
+
+        publishSensorsAndAlarm();
     }
 
+    wolk->disconnect();
     return 0;
 }
