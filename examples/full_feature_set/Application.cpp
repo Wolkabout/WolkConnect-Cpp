@@ -157,11 +157,6 @@ int main(int /* argc */, char** /* argv */)
     wolk->connect();
 
     const auto& publishSensorsAndAlarm = [&]() {
-        // Analyze the EF configuration to send only specific readings to the platform
-        // if "P" is in "EF", send it
-        // also for all the others
-        // but if "H" is in "EF", send "H" and "HH"
-
         const auto& index =
           std::find_if(deviceConfiguration->getConfiguration().begin(), deviceConfiguration->getConfiguration().end(),
                        [&](const wolkabout::ConfigurationItem& config) { return config.getReference() == "EF"; });
@@ -176,7 +171,7 @@ int main(int /* argc */, char** /* argv */)
 
         if (!validConfig || configString.find('P') != std::string::npos)
         {
-            wolk->addSensorReading("P", (rand() % 1000 * 0.1));
+            wolk->addSensorReading("P", (rand() % 801 + 300));
         }
 
         if (!validConfig || configString.find('H') != std::string::npos)
@@ -188,12 +183,12 @@ int main(int /* argc */, char** /* argv */)
 
         if (!validConfig || configString.find('T') != std::string::npos)
         {
-            wolk->addSensorReading("T", (rand() % 1500));
+            wolk->addSensorReading("T", (rand() % 126 - 40));
         }
 
         if (!validConfig || configString.find("ACL") != std::string::npos)
         {
-            wolk->addSensorReading("ACL", {rand() % 10000 * 0.001, rand() % 10000 * 0.001, rand() % 10000 * 0.001});
+            wolk->addSensorReading("ACL", {rand() % 100000 * 0.001, rand() % 100000 * 0.001, rand() % 100000 * 0.001});
         }
 
         wolk->publish();
