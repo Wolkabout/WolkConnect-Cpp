@@ -58,7 +58,7 @@ Example Usage
 -------------
 
 Create a device on WolkAbout IoT platform using the Device Type 'Simple example'.
-This type fits [`simple` example](./examples/simple/Application.cpp) and demonstrates the sending of a temperature sensor reading.
+This type fits `simple` [example](./examples/simple/Application.cpp) and demonstrates the sending of a temperature sensor reading.
 
 **Establishing connection with WolkAbout IoT platform:**
 ```cpp
