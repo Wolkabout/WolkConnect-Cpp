@@ -167,6 +167,13 @@ public:
                                     std::shared_ptr<FirmwareVersionProvider> provider);
 
     /**
+     * @brief withoutKeepAlive Disables ping mechanism used to notify WolkAbout IOT Platform
+     * that device is still connected
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withoutKeepAlive();
+
+    /**
      * @brief Builds Wolk instance
      * @return Wolk instance as std::unique_ptr<Wolk>
      *
@@ -210,10 +217,9 @@ private:
 
     bool m_fileManagementEnabled = false;
 
-    // json protocol does not currently support ping messages
-    bool m_keepAliveEnabled = false;
+    bool m_keepAliveEnabled;
 
-    static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
+    static const constexpr char* WOLK_DEMO_HOST = "ssl://api-integration.wolkabout.com:8883";
     static const constexpr char* TRUST_STORE = "ca.crt";
     static const constexpr char* DATABASE = "fileRepository.db";
 };

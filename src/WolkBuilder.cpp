@@ -144,6 +144,12 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> 
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withoutKeepAlive()
+{
+    m_keepAliveEnabled = false;
+    return *this;
+}
+
 std::unique_ptr<Wolk> WolkBuilder::build()
 {
     if (m_device.getKey().empty())
@@ -246,6 +252,15 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
     }
 
+    if (m_keepAliveEnabled)
+    {
+        wolk->m_keepAliveService = std::make_shared<KeepAliveService>(
+          wolk->m_device.getKey(), *wolk->m_statusProtocol, *wolk->m_connectivityService, Wolk::KEEP_ALIVE_INTERVAL);
+
+        // Do not add listener as pong message is not handled
+        wolk->m_inboundMessageHandler->addListener(wolk->m_keepAliveService);
+    }
+
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
 
     return wolk;
@@ -265,7 +280,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_fileDownloadDirectory{""}
 , m_firmwareInstaller{nullptr}
 , m_firmwareVersionProvider{nullptr}
-, m_keepAliveEnabled{false}
+, m_keepAliveEnabled{true}
 {
 }
 }    // namespace wolkabout

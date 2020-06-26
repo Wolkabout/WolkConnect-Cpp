@@ -76,7 +76,7 @@ std::vector<wolkabout::ConfigurationItem> readFile(const std::string& path)
 {
     if (!wolkabout::FileSystemUtils::isFilePresent(path))
     {
-//        throw std::logic_error("Given file does not exist (" + path + ").");
+        //        throw std::logic_error("Given file does not exist (" + path + ").");
         return std::vector<wolkabout::ConfigurationItem>();
     }
 
@@ -135,7 +135,7 @@ int main(int /* argc */, char** /* argv */)
         }
     };
 
-    wolkabout::Device device("device_key", "device_password", {"SW", "SL"});
+    wolkabout::Device device("ADC", "ITZ70HZGYB", {"SW", "SL"});
 
     static bool switchValue = false;
     static int sliderValue = 0;
@@ -291,48 +291,6 @@ int main(int /* argc */, char** /* argv */)
 
     wolk->connect();
 
-    const auto& publishSensorsAndAlarm = [&]() {
-        // TODO gets SIGSEGV when new configs arrive
-        LOG(WARN) << "DeviceConfiguration: Size: " << deviceConfiguration->getConfiguration().size();
-        const auto& index =
-          std::find_if(deviceConfiguration->getConfiguration().begin(), deviceConfiguration->getConfiguration().end(),
-                       [&](const wolkabout::ConfigurationItem& config) { return config.getReference() == "EF"; });
-        std::string configString;
-        bool validConfig = false;
-
-        if (index != deviceConfiguration->getConfiguration().end())
-        {
-            validConfig = true;
-            configString = (*index).getValues()[0];
-        }
-
-        if (!validConfig || configString.find('P') != std::string::npos)
-        {
-            wolk->addSensorReading("P", (rand() % 801 + 300));
-        }
-
-        if (!validConfig || configString.find('H') != std::string::npos)
-        {
-            const auto& val = (rand() % 1000 * 0.1);
-            wolk->addSensorReading("H", val);
-            wolk->addAlarm("HH", val > 90);
-        }
-
-        if (!validConfig || configString.find('T') != std::string::npos)
-        {
-            wolk->addSensorReading("T", (rand() % 126 - 40));
-        }
-
-        if (!validConfig || configString.find("ACL") != std::string::npos)
-        {
-            wolk->addSensorReading("ACL", {rand() % 100001 * 0.001, rand() % 100001 * 0.001, rand() % 100001 * 0.001});
-        }
-
-        wolk->publish();
-    };
-
-    publishSensorsAndAlarm();
-
     uint16_t heartbeat = 0;
     for (const auto& config : deviceConfiguration->getConfiguration())
     {
@@ -371,12 +329,49 @@ int main(int /* argc */, char** /* argv */)
                     setLogLevel(config.getValues()[0]);
             }
         }
-        LOG(DEBUG) << "Heartbeat: " << heartbeat << ", ";
+        LOG(DEBUG) << "Heartbeat: " << heartbeat;
 
         if (running)
             std::this_thread::sleep_for(std::chrono::seconds(heartbeat));
 
-        publishSensorsAndAlarm();
+        const auto& configVector = deviceConfiguration->getConfiguration();
+
+        auto index =
+          std::find_if(configVector.begin(), configVector.end(),
+                       [&](const wolkabout::ConfigurationItem& config) { return config.getReference() == "EF"; });
+        std::string configString;
+        bool validConfig = false;
+
+        if (index != configVector.end())
+        {
+            validConfig = true;
+            if (!index->getValues().empty())
+                configString = index->getValues()[0];
+        }
+
+        if (!validConfig || configString.find('P') != std::string::npos)
+        {
+            wolk->addSensorReading("P", (rand() % 801 + 300));
+        }
+
+        if (!validConfig || configString.find('H') != std::string::npos)
+        {
+            const auto& val = (rand() % 1000 * 0.1);
+            wolk->addSensorReading("H", val);
+            wolk->addAlarm("HH", val > 90);
+        }
+
+        if (!validConfig || configString.find('T') != std::string::npos)
+        {
+            wolk->addSensorReading("T", (rand() % 126 - 40));
+        }
+
+        if (!validConfig || configString.find("ACL") != std::string::npos)
+        {
+            wolk->addSensorReading("ACL", {rand() % 100001 * 0.001, rand() % 100001 * 0.001, rand() % 100001 * 0.001});
+        }
+
+        wolk->publish();
     }
 
     wolk->disconnect();
