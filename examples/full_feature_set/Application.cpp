@@ -47,10 +47,7 @@ bool writeFile(const std::string& path, const std::vector<wolkabout::Configurati
     {
         const auto& config = configuration.at(i);
 
-        const auto& obj = nlohmann::json{
-          {"reference", config.getReference()},
-          {"values", config.getValues()}
-        };
+        const auto& obj = nlohmann::json{{"reference", config.getReference()}, {"values", config.getValues()}};
 
         content += obj.dump();
 
@@ -79,7 +76,8 @@ std::vector<wolkabout::ConfigurationItem> readFile(const std::string& path)
 {
     if (!wolkabout::FileSystemUtils::isFilePresent(path))
     {
-        throw std::logic_error("Given file does not exist (" + path + ").");
+//        throw std::logic_error("Given file does not exist (" + path + ").");
+        return std::vector<wolkabout::ConfigurationItem>();
     }
 
     std::string jsonString;
@@ -187,18 +185,26 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            const auto& hb = wolkabout::ConfigurationItem({"10"}, "HB");
-            const auto& ef = wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF");
-            const auto& ll = wolkabout::ConfigurationItem({"TRACE"}, "LL");
+            const auto& value = readFile(configJsonPath);
+            if (value.empty())
+            {
+                const auto& hb = wolkabout::ConfigurationItem({"10"}, "HB");
+                const auto& ef = wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF");
+                const auto& ll = wolkabout::ConfigurationItem({"INFO"}, "LL");
 
-            m_configuration.emplace("HB", hb);
-            m_configuration.emplace("EF", ef);
-            m_configuration.emplace("LL", ll);
+                m_configuration.emplace("HB", hb);
+                m_configuration.emplace("EF", ef);
+                m_configuration.emplace("LL", ll);
 
-//            const auto& value = readFile(configJsonPath);
-//            LOG(DEBUG) << "Application: Configuration Size : " << value.size();
-
-//            writeFile(configJsonPath, {hb, ef, ll});
+                writeFile(configJsonPath, {hb, ef, ll});
+            }
+            else
+            {
+                for (const auto& config : value)
+                {
+                    m_configuration.emplace(config.getReference(), config);
+                }
+            }
         }
 
         std::vector<wolkabout::ConfigurationItem> getConfiguration() override
@@ -220,8 +226,6 @@ int main(int /* argc */, char** /* argv */)
                 const auto& it = m_configuration.find(config.getReference());
                 if (it != m_configuration.end())
                 {
-                    auto newPair =
-                      std::pair<const std::string, wolkabout::ConfigurationItem>(config.getReference(), config);
                     it->second = config;
                 }
                 else
@@ -229,6 +233,14 @@ int main(int /* argc */, char** /* argv */)
                     m_configuration.emplace(config.getReference(), config);
                 }
             }
+
+            std::vector<wolkabout::ConfigurationItem> configVector;
+            for (const auto& config : m_configuration)
+            {
+                configVector.emplace_back(config.second);
+            }
+
+            writeFile(configJsonPath, configVector);
         }
 
     private:
