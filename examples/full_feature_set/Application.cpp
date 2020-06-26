@@ -17,6 +17,8 @@
 #include "Wolk.h"
 #include "service/FirmwareInstaller.h"
 #include "utilities/ConsoleLogger.h"
+#include "utilities/FileSystemUtils.h"
+#include "utilities/json.hpp"
 
 #include <chrono>
 #include <csignal>
@@ -33,6 +35,75 @@ void sigintResponse(int signal)
 {
     if (sigintCall != nullptr)
         sigintCall(signal);
+}
+
+const std::string configJsonPath = "./configuration.json";
+
+bool writeFile(const std::string& path, const std::vector<wolkabout::ConfigurationItem>& configuration)
+{
+    std::string content = "[";
+
+    for (uint i = 0; i < configuration.size(); i++)
+    {
+        const auto& config = configuration.at(i);
+
+        const auto& obj = nlohmann::json{
+          {"reference", config.getReference()},
+          {"values", config.getValues()}
+        };
+
+        content += obj.dump();
+
+        if (i < (configuration.size() - 1))
+        {
+            content += ',';
+        }
+    }
+
+    content += "]";
+
+    try
+    {
+        wolkabout::FileSystemUtils::createFileWithContent(path, content);
+    }
+    catch (std::exception& e)
+    {
+        LOG(ERROR) << e.what();
+        throw std::logic_error("Unable to write configurations to output file.");
+    }
+
+    return true;
+}
+
+std::vector<wolkabout::ConfigurationItem> readFile(const std::string& path)
+{
+    if (!wolkabout::FileSystemUtils::isFilePresent(path))
+    {
+        throw std::logic_error("Given file does not exist (" + path + ").");
+    }
+
+    std::string jsonString;
+    if (!wolkabout::FileSystemUtils::readFileContent(path, jsonString))
+    {
+        throw std::logic_error("Unable to read file (" + path + ").");
+    }
+
+    try
+    {
+        const auto& arr = nlohmann::json::parse(jsonString);
+        std::vector<wolkabout::ConfigurationItem> configuration;
+
+        for (const auto& obj : arr)
+        {
+            configuration.emplace_back(obj["values"], obj["reference"]);
+        }
+
+        return configuration;
+    }
+    catch (std::exception&)
+    {
+        throw std::logic_error("Unable to parse file (" + path + ").");
+    }
 }
 
 int main(int /* argc */, char** /* argv */)
@@ -116,9 +187,18 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            m_configuration.emplace("HB", wolkabout::ConfigurationItem({"10"}, "HB"));
-            m_configuration.emplace("EF", wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF"));
-            m_configuration.emplace("LL", wolkabout::ConfigurationItem({"TRACE"}, "LL"));
+            const auto& hb = wolkabout::ConfigurationItem({"10"}, "HB");
+            const auto& ef = wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF");
+            const auto& ll = wolkabout::ConfigurationItem({"TRACE"}, "LL");
+
+            m_configuration.emplace("HB", hb);
+            m_configuration.emplace("EF", ef);
+            m_configuration.emplace("LL", ll);
+
+//            const auto& value = readFile(configJsonPath);
+//            LOG(DEBUG) << "Application: Configuration Size : " << value.size();
+
+//            writeFile(configJsonPath, {hb, ef, ll});
         }
 
         std::vector<wolkabout::ConfigurationItem> getConfiguration() override
