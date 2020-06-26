@@ -52,6 +52,7 @@ public:
 TEST_F(WolkTests, Notifies)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
     const auto& wolk = builder->build();
 
     auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
@@ -72,6 +73,7 @@ TEST_F(WolkTests, Notifies)
 TEST_F(WolkTests, ConnectTest)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
     const auto& wolk = builder->build();
 
     auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
@@ -100,6 +102,7 @@ TEST_F(WolkTests, ConnectTest)
 TEST_F(WolkTests, DisconnectTest)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
     const auto& wolk = builder->build();
 
     auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
@@ -117,6 +120,7 @@ TEST_F(WolkTests, DisconnectTest)
 TEST_F(WolkTests, AddingSensors)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
     const auto& wolk = builder->build();
 
     auto connectivityServiceMock =
@@ -141,6 +145,7 @@ TEST_F(WolkTests, AddingSensors)
 TEST_F(WolkTests, AddAlarms)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
     const auto& wolk = builder->build();
 
     auto connectivityServiceMock =
@@ -172,6 +177,7 @@ TEST_F(WolkTests, HandleActuatorCommands)
 
     builder->actuationHandler(actuationHandler);
     builder->actuatorStatusProvider(actuatorStatusProvider);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
 
     const auto& wolk = builder->build();
 
@@ -207,6 +213,7 @@ TEST_F(WolkTests, HandleConfigurationCommands)
 
     builder->configurationHandler(configurationHandler);
     builder->configurationProvider(configurationProvider);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
 
     const auto& wolk = builder->build();
 
@@ -232,6 +239,7 @@ TEST_F(WolkTests, HandleConfigurationCommands)
 TEST_F(WolkTests, ConnectivityFacade)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
     const auto& wolk = builder->build();
 
     const auto& inboundMessageHandlerMock =
