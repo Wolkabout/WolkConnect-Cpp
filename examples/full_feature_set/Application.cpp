@@ -116,26 +116,44 @@ int main(int /* argc */, char** /* argv */)
     public:
         DeviceConfiguration()
         {
-            m_configuration.push_back(wolkabout::ConfigurationItem({"10"}, "HB"));
-            m_configuration.push_back(wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF"));
-            m_configuration.push_back(wolkabout::ConfigurationItem({"INFO"}, "LL"));
+            m_configuration.emplace("HB", wolkabout::ConfigurationItem({"10"}, "HB"));
+            m_configuration.emplace("EF", wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF"));
+            m_configuration.emplace("LL", wolkabout::ConfigurationItem({"TRACE"}, "LL"));
         }
 
         std::vector<wolkabout::ConfigurationItem> getConfiguration() override
         {
             std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
-            return m_configuration;
+            std::vector<wolkabout::ConfigurationItem> configurations;
+            for (const auto& config : m_configuration)
+            {
+                configurations.emplace_back(config.second);
+            }
+            return configurations;
         }
 
         void handleConfiguration(const std::vector<wolkabout::ConfigurationItem>& configuration) override
         {
             std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
-            m_configuration = configuration;
+            for (const auto& config : configuration)
+            {
+                const auto& it = m_configuration.find(config.getReference());
+                if (it != m_configuration.end())
+                {
+                    auto newPair =
+                      std::pair<const std::string, wolkabout::ConfigurationItem>(config.getReference(), config);
+                    it->second = config;
+                }
+                else
+                {
+                    m_configuration.emplace(config.getReference(), config);
+                }
+            }
         }
 
     private:
         std::mutex m_ConfigurationMutex;
-        std::vector<wolkabout::ConfigurationItem> m_configuration;
+        std::map<std::string, wolkabout::ConfigurationItem> m_configuration;
     };
     auto deviceConfiguration = std::make_shared<DeviceConfiguration>();
 
@@ -183,6 +201,7 @@ int main(int /* argc */, char** /* argv */)
 
     const auto& publishSensorsAndAlarm = [&]() {
         // TODO gets SIGSEGV when new configs arrive
+        LOG(WARN) << "DeviceConfiguration: Size: " << deviceConfiguration->getConfiguration().size();
         const auto& index =
           std::find_if(deviceConfiguration->getConfiguration().begin(), deviceConfiguration->getConfiguration().end(),
                        [&](const wolkabout::ConfigurationItem& config) { return config.getReference() == "EF"; });
@@ -214,7 +233,7 @@ int main(int /* argc */, char** /* argv */)
 
         if (!validConfig || configString.find("ACL") != std::string::npos)
         {
-            wolk->addSensorReading("ACL", {rand() % 100000 * 0.001, rand() % 100000 * 0.001, rand() % 100000 * 0.001});
+            wolk->addSensorReading("ACL", {rand() % 100001 * 0.001, rand() % 100001 * 0.001, rand() % 100001 * 0.001});
         }
 
         wolk->publish();
