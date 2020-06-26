@@ -125,6 +125,15 @@ void Wolk::publishConfiguration()
     });
 }
 
+long long Wolk::getLastTimestamp()
+{
+    if (m_keepAliveService)
+    {
+        return m_keepAliveService->getLastTimestamp();
+    }
+    return 0;
+}
+
 void Wolk::connect()
 {
     addToCommandBuffer([=]() -> void {

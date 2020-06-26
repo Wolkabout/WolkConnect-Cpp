@@ -180,6 +180,11 @@ public:
     void publishConfiguration();
 
     /**
+     * @brief Invokes keepAliveServices method of fetching the last received timestamp in pong.
+     */
+    long long getLastTimestamp();
+
+    /**
      * @brief Establishes connection with WolkAbout IoT platform
      */
     void connect();
@@ -198,7 +203,7 @@ private:
     class ConnectivityFacade;
 
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
-    static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{600};
+    static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{60};
 
     Wolk(Device device);
 
