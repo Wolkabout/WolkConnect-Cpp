@@ -19,6 +19,7 @@
 #include "model/Message.h"
 #include "protocol/StatusProtocol.h"
 #include "utilities/Logger.h"
+#include "utilities/json.hpp"
 
 namespace wolkabout
 {
@@ -58,7 +59,20 @@ void KeepAliveService::disconnected()
     m_timer.stop();
 }
 
-void KeepAliveService::messageReceived(std::shared_ptr<Message> message) {}
+long long int KeepAliveService::getLastTimestamp() const
+{
+    return m_lastTimestamp;
+}
+
+void KeepAliveService::messageReceived(std::shared_ptr<Message> message)
+{
+    if (m_protocol.isPongMessage(*message))
+    {
+        const auto& payload = nlohmann::json::parse(message->getContent());
+        m_lastTimestamp = payload["value"];
+        LOG(DEBUG) << "KeepAliveService: Timestamp received: " << m_lastTimestamp;
+    }
+}
 
 const Protocol& KeepAliveService::getProtocol()
 {

@@ -329,7 +329,9 @@ int main(int /* argc */, char** /* argv */)
                     setLogLevel(config.getValues()[0]);
             }
         }
-        LOG(DEBUG) << "Heartbeat: " << heartbeat;
+
+        LOG(DEBUG) << "Heartbeat is: " << heartbeat;
+        LOG(DEBUG) << "Last received timestamp : " << wolk->getLastTimestamp();
 
         if (running)
             std::this_thread::sleep_for(std::chrono::seconds(heartbeat));
