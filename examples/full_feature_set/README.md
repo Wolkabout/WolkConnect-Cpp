@@ -49,7 +49,7 @@ Example Usage
 -------------
 
 Create a device on WolkAbout IoT platform using the Device Type 'Full example'.
-This manifest fits `full_feature_set` example and demonstrates all the functionality of WolkConnect C++
+This type fits `full_feature_set` example and demonstrates all the functionality of WolkConnect C++
 
 **Establishing connection with WolkAbout IoT platform:**
 ```cpp
