@@ -116,7 +116,7 @@ void FirmwareUpdateService::publishFirmwareVersion()
             LOG(WARN) << "Failed to get device's firmware version";
             return;
         }
-
+      
         const std::shared_ptr<Message> message =
           m_protocol.makeMessage(m_deviceKey, FirmwareVersion{m_deviceKey, firmwareVersion});
 

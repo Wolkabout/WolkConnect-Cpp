@@ -222,7 +222,7 @@ private:
     void handleConfigurationSetCommand(const ConfigurationSetCommand& command);
     void handleConfigurationGetCommand();
 
-    void publishFirmwareVersion();
+    void publishFirmwareStatus();
 
     void notifyConnected();
     void notifyDisonnected();
