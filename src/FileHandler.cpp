@@ -76,4 +76,11 @@ FileHandler::StatusCode FileHandler::saveFile(const std::string& filePath) const
     return FileHandler::StatusCode::FILE_HANDLING_ERROR;
 }
 
+FileHandler::StatusCode FileHandler::saveFile(const std::string& fileName, const std::string& directory) const
+{
+    const std::string path = FileSystemUtils::composePath(fileName, directory);
+
+    return saveFile(path);
+}
+
 }    // namespace wolkabout

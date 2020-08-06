@@ -70,8 +70,7 @@ void Wolk::addSensorReading(const std::string& reference, const std::vector<std:
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer(
-      [=]() -> void { m_dataService->addSensorReading(reference, values, getSensorDelimiter(reference), rtc); });
+    addToCommandBuffer([=]() -> void { m_dataService->addSensorReading(reference, values, rtc); });
 }
 
 void Wolk::addAlarm(const std::string& reference, bool active, unsigned long long rtc)
@@ -121,9 +120,18 @@ void Wolk::publishConfiguration()
             return std::vector<ConfigurationItem>();
         }();
 
-        m_dataService->addConfiguration(configuration, getConfigurationDelimiters());
+        m_dataService->addConfiguration(configuration);
         flushConfiguration();
     });
+}
+
+long long Wolk::getLastTimestamp()
+{
+    if (m_keepAliveService)
+    {
+        return m_keepAliveService->getLastTimestamp();
+    }
+    return 0;
 }
 
 void Wolk::connect()
@@ -175,6 +183,7 @@ Wolk::Wolk(Device device)
 , m_actuatorStatusProviderLambda(nullptr)
 , m_configurationHandlerLambda(nullptr)
 , m_configurationProviderLambda(nullptr)
+, m_fileRepository(nullptr)
 {
     m_commandBuffer = std::unique_ptr<CommandBuffer>(new CommandBuffer());
 }
@@ -259,24 +268,6 @@ void Wolk::publishFirmwareStatus()
         m_firmwareUpdateService->reportFirmwareUpdateResult();
         m_firmwareUpdateService->publishFirmwareVersion();
     }
-}
-
-std::string Wolk::getSensorDelimiter(const std::string& reference)
-{
-    auto delimiters = m_device.getSensorDelimiters();
-
-    auto it = delimiters.find(reference);
-    if (it != delimiters.end())
-    {
-        return it->second;
-    }
-
-    return "";
-}
-
-std::map<std::string, std::string> Wolk::getConfigurationDelimiters()
-{
-    return m_device.getConfigurationDelimiters();
 }
 
 void Wolk::notifyConnected()

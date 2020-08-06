@@ -19,38 +19,16 @@
 namespace wolkabout
 {
 Device::Device(std::string key, std::string password, std::vector<std::string> actuatorReferences)
-: DetailedDevice{"", key, password, DeviceManifest{"", "", "", ""}}
+: DetailedDevice{"", key, password, DeviceTemplate{{}, {}, {}, {}, "", {}, {}, {}}}
 {
     for (const auto& reference : actuatorReferences)
     {
-        m_deviceManifest.addActuator(ActuatorManifest{"", reference, DataType::STRING, ""});
+        m_deviceTemplate.addActuator(ActuatorTemplate{"", reference, DataType::STRING, ""});
     }
-}
-
-void Device::addSensor(const std::string& reference, unsigned size)
-{
-    m_deviceManifest.addSensor(
-      SensorManifest{"", reference, "", "", DataType::STRING, 1, "", std::vector<std::string>(size, "")});
-}
-
-void Device::addConfiguration(const std::string& reference, unsigned size)
-{
-    m_deviceManifest.addConfiguration(
-      ConfigurationManifest{"", reference, DataType::STRING, "", "", std::vector<std::string>(size, "")});
 }
 
 std::vector<std::string> Device::getActuatorReferences() const
 {
     return DetailedDevice::getActuatorReferences();
-}
-
-std::map<std::string, std::string> Device::getSensorDelimiters() const
-{
-    return DetailedDevice::getSensorDelimiters();
-}
-
-std::map<std::string, std::string> Device::getConfigurationDelimiters() const
-{
-    return DetailedDevice::getConfigurationDelimiters();
 }
 }    // namespace wolkabout

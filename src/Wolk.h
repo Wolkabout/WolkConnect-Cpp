@@ -25,9 +25,9 @@
 #include "model/ActuatorStatus.h"
 #include "model/Device.h"
 #include "protocol/DataProtocol.h"
-#include "protocol/FileDownloadProtocol.h"
-#include "protocol/FirmwareUpdateProtocol.h"
 #include "protocol/StatusProtocol.h"
+#include "protocol/json/JsonDFUProtocol.h"
+#include "protocol/json/JsonDownloadProtocol.h"
 #include "utilities/CommandBuffer.h"
 #include "utilities/StringUtils.h"
 
@@ -46,6 +46,7 @@ class InboundMessageHandler;
 class FirmwareUpdateService;
 class FileDownloadService;
 class KeepAliveService;
+class FileRepository;
 class DataService;
 
 class Wolk
@@ -179,6 +180,11 @@ public:
     void publishConfiguration();
 
     /**
+     * @brief Invokes keepAliveServices method of fetching the last received timestamp in pong.
+     */
+    long long getLastTimestamp();
+
+    /**
      * @brief Establishes connection with WolkAbout IoT platform
      */
     void connect();
@@ -197,7 +203,7 @@ private:
     class ConnectivityFacade;
 
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
-    static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{600};
+    static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{60};
 
     Wolk(Device device);
 
@@ -218,9 +224,6 @@ private:
 
     void publishFirmwareStatus();
 
-    std::string getSensorDelimiter(const std::string& reference);
-    std::map<std::string, std::string> getConfigurationDelimiters();
-
     void notifyConnected();
     void notifyDisonnected();
 
@@ -228,8 +231,8 @@ private:
 
     std::unique_ptr<DataProtocol> m_dataProtocol;
     std::unique_ptr<StatusProtocol> m_statusProtocol;
-    std::unique_ptr<FileDownloadProtocol> m_fileDownloadProtocol;
-    std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
+    std::unique_ptr<JsonDownloadProtocol> m_fileDownloadProtocol;
+    std::unique_ptr<JsonDFUProtocol> m_firmwareUpdateProtocol;
 
     std::unique_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
@@ -239,6 +242,8 @@ private:
     std::shared_ptr<ConnectivityFacade> m_connectivityManager;
 
     std::shared_ptr<DataService> m_dataService;
+
+    std::shared_ptr<FileRepository> m_fileRepository;
 
     std::shared_ptr<FileDownloadService> m_fileDownloadService;
     std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;

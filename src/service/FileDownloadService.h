@@ -19,126 +19,112 @@
 
 #include "InboundMessageHandler.h"
 #include "WolkaboutFileDownloader.h"
+#include "connectivity/ConnectivityService.h"
+#include "protocol/json/JsonDownloadProtocol.h"
+#include "service/FileDownloader.h"
 #include "utilities/ByteUtils.h"
 #include "utilities/CommandBuffer.h"
-#include "utilities/Timer.h"
+
+#include <atomic>
 #include <cstdint>
+#include <map>
 #include <memory>
+#include <model/FileDelete.h>
+#include <model/FileUploadAbort.h>
+#include <model/FileUploadInitiate.h>
+#include <mutex>
 #include <string>
+#include <thread>
+#include <tuple>
 
 namespace wolkabout
 {
 class BinaryData;
+class Protocol;
+class FileDelete;
+class FileRepository;
+class FileUploadAbort;
+class FileUploadInitiate;
+class FileUploadStatus;
+class FileUrlDownloadAbort;
+class FileUrlDownloadInitiate;
+class FileUrlDownloadStatus;
+class InboundPlatformMessageHandler;
 class ConnectivityService;
-class FileHandler;
-class FileDownloadProtocol;
+class UrlFileDownloader;
 
-class FileDownloadService : public WolkaboutFileDownloader, public MessageListener
+class FileDownloadService : public MessageListener
 {
 public:
-    FileDownloadService(std::string deviceKey, FileDownloadProtocol& protocol, uint_fast64_t maxFileSize,
-                        std::uint_fast64_t maxPacketSize, std::unique_ptr<FileHandler> fileHandler,
-                        ConnectivityService& connectivityService);
+    FileDownloadService(std::string deviceKey, JsonDownloadProtocol& protocol, std::string fileDownloadDirectory,
+                        std::uint64_t maxPacketSize, ConnectivityService& connectivityService,
+                        FileRepository& fileRepository, std::shared_ptr<UrlFileDownloader> urlFileDownloader = nullptr);
+
+    ~FileDownloadService();
 
     FileDownloadService(const FileDownloadService&) = delete;
     FileDownloadService& operator=(const FileDownloadService&) = delete;
 
-    void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
-                  const std::string& downloadDirectory,
-                  std::function<void(const std::string& filePath)> onSuccessCallback,
-                  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) override;
+    virtual void messageReceived(std::shared_ptr<Message> message) override;
 
-    void abort() override;
+    virtual const Protocol& getProtocol() override;
 
-    void messageReceived(std::shared_ptr<Message> message) override;
-
-    const Protocol& getProtocol() override;
+    virtual void sendFileList();
 
 private:
-    void handleBinaryData(const BinaryData& binaryData);
+    void handle(const BinaryData& binaryData);
+    void handle(const FileUploadInitiate& request);
+    void handle(const FileUploadAbort& request);
+    void handle(const FileDelete& request);
+    void handle(const FileUrlDownloadInitiate& request);
+    void handle(const FileUrlDownloadAbort& request);
+
+    void download(const std::string& fileName, std::uint64_t fileSize, const std::string& fileHash);
+    void urlDownload(const std::string& fileUrl);
+    void abortDownload(const std::string& fileName);
+    void abortUrlDownload(const std::string& fileUrl);
+    void deleteFile(const std::string& fileName);
+    void purgeFiles();
+
+    void sendStatus(const FileUploadStatus& response);
+    void sendStatus(const FileUrlDownloadStatus& response);
+    void sendFileListUpdate();
+    void sendFileListResponse();
+
+    void requestPacket(const FilePacketRequest& request);
+    void downloadCompleted(const std::string& fileName, const std::string& filePath, const std::string& fileHash);
+    void downloadFailed(const std::string& fileName, FileTransferError errorCode);
+
+    void urlDownloadCompleted(const std::string& fileUrl, const std::string& fileName, const std::string& filePath);
+    void urlDownloadFailed(const std::string& fileUrl, FileTransferError errorCode);
 
     void addToCommandBuffer(std::function<void()> command);
 
-    void requestPacket(unsigned index, std::uint_fast64_t size);
-
-    void packetFailed();
-
-    void clear();
-
-    class FileDownloadServiceState
-    {
-    public:
-        FileDownloadServiceState(FileDownloadService& service) : m_service{service} {}
-        virtual ~FileDownloadServiceState() = default;
-        virtual void handleBinaryData(const BinaryData& binaryData) = 0;
-        virtual void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
-                              const std::string& downloadDirectory,
-                              std::function<void(const std::string& filePath)> onSuccessCallback,
-                              std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) = 0;
-        virtual void abort() = 0;
-
-    protected:
-        FileDownloadService& m_service;
-    };
-
-    class IdleState : public FileDownloadServiceState
-    {
-    public:
-        using FileDownloadServiceState::FileDownloadServiceState;
-        void handleBinaryData(const BinaryData& binaryData) override;
-        void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
-                      const std::string& downloadDirectory,
-                      std::function<void(const std::string& filePath)> onSuccessCallback,
-                      std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) override;
-        void abort() override;
-    };
-
-    class DownloadState : public FileDownloadServiceState
-    {
-    public:
-        using FileDownloadServiceState::FileDownloadServiceState;
-        void handleBinaryData(const BinaryData& binaryData) override;
-        void download(const std::string& fileName, std::uint_fast64_t fileSize, const ByteArray& fileHash,
-                      const std::string& downloadDirectory,
-                      std::function<void(const std::string& filePath)> onSuccessCallback,
-                      std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback) override;
-        void abort() override;
-    };
-
-    friend class IdleState;
-    friend class DownloadState;
+    void flagCompletedDownload(const std::string& key);
+    void clearDownloads();
+    void notifyCleanup();
 
     const std::string m_deviceKey;
+    const std::string m_fileDownloadDirectory;
+    const std::uint64_t m_maxPacketSize;
 
-    FileDownloadProtocol& m_protocol;
+    JsonDownloadProtocol& m_protocol;
 
-    std::uint_fast64_t m_maxFileSize;
-    std::uint_fast64_t m_maxPacketSize;
-    std::unique_ptr<FileHandler> m_fileHandler;
     ConnectivityService& m_connectivityService;
+    FileRepository& m_fileRepository;
 
-    std::unique_ptr<CommandBuffer> m_commandBuffer;
+    std::shared_ptr<UrlFileDownloader> m_urlFileDownloader;
 
-    std::unique_ptr<IdleState> m_idleState;
-    std::unique_ptr<DownloadState> m_downloadState;
-    FileDownloadServiceState* m_currentState;
+    // temporary to disallow simultaneous downloads
+    std::string m_activeDownload;
+    std::map<std::string, std::tuple<std::string, std::unique_ptr<FileDownloader>, bool>> m_activeDownloads;
 
-    Timer m_timer;
+    std::atomic_bool m_run;
+    std::condition_variable m_condition;
+    std::recursive_mutex m_mutex;
+    std::thread m_garbageCollector;
 
-    std::string m_currentFileName;
-    std::uint_fast64_t m_currentFileSize;
-    std::uint_fast64_t m_currentPacketSize;
-    unsigned m_currentPacketCount;
-    unsigned m_currentPacketIndex;
-    ByteArray m_currentFileHash;
-    std::string m_currentDownloadDirectory;
-    std::function<void(const std::string&)> m_currentOnSuccessCallback;
-    std::function<void(WolkaboutFileDownloader::Error)> m_currentOnFailCallback;
-
-    static const unsigned short MAX_RETRY_COUNT = 3;
-    unsigned short m_retryCount;
-
-    static const constexpr std::chrono::milliseconds PACKET_REQUEST_TIMEOUT{6000};
+    CommandBuffer m_commandBuffer;
 };
 }    // namespace wolkabout
 

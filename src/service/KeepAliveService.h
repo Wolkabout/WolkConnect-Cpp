@@ -31,15 +31,20 @@ class KeepAliveService : public ConnectionStatusListener, public MessageListener
 public:
     KeepAliveService(std::string deviceKey, StatusProtocol& protocol, ConnectivityService& connectivityService,
                      std::chrono::seconds keepAliveInterval);
+    KeepAliveService();
 
     void connected() override;
     void disconnected() override;
+
+    long long int getLastTimestamp() const;
 
     void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
 
 private:
     std::string m_deviceKey;
+
+    long long m_lastTimestamp;
 
     StatusProtocol& m_protocol;
     ConnectivityService& m_connectivityService;

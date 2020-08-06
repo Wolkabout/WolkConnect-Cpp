@@ -1,0 +1,59 @@
+sudo: false
+
+jobs:
+  include:
+    - stage: compile
+      dist: bionic
+      language: cpp
+      compiler:
+        - gcc
+      addons:
+        apt: 
+          packages: 
+            - m4
+            - zlib1g-dev
+            - cmake
+            - libpoco-dev
+            - libssl-dev 
+      script:
+        - ./configure.sh
+        - pushd out
+        - make -j$(nproc)
+    - stage: tests
+      dist: focal
+      language: cpp
+      compiler:
+        - gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-9
+            - g++-9
+            - m4
+            - zlib1g-dev
+            - libpoco-dev
+            - libssl-dev
+      env:
+        - MATRIX_EVAL="CC=gcc-9 && CXX=g++-9"
+      script:
+        - ./configure.sh
+        - pushd out
+        - make -j$(nproc)
+        - make tests -j$(nproc)
+    - stage: deploy
+      if: branch = master
+      addons:
+        apt:
+          packages:
+            - doxygen
+      script:
+        - doxygen Doxyfile
+      deploy:
+        provider: pages
+        skip_cleanup: true
+        local_dir: docs
+        github_token: $GH_REPO_TOKEN
+        on:
+          branch: master

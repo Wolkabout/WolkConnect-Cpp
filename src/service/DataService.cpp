@@ -131,11 +131,9 @@ void DataService::addSensorReading(const std::string& reference, const std::stri
 }
 
 void DataService::addSensorReading(const std::string& reference, const std::vector<std::string>& values,
-                                   const std::string& delimiter, unsigned long long int rtc)
+                                   unsigned long long int rtc)
 {
     auto sensorReading = std::make_shared<SensorReading>(values, reference, rtc);
-
-    m_sensorDelimiters[reference] = delimiter;
 
     m_persistence.putSensorReading(reference, sensorReading);
 }
@@ -154,12 +152,9 @@ void DataService::addActuatorStatus(const std::string& reference, const std::str
     m_persistence.putActuatorStatus(reference, actuatorStatusWithRef);
 }
 
-void DataService::addConfiguration(const std::vector<ConfigurationItem>& configuration,
-                                   const std::map<std::string, std::string>& delimiters)
+void DataService::addConfiguration(const std::vector<ConfigurationItem>& configuration)
 {
     auto conf = std::make_shared<std::vector<ConfigurationItem>>(configuration);
-
-    m_configurationDelimiters = delimiters;
 
     m_persistence.putConfiguration(m_deviceKey, conf);
 }
@@ -181,9 +176,7 @@ void DataService::publishSensorReadingsForPersistanceKey(const std::string& pers
         return;
     }
 
-    const auto delimiter = getSensorDelimiter(persistanceKey);
-
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeMessage(m_deviceKey, sensorReadings, delimiter);
+    const std::shared_ptr<Message> outboundMessage = m_protocol.makeMessage(m_deviceKey, sensorReadings);
 
     if (!outboundMessage)
     {
@@ -282,8 +275,7 @@ void DataService::publishConfigurationForPersistanceKey(const std::string& persi
         return;
     }
 
-    const std::shared_ptr<Message> outboundMessage =
-      m_protocol.makeMessage(persistanceKey, *configuration, m_configurationDelimiters);
+    const std::shared_ptr<Message> outboundMessage = m_protocol.makeMessage(persistanceKey, *configuration);
 
     if (!outboundMessage)
     {
@@ -296,12 +288,5 @@ void DataService::publishConfigurationForPersistanceKey(const std::string& persi
     {
         m_persistence.removeConfiguration(persistanceKey);
     }
-}
-
-std::string DataService::getSensorDelimiter(const std::string& key) const
-{
-    const auto it = m_sensorDelimiters.find(key);
-
-    return it != m_sensorDelimiters.end() ? it->second : "";
 }
 }    // namespace wolkabout

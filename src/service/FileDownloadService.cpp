@@ -14,94 +14,147 @@
  * limitations under the License.
  */
 
-#include "FileDownloadService.h"
+#include "service/FileDownloadService.h"
 #include "FileHandler.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/BinaryData.h"
+#include "model/FileList.h"
 #include "model/FilePacketRequest.h"
+#include "model/FileTransferStatus.h"
+#include "model/FileUploadStatus.h"
+#include "model/FileUrlDownloadAbort.h"
+#include "model/FileUrlDownloadInitiate.h"
+#include "model/FileUrlDownloadStatus.h"
 #include "model/Message.h"
-#include "protocol/FileDownloadProtocol.h"
-#include "utilities/ConsoleLogger.h"
+#include "protocol/json/JsonDownloadProtocol.h"
+#include "repository/FileRepository.h"
+#include "service/UrlFileDownloader.h"
+#include "utilities/ByteUtils.h"
+#include "utilities/FileSystemUtils.h"
+#include "utilities/Logger.h"
 
 #include <cassert>
 #include <cmath>
+#include <utilities/StringUtils.h>
+
+namespace
+{
+static const size_t FILE_HASH_INDEX = 0;
+static const size_t FILE_DOWNLOADER_INDEX = 1;
+static const size_t FLAG_INDEX = 2;
+}    // namespace
 
 namespace wolkabout
 {
-const constexpr std::chrono::milliseconds FileDownloadService::PACKET_REQUEST_TIMEOUT;
-
-FileDownloadService::FileDownloadService(std::string deviceKey, FileDownloadProtocol& protocol,
-                                         uint_fast64_t maxFileSize, uint_fast64_t maxPacketSize,
-                                         std::unique_ptr<FileHandler> fileHandler,
-                                         ConnectivityService& connectivityService)
+FileDownloadService::FileDownloadService(std::string deviceKey, JsonDownloadProtocol& protocol,
+                                         std::string fileDownloadDirectory, std::uint64_t maxPacketSize,
+                                         ConnectivityService& connectivityService, FileRepository& fileRepository,
+                                         std::shared_ptr<UrlFileDownloader> urlFileDownloader)
 : m_deviceKey{std::move(deviceKey)}
 , m_protocol{protocol}
-, m_maxFileSize{maxFileSize}
+, m_fileDownloadDirectory{std::move(fileDownloadDirectory)}
 , m_maxPacketSize{maxPacketSize}
-, m_fileHandler{std::move(fileHandler)}
 , m_connectivityService{connectivityService}
-, m_commandBuffer{new CommandBuffer()}
-, m_idleState{new FileDownloadService::IdleState(*this)}
-, m_downloadState{new FileDownloadService::DownloadState(*this)}
-, m_currentFileName{""}
-, m_currentFileSize{0}
-, m_currentPacketSize{0}
-, m_currentPacketCount{0}
-, m_currentPacketIndex{0}
-, m_currentFileHash{}
-, m_currentDownloadDirectory{""}
-, m_retryCount{0}
+, m_fileRepository{fileRepository}
+, m_urlFileDownloader{std::move(urlFileDownloader)}
+, m_activeDownload{""}
+, m_run{true}
+, m_garbageCollector(&FileDownloadService::clearDownloads, this)
 {
-    m_currentState = m_idleState.get();
 }
 
-void FileDownloadService::download(const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash,
-                                   const std::string& downloadDirectory,
-                                   std::function<void(const std::string& filePath)> onSuccessCallback,
-                                   std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback)
+FileDownloadService::~FileDownloadService()
 {
-    addToCommandBuffer([=] {
-        m_currentState->download(fileName, fileSize, fileHash, downloadDirectory, onSuccessCallback, onFailCallback);
-    });
+    m_run = false;
+    notifyCleanup();
+
+    if (m_garbageCollector.joinable())
+    {
+        m_garbageCollector.join();
+    }
 }
 
-void FileDownloadService::abort()
-{
-    addToCommandBuffer([=] { m_currentState->abort(); });
-}
-
-void FileDownloadService::messageReceived(std::shared_ptr<Message> message)
+void FileDownloadService::messageReceived(std::shared_ptr<wolkabout::Message> message)
 {
     assert(message);
 
-    const std::string deviceKey = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
-    if (deviceKey.empty())
+    auto binary = m_protocol.makeBinaryData(*message);
+    if (binary)
     {
-        LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
+        auto binaryData = *binary;
+        addToCommandBuffer([=] { handle(binaryData); });
+
         return;
     }
 
-    if (deviceKey != m_deviceKey)
+    auto uploadInit = m_protocol.makeFileUploadInitiate(*message);
+    if (uploadInit)
     {
-        LOG(WARN) << "Device key mismatch: " << message->getChannel();
+        auto initiateRequest = *uploadInit;
+        addToCommandBuffer([=] { handle(initiateRequest); });
+
         return;
     }
 
-    if (m_protocol.isBinary(*message))
+    auto uploadAbort = m_protocol.makeFileUploadAbort(*message);
+    if (uploadAbort)
     {
-        auto binary = m_protocol.makeBinaryData(*message);
-        if (!binary)
-        {
-            LOG(WARN) << "Unable to parse message contents: " << message->getContent();
-            return;
-        }
+        auto abortRequest = *uploadAbort;
+        addToCommandBuffer([=] { handle(abortRequest); });
 
-        handleBinaryData(*binary);
+        return;
     }
-    else
+
+    auto fileDelete = m_protocol.makeFileDelete(*message);
+    if (fileDelete)
     {
-        LOG(WARN) << "Unable to parse message channel: " << message->getChannel();
+        auto deleteRequest = *fileDelete;
+        addToCommandBuffer([=] { handle(deleteRequest); });
+
+        return;
     }
+
+    if (m_protocol.isFilePurge(*message))
+    {
+        addToCommandBuffer([=] { purgeFiles(); });
+
+        return;
+    }
+
+    if (m_protocol.isFileListRequest(*message))
+    {
+        addToCommandBuffer([=] { sendFileListResponse(); });
+
+        return;
+    }
+
+    auto listConfirmResult = m_protocol.makeFileListConfirm(*message);
+    if (listConfirmResult)
+    {
+        LOG(DEBUG) << "Received file list confirm: " << to_string(*listConfirmResult);
+        return;
+    }
+
+    auto urlDownloadInit = m_protocol.makeFileUrlDownloadInitiate(*message);
+    if (urlDownloadInit)
+    {
+        auto initiateRequest = *urlDownloadInit;
+        addToCommandBuffer([=] { handle(initiateRequest); });
+
+        return;
+    }
+
+    auto urlDownloadAbort = m_protocol.makeFileUrlDownloadAbort(*message);
+    if (urlDownloadAbort)
+    {
+        auto abortRequest = *urlDownloadAbort;
+        addToCommandBuffer([=] { handle(abortRequest); });
+
+        return;
+    }
+
+    LOG(WARN) << "Unable to parse message; channel: " << message->getChannel()
+              << ", content: " << message->getContent();
 }
 
 const Protocol& FileDownloadService::getProtocol()
@@ -109,249 +162,468 @@ const Protocol& FileDownloadService::getProtocol()
     return m_protocol;
 }
 
-void FileDownloadService::handleBinaryData(const BinaryData& binaryData)
+void FileDownloadService::handle(const BinaryData& binaryData)
 {
-    addToCommandBuffer([=] { m_currentState->handleBinaryData(binaryData); });
+    std::lock_guard<decltype(m_mutex)> lg{m_mutex};
+
+    auto it = m_activeDownloads.find(m_activeDownload);
+    if (it == m_activeDownloads.end())
+    {
+        LOG(WARN) << "Unexpected binary data";
+        return;
+    }
+
+    std::get<FILE_DOWNLOADER_INDEX>(it->second)->handleData(binaryData);
 }
 
-void FileDownloadService::addToCommandBuffer(std::function<void()> command)
+void FileDownloadService::handle(const FileUploadInitiate& request)
 {
-    m_commandBuffer->pushCommand(std::make_shared<std::function<void()>>(command));
+    if (m_maxPacketSize == 0)
+    {
+        LOG(WARN) << "File transfer protocol disabled";
+
+        sendStatus(FileUploadStatus{request.getName(), FileTransferError::TRANSFER_PROTOCOL_DISABLED});
+        return;
+    }
+
+    if (request.getName().empty())
+    {
+        LOG(WARN) << "Missing file name from file upload initiate";
+
+        sendStatus(FileUploadStatus{request.getName(), FileTransferError::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    if (request.getSize() == 0)
+    {
+        LOG(WARN) << "Missing file size from file upload initiate";
+        sendStatus(FileUploadStatus{request.getName(), FileTransferError::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    if (request.getHash().empty())
+    {
+        LOG(WARN) << "Missing file hash from file upload initiate";
+        sendStatus(FileUploadStatus{request.getName(), FileTransferError::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    auto fileInfo = m_fileRepository.getFileInfo(request.getName());
+
+    if (!fileInfo)
+    {
+        download(request.getName(), request.getSize(), request.getHash());
+    }
+    else if (fileInfo->hash != request.getHash())
+    {
+        sendStatus(FileUploadStatus{request.getName(), FileTransferError::FILE_HASH_MISMATCH});
+    }
+    else
+    {
+        sendStatus(FileUploadStatus{request.getName(), FileTransferStatus::FILE_READY});
+    }
 }
 
-void FileDownloadService::requestPacket(unsigned index, uint_fast64_t size)
+void FileDownloadService::handle(const FileUploadAbort& request)
 {
-    ++m_retryCount;
+    if (request.getName().empty())
+    {
+        LOG(WARN) << "Missing file name from file upload abort";
 
-    auto cancel = [=] {
-        abort();
-        if (m_currentOnFailCallback)
+        sendStatus(FileUploadStatus{request.getName(), FileTransferError::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    abortDownload(request.getName());
+}
+
+void FileDownloadService::handle(const FileDelete& request)
+{
+    if (request.getName().empty())
+    {
+        LOG(WARN) << "Missing file name from file delete";
+
+        sendFileList();
+        return;
+    }
+
+    deleteFile(request.getName());
+}
+
+void FileDownloadService::handle(const FileUrlDownloadInitiate& request)
+{
+    if (!m_urlFileDownloader)
+    {
+        LOG(WARN) << "Url downloader not available";
+
+        sendStatus(FileUrlDownloadStatus{request.getUrl(), FileTransferError::TRANSFER_PROTOCOL_DISABLED});
+        return;
+    }
+
+    if (request.getUrl().empty())
+    {
+        LOG(WARN) << "Missing file url from file url download initiate";
+
+        sendStatus(FileUrlDownloadStatus{request.getUrl(), FileTransferError::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    urlDownload(request.getUrl());
+}
+
+void FileDownloadService::handle(const FileUrlDownloadAbort& request)
+{
+    if (!m_urlFileDownloader)
+    {
+        LOG(WARN) << "Url downloader not available";
+
+        sendStatus(FileUrlDownloadStatus{request.getUrl(), FileTransferError::TRANSFER_PROTOCOL_DISABLED});
+        return;
+    }
+
+    if (request.getUrl().empty())
+    {
+        LOG(WARN) << "Missing file url from file url download abort";
+
+        sendStatus(FileUrlDownloadStatus{request.getUrl(), FileTransferError::UNSPECIFIED_ERROR});
+        return;
+    }
+
+    abortUrlDownload(request.getUrl());
+}
+
+void FileDownloadService::download(const std::string& fileName, uint64_t fileSize, const std::string& fileHash)
+{
+    std::lock_guard<decltype(m_mutex)> lg{m_mutex};
+
+    auto it = m_activeDownloads.find(fileName);
+    if (it != m_activeDownloads.end())
+    {
+        auto activeHash = std::get<FILE_HASH_INDEX>(m_activeDownloads[fileName]);
+        if (activeHash != fileHash)
         {
-            m_currentOnFailCallback(WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR);
+            LOG(WARN) << "Download already active for file: " << fileName << ", but with different hash";
+            // TODO another error
+            sendStatus(FileUploadStatus{fileName, FileTransferError::UNSPECIFIED_ERROR});
+            return;
         }
-    };
 
-    std::shared_ptr<Message> message =
-      m_protocol.makeMessage(m_deviceKey, FilePacketRequest{m_currentFileName, index, size});
+        LOG(INFO) << "Download already active for file: " << fileName;
+        sendStatus(FileUploadStatus{fileName, FileTransferStatus::FILE_TRANSFER});
+        return;
+    }
+
+    LOG(INFO) << "Downloading file: " << fileName;
+    sendStatus(FileUploadStatus{fileName, FileTransferStatus::FILE_TRANSFER});
+
+    const auto byteHash = ByteUtils::toByteArray(StringUtils::base64Decode(fileHash));
+
+    auto downloader = std::unique_ptr<FileDownloader>(new FileDownloader(m_maxPacketSize));
+    m_activeDownloads[fileName] = std::make_tuple(fileHash, std::move(downloader), false);
+    m_activeDownload = fileName;
+
+    std::get<FILE_DOWNLOADER_INDEX>(m_activeDownloads[fileName])
+      ->download(fileName, fileSize, byteHash, m_fileDownloadDirectory,
+                 [=](const FilePacketRequest& request) { requestPacket(request); },
+                 [=](const std::string& filePath) { downloadCompleted(fileName, filePath, fileHash); },
+                 [=](FileTransferError code) { downloadFailed(fileName, code); });
+}
+
+void FileDownloadService::urlDownload(const std::string& fileUrl)
+{
+    LOG(DEBUG) << "FileDownloadService::urlDownload " << fileUrl;
+
+    m_urlFileDownloader->download(
+      fileUrl, m_fileDownloadDirectory,
+      [=](const std::string& url, const std::string& fileName, const std::string& filePath) {
+          urlDownloadCompleted(url, fileName, filePath);
+      },
+      [=](const std::string& url, FileTransferError errorCode) { urlDownloadFailed(url, errorCode); });
+}
+
+void FileDownloadService::abortDownload(const std::string& fileName)
+{
+    LOG(DEBUG) << "FileDownloadService::abort " << fileName;
+
+    std::lock_guard<decltype(m_mutex)> lg{m_mutex};
+
+    auto it = m_activeDownloads.find(fileName);
+    if (it != m_activeDownloads.end())
+    {
+        LOG(INFO) << "Aborting download for file: " << fileName;
+        std::get<FILE_DOWNLOADER_INDEX>(it->second)->abort();
+        flagCompletedDownload(fileName);
+        // TODO race with completed
+        sendStatus(FileUploadStatus{fileName, FileTransferStatus::ABORTED});
+
+        m_activeDownload = "";
+    }
+    else
+    {
+        LOG(DEBUG) << "FileDownloadService::abort download not active";
+    }
+}
+
+void FileDownloadService::abortUrlDownload(const std::string& fileUrl)
+{
+    LOG(DEBUG) << "FileDownloadService::abortUrlDownload " << fileUrl;
+
+    LOG(INFO) << "Aborting download for file: " << fileUrl;
+    m_urlFileDownloader->abort(fileUrl);
+
+    sendStatus(FileUrlDownloadStatus{fileUrl, FileTransferStatus::ABORTED});
+}
+
+void FileDownloadService::deleteFile(const std::string& fileName)
+{
+    LOG(DEBUG) << "FileDownloadService::delete " << fileName;
+
+    auto info = m_fileRepository.getFileInfo(fileName);
+    if (!info)
+    {
+        LOG(WARN) << "File info missing for file: " << fileName << ",  can't delete";
+    }
+
+    LOG(INFO) << "Deleting file: " << info->path;
+    if (!FileSystemUtils::deleteFile(info->path))
+    {
+        LOG(ERROR) << "Failed to delete file: " << info->path;
+        sendFileList();
+        return;
+    }
+
+    m_fileRepository.remove(fileName);
+
+    sendFileList();
+}
+
+void FileDownloadService::purgeFiles()
+{
+    LOG(DEBUG) << "FileDownloadService::purge";
+
+    auto fileNames = m_fileRepository.getAllFileNames();
+    if (!fileNames)
+    {
+        LOG(ERROR) << "Failed to fetch file names";
+        sendFileList();
+        return;
+    }
+
+    for (const auto& name : *fileNames)
+    {
+        auto info = m_fileRepository.getFileInfo(name);
+        if (!info)
+        {
+            LOG(ERROR) << "File info missing for file: " << name << ",  can't delete";
+            continue;
+        }
+
+        LOG(INFO) << "Deleting file: " << info->path;
+        if (!FileSystemUtils::deleteFile(info->path))
+        {
+            LOG(ERROR) << "Failed to delete file: " << info->path;
+            continue;
+        }
+
+        m_fileRepository.remove(name);
+    }
+
+    sendFileList();
+}
+
+void FileDownloadService::sendFileList()
+{
+    LOG(DEBUG) << "FileDownloadService::sendFileList";
+
+    addToCommandBuffer([=] { sendFileListUpdate(); });
+}
+
+void FileDownloadService::sendStatus(const FileUploadStatus& response)
+{
+    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, response);
+
+    if (!message)
+    {
+        LOG(ERROR) << "Failed to create file upload status";
+        return;
+    }
+
+    m_connectivityService.publish(message);
+}
+
+void FileDownloadService::sendStatus(const FileUrlDownloadStatus& response)
+{
+    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, response);
+
+    if (!message)
+    {
+        LOG(ERROR) << "Failed to create file url download status";
+        return;
+    }
+
+    m_connectivityService.publish(message);
+}
+
+void FileDownloadService::sendFileListUpdate()
+{
+    LOG(DEBUG) << "FileDownloadService::sendFileListUpdate";
+
+    auto fileNames = m_fileRepository.getAllFileNames();
+    if (!fileNames)
+    {
+        LOG(ERROR) << "Failed to fetch file names";
+        return;
+    }
+
+    std::shared_ptr<Message> message = m_protocol.makeFileListUpdateMessage(m_deviceKey, FileList{*fileNames});
+
+    if (!message)
+    {
+        LOG(ERROR) << "Failed to create file list update";
+        return;
+    }
+
+    m_connectivityService.publish(message);
+}
+
+void FileDownloadService::sendFileListResponse()
+{
+    LOG(DEBUG) << "FileDownloadService::sendFileListResponse";
+
+    auto fileNames = m_fileRepository.getAllFileNames();
+    if (!fileNames)
+    {
+        LOG(ERROR) << "Failed to fetch file names";
+        return;
+    }
+
+    std::shared_ptr<Message> message = m_protocol.makeFileListResponseMessage(m_deviceKey, FileList{*fileNames});
+
+    if (!message)
+    {
+        LOG(ERROR) << "Failed to create file list response";
+        return;
+    }
+
+    m_connectivityService.publish(message);
+}
+
+void FileDownloadService::requestPacket(const FilePacketRequest& request)
+{
+    std::shared_ptr<Message> message = m_protocol.makeMessage(m_deviceKey, request);
 
     if (!message)
     {
         LOG(WARN) << "Failed to create file packet request";
-        cancel();
         return;
     }
 
-    if (!m_connectivityService.publish(message))
-    {
-        LOG(WARN) << "Failed to publish file packet request";
-        cancel();
-        return;
-    }
-
-    m_timer.start(PACKET_REQUEST_TIMEOUT, cancel);
+    m_connectivityService.publish(message);
 }
 
-void FileDownloadService::packetFailed()
+void FileDownloadService::downloadCompleted(const std::string& fileName, const std::string& filePath,
+                                            const std::string& fileHash)
 {
-    if (m_retryCount == FileDownloadService::MAX_RETRY_COUNT)
-    {
-        abort();
-        if (m_currentOnFailCallback)
+    flagCompletedDownload(fileName);
+
+    addToCommandBuffer([=] {
+        m_fileRepository.store(FileInfo{fileName, fileHash, filePath});
+        sendStatus(FileUploadStatus{fileName, FileTransferStatus::FILE_READY});
+    });
+
+    sendFileList();
+}
+
+void FileDownloadService::downloadFailed(const std::string& fileName, FileTransferError errorCode)
+{
+    flagCompletedDownload(fileName);
+
+    sendStatus(FileUploadStatus{fileName, errorCode});
+
+    sendFileList();
+}
+
+void FileDownloadService::urlDownloadCompleted(const std::string& fileUrl, const std::string& fileName,
+                                               const std::string& filePath)
+{
+    addToCommandBuffer([=] {
+        ByteArray fileContent;
+        if (!FileSystemUtils::readBinaryFileContent(filePath, fileContent))
         {
-            m_currentOnFailCallback(WolkaboutFileDownloader::Error::RETRY_COUNT_EXCEEDED);
+            LOG(ERROR) << "Failed to open downloaded file: " << filePath;
+            FileSystemUtils::deleteFile(filePath);
+            sendStatus(FileUrlDownloadStatus{fileUrl, FileTransferError::FILE_SYSTEM_ERROR});
+            return;
         }
-    }
-    else
-    {
-        requestPacket(m_currentPacketIndex, m_currentPacketSize);
-    }
+
+        auto byteHash = ByteUtils::hashSHA256(fileContent);
+        auto hashStr = StringUtils::base64Encode(byteHash);
+
+        m_fileRepository.store(FileInfo{fileName, hashStr, filePath});
+        sendStatus(FileUrlDownloadStatus{fileUrl, fileName});
+    });
+
+    sendFileList();
 }
 
-void FileDownloadService::clear()
+void FileDownloadService::urlDownloadFailed(const std::string& fileUrl, FileTransferError errorCode)
 {
-    m_currentState = m_idleState.get();
+    sendStatus(FileUrlDownloadStatus{fileUrl, errorCode});
 
-    m_currentFileName = "";
-    m_currentFileSize = 0;
-    m_currentPacketSize = 0;
-    m_currentPacketCount = 0;
-    m_currentPacketIndex = 0;
-    m_currentFileHash = {};
-    m_currentDownloadDirectory = "";
-    m_currentOnSuccessCallback = nullptr;
-    m_currentOnFailCallback = nullptr;
-    m_retryCount = 0;
+    sendFileList();
 }
 
-void FileDownloadService::IdleState::handleBinaryData(const BinaryData&) {}
-
-void FileDownloadService::IdleState::download(
-  const std::string& fileName, uint_fast64_t fileSize, const ByteArray& fileHash, const std::string& downloadDirectory,
-  std::function<void(const std::string& filePath)> onSuccessCallback,
-  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback)
+void FileDownloadService::addToCommandBuffer(std::function<void()> command)
 {
-    if (fileSize > m_service.m_maxFileSize)
+    m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(command));
+}
+
+void FileDownloadService::flagCompletedDownload(const std::string& key)
+{
+    std::lock_guard<decltype(m_mutex)> lg{m_mutex};
+
+    auto it = m_activeDownloads.find(key);
+    if (it != m_activeDownloads.end())
     {
-        if (onFailCallback)
+        std::get<FLAG_INDEX>(it->second) = true;
+    }
+
+    notifyCleanup();
+}
+
+void FileDownloadService::notifyCleanup()
+{
+    m_condition.notify_one();
+}
+
+void FileDownloadService::clearDownloads()
+{
+    while (m_run)
+    {
+        std::unique_lock<decltype(m_mutex)> lg{m_mutex};
+
+        for (auto it = m_activeDownloads.begin(); it != m_activeDownloads.end();)
         {
-            onFailCallback(WolkaboutFileDownloader::Error::UNSUPPORTED_FILE_SIZE);
-        }
-        return;
-    }
+            auto& tuple = it->second;
+            auto& downloadCompleted = std::get<FLAG_INDEX>(tuple);
 
-    if (fileSize <= m_service.m_maxPacketSize - (2 * ByteUtils::SHA_256_HASH_BYTE_LENGTH))
-    {
-        m_service.m_currentPacketCount = 1;
-        m_service.m_currentPacketSize = fileSize + (2 * ByteUtils::SHA_256_HASH_BYTE_LENGTH);
-    }
-    else
-    {
-        const auto count =
-          static_cast<double>(fileSize) / (m_service.m_maxPacketSize - (2 * ByteUtils::SHA_256_HASH_BYTE_LENGTH));
-        m_service.m_currentPacketCount = static_cast<unsigned>(std::ceil(count));
-        m_service.m_currentPacketSize = m_service.m_maxPacketSize;
-    }
-
-    m_service.m_currentPacketIndex = 0;
-
-    m_service.m_currentFileName = fileName;
-    m_service.m_currentFileSize = fileSize;
-    m_service.m_currentFileHash = fileHash;
-    m_service.m_currentDownloadDirectory = downloadDirectory;
-    m_service.m_currentOnSuccessCallback = onSuccessCallback;
-    m_service.m_currentOnFailCallback = onFailCallback;
-
-    m_service.m_fileHandler->clear();
-
-    m_service.requestPacket(0, m_service.m_currentPacketSize);
-
-    m_service.m_currentState = m_service.m_downloadState.get();
-}
-
-void FileDownloadService::IdleState::abort() {}
-
-void FileDownloadService::DownloadState::handleBinaryData(const BinaryData& binaryData)
-{
-    m_service.m_timer.stop();
-
-    const auto result = m_service.m_fileHandler->handleData(binaryData);
-    switch (result)
-    {
-    case FileHandler::StatusCode::OK:
-    {
-        if (++m_service.m_currentPacketIndex == m_service.m_currentPacketCount)
-        {
-            // download complete
-            const auto validationResult = m_service.m_fileHandler->validateFile(m_service.m_currentFileHash);
-            switch (validationResult)
+            if (downloadCompleted)
             {
-            case FileHandler::StatusCode::OK:
-            {
-                const std::string filePath = m_service.m_currentDownloadDirectory + "/" + m_service.m_currentFileName;
-                const auto saveResult = m_service.m_fileHandler->saveFile(filePath);
-                switch (saveResult)
-                {
-                case FileHandler::StatusCode::OK:
-                {
-                    if (m_service.m_currentOnSuccessCallback)
-                    {
-                        m_service.m_currentOnSuccessCallback(filePath);
-                    }
-
-                    m_service.clear();
-                    return;
-                }
-                case FileHandler::StatusCode::FILE_HANDLING_ERROR:
-                {
-                    if (m_service.m_currentOnFailCallback)
-                    {
-                        m_service.m_currentOnFailCallback(WolkaboutFileDownloader::Error::FILE_SYSTEM_ERROR);
-                    }
-
-                    abort();
-                    m_service.clear();
-                    return;
-                }
-                default:
-                {
-                    if (m_service.m_currentOnFailCallback)
-                    {
-                        m_service.m_currentOnFailCallback(WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR);
-                    }
-
-                    abort();
-                    m_service.clear();
-                    return;
-                }
-                }
+                LOG(DEBUG) << "Removing completed download on channel: " << it->first;
+                // removed flagged messages
+                it = m_activeDownloads.erase(it);
             }
-            case FileHandler::StatusCode::FILE_HASH_NOT_VALID:
+            else
             {
-                if (m_service.m_currentOnFailCallback)
-                {
-                    m_service.m_currentOnFailCallback(WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR);
-                }
-
-                abort();
-                m_service.clear();
-                return;
-            }
-            default:
-            {
-                if (m_service.m_currentOnFailCallback)
-                {
-                    m_service.m_currentOnFailCallback(WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR);
-                }
-
-                abort();
-                m_service.clear();
-                return;
-            }
+                ++it;
             }
         }
-        else
-        {
-            m_service.m_retryCount = 0;
-            m_service.requestPacket(m_service.m_currentPacketIndex, m_service.m_currentPacketSize);
-        }
 
-        break;
+        lg.unlock();
+
+        static std::mutex cvMutex;
+        std::unique_lock<std::mutex> lock{cvMutex};
+        m_condition.wait(lock);
     }
-    case FileHandler::StatusCode::PACKAGE_HASH_NOT_VALID:
-    {
-        m_service.packetFailed();
-
-        break;
-    }
-    case FileHandler::StatusCode::PREVIOUS_PACKAGE_HASH_NOT_VALID:
-    {
-        m_service.packetFailed();
-
-        break;
-    }
-    default:
-    {
-        if (m_service.m_currentOnFailCallback)
-        {
-            m_service.m_currentOnFailCallback(WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR);
-        }
-
-        abort();
-        m_service.clear();
-        return;
-    }
-    }
-}
-
-void FileDownloadService::DownloadState::download(
-  const std::string&, uint_fast64_t, const ByteArray&, const std::string&, std::function<void(const std::string&)>,
-  std::function<void(WolkaboutFileDownloader::Error errorCode)> onFailCallback)
-{
-    onFailCallback(WolkaboutFileDownloader::Error::UNSPECIFIED_ERROR);
-}
-
-void FileDownloadService::DownloadState::abort()
-{
-    m_service.m_fileHandler->clear();
 }
 }    // namespace wolkabout

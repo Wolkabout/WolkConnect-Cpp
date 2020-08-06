@@ -1,6 +1,7 @@
 # Build dir
 out
 dependencies
+docs/
 
 # Qt Creator
 *.config
@@ -11,3 +12,6 @@ dependencies
 
 # CLion
 .idea
+
+# Coverage info
+*.info
