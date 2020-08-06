@@ -219,7 +219,7 @@ private:
 
     bool m_keepAliveEnabled;
 
-    static const constexpr char* WOLK_DEMO_HOST = "ssl://api-integration.wolkabout.com:8883";
+    static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
     static const constexpr char* TRUST_STORE = "ca.crt";
     static const constexpr char* DATABASE = "fileRepository.db";
 };
