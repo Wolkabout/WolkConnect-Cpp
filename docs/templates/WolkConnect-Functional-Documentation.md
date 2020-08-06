@@ -179,5 +179,5 @@ This firmware handler will specify the following parameters:
 
 To see how to utilize WolkConnect library APIs, visit one of the following files and look up detailed information in the Example Usage section:
 
-- [Simple example README.md](../../README.md) - demonstrates the sending of a temperature sensor reading
-- [Full feature set example README.md](../../examples/full_feature_set/README.md) - demonstrates full WolkAbout IoT Platform potential
+- [Simple example README.md](https://github.com/Wolkabout/WolkConnect-Cpp/blob/master/README.md) - demonstrates the sending of a temperature sensor reading
+- [Full feature set example README.md](https://github.com/Wolkabout/WolkConnect-Cpp/blob/master/examples/full_feature_set/README.md) - demonstrates full WolkAbout IoT Platform potential
