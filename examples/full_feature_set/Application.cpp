@@ -135,7 +135,7 @@ int main(int /* argc */, char** /* argv */)
         }
     };
 
-    wolkabout::Device device("ADC", "ITZ70HZGYB", {"SW", "SL"});
+    wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
 
     static bool switchValue = false;
     static int sliderValue = 0;
