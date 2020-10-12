@@ -24,6 +24,8 @@
 #include "mocks/DataProtocolMock.h"
 #include "mocks/DataServiceMock.h"
 #include "mocks/InboundMessageHandlerMock.h"
+#include "mocks/FileDownloadServiceMock.h"
+#include "mocks/FileRepositoryMock.h"
 #include "mocks/KeepAliveServiceMock.h"
 #include "mocks/PersistenceMock.h"
 #include "mocks/StatusProtocolMock.h"
@@ -47,6 +49,9 @@ public:
       std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD", std::vector<std::string>{"A1", "A2", "A3"});
 
     std::shared_ptr<wolkabout::WolkBuilder> builder;
+
+    wolkabout::JsonDownloadProtocol m_downloadProtocol;
+    std::unique_ptr<wolkabout::FileRepository> m_fileRepositoryMock = std::unique_ptr<wolkabout::FileRepository>(new FileRepositoryMock());
 };
 
 TEST_F(WolkTests, Notifies)
@@ -89,6 +94,10 @@ TEST_F(WolkTests, ConnectTest)
 
     wolk->m_dataService = std::move(dataServiceMock);
     wolk->m_connectivityService = std::move(connectivityServiceMock);
+
+    auto fileDownloadServiceMock = std::make_shared<FileDownloadServiceMock>(noActuatorsDevice->getKey(), m_downloadProtocol, "", 0, *wolk->m_connectivityService,
+                                                                             *m_fileRepositoryMock, nullptr);
+    wolk->m_fileDownloadService = std::move(fileDownloadServiceMock);
 
     EXPECT_CALL(dynamic_cast<ConnectivityServiceMock&>(*(wolk->m_connectivityService)), connect)
       .WillOnce(testing::Return(false))

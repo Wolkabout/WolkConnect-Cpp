@@ -223,6 +223,7 @@ private:
     void handleConfigurationGetCommand();
 
     void publishFirmwareStatus();
+    void publishFileList();
 
     void notifyConnected();
     void notifyDisonnected();

@@ -27,6 +27,7 @@
 #include "model/Message.h"
 #include "model/SensorReading.h"
 #include "service/DataService.h"
+#include "service/FileDownloadService.h"
 #include "service/FirmwareUpdateService.h"
 #include "service/KeepAliveService.h"
 #include "utilities/Logger.h"
@@ -155,6 +156,8 @@ void Wolk::connect()
 
         publishConfiguration();
 
+        publishFileList();
+
         publish();
     });
 }
@@ -267,6 +270,14 @@ void Wolk::publishFirmwareStatus()
     {
         m_firmwareUpdateService->reportFirmwareUpdateResult();
         m_firmwareUpdateService->publishFirmwareVersion();
+    }
+}
+
+void Wolk::publishFileList()
+{
+    if (m_fileDownloadService)
+    {
+        m_fileDownloadService->sendFileList();
     }
 }
 
