@@ -1,0 +1,9 @@
+*WolkConnect-Cpp RELEASE NOTES**
+--------------------------
+
+*WolkAbout Technology s.r.o.*
+
+WolkAbout C++11 Connector library for connecting devices to WolkAbout IoT Platform.
+
+**Version 3.0.1**
+- [BUGFIX] - Publish file list upon connecting.
