@@ -16,7 +16,7 @@
 #ifndef WOLKABOUTCONNECTOR_CONFIGURATIONHANDLERMOCK_H
 #define WOLKABOUTCONNECTOR_CONFIGURATIONHANDLERMOCK_H
 
-#include "ConfigurationHandler.h"
+#include "api/ConfigurationHandler.h"
 
 #include <gmock/gmock.h>
 

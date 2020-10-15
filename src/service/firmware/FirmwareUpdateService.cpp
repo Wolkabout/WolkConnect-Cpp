@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "service/FirmwareUpdateService.h"
-#include "FirmwareInstaller.h"
-#include "FirmwareVersionProvider.h"
+#include "FirmwareUpdateService.h"
+#include "api/FirmwareInstaller.h"
+#include "api/FirmwareVersionProvider.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/FirmwareUpdateAbort.h"
 #include "model/FirmwareUpdateInstall.h"
@@ -25,6 +25,7 @@
 #include "model/FirmwareVersion.h"
 #include "model/Message.h"
 #include "protocol/json/JsonDFUProtocol.h"
+#include "repository/FileRepository.h"
 #include "utilities/FileSystemUtils.h"
 #include "utilities/Logger.h"
 #include "utilities/StringUtils.h"
@@ -116,7 +117,7 @@ void FirmwareUpdateService::publishFirmwareVersion()
             LOG(WARN) << "Failed to get device's firmware version";
             return;
         }
-      
+
         const std::shared_ptr<Message> message =
           m_protocol.makeMessage(m_deviceKey, FirmwareVersion{m_deviceKey, firmwareVersion});
 

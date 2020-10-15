@@ -18,20 +18,13 @@
 #define FILEDOWNLOADSERVICE_H
 
 #include "InboundMessageHandler.h"
-#include "WolkaboutFileDownloader.h"
-#include "connectivity/ConnectivityService.h"
-#include "protocol/json/JsonDownloadProtocol.h"
-#include "service/FileDownloader.h"
-#include "utilities/ByteUtils.h"
+#include "model/FileTransferStatus.h"
 #include "utilities/CommandBuffer.h"
 
 #include <atomic>
 #include <cstdint>
 #include <map>
 #include <memory>
-#include <model/FileDelete.h>
-#include <model/FileUploadAbort.h>
-#include <model/FileUploadInitiate.h>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -40,8 +33,9 @@
 namespace wolkabout
 {
 class BinaryData;
-class Protocol;
 class FileDelete;
+class FileDownloader;
+class FilePacketRequest;
 class FileRepository;
 class FileUploadAbort;
 class FileUploadInitiate;
@@ -49,7 +43,7 @@ class FileUploadStatus;
 class FileUrlDownloadAbort;
 class FileUrlDownloadInitiate;
 class FileUrlDownloadStatus;
-class InboundPlatformMessageHandler;
+class JsonDownloadProtocol;
 class ConnectivityService;
 class UrlFileDownloader;
 

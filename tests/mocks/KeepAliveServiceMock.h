@@ -16,7 +16,7 @@
 #ifndef WOLKABOUTCONNECTOR_KEEPALIVESERVICEMOCK_H
 #define WOLKABOUTCONNECTOR_KEEPALIVESERVICEMOCK_H
 
-#include "service/KeepAliveService.h"
+#include "service/keep_alive/KeepAliveService.h"
 
 #include <gmock/gmock.h>
 

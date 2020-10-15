@@ -17,36 +17,33 @@
 #ifndef WOLKBUILDER_H
 #define WOLKBUILDER_H
 
-#include "ActuationHandler.h"
-#include "ActuatorStatusProvider.h"
-#include "ConfigurationHandler.h"
-#include "ConfigurationProvider.h"
-#include "FirmwareInstaller.h"
-#include "FirmwareVersionProvider.h"
-#include "InboundMessageHandler.h"
-#include "InboundPlatformMessageHandler.h"
-#include "connectivity/ConnectivityService.h"
+#include "api/ActuationHandler.h"
+#include "api/ActuatorStatusProvider.h"
+#include "api/ConfigurationHandler.h"
+#include "api/ConfigurationProvider.h"
+#include "api/FirmwareInstaller.h"
+#include "api/FirmwareVersionProvider.h"
+#include "api/UrlFileDownloader.h"
 #include "model/Device.h"
 #include "persistence/Persistence.h"
+#include "protocol/DataProtocol.h"
 
 #include <cstdint>
 #include <functional>
-#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace wolkabout
 {
 class Wolk;
-class UrlFileDownloader;
-class DataProtocol;
 
 class WolkBuilder final
 {
 public:
-    ~WolkBuilder() = default;
+    ~WolkBuilder();
 
-    WolkBuilder(WolkBuilder&&) = default;
+    WolkBuilder(WolkBuilder&&);
 
     /**
      * @brief WolkBuilder Initiates wolkabout::Wolk builder

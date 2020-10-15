@@ -16,7 +16,7 @@
 
 #define private public
 #define protected public
-#include "service/KeepAliveService.h"
+#include "service/keep_alive/KeepAliveService.h"
 #include "model/DeviceStatus.h"
 #include "model/Message.h"
 #undef private

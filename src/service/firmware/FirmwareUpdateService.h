@@ -17,17 +17,16 @@
 #define FIRMWAREUPDATESERVICE_H
 
 #include "InboundMessageHandler.h"
-#include "repository/FileRepository.h"
 #include "utilities/CommandBuffer.h"
 
 #include <functional>
-#include <map>
 #include <memory>
 #include <string>
 
 namespace wolkabout
 {
 class ConnectivityService;
+class FileRepository;
 class FirmwareInstaller;
 class FirmwareVersionProvider;
 class FirmwareUpdateAbort;
