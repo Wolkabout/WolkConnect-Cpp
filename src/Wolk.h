@@ -17,44 +17,45 @@
 #ifndef WOLK_H
 #define WOLK_H
 
-#include "ActuationHandler.h"
-#include "ActuatorStatusProvider.h"
-#include "ConfigurationHandler.h"
-#include "ConfigurationProvider.h"
 #include "WolkBuilder.h"
+#include "connectivity/ConnectivityService.h"
 #include "model/ActuatorStatus.h"
 #include "model/Device.h"
-#include "protocol/DataProtocol.h"
-#include "protocol/StatusProtocol.h"
-#include "protocol/json/JsonDFUProtocol.h"
-#include "protocol/json/JsonDownloadProtocol.h"
 #include "utilities/CommandBuffer.h"
 #include "utilities/StringUtils.h"
 
 #include <algorithm>
 #include <functional>
 #include <initializer_list>
-#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace wolkabout
 {
+class ActuationHandler;
+class ActuatorStatusProvider;
+class ConfigurationHandler;
+class ConfigurationProvider;
+class ConfigurationSetCommand;
 class ConnectivityService;
-class InboundMessageHandler;
-class FirmwareUpdateService;
-class FileDownloadService;
-class KeepAliveService;
-class FileRepository;
+class DataProtocol;
 class DataService;
+class FileDownloadService;
+class FileRepository;
+class FirmwareUpdateService;
+class InboundMessageHandler;
+class JsonDFUProtocol;
+class JsonDownloadProtocol;
+class KeepAliveService;
+class StatusProtocol;
 
 class Wolk
 {
     friend class WolkBuilder;
 
 public:
-    virtual ~Wolk() = default;
+    virtual ~Wolk();
 
     /**
      * @brief Initiates wolkabout::WolkBuilder that configures device to connect to WolkAbout IoT Cloud

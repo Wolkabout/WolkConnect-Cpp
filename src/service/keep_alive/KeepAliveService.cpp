@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "service/KeepAliveService.h"
+#include "KeepAliveService.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/Message.h"
 #include "protocol/StatusProtocol.h"

@@ -15,32 +15,25 @@
  */
 
 #include "WolkBuilder.h"
-#include "ActuationHandler.h"
-#include "ActuatorStatusProvider.h"
-#include "FileHandler.h"
 #include "InboundMessageHandler.h"
+#include "InboundPlatformMessageHandler.h"
 #include "Wolk.h"
 #include "connectivity/ConnectivityService.h"
 #include "connectivity/mqtt/MqttConnectivityService.h"
 #include "connectivity/mqtt/WolkPahoMqttClient.h"
-#include "model/Device.h"
-#include "model/FirmwareUpdateCommand.h"
-#include "persistence/Persistence.h"
 #include "persistence/inmemory/InMemoryPersistence.h"
-#include "protocol/json/DFUProtocol.h"
-#include "protocol/json/DownloadProtocol.h"
+#include "protocol/json/JsonDFUProtocol.h"
+#include "protocol/json/JsonDownloadProtocol.h"
 #include "protocol/json/JsonProtocol.h"
 #include "protocol/json/JsonSingleReferenceProtocol.h"
 #include "protocol/json/JsonStatusProtocol.h"
 #include "repository/SQLiteFileRepository.h"
-#include "service/DataService.h"
-#include "service/FileDownloadService.h"
-#include "service/FirmwareUpdateService.h"
-#include "service/KeepAliveService.h"
+#include "service/data/DataService.h"
+#include "service/file/FileDownloadService.h"
+#include "service/firmware/FirmwareUpdateService.h"
+#include "service/keep_alive/KeepAliveService.h"
 
-#include <functional>
 #include <stdexcept>
-#include <string>
 
 namespace wolkabout
 {
@@ -270,6 +263,10 @@ wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>()
 {
     return build();
 }
+
+WolkBuilder::~WolkBuilder() = default;
+
+WolkBuilder::WolkBuilder(WolkBuilder&&) = default;
 
 WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}

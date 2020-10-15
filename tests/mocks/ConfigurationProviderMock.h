@@ -16,7 +16,7 @@
 #ifndef WOLKABOUTCONNECTOR_CONFIGURATIONPROVIDERMOCK_H
 #define WOLKABOUTCONNECTOR_CONFIGURATIONPROVIDERMOCK_H
 
-#include "ConfigurationProvider.h"
+#include "api/ConfigurationProvider.h"
 
 #include <gmock/gmock.h>
 

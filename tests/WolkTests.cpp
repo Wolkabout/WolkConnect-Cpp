@@ -36,6 +36,7 @@
 #include "model/DeviceStatus.h"
 #include "model/Device.h"
 #include "model/Message.h"
+#include "protocol/json/JsonDownloadProtocol.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

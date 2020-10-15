@@ -15,9 +15,6 @@
  */
 
 #include "Wolk.h"
-#include "ActuationHandler.h"
-#include "ActuatorStatusProvider.h"
-#include "WolkBuilder.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"
@@ -26,10 +23,14 @@
 #include "model/Device.h"
 #include "model/Message.h"
 #include "model/SensorReading.h"
-#include "service/DataService.h"
-#include "service/FileDownloadService.h"
-#include "service/FirmwareUpdateService.h"
-#include "service/KeepAliveService.h"
+#include "protocol/DataProtocol.h"
+#include "protocol/StatusProtocol.h"
+#include "protocol/json/JsonDFUProtocol.h"
+#include "protocol/json/JsonDownloadProtocol.h"
+#include "service/data/DataService.h"
+#include "service/file/FileDownloadService.h"
+#include "service/firmware/FirmwareUpdateService.h"
+#include "service/keep_alive/KeepAliveService.h"
 #include "utilities/Logger.h"
 
 #include <initializer_list>
@@ -42,6 +43,8 @@
 namespace wolkabout
 {
 const constexpr std::chrono::seconds Wolk::KEEP_ALIVE_INTERVAL;
+
+Wolk::~Wolk() = default;
 
 WolkBuilder Wolk::newBuilder(Device device)
 {

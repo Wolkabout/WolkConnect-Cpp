@@ -16,7 +16,7 @@
 #ifndef WOLKABOUTCONNECTOR_DATASERVICEMOCK_H
 #define WOLKABOUTCONNECTOR_DATASERVICEMOCK_H
 
-#include "service/DataService.h"
+#include "service/data/DataService.h"
 
 #include <gmock/gmock.h>
 

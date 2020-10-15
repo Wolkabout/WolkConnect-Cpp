@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "service/FileDownloader.h"
+#include "FileDownloader.h"
 #include "model/BinaryData.h"
 #include "model/FilePacketRequest.h"
 #include "utilities/FileSystemUtils.h"

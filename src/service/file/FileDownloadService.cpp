@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-#include "service/FileDownloadService.h"
+#include "FileDownloadService.h"
+#include "FileDownloader.h"
 #include "FileHandler.h"
+#include "api/UrlFileDownloader.h"
 #include "connectivity/ConnectivityService.h"
 #include "model/BinaryData.h"
+#include "model/FileDelete.h"
 #include "model/FileList.h"
 #include "model/FilePacketRequest.h"
 #include "model/FileTransferStatus.h"
+#include "model/FileUploadAbort.h"
+#include "model/FileUploadInitiate.h"
 #include "model/FileUploadStatus.h"
 #include "model/FileUrlDownloadAbort.h"
 #include "model/FileUrlDownloadInitiate.h"
@@ -28,7 +33,6 @@
 #include "model/Message.h"
 #include "protocol/json/JsonDownloadProtocol.h"
 #include "repository/FileRepository.h"
-#include "service/UrlFileDownloader.h"
 #include "utilities/ByteUtils.h"
 #include "utilities/FileSystemUtils.h"
 #include "utilities/Logger.h"

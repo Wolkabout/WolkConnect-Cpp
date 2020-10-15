@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_FILEDOWNLOADSERVICEMOCK_H
 #define WOLKABOUTCONNECTOR_FILEDOWNLOADSERVICEMOCK_H
 
-#include "service/FileDownloadService.h"
+#include "service/file/FileDownloadService.h"
 
 #include <gmock/gmock.h>
 

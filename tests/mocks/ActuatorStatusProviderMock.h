@@ -18,7 +18,7 @@
 
 #define private public
 #define protected public
-#include "ActuatorStatusProvider.h"
+#include "api/ActuatorStatusProvider.h"
 #undef private
 #undef protected
 

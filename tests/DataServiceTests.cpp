@@ -16,7 +16,7 @@
 
 #define private public
 #define protected public
-#include "service/DataService.h"
+#include "service/data/DataService.h"
 #include "model/ActuatorGetCommand.h"
 #include "model/ActuatorSetCommand.h"
 #include "model/ConfigurationSetCommand.h"
