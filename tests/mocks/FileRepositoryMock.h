@@ -20,10 +20,9 @@
 
 #include <gmock/gmock.h>
 
-class FileRepositoryMock: public wolkabout::FileRepository
+class FileRepositoryMock : public wolkabout::FileRepository
 {
 public:
-
     MOCK_METHOD(void, connected, ());
     MOCK_METHOD(void, disconnected, ());
 

@@ -24,7 +24,7 @@
 
 #include <gmock/gmock.h>
 
-class ActuationHandlerMock: public wolkabout::ActuationHandler
+class ActuationHandlerMock : public wolkabout::ActuationHandler
 {
 public:
     MOCK_METHOD(void, handleActuation, (const std::string&, const std::string&), (override));

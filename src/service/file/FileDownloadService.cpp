@@ -37,6 +37,7 @@
 #include "utilities/FileSystemUtils.h"
 #include "utilities/Logger.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <utilities/StringUtils.h>
@@ -472,14 +473,9 @@ void FileDownloadService::sendFileListUpdate()
 {
     LOG(DEBUG) << "FileDownloadService::sendFileListUpdate";
 
-    auto fileNames = m_fileRepository.getAllFileNames();
-    if (!fileNames)
-    {
-        LOG(ERROR) << "Failed to fetch file names";
-        return;
-    }
+    auto fileNames = updateFileList();
 
-    std::shared_ptr<Message> message = m_protocol.makeFileListUpdateMessage(m_deviceKey, FileList{*fileNames});
+    std::shared_ptr<Message> message = m_protocol.makeFileListUpdateMessage(m_deviceKey, FileList{fileNames});
 
     if (!message)
     {
@@ -494,14 +490,9 @@ void FileDownloadService::sendFileListResponse()
 {
     LOG(DEBUG) << "FileDownloadService::sendFileListResponse";
 
-    auto fileNames = m_fileRepository.getAllFileNames();
-    if (!fileNames)
-    {
-        LOG(ERROR) << "Failed to fetch file names";
-        return;
-    }
+    auto fileNames = updateFileList();
 
-    std::shared_ptr<Message> message = m_protocol.makeFileListResponseMessage(m_deviceKey, FileList{*fileNames});
+    std::shared_ptr<Message> message = m_protocol.makeFileListResponseMessage(m_deviceKey, FileList{fileNames});
 
     if (!message)
     {
@@ -598,6 +589,86 @@ void FileDownloadService::flagCompletedDownload(const std::string& key)
 void FileDownloadService::notifyCleanup()
 {
     m_condition.notify_one();
+}
+
+std::vector<std::string> FileDownloadService::updateFileList()
+{
+    std::vector<std::tuple<std::string, std::unique_ptr<ByteArray>>> newFilesOnDisk;
+    std::vector<std::string> filesMissingOnDisk;
+    std::vector<std::string> allValidFiles;
+
+    auto filesOnDisk = FileSystemUtils::listFiles(m_fileDownloadDirectory);
+    auto filesInRepo = m_fileRepository.getAllFileNames();
+
+    if (!filesInRepo)
+    {
+        LOG(ERROR) << "Failed to fetch file names";
+        // Just return whatever is on the disk
+        return filesOnDisk;
+    }
+
+    for (const auto& repoFile : *filesInRepo)
+    {
+        auto it = std::find(filesOnDisk.begin(), filesOnDisk.end(), repoFile);
+        if (it == filesOnDisk.end())
+        {
+            LOG(WARN) << "File missing on disk: " << repoFile;
+            filesMissingOnDisk.push_back(repoFile);
+        }
+        else
+        {
+            allValidFiles.push_back(repoFile);
+        }
+    }
+
+    for (const auto& diskFile : filesOnDisk)
+    {
+        auto it = std::find(filesInRepo->begin(), filesInRepo->end(), diskFile);
+        if (it == filesInRepo->end())
+        {
+            std::unique_ptr<ByteArray> fileContent(new ByteArray());
+            bool result = FileSystemUtils::readBinaryFileContent(
+              FileSystemUtils::composePath(diskFile, m_fileDownloadDirectory), *fileContent);
+
+            if (result)
+            {
+                LOG(INFO) << "Found new file on disk: " << diskFile;
+                newFilesOnDisk.push_back({diskFile, std::move(fileContent)});
+                allValidFiles.push_back(diskFile);
+            }
+            else
+            {
+                LOG(WARN) << "Found new file on disk: " << diskFile << ", but unable to open";
+            }
+        }
+        else
+        {
+            allValidFiles.push_back(diskFile);
+        }
+    }
+
+    // remove missing files from repo
+    for (const auto& missingFile : filesMissingOnDisk)
+    {
+        m_fileRepository.remove(missingFile);
+    }
+
+    // add new files to repo
+    for (auto& newFile : newFilesOnDisk)
+    {
+        auto byteHash = ByteUtils::hashSHA256(*(std::get<1>(newFile)));
+        auto hashStr = StringUtils::base64Encode(byteHash);
+
+        auto fileName = std::get<0>(newFile);
+
+        auto path = FileSystemUtils::composePath(fileName, m_fileDownloadDirectory);
+
+        FileInfo info{fileName, hashStr, FileSystemUtils::absolutePath(path)};
+
+        m_fileRepository.store(info);
+    }
+
+    return allValidFiles;
 }
 
 void FileDownloadService::clearDownloads()

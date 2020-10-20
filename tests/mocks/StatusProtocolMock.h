@@ -20,7 +20,7 @@
 
 #include "protocol/StatusProtocol.h"
 
-class StatusProtocolMock: public wolkabout::StatusProtocol
+class StatusProtocolMock : public wolkabout::StatusProtocol
 {
 public:
     StatusProtocolMock() = default;
@@ -29,8 +29,10 @@ public:
     MOCK_CONST_METHOD1(isStatusConfirmMessage, bool(const wolkabout::Message&));
     MOCK_CONST_METHOD1(isPongMessage, bool(const wolkabout::Message&));
 
-    MOCK_CONST_METHOD2(makeStatusResponseMessage, std::unique_ptr<wolkabout::Message>(const std::string&, const wolkabout::DeviceStatus&));
-    MOCK_CONST_METHOD2(makeStatusUpdateMessage, std::unique_ptr<wolkabout::Message>(const std::string&, const wolkabout::DeviceStatus&));
+    MOCK_CONST_METHOD2(makeStatusResponseMessage,
+                       std::unique_ptr<wolkabout::Message>(const std::string&, const wolkabout::DeviceStatus&));
+    MOCK_CONST_METHOD2(makeStatusUpdateMessage,
+                       std::unique_ptr<wolkabout::Message>(const std::string&, const wolkabout::DeviceStatus&));
     MOCK_CONST_METHOD1(makeLastWillMessage, std::unique_ptr<wolkabout::Message>(const std::string&));
     MOCK_CONST_METHOD1(makeLastWillMessage, std::unique_ptr<wolkabout::Message>(const std::vector<std::string>&));
     MOCK_CONST_METHOD1(makeFromPingRequest, std::unique_ptr<wolkabout::Message>(const std::string&));

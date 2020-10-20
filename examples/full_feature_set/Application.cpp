@@ -285,7 +285,7 @@ int main(int /* argc */, char** /* argv */)
         })
         .configurationHandler(deviceConfiguration)
         .configurationProvider(deviceConfiguration)
-        .withFileManagement(".", 1024 * 1024)
+        .withFileManagement("files", 1024 * 1024)
         .withFirmwareUpdate(installer, provider)
         .build();
 

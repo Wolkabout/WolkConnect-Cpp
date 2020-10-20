@@ -50,24 +50,24 @@ public:
     void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
 
-    void addSensorReading(const std::string& reference, const std::string& value, unsigned long long int rtc);
+    virtual void addSensorReading(const std::string& reference, const std::string& value, unsigned long long int rtc);
 
-    void addSensorReading(const std::string& reference, const std::vector<std::string>& values,
-                          unsigned long long int rtc);
+    virtual void addSensorReading(const std::string& reference, const std::vector<std::string>& values,
+                                  unsigned long long int rtc);
 
-    void addAlarm(const std::string& reference, bool active, unsigned long long int rtc);
+    virtual void addAlarm(const std::string& reference, bool active, unsigned long long int rtc);
 
-    void addActuatorStatus(const std::string& reference, const std::string& value, ActuatorStatus::State state);
+    virtual void addActuatorStatus(const std::string& reference, const std::string& value, ActuatorStatus::State state);
 
-    void addConfiguration(const std::vector<ConfigurationItem>& configuration);
+    virtual void addConfiguration(const std::vector<ConfigurationItem>& configuration);
 
-    void publishSensorReadings();
+    virtual void publishSensorReadings();
 
-    void publishAlarms();
+    virtual void publishAlarms();
 
-    void publishActuatorStatuses();
+    virtual void publishActuatorStatuses();
 
-    void publishConfiguration();
+    virtual void publishConfiguration();
 
 private:
     std::string getSensorDelimiter(const std::string& key) const;
