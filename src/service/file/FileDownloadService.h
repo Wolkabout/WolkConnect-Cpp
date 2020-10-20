@@ -98,11 +98,14 @@ private:
     void clearDownloads();
     void notifyCleanup();
 
+    std::vector<std::string> updateFileList();
+
     const std::string m_deviceKey;
-    const std::string m_fileDownloadDirectory;
-    const std::uint64_t m_maxPacketSize;
 
     JsonDownloadProtocol& m_protocol;
+
+    const std::string m_fileDownloadDirectory;
+    const std::uint64_t m_maxPacketSize;
 
     ConnectivityService& m_connectivityService;
     FileRepository& m_fileRepository;

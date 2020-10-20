@@ -20,7 +20,7 @@
 
 #include "connectivity/ConnectivityService.h"
 
-class ConnectivityServiceMock: public wolkabout::ConnectivityService
+class ConnectivityServiceMock : public wolkabout::ConnectivityService
 {
 public:
     ConnectivityServiceMock() = default;

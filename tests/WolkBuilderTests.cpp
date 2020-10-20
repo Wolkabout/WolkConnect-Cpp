@@ -16,13 +16,13 @@
 
 #define private public
 #define protected public
+#include "Wolk.h"
+#include "WolkBuilder.h"
 #include "model/ActuatorGetCommand.h"
 #include "model/ActuatorSetCommand.h"
 #include "model/ConfigurationSetCommand.h"
 #include "model/Message.h"
 #include "protocol/DataProtocol.h"
-#include "WolkBuilder.h"
-#include "Wolk.h"
 #undef private
 #undef protected
 

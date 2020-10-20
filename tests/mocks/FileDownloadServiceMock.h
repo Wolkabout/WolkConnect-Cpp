@@ -21,18 +21,21 @@
 
 #include <gmock/gmock.h>
 
-class FileDownloadServiceMock: public wolkabout::FileDownloadService
+class FileDownloadServiceMock : public wolkabout::FileDownloadService
 {
 public:
-    FileDownloadServiceMock(std::string deviceKey, wolkabout::JsonDownloadProtocol& protocol, std::string fileDownloadDirectory,
-                            std::uint64_t maxPacketSize, wolkabout::ConnectivityService& connectivityService,
-                            wolkabout::FileRepository& fileRepository, std::shared_ptr<wolkabout::UrlFileDownloader> urlFileDownloader)
-    : FileDownloadService(deviceKey, protocol, fileDownloadDirectory, maxPacketSize, connectivityService, fileRepository, urlFileDownloader)
+    FileDownloadServiceMock(std::string deviceKey, wolkabout::JsonDownloadProtocol& protocol,
+                            std::string fileDownloadDirectory, std::uint64_t maxPacketSize,
+                            wolkabout::ConnectivityService& connectivityService,
+                            wolkabout::FileRepository& fileRepository,
+                            std::shared_ptr<wolkabout::UrlFileDownloader> urlFileDownloader)
+    : FileDownloadService(deviceKey, protocol, fileDownloadDirectory, maxPacketSize, connectivityService,
+                          fileRepository, urlFileDownloader)
     {
     }
 
     MOCK_METHOD(void, messageReceived, (std::shared_ptr<wolkabout::Message>), (override));
-    MOCK_METHOD(void, sendFileList, ());
+    MOCK_METHOD(void, sendFileList, (), (override));
 };
 
-#endif // WOLKABOUTCONNECTOR_FILEDOWNLOADSERVICEMOCK_H
+#endif    // WOLKABOUTCONNECTOR_FILEDOWNLOADSERVICEMOCK_H

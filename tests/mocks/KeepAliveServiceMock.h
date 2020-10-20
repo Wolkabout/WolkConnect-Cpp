@@ -20,7 +20,7 @@
 
 #include <gmock/gmock.h>
 
-class KeepAliveServiceMock: public wolkabout::KeepAliveService
+class KeepAliveServiceMock : public wolkabout::KeepAliveService
 {
 public:
     KeepAliveServiceMock(const std::string& deviceKey, wolkabout::StatusProtocol& protocol,
@@ -30,8 +30,8 @@ public:
     {
     }
 
-    MOCK_METHOD(void, connected, ());
-    MOCK_METHOD(void, disconnected, ());
+    MOCK_METHOD(void, connected, (), (override));
+    MOCK_METHOD(void, disconnected, (), (override));
 };
 
 #endif    // WOLKABOUTCONNECTOR_KEEPALIVESERVICEMOCK_H

@@ -16,11 +16,11 @@
 
 #define private public
 #define protected public
-#include "service/data/DataService.h"
 #include "model/ActuatorGetCommand.h"
 #include "model/ActuatorSetCommand.h"
 #include "model/ConfigurationSetCommand.h"
 #include "model/Message.h"
+#include "service/data/DataService.h"
 #undef private
 #undef protected
 

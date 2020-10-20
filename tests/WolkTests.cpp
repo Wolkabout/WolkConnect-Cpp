@@ -23,9 +23,9 @@
 #include "mocks/ConnectivityServiceMock.h"
 #include "mocks/DataProtocolMock.h"
 #include "mocks/DataServiceMock.h"
-#include "mocks/InboundMessageHandlerMock.h"
 #include "mocks/FileDownloadServiceMock.h"
 #include "mocks/FileRepositoryMock.h"
+#include "mocks/InboundMessageHandlerMock.h"
 #include "mocks/KeepAliveServiceMock.h"
 #include "mocks/PersistenceMock.h"
 #include "mocks/StatusProtocolMock.h"
@@ -33,13 +33,16 @@
 #include "model/ActuatorGetCommand.h"
 #include "model/ActuatorSetCommand.h"
 #include "model/ConfigurationSetCommand.h"
-#include "model/DeviceStatus.h"
 #include "model/Device.h"
+#include "model/DeviceStatus.h"
 #include "model/Message.h"
 #include "protocol/json/JsonDownloadProtocol.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+using testing::_;
+using testing::Matcher;
 
 class WolkTests : public ::testing::Test
 {
@@ -52,7 +55,26 @@ public:
     std::shared_ptr<wolkabout::WolkBuilder> builder;
 
     wolkabout::JsonDownloadProtocol m_downloadProtocol;
-    std::unique_ptr<wolkabout::FileRepository> m_fileRepositoryMock = std::unique_ptr<wolkabout::FileRepository>(new FileRepositoryMock());
+    std::unique_ptr<wolkabout::FileRepository> m_fileRepositoryMock =
+      std::unique_ptr<wolkabout::FileRepository>(new FileRepositoryMock());
+
+    std::mutex mutex;
+    std::condition_variable cv;
+    int eventsToWait = 0;
+
+    void onEvent()
+    {
+        std::lock_guard<std::mutex> lock{mutex};
+        eventsToWait--;
+        cv.notify_one();
+    }
+
+    void waitEvents(int eventCount = 1, std::chrono::milliseconds period = std::chrono::milliseconds{500})
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        eventsToWait = eventCount;
+        EXPECT_TRUE(cv.wait_for(lock, period, [this] { return eventsToWait <= 0; }));
+    }
 };
 
 TEST_F(WolkTests, Notifies)
@@ -96,17 +118,53 @@ TEST_F(WolkTests, ConnectTest)
     wolk->m_dataService = std::move(dataServiceMock);
     wolk->m_connectivityService = std::move(connectivityServiceMock);
 
-    auto fileDownloadServiceMock = std::make_shared<FileDownloadServiceMock>(noActuatorsDevice->getKey(), m_downloadProtocol, "", 0, *wolk->m_connectivityService,
-                                                                             *m_fileRepositoryMock, nullptr);
+    auto fileDownloadServiceMock =
+      std::make_shared<FileDownloadServiceMock>(noActuatorsDevice->getKey(), m_downloadProtocol, "", 0,
+                                                *wolk->m_connectivityService, *m_fileRepositoryMock, nullptr);
     wolk->m_fileDownloadService = std::move(fileDownloadServiceMock);
 
     EXPECT_CALL(dynamic_cast<ConnectivityServiceMock&>(*(wolk->m_connectivityService)), connect)
-      .WillOnce(testing::Return(false))
-      .WillOnce(testing::Return(true));
+      .WillOnce(testing::DoAll(testing::InvokeWithoutArgs(this, &WolkTests::onEvent), testing::Return(true)));
 
     EXPECT_NO_FATAL_FAILURE(wolk->connect());
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+    waitEvents(1);
+}
+
+TEST_F(WolkTests, WhenConnected_PublishFileList)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
+    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    const auto& wolk = builder->build();
+
+    auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
+    auto connectivityServiceMock =
+      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
+    auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new ::testing::NiceMock<KeepAliveServiceMock>(
+      noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
+
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
+      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+
+    wolk->m_dataService = std::move(dataServiceMock);
+    wolk->m_connectivityService = std::move(connectivityServiceMock);
+
+    auto fileDownloadServiceMock =
+      std::make_shared<FileDownloadServiceMock>(noActuatorsDevice->getKey(), m_downloadProtocol, "", 0,
+                                                *wolk->m_connectivityService, *m_fileRepositoryMock, nullptr);
+    wolk->m_fileDownloadService = std::move(fileDownloadServiceMock);
+
+    ON_CALL(dynamic_cast<ConnectivityServiceMock&>(*(wolk->m_connectivityService)), connect)
+      .WillByDefault(testing::Return(true));
+
+    EXPECT_CALL(dynamic_cast<FileDownloadServiceMock&>(*(wolk->m_fileDownloadService)), sendFileList)
+      .WillOnce(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
+
+    EXPECT_NO_FATAL_FAILURE(wolk->connect());
+
+    waitEvents(1);
 }
 
 TEST_F(WolkTests, DisconnectTest)
@@ -142,14 +200,24 @@ TEST_F(WolkTests, AddingSensors)
 
     wolk->m_dataService = std::move(dataServiceMock);
 
-    EXPECT_CALL(*persistenceMock, putSensorReading).Times(2).WillRepeatedly(testing::Return(true));
+    EXPECT_CALL(
+      dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
+      addSensorReading(Matcher<const std::string&>(_), Matcher<const std::string&>(_), Matcher<unsigned long long>(_)))
+      .Times(1)
+      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
+
+    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
+                addSensorReading(Matcher<const std::string&>(_), Matcher<const std::vector<std::string>&>(_),
+                                 Matcher<unsigned long long>(_)))
+      .Times(1)
+      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
     EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF1", 100));
     EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF2", std::vector<int>{1, 2, 3}));
     // Empty test
     EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF3", std::vector<int>{}));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    waitEvents(2);
 }
 
 TEST_F(WolkTests, AddAlarms)
@@ -167,9 +235,13 @@ TEST_F(WolkTests, AddAlarms)
 
     wolk->m_dataService = std::move(dataServiceMock);
 
+    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)), addAlarm)
+      .Times(1)
+      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
+
     EXPECT_NO_FATAL_FAILURE(wolk->addAlarm("TEST_ALARM_REF1", true));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    waitEvents(1);
 }
 
 TEST_F(WolkTests, HandleActuatorCommands)
@@ -198,14 +270,16 @@ TEST_F(WolkTests, HandleActuatorCommands)
     auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
       noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
 
-    EXPECT_CALL(*persistenceMock, putActuatorStatus).Times(2).WillRepeatedly(testing::Return(true));
-
     wolk->m_dataService = std::move(dataServiceMock);
+
+    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)), addActuatorStatus)
+      .Times(2)
+      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
     EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorGetCommand("TEST_REF1"));
     EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorSetCommand("TEST_REF1", "VALUE1"));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    waitEvents(2);
 }
 
 TEST_F(WolkTests, HandleConfigurationCommands)
@@ -234,16 +308,17 @@ TEST_F(WolkTests, HandleConfigurationCommands)
     auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
       noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
 
-    EXPECT_CALL(*persistenceMock, putConfiguration).Times(2).WillRepeatedly(testing::Return(true));
-    EXPECT_CALL(*persistenceMock, getConfiguration).Times(2).WillRepeatedly(testing::Return(nullptr));
-
     wolk->m_dataService = std::move(dataServiceMock);
+
+    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)), addConfiguration)
+      .Times(2)
+      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
     EXPECT_NO_FATAL_FAILURE(wolk->handleConfigurationGetCommand());
     EXPECT_NO_FATAL_FAILURE(wolk->handleConfigurationSetCommand(
       wolkabout::ConfigurationSetCommand(std::vector<wolkabout::ConfigurationItem>())));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    waitEvents(2);
 }
 
 TEST_F(WolkTests, ConnectivityFacade)
@@ -257,40 +332,40 @@ TEST_F(WolkTests, ConnectivityFacade)
 
     bool channel1Invoked = false, channel2Invoked = false, connectionLostInvoked = false, channelsRequested = false;
 
-//    This part doesn't work, since the class contains a reference, and not a pointer.
-//    EXPECT_CALL(*inboundMessageHandlerMock, messageReceived)
-//      .WillOnce([&](const std::string& channel, const std::string& message) {
-//          if (channel == "CHANNEL1")
-//              channel1Invoked = true;
-//          else if (channel == "CHANNEL2")
-//              channel2Invoked = true;
-//          std::cout << "InboundMessageHandlerMock: " << channel << ", " << message << std::endl;
-//      });
-//
-//    EXPECT_CALL(*inboundMessageHandlerMock, getChannels).WillOnce([&]() {
-//        channelsRequested = true;
-//        return std::vector<std::string>{"CHANNEL1", "CHANNEL2"};
-//    });
-//
-//    wolk->m_connectivityManager->m_messageHandler =
-//      static_cast<wolkabout::InboundMessageHandler&>(*inboundMessageHandlerMock);
+    //    This part doesn't work, since the class contains a reference, and not a pointer.
+    //    EXPECT_CALL(*inboundMessageHandlerMock, messageReceived)
+    //      .WillOnce([&](const std::string& channel, const std::string& message) {
+    //          if (channel == "CHANNEL1")
+    //              channel1Invoked = true;
+    //          else if (channel == "CHANNEL2")
+    //              channel2Invoked = true;
+    //          std::cout << "InboundMessageHandlerMock: " << channel << ", " << message << std::endl;
+    //      });
+    //
+    //    EXPECT_CALL(*inboundMessageHandlerMock, getChannels).WillOnce([&]() {
+    //        channelsRequested = true;
+    //        return std::vector<std::string>{"CHANNEL1", "CHANNEL2"};
+    //    });
+    //
+    //    wolk->m_connectivityManager->m_messageHandler =
+    //      static_cast<wolkabout::InboundMessageHandler&>(*inboundMessageHandlerMock);
 
     wolk->m_connectivityManager->m_connectionLostHandler = [&]() {
         connectionLostInvoked = true;
         std::cout << "ConnectionLostHandler: Invoked!" << std::endl;
     };
 
-//    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL1", "MESSAGE1"));
-//    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL2", "MESSAGE2"));
-//
-//    EXPECT_EQ(wolk->m_connectivityManager->getChannels().size(), 2);
+    //    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL1", "MESSAGE1"));
+    //    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL2", "MESSAGE2"));
+    //
+    //    EXPECT_EQ(wolk->m_connectivityManager->getChannels().size(), 2);
 
     EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->connectionLost());
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-//    EXPECT_TRUE(channel1Invoked);
-//    EXPECT_TRUE(channel2Invoked);
+    //    EXPECT_TRUE(channel1Invoked);
+    //    EXPECT_TRUE(channel2Invoked);
     EXPECT_TRUE(connectionLostInvoked);
-//    EXPECT_TRUE(channelsRequested);
+    //    EXPECT_TRUE(channelsRequested);
 }

@@ -20,7 +20,7 @@
 
 #include <gmock/gmock.h>
 
-class ConfigurationProviderMock: public wolkabout::ConfigurationProvider
+class ConfigurationProviderMock : public wolkabout::ConfigurationProvider
 {
 public:
     MOCK_METHOD(std::vector<wolkabout::ConfigurationItem>, getConfiguration, (), (override));

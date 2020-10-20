@@ -16,9 +16,9 @@
 
 #define private public
 #define protected public
-#include "service/keep_alive/KeepAliveService.h"
 #include "model/DeviceStatus.h"
 #include "model/Message.h"
+#include "service/keep_alive/KeepAliveService.h"
 #undef private
 #undef protected
 
@@ -82,13 +82,12 @@ TEST_F(KeepAliveServiceTests, FunctionalityTest)
 
     std::unique_ptr<wolkabout::Message> message =
       std::unique_ptr<wolkabout::Message>(new wolkabout::Message("TEST", "TEST"));
-    EXPECT_CALL(*statusProtocolMock, makeFromPingRequest)
-      .WillOnce(Return(ByMove(std::move(message))));
+    EXPECT_CALL(*statusProtocolMock, makeFromPingRequest).WillOnce(Return(ByMove(std::move(message))));
     EXPECT_CALL(*connectivityServiceMock, publish).WillRepeatedly(Return(true));
 
     EXPECT_NO_THROW(keepAliveService->connected());
 
-    std::this_thread::sleep_for(std::chrono::milliseconds (999));
+    std::this_thread::sleep_for(std::chrono::milliseconds(999));
 
     EXPECT_NO_THROW(keepAliveService->disconnected());
 }

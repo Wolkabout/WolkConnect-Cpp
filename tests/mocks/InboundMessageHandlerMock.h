@@ -25,9 +25,9 @@ class InboundMessageHandlerMock : public wolkabout::InboundMessageHandler
 public:
     InboundMessageHandlerMock() = default;
 
-    MOCK_METHOD(void, messageReceived, (const std::string&, const std::string&));
-    MOCK_METHOD(std::vector<std::string>, getChannels, (), (const));
-    MOCK_METHOD(void, addListener, (std::weak_ptr<wolkabout::MessageListener>));
+    MOCK_METHOD(void, messageReceived, (const std::string&, const std::string&), (override));
+    MOCK_METHOD(std::vector<std::string>, getChannels, (), (override, const));
+    MOCK_METHOD(void, addListener, (std::weak_ptr<wolkabout::MessageListener>), (override));
 };
 
 #endif    // WOLKABOUTCONNECTOR_INBOUNDMESSAGEHANDLERMOCK_H
