@@ -226,6 +226,7 @@ private:
     void publishFirmwareStatus();
     void publishFileList();
 
+    void tryConnect(bool firstTime = false);
     void notifyConnected();
     void notifyDisonnected();
 
