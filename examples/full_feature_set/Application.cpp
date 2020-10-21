@@ -108,6 +108,8 @@ int main(int /* argc */, char** /* argv */)
 {
     auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
     logger->setLogLevel(wolkabout::LogLevel::INFO);
+    logger->flushEvery(std::chrono::seconds{10});
+    logger->flushAt(wolkabout::LogLevel::INFO);
     wolkabout::Logger::setInstance(std::move(logger));
 
     std::function<void(std::string)> setLogLevel = [&](std::string level) {
