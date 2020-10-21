@@ -140,29 +140,7 @@ long long Wolk::getLastTimestamp()
 
 void Wolk::connect()
 {
-    addToCommandBuffer([=]() -> void {
-        if (!m_connectivityService->connect())
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            connect();
-            return;
-        }
-
-        notifyConnected();
-
-        publishFirmwareStatus();
-
-        for (const std::string& actuatorReference : m_device.getActuatorReferences())
-        {
-            publishActuatorStatus(actuatorReference);
-        }
-
-        publishConfiguration();
-
-        publishFileList();
-
-        publish();
-    });
+    tryConnect(true);
 }
 
 void Wolk::disconnect()
@@ -227,6 +205,8 @@ void Wolk::flushConfiguration()
 
 void Wolk::handleActuatorSetCommand(const std::string& reference, const std::string& value)
 {
+    LOG(INFO) << "Received actuation: " << reference << ", " << value;
+
     addToCommandBuffer([=] {
         if (auto provider = m_actuationHandler.lock())
         {
@@ -243,11 +223,15 @@ void Wolk::handleActuatorSetCommand(const std::string& reference, const std::str
 
 void Wolk::handleActuatorGetCommand(const std::string& reference)
 {
+    LOG(INFO) << "Received actuator status request: " << reference;
+
     publishActuatorStatus(reference);
 }
 
 void Wolk::handleConfigurationSetCommand(const ConfigurationSetCommand& command)
 {
+    LOG(INFO) << "Received configuration";
+
     addToCommandBuffer([=]() -> void {
         if (auto handler = m_configurationHandler.lock())
         {
@@ -264,6 +248,8 @@ void Wolk::handleConfigurationSetCommand(const ConfigurationSetCommand& command)
 
 void Wolk::handleConfigurationGetCommand()
 {
+    LOG(INFO) << "Received configuration request";
+
     publishConfiguration();
 }
 
@@ -284,16 +270,53 @@ void Wolk::publishFileList()
     }
 }
 
+void Wolk::tryConnect(bool firstTime)
+{
+    addToCommandBuffer([=]() -> void {
+        if (firstTime)
+            LOG(INFO) << "Connecting...";
+
+        if (!m_connectivityService->connect())
+        {
+            if (firstTime)
+                LOG(INFO) << "Failed to connect";
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            tryConnect(false);
+            return;
+        }
+
+        notifyConnected();
+    });
+}
+
 void Wolk::notifyConnected()
 {
+    LOG(INFO) << "Connection established";
+
     if (m_keepAliveService)
     {
         m_keepAliveService->connected();
     }
+
+    publishFirmwareStatus();
+
+    for (const std::string& actuatorReference : m_device.getActuatorReferences())
+    {
+        publishActuatorStatus(actuatorReference);
+    }
+
+    publishConfiguration();
+
+    publishFileList();
+
+    publish();
 }
 
 void Wolk::notifyDisonnected()
 {
+    LOG(INFO) << "Connection lost";
+
     if (m_keepAliveService)
     {
         m_keepAliveService->disconnected();
