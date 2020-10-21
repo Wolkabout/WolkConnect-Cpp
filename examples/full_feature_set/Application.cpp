@@ -289,6 +289,7 @@ int main(int /* argc */, char** /* argv */)
         .configurationProvider(deviceConfiguration)
         .withFileManagement("files", 1024 * 1024)
         .withFirmwareUpdate(installer, provider)
+        .host("ssl://api-demo.wolkabout.com:8883")
         .build();
 
     wolk->connect();
