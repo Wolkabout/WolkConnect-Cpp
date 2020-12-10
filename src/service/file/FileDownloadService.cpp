@@ -126,13 +126,6 @@ void FileDownloadService::messageReceived(std::shared_ptr<wolkabout::Message> me
         return;
     }
 
-    if (m_protocol.isFileListRequest(*message))
-    {
-        addToCommandBuffer([=] { sendFileListResponse(); });
-
-        return;
-    }
-
     auto listConfirmResult = m_protocol.makeFileListConfirm(*message);
     if (listConfirmResult)
     {
@@ -480,23 +473,6 @@ void FileDownloadService::sendFileListUpdate()
     if (!message)
     {
         LOG(ERROR) << "Failed to create file list update";
-        return;
-    }
-
-    m_connectivityService.publish(message);
-}
-
-void FileDownloadService::sendFileListResponse()
-{
-    LOG(DEBUG) << "FileDownloadService::sendFileListResponse";
-
-    auto fileNames = updateFileList();
-
-    std::shared_ptr<Message> message = m_protocol.makeFileListResponseMessage(m_deviceKey, FileList{fileNames});
-
-    if (!message)
-    {
-        LOG(ERROR) << "Failed to create file list response";
         return;
     }
 
