@@ -129,7 +129,7 @@ void FileDownloadService::messageReceived(std::shared_ptr<wolkabout::Message> me
     auto listConfirmResult = m_protocol.makeFileListConfirm(*message);
     if (listConfirmResult)
     {
-        LOG(DEBUG) << "Received file list confirm: " << to_string(*listConfirmResult);
+        LOG(DEBUG) << "Received file list confirm: " << listConfirmResult->getMessage();
         return;
     }
 
