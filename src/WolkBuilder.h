@@ -59,6 +59,14 @@ public:
     WolkBuilder& host(const std::string& host);
 
     /**
+     * @brief Allows passing of custom CA’s public certificate file to custom WolkAbout IoT platform instance
+     * @param ca_cert_path ca.crt file system path
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& ca_cert_path(const std::string& ca_cert_path);
+
+
+    /**
      * @brief Sets actuation handler
      * @param actuationHandler Lambda that handles actuation requests
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
@@ -188,6 +196,7 @@ public:
 
 private:
     std::string m_host;
+    std::string m_ca_cert_path;
     Device m_device;
 
     std::function<void(std::string, std::string)> m_actuationHandlerLambda;

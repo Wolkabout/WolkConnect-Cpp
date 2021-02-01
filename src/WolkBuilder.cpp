@@ -43,6 +43,13 @@ WolkBuilder& WolkBuilder::host(const std::string& host)
     return *this;
 }
 
+WolkBuilder& WolkBuilder::ca_cert_path(const std::string& ca_cert_path)
+{
+    m_ca_cert_path = ca_cert_path;
+
+    return *this;
+}
+
 WolkBuilder& WolkBuilder::actuationHandler(
   const std::function<void(const std::string&, const std::string&)>& actuationHandler)
 {
@@ -186,7 +193,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     auto mqttClient = std::make_shared<WolkPahoMqttClient>();
     wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(
-      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, TRUST_STORE));
+      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, m_ca_cert_path));
 
     wolk->m_inboundMessageHandler =
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
@@ -270,6 +277,7 @@ WolkBuilder::WolkBuilder(WolkBuilder&&) = default;
 
 WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}
+, m_ca_cert_path{TRUST_STORE}
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}
 , m_dataProtocol{new JsonProtocol()}
