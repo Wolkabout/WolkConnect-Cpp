@@ -16,9 +16,9 @@
 #ifndef WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
 #define WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
 
-#include <gmock/gmock.h>
-
 #include "connectivity/ConnectivityService.h"
+
+#include <gmock/gmock.h>
 
 class ConnectivityServiceMock : public wolkabout::ConnectivityService
 {

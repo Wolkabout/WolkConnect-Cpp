@@ -17,7 +17,6 @@
 #define WOLKABOUTCONNECTOR_MESSAGELISTENERMOKC_H
 
 #include "InboundPlatformMessageHandler.h"
-
 #include "mocks/ProtocolMock.h"
 
 #include <gmock/gmock.h>

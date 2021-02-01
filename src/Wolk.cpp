@@ -15,6 +15,7 @@
  */
 
 #include "Wolk.h"
+
 #include "connectivity/ConnectivityService.h"
 #include "model/ActuatorStatus.h"
 #include "model/Alarm.h"

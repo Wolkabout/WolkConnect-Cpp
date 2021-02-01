@@ -15,6 +15,7 @@
  */
 
 #include "KeepAliveService.h"
+
 #include "connectivity/ConnectivityService.h"
 #include "model/Message.h"
 #include "protocol/StatusProtocol.h"

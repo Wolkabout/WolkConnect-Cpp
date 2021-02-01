@@ -25,6 +25,7 @@
 #include "mocks/MessageListenerMock.h"
 
 #include <gtest/gtest.h>
+
 #include <iostream>
 
 class InboundPlatformMessageHandlerTests : public ::testing::Test

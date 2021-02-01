@@ -26,16 +26,17 @@
 #undef private
 #undef protected
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include <iostream>
-
 #include "mocks/ActuationHandlerMock.h"
 #include "mocks/ActuatorStatusProviderMock.h"
 #include "mocks/ConfigurationHandlerMock.h"
 #include "mocks/ConfigurationProviderMock.h"
 #include "mocks/DataProtocolMock.h"
 #include "mocks/PersistenceMock.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <iostream>
 
 class WolkBuilderTests : public ::testing::Test
 {

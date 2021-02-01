@@ -22,12 +22,13 @@
 #undef private
 #undef protected
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include <iostream>
-
 #include "mocks/ConnectivityServiceMock.h"
 #include "mocks/StatusProtocolMock.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <iostream>
 
 class KeepAliveServiceTests : public ::testing::Test
 {

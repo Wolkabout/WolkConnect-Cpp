@@ -65,7 +65,6 @@ public:
      */
     WolkBuilder& ca_cert_path(const std::string& ca_cert_path);
 
-
     /**
      * @brief Sets actuation handler
      * @param actuationHandler Lambda that handles actuation requests

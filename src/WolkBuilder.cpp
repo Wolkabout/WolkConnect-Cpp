@@ -15,6 +15,7 @@
  */
 
 #include "WolkBuilder.h"
+
 #include "InboundMessageHandler.h"
 #include "InboundPlatformMessageHandler.h"
 #include "Wolk.h"

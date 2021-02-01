@@ -15,6 +15,7 @@
  */
 
 #include "FileDownloadService.h"
+
 #include "FileDownloader.h"
 #include "FileHandler.h"
 #include "api/UrlFileDownloader.h"
@@ -66,10 +67,10 @@ FileDownloadService::FileDownloadService(std::string deviceKey, JsonDownloadProt
 , m_run{true}
 , m_garbageCollector(&FileDownloadService::clearDownloads, this)
 {
-    if(!FileSystemUtils::isDirectoryPresent(m_fileDownloadDirectory)){
+    if (!FileSystemUtils::isDirectoryPresent(m_fileDownloadDirectory))
+    {
         FileSystemUtils::createDirectory(m_fileDownloadDirectory);
     }
-
 }
 
 FileDownloadService::~FileDownloadService()
@@ -325,10 +326,11 @@ void FileDownloadService::download(const std::string& fileName, uint64_t fileSiz
     m_activeDownload = fileName;
 
     std::get<FILE_DOWNLOADER_INDEX>(m_activeDownloads[fileName])
-      ->download(fileName, fileSize, byteHash, m_fileDownloadDirectory,
-                 [=](const FilePacketRequest& request) { requestPacket(request); },
-                 [=](const std::string& filePath) { downloadCompleted(fileName, filePath, fileHash); },
-                 [=](FileTransferError code) { downloadFailed(fileName, code); });
+      ->download(
+        fileName, fileSize, byteHash, m_fileDownloadDirectory,
+        [=](const FilePacketRequest& request) { requestPacket(request); },
+        [=](const std::string& filePath) { downloadCompleted(fileName, filePath, fileHash); },
+        [=](FileTransferError code) { downloadFailed(fileName, code); });
 }
 
 void FileDownloadService::urlDownload(const std::string& fileUrl)

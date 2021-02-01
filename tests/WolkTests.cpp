@@ -29,7 +29,6 @@
 #include "mocks/KeepAliveServiceMock.h"
 #include "mocks/PersistenceMock.h"
 #include "mocks/StatusProtocolMock.h"
-
 #include "model/ActuatorGetCommand.h"
 #include "model/ActuatorSetCommand.h"
 #include "model/ConfigurationSetCommand.h"
