@@ -66,6 +66,10 @@ FileDownloadService::FileDownloadService(std::string deviceKey, JsonDownloadProt
 , m_run{true}
 , m_garbageCollector(&FileDownloadService::clearDownloads, this)
 {
+    if(!FileSystemUtils::isDirectoryPresent(m_fileDownloadDirectory)){
+        FileSystemUtils::createDirectory(m_fileDownloadDirectory);
+    }
+
 }
 
 FileDownloadService::~FileDownloadService()
