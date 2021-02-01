@@ -2,6 +2,7 @@
 out
 dependencies
 docs/
+cmake-build-debug
 
 # Qt Creator
 *.config
