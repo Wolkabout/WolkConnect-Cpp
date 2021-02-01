@@ -5,8 +5,12 @@
 
 WolkAbout C++11 Connector library for connecting devices to WolkAbout IoT Platform.
 
+**Version 3.0.3**
+- [BUGFIX] - Create FM directory on initialisation.
+- [IMPROVEMENT] - expose path for ca.crt file
+
 **Version 3.0.2**
-- [IMPROVEMENT] Protocol improvements in SDK.
+- [IMPROVEMENT] - Protocol improvements in SDK.
 
 **Version 3.0.1**
 - [BUGFIX] - Publish file list upon connecting.
