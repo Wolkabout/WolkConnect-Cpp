@@ -15,6 +15,7 @@
  */
 
 #include "FirmwareUpdateService.h"
+
 #include "api/FirmwareInstaller.h"
 #include "api/FirmwareVersionProvider.h"
 #include "connectivity/ConnectivityService.h"
@@ -234,7 +235,8 @@ void FirmwareUpdateService::install(const std::string& firmwareFile)
 
     sendStatus(FirmwareUpdateStatus{{m_deviceKey}, FirmwareUpdateStatus::Status::INSTALLATION});
 
-    m_firmwareInstaller->install(fileInfo->path, [=]() { installSucceeded(); }, [=]() { installFailed(); });
+    m_firmwareInstaller->install(
+      fileInfo->path, [=]() { installSucceeded(); }, [=]() { installFailed(); });
 }
 
 void FirmwareUpdateService::installSucceeded()

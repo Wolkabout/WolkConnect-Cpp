@@ -16,9 +16,9 @@
 #ifndef WOLKABOUTCONNECTOR_STATUSPROTOCOLMOCK_H
 #define WOLKABOUTCONNECTOR_STATUSPROTOCOLMOCK_H
 
-#include <gmock/gmock.h>
-
 #include "protocol/StatusProtocol.h"
+
+#include <gmock/gmock.h>
 
 class StatusProtocolMock : public wolkabout::StatusProtocol
 {

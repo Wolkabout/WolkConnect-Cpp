@@ -21,6 +21,7 @@
 #undef protected
 
 #include <gtest/gtest.h>
+
 #include <iostream>
 
 class SQLiteFileRepositoryTests : public ::testing::Test
