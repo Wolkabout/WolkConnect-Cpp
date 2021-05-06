@@ -650,6 +650,9 @@ std::vector<std::string> FileDownloadService::updateFileList()
         m_fileRepository.store(info);
     }
 
+    // Sort and remove all duplicates
+    std::sort(allValidFiles.begin(), allValidFiles.end());
+    allValidFiles.erase(std::unique(allValidFiles.begin(), allValidFiles.end()), allValidFiles.end());
     return allValidFiles;
 }
 
