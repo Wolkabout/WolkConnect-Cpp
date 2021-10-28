@@ -16,23 +16,12 @@
 
 #include "Wolk.h"
 
-#include "connectivity/ConnectivityService.h"
-#include "model/ActuatorStatus.h"
-#include "model/Alarm.h"
-#include "model/ConfigurationItem.h"
-#include "model/ConfigurationSetCommand.h"
-#include "model/Device.h"
-#include "model/Message.h"
-#include "model/SensorReading.h"
-#include "protocol/DataProtocol.h"
-#include "protocol/StatusProtocol.h"
-#include "protocol/json/JsonDFUProtocol.h"
-#include "protocol/json/JsonDownloadProtocol.h"
+#include "core/connectivity/ConnectivityService.h"
+#include "core/model/Device.h"
+#include "core/model/Message.h"
+#include "core/protocol/DataProtocol.h"
 #include "service/data/DataService.h"
-#include "service/file/FileDownloadService.h"
-#include "service/firmware/FirmwareUpdateService.h"
-#include "service/keep_alive/KeepAliveService.h"
-#include "utilities/Logger.h"
+#include "core/utilities/Logger.h"
 
 #include <initializer_list>
 #include <memory>
@@ -43,7 +32,6 @@
 
 namespace wolkabout
 {
-const constexpr std::chrono::seconds Wolk::KEEP_ALIVE_INTERVAL;
 
 Wolk::~Wolk() = default;
 
@@ -52,17 +40,17 @@ WolkBuilder Wolk::newBuilder(Device device)
     return WolkBuilder(device);
 }
 
-void Wolk::addSensorReading(const std::string& reference, std::string value, unsigned long long rtc)
+void Wolk::addReading(const std::string& reference, std::string value, unsigned long long rtc)
 {
     if (rtc == 0)
     {
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addSensorReading(reference, value, rtc); });
+    addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, value, rtc); });
 }
 
-void Wolk::addSensorReading(const std::string& reference, const std::vector<std::string> values,
+void Wolk::addReading(const std::string& reference, const std::vector<std::string> values,
                             unsigned long long int rtc)
 {
     if (values.empty())
@@ -75,68 +63,7 @@ void Wolk::addSensorReading(const std::string& reference, const std::vector<std:
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addSensorReading(reference, values, rtc); });
-}
-
-void Wolk::addAlarm(const std::string& reference, bool active, unsigned long long rtc)
-{
-    if (rtc == 0)
-    {
-        rtc = Wolk::currentRtc();
-    }
-
-    addToCommandBuffer([=]() -> void { m_dataService->addAlarm(reference, active, rtc); });
-}
-
-void Wolk::publishActuatorStatus(const std::string& reference)
-{
-    addToCommandBuffer([=]() -> void {
-        const ActuatorStatus actuatorStatus = [&]() -> ActuatorStatus {
-            if (auto provider = m_actuatorStatusProvider.lock())
-            {
-                return provider->getActuatorStatus(reference);
-            }
-            else if (m_actuatorStatusProviderLambda)
-            {
-                return m_actuatorStatusProviderLambda(reference);
-            }
-
-            return ActuatorStatus();
-        }();
-
-        m_dataService->addActuatorStatus(reference, actuatorStatus.getValue(), actuatorStatus.getState());
-        flushActuatorStatuses();
-    });
-}
-
-void Wolk::publishConfiguration()
-{
-    addToCommandBuffer([=]() -> void {
-        const auto configuration = [=]() -> std::vector<ConfigurationItem> {
-            if (auto provider = m_configurationProvider.lock())
-            {
-                return provider->getConfiguration();
-            }
-            else if (m_configurationProviderLambda)
-            {
-                return m_configurationProviderLambda();
-            }
-
-            return std::vector<ConfigurationItem>();
-        }();
-
-        m_dataService->addConfiguration(configuration);
-        flushConfiguration();
-    });
-}
-
-long long Wolk::getLastTimestamp()
-{
-    if (m_keepAliveService)
-    {
-        return m_keepAliveService->getLastTimestamp();
-    }
-    return 0;
+    addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, values, rtc); });
 }
 
 void Wolk::connect()
@@ -155,20 +82,14 @@ void Wolk::disconnect()
 void Wolk::publish()
 {
     addToCommandBuffer([=]() -> void {
-        flushActuatorStatuses();
-        flushAlarms();
-        flushSensorReadings();
-        flushConfiguration();
+        flushAttributes();
+        flushReadings();
+        flushParameters();
     });
 }
 
 Wolk::Wolk(Device device)
 : m_device(device)
-, m_actuationHandlerLambda(nullptr)
-, m_actuatorStatusProviderLambda(nullptr)
-, m_configurationHandlerLambda(nullptr)
-, m_configurationProviderLambda(nullptr)
-, m_fileRepository(nullptr)
 {
     m_commandBuffer = std::unique_ptr<CommandBuffer>(new CommandBuffer());
 }
@@ -184,24 +105,19 @@ unsigned long long Wolk::currentRtc()
     return static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 }
 
-void Wolk::flushActuatorStatuses()
+void Wolk::flushAttributes()
 {
-    m_dataService->publishActuatorStatuses();
+    m_dataService->publishAttributes();
 }
 
-void Wolk::flushAlarms()
+void Wolk::flushReadings()
 {
-    m_dataService->publishAlarms();
+    m_dataService->publishReadings();
 }
 
-void Wolk::flushSensorReadings()
+void Wolk::flushParameters()
 {
-    m_dataService->publishSensorReadings();
-}
-
-void Wolk::flushConfiguration()
-{
-    m_dataService->publishConfiguration();
+    m_dataService->publishParameters();
 }
 
 void Wolk::handleActuatorSetCommand(const std::string& reference, const std::string& value)
@@ -209,66 +125,17 @@ void Wolk::handleActuatorSetCommand(const std::string& reference, const std::str
     LOG(INFO) << "Received actuation: " << reference << ", " << value;
 
     addToCommandBuffer([=] {
-        if (auto provider = m_actuationHandler.lock())
-        {
-            provider->handleActuation(reference, value);
-        }
-        else if (m_actuationHandlerLambda)
-        {
-            m_actuationHandlerLambda(reference, value);
-        }
+//        if (auto provider = m_actuationHandler.lock())
+//        {
+//            provider->handleActuation(reference, value);
+//        }
+//        else if (m_actuationHandlerLambda)
+//        {
+//            m_actuationHandlerLambda(reference, value);
+//        }
     });
 
     publishActuatorStatus(reference);
-}
-
-void Wolk::handleActuatorGetCommand(const std::string& reference)
-{
-    LOG(INFO) << "Received actuator status request: " << reference;
-
-    publishActuatorStatus(reference);
-}
-
-void Wolk::handleConfigurationSetCommand(const ConfigurationSetCommand& command)
-{
-    LOG(INFO) << "Received configuration";
-
-    addToCommandBuffer([=]() -> void {
-        if (auto handler = m_configurationHandler.lock())
-        {
-            handler->handleConfiguration(command.getValues());
-        }
-        else if (m_configurationHandlerLambda)
-        {
-            m_configurationHandlerLambda(command.getValues());
-        }
-    });
-
-    publishConfiguration();
-}
-
-void Wolk::handleConfigurationGetCommand()
-{
-    LOG(INFO) << "Received configuration request";
-
-    publishConfiguration();
-}
-
-void Wolk::publishFirmwareStatus()
-{
-    if (m_firmwareUpdateService)
-    {
-        m_firmwareUpdateService->reportFirmwareUpdateResult();
-        m_firmwareUpdateService->publishFirmwareVersion();
-    }
-}
-
-void Wolk::publishFileList()
-{
-    if (m_fileDownloadService)
-    {
-        m_fileDownloadService->sendFileList();
-    }
 }
 
 void Wolk::tryConnect(bool firstTime)
@@ -295,33 +162,12 @@ void Wolk::notifyConnected()
 {
     LOG(INFO) << "Connection established";
 
-    if (m_keepAliveService)
-    {
-        m_keepAliveService->connected();
-    }
-
-    publishFirmwareStatus();
-
-    for (const std::string& actuatorReference : m_device.getActuatorReferences())
-    {
-        publishActuatorStatus(actuatorReference);
-    }
-
-    publishConfiguration();
-
-    publishFileList();
-
     publish();
 }
 
 void Wolk::notifyDisonnected()
 {
     LOG(INFO) << "Connection lost";
-
-    if (m_keepAliveService)
-    {
-        m_keepAliveService->disconnected();
-    }
 }
 
 Wolk::ConnectivityFacade::ConnectivityFacade(InboundMessageHandler& handler,

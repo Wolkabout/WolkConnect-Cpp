@@ -18,11 +18,10 @@
 #define WOLK_H
 
 #include "WolkBuilder.h"
-#include "connectivity/ConnectivityService.h"
-#include "model/ActuatorStatus.h"
-#include "model/Device.h"
-#include "utilities/CommandBuffer.h"
-#include "utilities/StringUtils.h"
+#include "core/connectivity/ConnectivityService.h"
+#include "core/model/Device.h"
+#include "core/utilities/CommandBuffer.h"
+#include "core/utilities/StringUtils.h"
 
 #include <algorithm>
 #include <functional>
@@ -34,21 +33,11 @@
 namespace wolkabout
 {
 class ActuationHandler;
-class ActuatorStatusProvider;
-class ConfigurationHandler;
-class ConfigurationProvider;
-class ConfigurationSetCommand;
 class ConnectivityService;
 class DataProtocol;
 class DataService;
-class FileDownloadService;
-class FileRepository;
-class FirmwareUpdateService;
 class InboundMessageHandler;
-class JsonDFUProtocol;
-class JsonDownloadProtocol;
-class KeepAliveService;
-class StatusProtocol;
+class WolkaboutDataProtocol;
 
 class Wolk
 {
@@ -85,7 +74,7 @@ public:
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    template <typename T> void addSensorReading(const std::string& reference, T value, unsigned long long int rtc = 0);
+    template <typename T> void addReading(const std::string& reference, T value, unsigned long long int rtc = 0);
 
     /**
      * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
@@ -95,7 +84,7 @@ public:
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    void addSensorReading(const std::string& reference, std::string value, unsigned long long int rtc = 0);
+    void addReading(const std::string& reference, std::string value, unsigned long long int rtc = 0);
 
     /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
@@ -119,7 +108,7 @@ public:
      *            If omitted current POSIX time is adopted
      */
     template <typename T>
-    void addSensorReading(const std::string& reference, std::initializer_list<T> values,
+    void addReading(const std::string& reference, std::initializer_list<T> values,
                           unsigned long long int rtc = 0);
 
     /**
@@ -144,7 +133,7 @@ public:
      *            If omitted current POSIX time is adopted
      */
     template <typename T>
-    void addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
+    void addReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
 
     /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
@@ -154,7 +143,7 @@ public:
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    void addSensorReading(const std::string& reference, const std::vector<std::string> values,
+    void addReading(const std::string& reference, const std::vector<std::string> values,
                           unsigned long long int rtc = 0);
 
     /**
@@ -204,7 +193,6 @@ private:
     class ConnectivityFacade;
 
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
-    static const constexpr std::chrono::seconds KEEP_ALIVE_INTERVAL{60};
 
     Wolk(Device device);
 
@@ -212,19 +200,11 @@ private:
 
     static unsigned long long int currentRtc();
 
-    void flushActuatorStatuses();
-    void flushAlarms();
-    void flushSensorReadings();
-    void flushConfiguration();
+    void flushReadings();
+    void flushAttributes();
+    void flushParameters();
 
     void handleActuatorSetCommand(const std::string& reference, const std::string& value);
-    void handleActuatorGetCommand(const std::string& reference);
-
-    void handleConfigurationSetCommand(const ConfigurationSetCommand& command);
-    void handleConfigurationGetCommand();
-
-    void publishFirmwareStatus();
-    void publishFileList();
 
     void tryConnect(bool firstTime = false);
     void notifyConnected();
@@ -233,9 +213,6 @@ private:
     Device m_device;
 
     std::unique_ptr<DataProtocol> m_dataProtocol;
-    std::unique_ptr<StatusProtocol> m_statusProtocol;
-    std::unique_ptr<JsonDownloadProtocol> m_fileDownloadProtocol;
-    std::unique_ptr<JsonDFUProtocol> m_firmwareUpdateProtocol;
 
     std::unique_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
@@ -246,24 +223,8 @@ private:
 
     std::shared_ptr<DataService> m_dataService;
 
-    std::shared_ptr<FileRepository> m_fileRepository;
-
-    std::shared_ptr<FileDownloadService> m_fileDownloadService;
-    std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
-
-    std::shared_ptr<KeepAliveService> m_keepAliveService;
-
-    std::function<void(std::string, std::string)> m_actuationHandlerLambda;
-    std::weak_ptr<ActuationHandler> m_actuationHandler;
-
-    std::function<ActuatorStatus(std::string)> m_actuatorStatusProviderLambda;
-    std::weak_ptr<ActuatorStatusProvider> m_actuatorStatusProvider;
-
-    std::function<void(const std::vector<ConfigurationItem>& configuration)> m_configurationHandlerLambda;
-    std::weak_ptr<ConfigurationHandler> m_configurationHandler;
-
-    std::function<std::vector<ConfigurationItem>()> m_configurationProviderLambda;
-    std::weak_ptr<ConfigurationProvider> m_configurationProvider;
+//    std::function<void(std::string, std::string)> m_actuationHandlerLambda;
+//    std::weak_ptr<ActuationHandler> m_actuationHandler;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
 
@@ -282,25 +243,25 @@ private:
     };
 };
 
-template <typename T> void Wolk::addSensorReading(const std::string& reference, T value, unsigned long long rtc)
+template <typename T> void Wolk::addReading(const std::string& reference, T value, unsigned long long rtc)
 {
-    addSensorReading(reference, StringUtils::toString(value), rtc);
+    addReading(reference, StringUtils::toString(value), rtc);
 }
 
 template <typename T>
-void Wolk::addSensorReading(const std::string& reference, std::initializer_list<T> values, unsigned long long int rtc)
+void Wolk::addReading(const std::string& reference, std::initializer_list<T> values, unsigned long long int rtc)
 {
-    addSensorReading(reference, std::vector<T>(values), rtc);
+    addReading(reference, std::vector<T>(values), rtc);
 }
 
 template <typename T>
-void Wolk::addSensorReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
+void Wolk::addReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
 {
     std::vector<std::string> stringifiedValues(values.size());
     std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
                    [&](const T& value) -> std::string { return StringUtils::toString(value); });
 
-    addSensorReading(reference, stringifiedValues, rtc);
+    addReading(reference, stringifiedValues, rtc);
 }
 }    // namespace wolkabout
 

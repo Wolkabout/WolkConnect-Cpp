@@ -17,9 +17,8 @@
 #ifndef DATASERVICE_H
 #define DATASERVICE_H
 
-#include "InboundMessageHandler.h"
-#include "model/ActuatorStatus.h"
-#include "model/ConfigurationItem.h"
+#include "core/InboundMessageHandler.h"
+#include "core/Types.h"
 
 #include <functional>
 #include <map>
@@ -35,7 +34,6 @@ class ConnectivityService;
 class ConfigurationSetCommand;
 
 typedef std::function<void(const std::string&, const std::string&)> ActuatorSetHandler;
-typedef std::function<void(const std::string&)> ActuatorGetHandler;
 
 typedef std::function<void(const ConfigurationSetCommand&)> ConfigurationSetHandler;
 typedef std::function<void()> ConfigurationGetHandler;
@@ -45,38 +43,29 @@ class DataService : public MessageListener
 public:
     DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
                 ConnectivityService& connectivityService, const ActuatorSetHandler& actuatorSetHandler,
-                const ActuatorGetHandler& actuatorGetHandler, const ConfigurationSetHandler& configurationSetHandler,
+                const ConfigurationSetHandler& configurationSetHandler,
                 const ConfigurationGetHandler& configurationGetHandler);
 
     void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
 
-    virtual void addSensorReading(const std::string& reference, const std::string& value, unsigned long long int rtc);
+    virtual void addReading(const std::string& reference, const std::string& value, unsigned long long int rtc);
 
-    virtual void addSensorReading(const std::string& reference, const std::vector<std::string>& values,
+    virtual void addReading(const std::string& reference, const std::vector<std::string>& values,
                                   unsigned long long int rtc);
 
-    virtual void addAlarm(const std::string& reference, bool active, unsigned long long int rtc);
+    virtual void publishReadings();
 
-    virtual void addActuatorStatus(const std::string& reference, const std::string& value, ActuatorStatus::State state);
+    virtual void publishAttributes();
 
-    virtual void addConfiguration(const std::vector<ConfigurationItem>& configuration);
-
-    virtual void publishSensorReadings();
-
-    virtual void publishAlarms();
-
-    virtual void publishActuatorStatuses();
-
-    virtual void publishConfiguration();
+    virtual void publishParameters();
 
 private:
-    std::string getSensorDelimiter(const std::string& key) const;
+    std::string getValueDelimiter(const std::string& key) const;
 
-    void publishSensorReadingsForPersistanceKey(const std::string& persistanceKey);
-    void publishAlarmsForPersistanceKey(const std::string& persistanceKey);
-    void publishActuatorStatusesForPersistanceKey(const std::string& persistanceKey);
-    void publishConfigurationForPersistanceKey(const std::string& persistanceKey);
+    void publishReadingsForPersistanceKey(const std::string& persistanceKey);
+    void publishAttributesForPersistanceKey(const std::string& persistanceKey);
+    void publishParametersForPersistanceKey(const std::string& persistanceKey);
 
     const std::string m_deviceKey;
 
@@ -85,7 +74,6 @@ private:
     ConnectivityService& m_connectivityService;
 
     ActuatorSetHandler m_actuatorSetHandler;
-    ActuatorGetHandler m_actuatorGetHandler;
 
     ConfigurationSetHandler m_configurationSetHandler;
     ConfigurationGetHandler m_configurationGetHandler;

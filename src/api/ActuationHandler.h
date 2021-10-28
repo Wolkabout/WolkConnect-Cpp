@@ -31,7 +31,7 @@ public:
      * @param reference Actuator reference
      * @param value Desired actuator value
      */
-    virtual void handleActuation(const std::string& reference, const std::string& value) = 0;
+    virtual void handleActuation(const std::vector<Feed>) = 0;
 
     virtual ~ActuationHandler() = default;
 };

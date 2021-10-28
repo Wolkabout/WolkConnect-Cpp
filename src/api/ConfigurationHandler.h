@@ -17,7 +17,7 @@
 #ifndef CONFIGURATIONHANDLER_H
 #define CONFIGURATIONHANDLER_H
 
-#include "model/ConfigurationItem.h"
+#include "core/Types.h"
 
 #include <vector>
 
@@ -34,7 +34,7 @@ public:
      *        Must be implemented as thread safe
      * @param configuration as vector of wolkabout::ConfigurationItem
      */
-    virtual void handleConfiguration(const std::vector<ConfigurationItem>& configuration) = 0;
+    virtual void handleConfiguration(const std::vector<Parameters>& configuration) = 0;
 
     virtual ~ConfigurationHandler() = default;
 };

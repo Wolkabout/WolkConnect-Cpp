@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "connectivity/mqtt/PahoMqttClient.h"
+#include "core/connectivity/mqtt/PahoMqttClient.h"
 
 namespace wolkabout
 {
