@@ -17,8 +17,7 @@
 #ifndef WOLKBUILDER_H
 #define WOLKBUILDER_H
 
-#include "api/ActuationHandler.h"
-#include "api/ConfigurationHandler.h"
+#include "api/FeedUpdateHandler.h"
 #include "core/model/Device.h"
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
@@ -62,19 +61,19 @@ public:
     WolkBuilder& ca_cert_path(const std::string& ca_cert_path);
 
     /**
-     * @brief Sets actuation handler
-     * @param actuationHandler Lambda that handles actuation requests
+     * @brief Sets feed update handler
+     * @param feedUpdateHandler Lambda that handles feed update requests
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& actuationHandler(
-      const std::function<void(const std::string& reference, const std::string& value)>& actuationHandler);
+    WolkBuilder& feedUpdateHandler(
+      const std::function<void(const std::string& reference, const std::string& value)>& feedUpdateHandler);
 
     /**
-     * @brief Sets actuation handler
-     * @param actuationHandler Instance of wolkabout::ActuationHandler
+     * @brief Sets feed update handler
+     * @param feedUpdateHandler Instance of wolkabout::FeedUpdateHandler
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& actuationHandler(std::weak_ptr<ActuationHandler> actuationHandler);
+    WolkBuilder& feedUpdateHandler(std::weak_ptr<FeedUpdateHandler> feedUpdateHandler);
 
     /**
      * @brief Sets underlying persistence mechanism to be used<br>
@@ -91,14 +90,6 @@ public:
      * fluent interface)
      */
     WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol);
-
-    /**
-     * @brief withFileManagement enables file transfer with the platform
-     * @param fileDownloadDirectory path to folder where to store files
-     * @param maxPacketSize prefered file packet size in bytes
-     * @return Reference to current wolkabout::WolkBuilder instance (Provides
-     * fluent interface)
-     */
 
     /**
      * @brief Builds Wolk instance
@@ -121,8 +112,8 @@ private:
     std::string m_ca_cert_path;
     Device m_device;
 
-    std::function<void(std::string, std::string)> m_actuationHandlerLambda;
-    std::weak_ptr<ActuationHandler> m_actuationHandler;
+    std::function<void(std::string, std::string)> m_feedUpdateHandlerLambda;
+    std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
     std::shared_ptr<Persistence> m_persistence;
     std::unique_ptr<DataProtocol> m_dataProtocol;

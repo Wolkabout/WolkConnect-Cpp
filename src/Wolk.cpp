@@ -120,22 +120,22 @@ void Wolk::flushParameters()
     m_dataService->publishParameters();
 }
 
-void Wolk::handleActuatorSetCommand(const std::string& reference, const std::string& value)
+void Wolk::handleFeedUpdateCommand(const std::vector<Reading> readings)
 {
-    LOG(INFO) << "Received actuation: " << reference << ", " << value;
+    LOG(INFO) << "Received feed update";
 
     addToCommandBuffer([=] {
-//        if (auto provider = m_actuationHandler.lock())
-//        {
-//            provider->handleActuation(reference, value);
-//        }
-//        else if (m_actuationHandlerLambda)
-//        {
-//            m_actuationHandlerLambda(reference, value);
-//        }
+        if (auto provider = m_feedUpdateHandler.lock())
+        {
+            provider->handleUpdate(readings);
+        }
+        else if (m_feedUpdateHandlerLambda)
+        {
+            m_feedUpdateHandlerLambda(readings);
+        }
     });
 
-    publishActuatorStatus(reference);
+//    publishActuatorStatus(reference);
 }
 
 void Wolk::tryConnect(bool firstTime)

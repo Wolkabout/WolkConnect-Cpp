@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-#ifndef ACTUATIONHANDLER_H
-#define ACTUATIONHANDLER_H
+#ifndef FEEDUPDATEHANDLER_H
+#define FEEDUPDATEHANDLER_H
 
 #include <string>
 
+#include "core/Types.h"
 namespace wolkabout
 {
-class ActuationHandler
+class FeedUpdateHandler
 {
 public:
     /**
-     * @brief Actuation handler callback<br>
+     * @brief Feed Update handler callback<br>
      *        Must be implemented as non blocking<br>
      *        Must be implemented as thread safe
-     * @param reference Actuator reference
-     * @param value Desired actuator value
+     * @param reference Feed reference
+     * @param value Desired feed value
      */
-    virtual void handleActuation(const std::vector<Feed>) = 0;
+    virtual void handleUpdate(const std::vector<Reading>) = 0;
 
-    virtual ~ActuationHandler() = default;
+    virtual ~FeedUpdateHandler() = default;
 };
 }    // namespace wolkabout
 

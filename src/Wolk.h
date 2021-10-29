@@ -32,7 +32,7 @@
 
 namespace wolkabout
 {
-class ActuationHandler;
+class FeedUpdateHandler;
 class ConnectivityService;
 class DataProtocol;
 class DataService;
@@ -147,34 +147,6 @@ public:
                           unsigned long long int rtc = 0);
 
     /**
-     * @brief Publishes alarm to WolkAbout IoT Cloud<br>
-     *        This method is thread safe, and can be called from multiple thread simultaneously
-     * @param reference Alarm reference
-     * @param active Is alarm active or not
-     * @param rtc POSIX time at which event occurred - Number of seconds since 01/01/1970<br>
-     *            If omitted current POSIX time is adopted
-     */
-    void addAlarm(const std::string& reference, bool active, unsigned long long int rtc = 0);
-
-    /**
-     * @brief Invokes ActuatorStatusProvider to obtain actuator status, and the publishes it.<br>
-     *        This method is thread safe, and can be called from multiple thread simultaneously
-     * @param Actuator reference
-     */
-    void publishActuatorStatus(const std::string& reference);
-
-    /**
-     * @brief Invokes ConfigurationProvider to obtain device configuration, and the publishes it.<br>
-     *        This method is thread safe, and can be called from multiple thread simultaneously
-     */
-    void publishConfiguration();
-
-    /**
-     * @brief Invokes keepAliveServices method of fetching the last received timestamp in pong.
-     */
-    long long getLastTimestamp();
-
-    /**
      * @brief Establishes connection with WolkAbout IoT platform
      */
     void connect();
@@ -204,7 +176,7 @@ private:
     void flushAttributes();
     void flushParameters();
 
-    void handleActuatorSetCommand(const std::string& reference, const std::string& value);
+    void handleFeedUpdateCommand(const std::vector<Reading> readings);
 
     void tryConnect(bool firstTime = false);
     void notifyConnected();
@@ -223,8 +195,8 @@ private:
 
     std::shared_ptr<DataService> m_dataService;
 
-//    std::function<void(std::string, std::string)> m_actuationHandlerLambda;
-//    std::weak_ptr<ActuationHandler> m_actuationHandler;
+    std::function<void(std::vector<Reading> readings)> m_feedUpdateHandlerLambda;
+    std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
 

@@ -23,7 +23,6 @@
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
 #include "core/protocol/WolkaboutDataProtocol.h"
 #include "connectivity/mqtt/WolkPahoMqttClient.h"
-#include "repository/SQLiteFileRepository.h"
 #include "service/data/DataService.h"
 
 #include <stdexcept>
@@ -43,18 +42,18 @@ WolkBuilder& WolkBuilder::ca_cert_path(const std::string& ca_cert_path)
     return *this;
 }
 
-WolkBuilder& WolkBuilder::actuationHandler(
-  const std::function<void(const std::string&, const std::string&)>& actuationHandler)
+WolkBuilder& WolkBuilder::feedUpdateHandler(
+  const std::function<void(const std::string&, const std::string&)>& feedUpdateHandler)
 {
-    m_actuationHandlerLambda = actuationHandler;
-    m_actuationHandler.reset();
+    m_feedUpdateHandlerLambda = feedUpdateHandler;
+    m_feedUpdateHandler.reset();
     return *this;
 }
 
-WolkBuilder& WolkBuilder::actuationHandler(std::weak_ptr<ActuationHandler> actuationHandler)
+WolkBuilder& WolkBuilder::feedUpdateHandler(std::weak_ptr<FeedUpdateHandler> feedUpdateHandler)
 {
-    m_actuationHandler = actuationHandler;
-    m_actuationHandlerLambda = nullptr;
+    m_feedUpdateHandler = feedUpdateHandler;
+    m_feedUpdateHandlerLambda = nullptr;
     return *this;
 }
 
@@ -95,8 +94,8 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         wolk->connect();
     });
 
-    wolk->m_actuationHandlerLambda = m_actuationHandlerLambda;
-    wolk->m_actuationHandler = m_actuationHandler;
+    wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
+    wolk->m_feedUpdateHandler = m_feedUpdateHandler;
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
@@ -105,13 +104,10 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
       [&](const std::string& reference, const std::string& value)
       {
-          wolk->handleActuatorSetCommand(reference, value);
+          wolk->handleFeedUpdateCommand(reference, value);
       });
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
-
-    // Setup file repository
-//    wolk->m_fileRepository.reset(new SQLiteFileRepository(DATABASE));
 
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
 
