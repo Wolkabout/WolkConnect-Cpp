@@ -113,6 +113,10 @@ void DataService::publishReadings()
     }
 }
 
+void DataService::publishAttributes(){}
+
+void DataService::publishParameters(){}
+
 void DataService::publishReadingsForPersistenceKey(const std::string& persistanceKey)
 {
     const auto readings = m_persistence.getReadings(persistanceKey, PUBLISH_BATCH_ITEMS_COUNT);
