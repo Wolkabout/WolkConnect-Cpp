@@ -18,7 +18,7 @@
 
 #define private public
 #define protected public
-#include "api/ActuationHandler.h"
+#include "api/FeedUpdateHandler.h"
 #undef private
 #undef protected
 

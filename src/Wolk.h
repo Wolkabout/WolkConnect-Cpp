@@ -176,7 +176,7 @@ private:
     void flushAttributes();
     void flushParameters();
 
-    void handleFeedUpdateCommand(const std::vector<Reading> readings);
+    void handleFeedUpdateCommand(const std::map<unsigned long long int, std::vector<Reading>> readings);
 
     void tryConnect(bool firstTime = false);
     void notifyConnected();
@@ -195,7 +195,7 @@ private:
 
     std::shared_ptr<DataService> m_dataService;
 
-    std::function<void(std::vector<Reading> readings)> m_feedUpdateHandlerLambda;
+    std::function<void(const std::map<unsigned long long int, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;

@@ -43,7 +43,7 @@ WolkBuilder& WolkBuilder::ca_cert_path(const std::string& ca_cert_path)
 }
 
 WolkBuilder& WolkBuilder::feedUpdateHandler(
-  const std::function<void(const std::string&, const std::string&)>& feedUpdateHandler)
+  const std::function<void(const std::map<unsigned long long int, std::vector<Reading>>)>& feedUpdateHandler)
 {
     m_feedUpdateHandlerLambda = feedUpdateHandler;
     m_feedUpdateHandler.reset();
@@ -102,9 +102,9 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [&](const std::string& reference, const std::string& value)
+      [&](const std::map<unsigned long long int, std::vector<Reading>> readings)
       {
-          wolk->handleFeedUpdateCommand(reference, value);
+          wolk->handleFeedUpdateCommand(readings);
       });
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);

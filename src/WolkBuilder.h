@@ -66,7 +66,7 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& feedUpdateHandler(
-      const std::function<void(const std::string& reference, const std::string& value)>& feedUpdateHandler);
+      const std::function<void(const std::map<unsigned long long int, std::vector<Reading>>)>& feedUpdateHandler);
 
     /**
      * @brief Sets feed update handler
@@ -112,7 +112,7 @@ private:
     std::string m_ca_cert_path;
     Device m_device;
 
-    std::function<void(std::string, std::string)> m_feedUpdateHandlerLambda;
+    std::function<void(std::map<unsigned long long int, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
     std::shared_ptr<Persistence> m_persistence;

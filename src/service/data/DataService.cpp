@@ -31,14 +31,12 @@
 namespace wolkabout
 {
 DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
-                         ConnectivityService& connectivityService, const ActuatorSetHandler& actuatorSetHandler,
-                         const ConfigurationSetHandler& configurationSetHandler)
+                         ConnectivityService& connectivityService, const FeedUpdateSetHandler& feedUpdateHandler)
 : m_deviceKey{std::move(deviceKey)}
 , m_protocol{protocol}
 , m_persistence{persistence}
 , m_connectivityService{connectivityService}
-, m_actuatorSetHandler{actuatorSetHandler}
-, m_configurationSetHandler{configurationSetHandler}
+, m_feedUpdateHandler{feedUpdateHandler}
 {
 }
 
@@ -59,32 +57,33 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
         return;
     }
 
-    switch (m_protocol->getMessageType(message))
+    switch (m_protocol.getMessageType(message))
     {
 
     case MessageType::FEED_VALUES:
     {
-        auto feedValuesMessage = m_protocol->parseFeedValues(message);
+        auto feedValuesMessage = m_protocol.parseFeedValues(message);
         if(!feedValuesMessage)
         {
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
         }
-        if (m_actuatorSetHandler)
+        if (m_feedUpdateHandler)
         {
-            m_actuatorSetHandler(feedValuesMessage->getValues());
+            m_feedUpdateHandler(feedValuesMessage->getReadings());
         }
     }
     case MessageType::PARAMETER_SYNC:
     {
-        auto parameterMessage = m_protocol->parseParameters(message);
+        auto parameterMessage = m_protocol.parseParameters(message);
         if(!parameterMessage)
         {
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
         }
-        if(m_configurationSetHandler)
-        {
-            m_configurationSetHandler(parameterMessage->getValues())
-        }
+        // TODO implement the commented part of the code
+//        if(m_configurationSetHandler)
+//        {
+//            m_configurationSetHandler(parameterMessage->getParameters());
+//        }
 
     }
     default:
@@ -106,30 +105,15 @@ void DataService::addReading(const std::string& reference, const std::string& va
     m_persistence.putReading(reference, sensorReading);
 }
 
-void DataService::addReading(const std::string& reference, const std::vector<std::string>& values,
-                                   unsigned long long int rtc)
-{
-    auto sensorReading = std::make_shared<Reading>(values, reference, rtc);
-
-    m_persistence.putReading(reference, sensorReading);
-}
-
-void DataService::addConfiguration(const std::vector<ConfigurationItem>& configuration)
-{
-    auto conf = std::make_shared<std::vector<ConfigurationItem>>(configuration);
-
-    m_persistence.putConfiguration(m_deviceKey, conf);
-}
-
 void DataService::publishReadings()
 {
     for (const auto& key : m_persistence.getReadingsKeys())
     {
-        publishReadingsForPersistanceKey(key);
+        publishReadingsForPersistenceKey(key);
     }
 }
 
-void DataService::publishReadingsForPersistanceKey(const std::string& persistanceKey)
+void DataService::publishReadingsForPersistenceKey(const std::string& persistanceKey)
 {
     const auto readings = m_persistence.getReadings(persistanceKey, PUBLISH_BATCH_ITEMS_COUNT);
 
@@ -138,7 +122,9 @@ void DataService::publishReadingsForPersistanceKey(const std::string& persistanc
         return;
     }
 
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeMessage(m_deviceKey, readings);
+    FeedValuesMessage feedValuesMessage(readings);
+
+    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, feedValuesMessage);
 
     if (!outboundMessage)
     {
@@ -151,8 +137,8 @@ void DataService::publishReadingsForPersistanceKey(const std::string& persistanc
     {
         m_persistence.removeReadings(persistanceKey, PUBLISH_BATCH_ITEMS_COUNT);
 
-        // proceed to publish next batch only if publish is successfull
-        publishReadingsForPersistanceKey(persistanceKey);
+        // proceed to publish next batch only if publish is successful
+        publishReadingsForPersistenceKey(persistanceKey);
     }
 }
 

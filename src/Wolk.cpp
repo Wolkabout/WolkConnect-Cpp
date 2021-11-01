@@ -50,22 +50,6 @@ void Wolk::addReading(const std::string& reference, std::string value, unsigned 
     addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, value, rtc); });
 }
 
-void Wolk::addReading(const std::string& reference, const std::vector<std::string> values,
-                            unsigned long long int rtc)
-{
-    if (values.empty())
-    {
-        return;
-    }
-
-    if (rtc == 0)
-    {
-        rtc = Wolk::currentRtc();
-    }
-
-    addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, values, rtc); });
-}
-
 void Wolk::connect()
 {
     tryConnect(true);
@@ -120,7 +104,7 @@ void Wolk::flushParameters()
     m_dataService->publishParameters();
 }
 
-void Wolk::handleFeedUpdateCommand(const std::vector<Reading> readings)
+void Wolk::handleFeedUpdateCommand(const std::map<unsigned long long int, std::vector<Reading>> readings)
 {
     LOG(INFO) << "Received feed update";
 

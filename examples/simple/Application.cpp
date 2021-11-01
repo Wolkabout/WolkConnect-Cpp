@@ -35,7 +35,7 @@ int main(int /* argc */, char** /* argv */)
 
     while (true)
     {
-        wolk->addSensorReading("T", distribution(engine));
+        wolk->addReading("T", distribution(engine));
 
         wolk->publish();
 

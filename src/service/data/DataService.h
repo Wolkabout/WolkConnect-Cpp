@@ -31,28 +31,19 @@ namespace wolkabout
 class DataProtocol;
 class Persistence;
 class ConnectivityService;
-class ConfigurationSetCommand;
 
-typedef std::function<void(const std::string&, const std::string&)> ActuatorSetHandler;
-
-typedef std::function<void(const ConfigurationSetCommand&)> ConfigurationSetHandler;
-typedef std::function<void()> ConfigurationGetHandler;
+typedef std::function<void(std::map<unsigned long long int, std::vector<Reading>>)> FeedUpdateSetHandler;
 
 class DataService : public MessageListener
 {
 public:
     DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
-                ConnectivityService& connectivityService, const ActuatorSetHandler& actuatorSetHandler,
-                const ConfigurationSetHandler& configurationSetHandler,
-                const ConfigurationGetHandler& configurationGetHandler);
+                ConnectivityService& connectivityService, const FeedUpdateSetHandler& feedUpdateHandler);
 
     void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
 
     virtual void addReading(const std::string& reference, const std::string& value, unsigned long long int rtc);
-
-    virtual void addReading(const std::string& reference, const std::vector<std::string>& values,
-                                  unsigned long long int rtc);
 
     virtual void publishReadings();
 
@@ -63,9 +54,9 @@ public:
 private:
     std::string getValueDelimiter(const std::string& key) const;
 
-    void publishReadingsForPersistanceKey(const std::string& persistanceKey);
-    void publishAttributesForPersistanceKey(const std::string& persistanceKey);
-    void publishParametersForPersistanceKey(const std::string& persistanceKey);
+    void publishReadingsForPersistenceKey(const std::string& persistenceKey);
+    void publishAttributesForPersistenceKey(const std::string& persistenceKey);
+    void publishParametersForPersistenceKey(const std::string& persistenceKey);
 
     const std::string m_deviceKey;
 
@@ -73,10 +64,7 @@ private:
     Persistence& m_persistence;
     ConnectivityService& m_connectivityService;
 
-    ActuatorSetHandler m_actuatorSetHandler;
-
-    ConfigurationSetHandler m_configurationSetHandler;
-    ConfigurationGetHandler m_configurationGetHandler;
+    FeedUpdateSetHandler m_feedUpdateHandler;
 
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 };

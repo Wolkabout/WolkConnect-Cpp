@@ -17,6 +17,7 @@
 #ifndef FEEDUPDATEHANDLER_H
 #define FEEDUPDATEHANDLER_H
 
+#include <map>
 #include <string>
 
 #include "core/Types.h"
@@ -32,7 +33,7 @@ public:
      * @param reference Feed reference
      * @param value Desired feed value
      */
-    virtual void handleUpdate(const std::vector<Reading>) = 0;
+    virtual void handleUpdate(std::map<unsigned long long int, std::vector<Reading>>) = 0;
 
     virtual ~FeedUpdateHandler() = default;
 };
