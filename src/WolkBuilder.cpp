@@ -21,6 +21,7 @@
 #include "Wolk.h"
 #include "core/connectivity/ConnectivityService.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
+#include "core/persistence/inmemory/InMemoryPersistence.h"
 #include "core/protocol/WolkaboutDataProtocol.h"
 #include "connectivity/mqtt/WolkPahoMqttClient.h"
 #include "service/data/DataService.h"
@@ -127,7 +128,9 @@ WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}
 , m_ca_cert_path{TRUST_STORE}
 , m_device{std::move(device)}
+, m_persistence{new InMemoryPersistence()}
 , m_dataProtocol(new WolkaboutDataProtocol())
+, m_maxPacketSize{0}
 {
 }
 }    // namespace wolkabout

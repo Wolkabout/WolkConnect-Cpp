@@ -100,7 +100,7 @@ const Protocol& DataService::getProtocol()
 
 void DataService::addReading(const std::string& reference, const std::string& value, unsigned long long int rtc)
 {
-    auto sensorReading = std::make_shared<Reading>(value, reference, rtc);
+    auto sensorReading = std::make_shared<Reading>(reference, value, rtc);
 
     m_persistence.putReading(reference, sensorReading);
 }
