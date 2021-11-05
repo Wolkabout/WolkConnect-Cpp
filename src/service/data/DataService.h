@@ -25,6 +25,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <core/model/Attribute.h>
+#include "core/model/Feed.h"
 
 namespace wolkabout
 {
@@ -44,6 +46,15 @@ public:
     const Protocol& getProtocol() override;
 
     virtual void addReading(const std::string& reference, const std::string& value, unsigned long long int rtc);
+
+    virtual void addAttribute(Attribute attribute);
+    virtual void updateParameter(Parameters parameter);
+
+    virtual void registerFeed(Feed feed);
+    virtual void registerFeeds(std::vector<Feed> feed);
+
+    virtual void pullFeedValues();
+    virtual void pullParameters();
 
     virtual void publishReadings();
 
