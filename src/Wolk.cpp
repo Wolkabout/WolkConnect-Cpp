@@ -118,8 +118,6 @@ void Wolk::handleFeedUpdateCommand(const std::map<unsigned long long int, std::v
             m_feedUpdateHandlerLambda(readings);
         }
     });
-
-//    publishActuatorStatus(reference);
 }
 
 void Wolk::tryConnect(bool firstTime)
@@ -152,6 +150,27 @@ void Wolk::notifyConnected()
 void Wolk::notifyDisonnected()
 {
     LOG(INFO) << "Connection lost";
+}
+void Wolk::registerFeed(Feed feed)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->registerFeed(feed); });
+}
+void Wolk::pullFeedValues()
+{
+    addToCommandBuffer([=]() -> void { m_dataService->pullFeedValues(); });
+}
+
+void Wolk::pullParameters()
+{
+    addToCommandBuffer([=]() -> void { m_dataService->pullParameters(); });
+}
+void Wolk::addAttribute(Attribute attribute)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->addAttribute(attribute); });
+}
+void Wolk::updateParameter(Parameters parameter)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->updateParameter(parameter); });
 }
 
 Wolk::ConnectivityFacade::ConnectivityFacade(InboundMessageHandler& handler,

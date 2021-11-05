@@ -146,6 +146,15 @@ public:
     void addReading(const std::string& reference, const std::vector<std::string> values,
                           unsigned long long int rtc = 0);
 
+    void pullFeedValues();
+    void pullParameters();
+
+    void registerFeed(Feed feed);
+
+    void addAttribute(Attribute attribute);
+
+    void updateParameter(Parameters parameters);
+
     /**
      * @brief Establishes connection with WolkAbout IoT platform
      */
@@ -235,6 +244,7 @@ void Wolk::addReading(const std::string& reference, const std::vector<T> values,
 
     addReading(reference, stringifiedValues, rtc);
 }
+
 }    // namespace wolkabout
 
 #endif
