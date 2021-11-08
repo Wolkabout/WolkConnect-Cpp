@@ -106,6 +106,10 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       [&](const std::map<unsigned long long int, std::vector<Reading>> readings)
       {
           wolk->handleFeedUpdateCommand(readings);
+      },
+      [&](const std::vector<Parameters> parameters)
+      {
+        wolk->handleParameterCommand(parameters);
       });
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);

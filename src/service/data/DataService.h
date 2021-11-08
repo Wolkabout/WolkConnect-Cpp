@@ -35,12 +35,14 @@ class Persistence;
 class ConnectivityService;
 
 typedef std::function<void(std::map<unsigned long long int, std::vector<Reading>>)> FeedUpdateSetHandler;
+typedef std::function<void(std::vector<Parameters>)> ParameterSyncHandler;
 
 class DataService : public MessageListener
 {
 public:
     DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
-                ConnectivityService& connectivityService, const FeedUpdateSetHandler& feedUpdateHandler);
+                ConnectivityService& connectivityService, FeedUpdateSetHandler feedUpdateHandler,
+                ParameterSyncHandler parameterSyncHandler);
 
     void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
@@ -66,8 +68,6 @@ private:
     std::string getValueDelimiter(const std::string& key) const;
 
     void publishReadingsForPersistenceKey(const std::string& persistenceKey);
-    void publishAttributesForPersistenceKey(const std::string& persistenceKey);
-    void publishParametersForPersistenceKey(const std::string& persistenceKey);
 
     const std::string m_deviceKey;
 
@@ -76,6 +76,7 @@ private:
     ConnectivityService& m_connectivityService;
 
     FeedUpdateSetHandler m_feedUpdateHandler;
+    ParameterSyncHandler m_parameterSyncHandler;
 
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 };

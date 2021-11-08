@@ -33,6 +33,7 @@
 namespace wolkabout
 {
 class FeedUpdateHandler;
+class ParameterHandler;
 class ConnectivityService;
 class DataProtocol;
 class DataService;
@@ -186,6 +187,7 @@ private:
     void flushParameters();
 
     void handleFeedUpdateCommand(const std::map<unsigned long long int, std::vector<Reading>> readings);
+    void handleParameterCommand(const std::vector<Parameters> parameters);
 
     void tryConnect(bool firstTime = false);
     void notifyConnected();
@@ -206,6 +208,9 @@ private:
 
     std::function<void(const std::map<unsigned long long int, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
+
+    std::function<void(const std::vector<Parameters>)> m_parameterLambda;
+    std::weak_ptr<ParameterHandler> m_parameterHandler;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
 

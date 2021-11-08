@@ -32,12 +32,14 @@
 namespace wolkabout
 {
 DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
-                         ConnectivityService& connectivityService, const FeedUpdateSetHandler& feedUpdateHandler)
+                         ConnectivityService& connectivityService, FeedUpdateSetHandler  feedUpdateHandler,
+                         ParameterSyncHandler  parameterSyncHandler)
 : m_deviceKey{std::move(deviceKey)}
 , m_protocol{protocol}
 , m_persistence{persistence}
 , m_connectivityService{connectivityService}
-, m_feedUpdateHandler{feedUpdateHandler}
+, m_feedUpdateHandler{std::move(feedUpdateHandler)}
+, m_parameterSyncHandler{std::move(parameterSyncHandler)}
 {
 }
 
@@ -80,11 +82,10 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
         {
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
         }
-        // TODO implement the commented part of the code
-//        if(m_configurationSetHandler)
-//        {
-//            m_configurationSetHandler(parameterMessage->getParameters());
-//        }
+        if(m_parameterSyncHandler)
+        {
+            m_parameterSyncHandler(parameterMessage->getParameters());
+        }
 
     }
     default:
@@ -130,6 +131,7 @@ void DataService::publishAttributes()
     if (!outboundMessage)
     {
         LOG(ERROR) << "Unable to create message from attributes";
+        m_persistence.removeAttributes();
         return;
     }
 
@@ -159,6 +161,7 @@ void DataService::publishParameters()
     if (!outboundMessage)
     {
         LOG(ERROR) << "Unable to create message from parameters";
+        m_persistence.removeAttributes();
         return;
     }
 
@@ -168,7 +171,7 @@ void DataService::publishParameters()
     }
 }
 
-void DataService::publishReadingsForPersistenceKey(const std::string& persistanceKey)
+void DataService::  publishReadingsForPersistenceKey(const std::string& persistanceKey)
 {
     const auto readings = m_persistence.getReadings(persistanceKey, PUBLISH_BATCH_ITEMS_COUNT);
 

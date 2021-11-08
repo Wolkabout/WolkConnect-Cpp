@@ -22,6 +22,7 @@
 #include "core/protocol/DataProtocol.h"
 #include "service/data/DataService.h"
 #include "core/utilities/Logger.h"
+#include "api/ParameterHandler.h"
 
 #include <initializer_list>
 #include <memory>
@@ -118,6 +119,22 @@ void Wolk::handleFeedUpdateCommand(const std::map<unsigned long long int, std::v
             m_feedUpdateHandlerLambda(readings);
         }
     });
+}
+
+void Wolk::handleParameterCommand(const std::vector<Parameters> parameters)
+{
+    LOG(INFO) << "Received parameter sync";
+
+    addToCommandBuffer([=] {
+                           if (auto provider = m_parameterHandler.lock())
+                           {
+                               provider->handleUpdate(parameters);
+                           }
+                           else if (m_parameterLambda)
+                           {
+                               m_parameterLambda(parameters);
+                           }
+                       });
 }
 
 void Wolk::tryConnect(bool firstTime)
