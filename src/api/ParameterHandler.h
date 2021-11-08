@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef CONFIGURATIONHANDLER_H
-#define CONFIGURATIONHANDLER_H
+#ifndef PARAMETERHANDLER_H
+#define PARAMETERHANDLER_H
 
 #include "core/Types.h"
 
@@ -23,7 +23,7 @@
 
 namespace wolkabout
 {
-class ConfigurationHandler
+class ParameterHandler
 {
 public:
     /**
@@ -32,11 +32,11 @@ public:
 
      *        Must be implemented as non blocking<br>
      *        Must be implemented as thread safe
-     * @param configuration as vector of wolkabout::ConfigurationItem
+     * @param parameters as vector of wolkabout::Parameters
      */
-    virtual void handleConfiguration(const std::vector<Parameters>& configuration) = 0;
+    virtual void handleUpdate(const std::vector<Parameters>& parameters) = 0;
 
-    virtual ~ConfigurationHandler() = default;
+    virtual ~ParameterHandler() = default;
 };
 }    // namespace wolkabout
 
