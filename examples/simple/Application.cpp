@@ -23,10 +23,10 @@
 
 int main(int /* argc */, char** /* argv */)
 {
-    wolkabout::Device device("device_key", "some_password");
+    wolkabout::Device device("Milosevic", "ACJV6NPJK8", wolkabout::OutboundDataMode::PUSH);
 
     std::unique_ptr<wolkabout::Wolk> wolk =
-      wolkabout::Wolk::newBuilder(device).host("ssl://api-demo.wolkabout.com:8883").build();
+      wolkabout::Wolk::newBuilder(device).host("integration5.wolkabout.com:2883").build();
 
     wolk->connect();
 
@@ -36,10 +36,22 @@ int main(int /* argc */, char** /* argv */)
     while (true)
     {
         wolk->addReading("T", distribution(engine));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
+        wolkabout::Feed feed("TempVode", "TV", wolkabout::FeedType::IN, wolkabout::Unit::CELSIUS);
+        wolk->registerFeed(feed);
+
+        wolkabout::Attribute attribute("JMBG", wolkabout::DataType::NUMERIC, "12345");
+        wolk->addAttribute(attribute);
+        wolk->updateParameter({wolkabout::ParameterName::EXTERNAL_ID, "131231"});
+
+        wolk->pullFeedValues();
+        wolk->pullParameters();
+
+        wolk->addReading("T", distribution(engine));
         wolk->publish();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }
 
     return 0;
