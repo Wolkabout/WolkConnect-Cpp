@@ -120,6 +120,8 @@ set(FULL_EXAMPLE_SOURCE_FILES examples/full_feature_set/Application.cpp)
 add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
 target_link_libraries(full_example ${PROJECT_NAME})
 set_target_properties(full_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+# TODO Remove
+set_target_properties(full_example PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 # Simple example
 set(SIMPLE_EXAMPLE_SOURCE_FILES examples/simple/Application.cpp)
