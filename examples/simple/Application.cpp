@@ -40,15 +40,9 @@ int main(int /* argc */, char** /* argv */)
     {
         wolk->addReading("T", distribution(engine));
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-        wolk->pullFeedValues();
-        wolk->pullParameters();
-
-        wolk->addReading("T", distribution(engine));
         wolk->publish();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }
 
+    wolk->disconnect();
     return 0;
 }

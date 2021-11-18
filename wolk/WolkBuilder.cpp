@@ -25,6 +25,7 @@
 #include "wolk/WolkBuilder.h"
 
 #include <stdexcept>
+#include <utility>
 
 namespace wolkabout
 {
@@ -51,20 +52,20 @@ WolkBuilder& WolkBuilder::feedUpdateHandler(
 
 WolkBuilder& WolkBuilder::feedUpdateHandler(std::weak_ptr<FeedUpdateHandler> feedUpdateHandler)
 {
-    m_feedUpdateHandler = feedUpdateHandler;
+    m_feedUpdateHandler = std::move(feedUpdateHandler);
     m_feedUpdateHandlerLambda = nullptr;
     return *this;
 }
 
 WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persistence)
 {
-    m_persistence = persistence;
+    m_persistence = std::move(persistence);
     return *this;
 }
 
 WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protocol)
 {
-    m_dataProtocol.reset(protocol.release());
+    m_dataProtocol = std::move(protocol);
     return *this;
 }
 
@@ -111,7 +112,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     wolk->m_dataService = std::make_shared<DataService>(
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
       [&](const std::map<std::uint64_t, std::vector<Reading>>& readings) { wolk->handleFeedUpdateCommand(readings); },
-      [&](const std::vector<Parameters> parameters) { wolk->handleParameterCommand(parameters); });
+      [&](const std::vector<Parameters>& parameters) { wolk->handleParameterCommand(parameters); });
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 

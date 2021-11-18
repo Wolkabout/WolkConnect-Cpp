@@ -14,20 +14,121 @@
  * limitations under the License.
  */
 
-#include "Wolk.h"
+#include "core/persistence/inmemory/InMemoryPersistence.h"
 #include "core/service/FirmwareInstaller.h"
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
 #include "core/utilities/json.hpp"
+#include "wolk/Wolk.h"
 
 #include <chrono>
 #include <csignal>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <string>
 #include <thread>
+#include <utility>
 
+/**
+ * This is the place where user input is required for running the example.
+ * In here, you can enter the device credentials to successfully identify the device on the platform.
+ * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
+ */
+const std::string DEVICE_KEY = "ACFE";
+const std::string DEVICE_PASSWORD = "IO62M61QOR";
+const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
+const std::string CA_CERT_PATH = "./ca.crt";
+const std::string FILE_MANAGEMENT_LOCATION = "./files";
+
+/**
+ * This is a structure definition that is a collection of all information/feeds the device will have.
+ */
+struct DeviceData
+{
+    std::double_t temperature;
+    bool toggle;
+    std::chrono::seconds heartbeat;
+    std::string firmwareVersion;
+};
+
+/**
+ * This class represents an object capable of storing feed values into the persistence.
+ * This can be used to retrieve old feed values after running the program to keep the device state consistent.
+ */
+class FeedPersistence
+{
+public:
+    /**
+     * This is the default constructor for the feeds that will create the map for all feeds, in which values can be
+     * loaded/saved.
+     *
+     * @param feedNames The list of all feeds that will be in this session.
+     */
+    explicit FeedPersistence(const std::vector<std::string>& feedNames)
+    {
+        for (const auto& feedName : feedNames)
+            m_feeds.emplace(feedName, std::string{});
+    }
+
+private:
+    // This is the constant value representing the location of the JSON file used to load/store values.
+    static const std::string JSON_FILE_LOCATION;
+
+    // This is the place where in memory the values are going to be stored.
+    std::map<std::string, std::string> m_feeds;
+};
+
+/**
+ * This is an object that is capable of handling the received data about feeds from the platform.
+ * It will interact with the DeviceData object in which it store the information. It can also notify the persistence, so
+ * the cold-storage information can be updated too.
+ */
+class DeviceDataChangeHandler : public wolkabout::FeedUpdateHandler
+{
+public:
+    /**
+     * Default constructor that will establish the relationship between the handler and the data.
+     *
+     * @param deviceData The data object in which the handler will put the data.
+     * @param persistence The optional persistence object that will be notified when the data is changed.
+     */
+    explicit DeviceDataChangeHandler(DeviceData& deviceData, std::shared_ptr<FeedPersistence> persistence = nullptr)
+    : m_deviceData(deviceData), m_persistence(std::move(persistence))
+    {
+    }
+
+    /**
+     * Default setter for the persistence that will be notified by the change handler about device information.
+     *
+     * @param persistence Pointer to the new persistence that will be used by the handler.
+     */
+    void setPersistence(std::shared_ptr<FeedPersistence> persistence) { m_persistence = std::move(persistence); }
+
+    /**
+     * This is the overridden method from the `FeedUpdateHandler` interface.
+     * This is the method that will receive information about a feed.
+     *
+     * @param map The map containing information about updated feeds and their new value(s).
+     */
+    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> map) override
+    {
+        // TODO
+    }
+
+private:
+    // This is where the object containing all information about the device is stored, and the optional pointer to
+    // persistence.
+    DeviceData& m_deviceData;
+    std::shared_ptr<FeedPersistence> m_persistence;
+};
+
+const std::string FeedPersistence::JSON_FILE_LOCATION = "./feeds.json";
+
+/**
+ * This is interrupt logic used to stop the application from running.
+ */
 std::function<void(int)> sigintCall;
 
 void sigintResponse(int signal)
@@ -36,280 +137,50 @@ void sigintResponse(int signal)
         sigintCall(signal);
 }
 
-const std::string configJsonPath = "./configuration.json";
-
-bool writeFile(const std::string& path, const std::vector<wolkabout::ConfigurationItem>& configuration)
-{
-    std::string content = "[";
-
-    for (uint i = 0; i < configuration.size(); i++)
-    {
-        const auto& config = configuration.at(i);
-
-        const auto& obj = nlohmann::json{{"reference", config.getReference()}, {"values", config.getValues()}};
-
-        content += obj.dump();
-
-        if (i < (configuration.size() - 1))
-        {
-            content += ',';
-        }
-    }
-
-    content += "]";
-
-    try
-    {
-        wolkabout::FileSystemUtils::createFileWithContent(path, content);
-    }
-    catch (std::exception& e)
-    {
-        LOG(ERROR) << e.what();
-        throw std::logic_error("Unable to write configurations to output file.");
-    }
-
-    return true;
-}
-
-std::vector<wolkabout::ConfigurationItem> readFile(const std::string& path)
-{
-    if (!wolkabout::FileSystemUtils::isFilePresent(path))
-    {
-        //        throw std::logic_error("Given file does not exist (" + path + ").");
-        return std::vector<wolkabout::ConfigurationItem>();
-    }
-
-    std::string jsonString;
-    if (!wolkabout::FileSystemUtils::readFileContent(path, jsonString))
-    {
-        throw std::logic_error("Unable to read file (" + path + ").");
-    }
-
-    try
-    {
-        const auto& arr = nlohmann::json::parse(jsonString);
-        std::vector<wolkabout::ConfigurationItem> configuration;
-
-        for (const auto& obj : arr)
-        {
-            configuration.emplace_back(obj["values"], obj["reference"]);
-        }
-
-        return configuration;
-    }
-    catch (std::exception&)
-    {
-        throw std::logic_error("Unable to parse file (" + path + ").");
-    }
-}
-
 int main(int /* argc */, char** /* argv */)
 {
-    auto logger = std::unique_ptr<wolkabout::ConsoleLogger>(new wolkabout::ConsoleLogger());
-    logger->setLogLevel(wolkabout::LogLevel::INFO);
-    logger->flushEvery(std::chrono::seconds{10});
-    logger->flushAt(wolkabout::LogLevel::INFO);
-    wolkabout::Logger::setInstance(std::move(logger));
+    /**
+     * Setting up the default console logger.
+     * For more info, increase the LogLevel.
+     * Logging to file could also be added here, by adding the type `Logger::Type::FILE` and passing a file path as
+     * third argument.
+     */
+    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
 
-    std::function<void(std::string)> setLogLevel = [&](std::string level) {
-        std::transform(level.begin(), level.end(), level.begin(), [&](char c) { return std::tolower(c); });
+    /**
+     * Now we can create the device using the user provided device credentials.
+     * We will also create the data object, in which we store the state of all values of the device.
+     * And the persistence object, that will be storing the values in cold-storage, that would be available to us at any
+     * moment. There are only two values that the platform could send us - Switch ("SW"), or Heartbeat ("HB"), so only
+     * those two will be stored by the persistence.
+     */
+    auto device = wolkabout::Device{DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH};
+    auto deviceInfo = DeviceData{0, false, std::chrono::seconds(3), "1.0.0-DEVELOPMENT"};
+    auto infoPersistence = std::make_shared<FeedPersistence>(std::vector<std::string>{"SW", "HB"});
+    auto deviceInfoHandler = std::make_shared<DeviceDataChangeHandler>(deviceInfo, infoPersistence);
 
-        if (level == "trace")
-        {
-            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::TRACE);
-        }
-        else if (level == "debug")
-        {
-            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::DEBUG);
-        }
-        else if (level == "info")
-        {
-            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::INFO);
-        }
-        else if (level == "warn")
-        {
-            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::WARN);
-        }
-        else if (level == "error")
-        {
-            wolkabout::Logger::getInstance()->setLogLevel(wolkabout::LogLevel::ERROR);
-        }
-    };
+    /**
+     * Now we can start creating the Wolk instance that is right for us.
+     * We will also create some in memory persistence so messages can get buffered if the platform connection gets
+     * interrupted.
+     */
+    auto inMemoryPersistence = std::make_shared<wolkabout::InMemoryPersistence>();
+    auto wolk = wolkabout::WolkBuilder(device)
+                  .host(PLATFORM_HOST)
+                  .ca_cert_path(CA_CERT_PATH)
+                  .feedUpdateHandler(deviceInfoHandler)
+                  .withPersistence(inMemoryPersistence)
+                  .withFileManagement(FILE_MANAGEMENT_LOCATION)
+                  .build();
 
-    wolkabout::Device device("device_key", "some_password", {"SW", "SL"});
-
-    static bool switchValue = false;
-    static int sliderValue = 0;
-
-    static int deviceFirmwareVersion = 1;
-
-    class FirmwareInstallerImpl : public wolkabout::FirmwareInstaller
-    {
-    public:
-        void install(const std::string& firmwareFile, std::function<void()> onSuccess,
-                     std::function<void()> onFail) override
-        {
-            // Mock install
-            LOG(INFO) << "Updating firmware with file " << firmwareFile;
-
-            // Determine installation outcome and report it
-            if (true)
-            {
-                ++deviceFirmwareVersion;
-                onSuccess();
-            }
-            else
-            {
-                onFail();
-            }
-        }
-
-        bool abort() override
-        {
-            LOG(INFO) << "Abort device firmware installation";
-            // true if successfully aborted or false if abort can not be performed
-            return true;
-        }
-    };
-
-    class FirmwareVersionProviderImpl : public wolkabout::FirmwareVersionProvider
-    {
-    public:
-        std::string getFirmwareVersion() override { return std::to_string(deviceFirmwareVersion) + ".0.0"; }
-    };
-
-    auto installer = std::make_shared<FirmwareInstallerImpl>();
-    auto provider = std::make_shared<FirmwareVersionProviderImpl>();
-
-    class DeviceConfiguration : public wolkabout::ConfigurationProvider, public wolkabout::ConfigurationHandler
-    {
-    public:
-        DeviceConfiguration()
-        {
-            const auto& value = readFile(configJsonPath);
-            if (value.empty())
-            {
-                const auto& hb = wolkabout::ConfigurationItem({"10"}, "HB");
-                const auto& ef = wolkabout::ConfigurationItem({"P,T,H,ACL"}, "EF");
-                const auto& ll = wolkabout::ConfigurationItem({"INFO"}, "LL");
-
-                m_configuration.emplace("HB", hb);
-                m_configuration.emplace("EF", ef);
-                m_configuration.emplace("LL", ll);
-
-                writeFile(configJsonPath, {hb, ef, ll});
-            }
-            else
-            {
-                for (const auto& config : value)
-                {
-                    m_configuration.emplace(config.getReference(), config);
-                }
-            }
-        }
-
-        std::vector<wolkabout::ConfigurationItem> getConfiguration() override
-        {
-            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
-            std::vector<wolkabout::ConfigurationItem> configurations;
-            for (const auto& config : m_configuration)
-            {
-                configurations.emplace_back(config.second);
-            }
-            return configurations;
-        }
-
-        void handleConfiguration(const std::vector<wolkabout::ConfigurationItem>& configuration) override
-        {
-            std::lock_guard<decltype(m_ConfigurationMutex)> l(m_ConfigurationMutex);    // Must be thread safe
-            for (const auto& config : configuration)
-            {
-                const auto& it = m_configuration.find(config.getReference());
-                if (it != m_configuration.end())
-                {
-                    it->second = config;
-                }
-                else
-                {
-                    m_configuration.emplace(config.getReference(), config);
-                }
-            }
-
-            std::vector<wolkabout::ConfigurationItem> configVector;
-            for (const auto& config : m_configuration)
-            {
-                configVector.emplace_back(config.second);
-            }
-
-            writeFile(configJsonPath, configVector);
-        }
-
-    private:
-        std::mutex m_ConfigurationMutex;
-        std::map<std::string, wolkabout::ConfigurationItem> m_configuration;
-    };
-    auto deviceConfiguration = std::make_shared<DeviceConfiguration>();
-
-    std::unique_ptr<wolkabout::Wolk> wolk =
-      wolkabout::Wolk::newBuilder(device)
-        .actuationHandler([&](const std::string& reference, const std::string& value) -> void {
-            LOG(DEBUG) << "Actuation request received - Reference: " << reference << " value: " << value;
-
-            if (reference == "SW")
-            {
-                switchValue = value == "true";
-            }
-            else if (reference == "SL")
-            {
-                try
-                {
-                    sliderValue = std::stoi(value);
-                }
-                catch (...)
-                {
-                    sliderValue = 0;
-                }
-            }
-        })
-        .actuatorStatusProvider([&](const std::string& reference) -> wolkabout::ActuatorStatus {
-            if (reference == "SW")
-            {
-                return wolkabout::ActuatorStatus(switchValue ? "true" : "false",
-                                                 wolkabout::ActuatorStatus::State::READY);
-            }
-            else if (reference == "SL")
-            {
-                return wolkabout::ActuatorStatus(std::to_string(sliderValue), wolkabout::ActuatorStatus::State::READY);
-            }
-
-            return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
-        })
-        .configurationHandler(deviceConfiguration)
-        .configurationProvider(deviceConfiguration)
-        .withFileManagement("files", 1024 * 1024)
-        .withFirmwareUpdate(installer, provider)
-        .host("ssl://api-demo.wolkabout.com:8883")
-        .ca_cert_path("ca.crt")
-        .build();
-
+    /**
+     * Now we can start the running logic of the connector. We will connect to the platform, and start running a loop
+     * that will update the temperature feed. This loop will also be affected by the heartbeat feed.
+     */
     wolk->connect();
-
-    uint16_t heartbeat = 0;
-    for (const auto& config : deviceConfiguration->getConfiguration())
-    {
-        if (config.getReference() == "HB")
-        {
-            heartbeat = static_cast<uint16_t>(std::stoi(config.getValues()[0]));
-        }
-        if (config.getReference() == "LL")
-        {
-            if (setLogLevel)
-                setLogLevel(config.getValues()[0]);
-        }
-    }
-
     bool running = true;
-    sigintCall = [&](int signal) {
+    sigintCall = [&](int signal)
+    {
         LOG(WARN) << "Application: Received stop signal, disconnecting...";
         running = false;
         if (wolk)
@@ -318,65 +189,26 @@ int main(int /* argc */, char** /* argv */)
     };
     signal(SIGINT, sigintResponse);
 
+    /**
+     * We want to randomize the temperature data too, so we need the generator for random information.
+     */
+    auto engine = std::mt19937{static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    auto distribution = std::uniform_real_distribution<std::double_t>{-20.0, 80.0};
+
     while (running)
     {
-        for (const auto& config : deviceConfiguration->getConfiguration())
-        {
-            if (config.getReference() == "HB")
-            {
-                heartbeat = static_cast<uint16_t>(std::stoi(config.getValues()[0]));
-            }
-            if (config.getReference() == "LL")
-            {
-                if (setLogLevel)
-                    setLogLevel(config.getValues()[0]);
-            }
-        }
+        // Generate the new value
+        deviceInfo.temperature = distribution(engine);
 
-        LOG(DEBUG) << "Heartbeat is: " << heartbeat;
-        LOG(DEBUG) << "Last received timestamp : " << wolk->getLastTimestamp();
-
-        if (running)
-            std::this_thread::sleep_for(std::chrono::seconds(heartbeat));
-
-        const auto& configVector = deviceConfiguration->getConfiguration();
-
-        auto index =
-          std::find_if(configVector.begin(), configVector.end(),
-                       [&](const wolkabout::ConfigurationItem& config) { return config.getReference() == "EF"; });
-        std::string configString;
-        bool validConfig = false;
-
-        if (index != configVector.end())
-        {
-            validConfig = true;
-            if (!index->getValues().empty())
-                configString = index->getValues()[0];
-        }
-
-        if (!validConfig || configString.find('P') != std::string::npos)
-        {
-            wolk->addSensorReading("P", (rand() % 801 + 300));
-        }
-
-        if (!validConfig || configString.find('H') != std::string::npos)
-        {
-            const auto& val = (rand() % 1000 * 0.1);
-            wolk->addSensorReading("H", val);
-            wolk->addAlarm("HH", val > 90);
-        }
-
-        if (!validConfig || configString.find('T') != std::string::npos)
-        {
-            wolk->addSensorReading("T", (rand() % 126 - 40));
-        }
-
-        if (!validConfig || configString.find("ACL") != std::string::npos)
-        {
-            wolk->addSensorReading("ACL", {rand() % 100001 * 0.001, rand() % 100001 * 0.001, rand() % 100001 * 0.001});
-        }
-
+        // Publish the information
+        wolk->addReading("T", deviceInfo.temperature);
+        wolk->addReading("SW", deviceInfo.toggle);
+        wolk->addReading("HB", deviceInfo.heartbeat.count());
         wolk->publish();
+
+        // And sleep in the loop
+        if (running)
+            std::this_thread::sleep_for(std::chrono::seconds(deviceInfo.heartbeat));
     }
 
     wolk->disconnect();
