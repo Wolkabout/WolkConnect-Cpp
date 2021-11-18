@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#include "Wolk.h"
+#include "core/utilities/Logger.h"
+#include "wolk/Wolk.h"
 
 #include <chrono>
 #include <memory>
@@ -23,27 +24,22 @@
 
 int main(int /* argc */, char** /* argv */)
 {
-    wolkabout::Device device("Milosevic", "ACJV6NPJK8", wolkabout::OutboundDataMode::PUSH);
+    wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
+
+    wolkabout::Device device("ADCPSH", "BA7PVLD7UD", wolkabout::OutboundDataMode::PUSH);
 
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device).host("integration5.wolkabout.com:2883").build();
 
     wolk->connect();
 
-    std::default_random_engine engine;
-    std::uniform_real_distribution<> distribution(-20, 80);
+    auto engine = std::mt19937(static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count()));
+    auto distribution = std::uniform_real_distribution<>(-20, 80);
 
     while (true)
     {
         wolk->addReading("T", distribution(engine));
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-        wolkabout::Feed feed("TempVode", "TV", wolkabout::FeedType::IN, wolkabout::Unit::CELSIUS);
-        wolk->registerFeed(feed);
-
-        wolkabout::Attribute attribute("JMBG", wolkabout::DataType::NUMERIC, "12345");
-        wolk->addAttribute(attribute);
-        wolk->updateParameter({wolkabout::ParameterName::EXTERNAL_ID, "131231"});
 
         wolk->pullFeedValues();
         wolk->pullParameters();

@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 #ifndef WOLK_H
 #define WOLK_H
 
-#include "WolkBuilder.h"
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Device.h"
 #include "core/utilities/CommandBuffer.h"
 #include "core/utilities/StringUtils.h"
+#include "wolk/WolkBuilder.h"
 
 #include <algorithm>
 #include <functional>
@@ -68,14 +68,14 @@ public:
      *               - signed long long int<br>
      *               - unsigned int<br>
      *               - unsigned long int<br>
-     *               - unsigned long long int<br>
+     *               - std::uint64_t<br>
      *               - string<br>
      *               - char*<br>
      *               - const char*<br>
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    template <typename T> void addReading(const std::string& reference, T value, unsigned long long int rtc = 0);
+    template <typename T> void addReading(const std::string& reference, T value, std::uint64_t rtc = 0);
 
     /**
      * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
@@ -85,7 +85,7 @@ public:
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    void addReading(const std::string& reference, std::string value, unsigned long long int rtc = 0);
+    void addReading(const std::string& reference, std::string value, std::uint64_t rtc = 0);
 
     /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
@@ -101,7 +101,7 @@ public:
      *               - signed long long int<br>
      *               - unsigned int<br>
      *               - unsigned long int<br>
-     *               - unsigned long long int<br>
+     *               - std::uint64_t<br>
      *               - string<br>
      *               - char*<br>
      *               - const char*<br>
@@ -109,8 +109,7 @@ public:
      *            If omitted current POSIX time is adopted
      */
     template <typename T>
-    void addReading(const std::string& reference, std::initializer_list<T> values,
-                          unsigned long long int rtc = 0);
+    void addReading(const std::string& reference, std::initializer_list<T> values, std::uint64_t rtc = 0);
 
     /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
@@ -126,7 +125,7 @@ public:
      *               - signed long long int<br>
      *               - unsigned int<br>
      *               - unsigned long int<br>
-     *               - unsigned long long int<br>
+     *               - std::uint64_t<br>
      *               - string<br>
      *               - char*<br>
      *               - const char*<br>
@@ -134,7 +133,7 @@ public:
      *            If omitted current POSIX time is adopted
      */
     template <typename T>
-    void addReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc = 0);
+    void addReading(const std::string& reference, const std::vector<T> values, std::uint64_t rtc = 0);
 
     /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
@@ -144,8 +143,7 @@ public:
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    void addReading(const std::string& reference, const std::vector<std::string> values,
-                          unsigned long long int rtc = 0);
+    void addReading(const std::string& reference, const std::vector<std::string> values, std::uint64_t rtc = 0);
 
     void pullFeedValues();
     void pullParameters();
@@ -180,13 +178,13 @@ private:
 
     void addToCommandBuffer(std::function<void()> command);
 
-    static unsigned long long int currentRtc();
+    static std::uint64_t currentRtc();
 
     void flushReadings();
     void flushAttributes();
     void flushParameters();
 
-    void handleFeedUpdateCommand(const std::map<unsigned long long int, std::vector<Reading>> readings);
+    void handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Reading>>& readings);
     void handleParameterCommand(const std::vector<Parameters> parameters);
 
     void tryConnect(bool firstTime = false);
@@ -206,7 +204,7 @@ private:
 
     std::shared_ptr<DataService> m_dataService;
 
-    std::function<void(const std::map<unsigned long long int, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
+    std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
     std::function<void(const std::vector<Parameters>)> m_parameterLambda;
@@ -229,19 +227,19 @@ private:
     };
 };
 
-template <typename T> void Wolk::addReading(const std::string& reference, T value, unsigned long long rtc)
+template <typename T> void Wolk::addReading(const std::string& reference, T value, std::uint64_t rtc)
 {
     addReading(reference, StringUtils::toString(value), rtc);
 }
 
 template <typename T>
-void Wolk::addReading(const std::string& reference, std::initializer_list<T> values, unsigned long long int rtc)
+void Wolk::addReading(const std::string& reference, std::initializer_list<T> values, std::uint64_t rtc)
 {
     addReading(reference, std::vector<T>(values), rtc);
 }
 
 template <typename T>
-void Wolk::addReading(const std::string& reference, const std::vector<T> values, unsigned long long int rtc)
+void Wolk::addReading(const std::string& reference, const std::vector<T> values, std::uint64_t rtc)
 {
     std::vector<std::string> stringifiedValues(values.size());
     std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),

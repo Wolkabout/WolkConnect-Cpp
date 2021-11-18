@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include "core/model/Device.h"
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
-#include "core/protocol/WolkaboutDataProtocol.h"
+#include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
 
 #include <cstdint>
 #include <functional>
@@ -36,15 +36,16 @@ class Wolk;
 class WolkBuilder final
 {
 public:
-    ~WolkBuilder();
-
-    WolkBuilder(WolkBuilder&&);
+    /**
+     * @brief WolkBuilder move constructors.
+     */
+    WolkBuilder(WolkBuilder&&) noexcept = default;
 
     /**
      * @brief WolkBuilder Initiates wolkabout::Wolk builder
      * @param device Device for which wolkabout::WolkBuilder is instantiated
      */
-    WolkBuilder(Device device);
+    explicit WolkBuilder(Device device);
 
     /**
      * @brief Allows passing of URI to custom WolkAbout IoT platform instance
@@ -66,7 +67,7 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& feedUpdateHandler(
-      const std::function<void(const std::map<unsigned long long int, std::vector<Reading>>)>& feedUpdateHandler);
+      const std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler);
 
     /**
      * @brief Sets feed update handler
@@ -92,6 +93,16 @@ public:
     WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol);
 
     /**
+     * @brief Sets the Wolk module to allow file management functionality.
+     * @param fileDownloadLocation The folder location for file management.
+     * @param maxPacketSize The maximum packet size for downloading chunks.
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withFileManagement(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize = UINT64_MAX);
+
+    WolkBuilder& withFirmwareUpdate();
+
+    /**
      * @brief Builds Wolk instance
      * @return Wolk instance as std::unique_ptr<Wolk>
      *
@@ -112,7 +123,7 @@ private:
     std::string m_ca_cert_path;
     Device m_device;
 
-    std::function<void(std::map<unsigned long long int, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
+    std::function<void(std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
     std::shared_ptr<Persistence> m_persistence;

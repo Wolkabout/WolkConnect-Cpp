@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include "DataService.h"
-
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Message.h"
 #include "core/model/Feed.h"
@@ -24,6 +22,7 @@
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
 #include "core/utilities/Logger.h"
+#include "wolk/service/data/DataService.h"
 
 #include <algorithm>
 #include <cassert>
@@ -32,8 +31,8 @@
 namespace wolkabout
 {
 DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
-                         ConnectivityService& connectivityService, FeedUpdateSetHandler  feedUpdateHandler,
-                         ParameterSyncHandler  parameterSyncHandler)
+                         ConnectivityService& connectivityService, FeedUpdateSetHandler feedUpdateHandler,
+                         ParameterSyncHandler parameterSyncHandler)
 : m_deviceKey{std::move(deviceKey)}
 , m_protocol{protocol}
 , m_persistence{persistence}
@@ -62,11 +61,10 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
 
     switch (m_protocol.getMessageType(message))
     {
-
     case MessageType::FEED_VALUES:
     {
         auto feedValuesMessage = m_protocol.parseFeedValues(message);
-        if(!feedValuesMessage)
+        if (!feedValuesMessage)
         {
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
         }
@@ -78,15 +76,14 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
     case MessageType::PARAMETER_SYNC:
     {
         auto parameterMessage = m_protocol.parseParameters(message);
-        if(!parameterMessage)
+        if (!parameterMessage)
         {
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
         }
-        if(m_parameterSyncHandler)
+        if (m_parameterSyncHandler)
         {
             m_parameterSyncHandler(parameterMessage->getParameters());
         }
-
     }
     default:
     {
@@ -100,7 +97,7 @@ const Protocol& DataService::getProtocol()
     return m_protocol;
 }
 
-void DataService::addReading(const std::string& reference, const std::string& value, unsigned long long int rtc)
+void DataService::addReading(const std::string& reference, const std::string& value, std::uint64_t rtc)
 {
     auto sensorReading = std::make_shared<Reading>(reference, value, rtc);
 
@@ -126,7 +123,8 @@ void DataService::publishAttributes()
 
     AttributeRegistrationMessage attributeRegistrationMessage(attributes);
 
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, attributeRegistrationMessage);
+    const std::shared_ptr<Message> outboundMessage =
+      m_protocol.makeOutboundMessage(m_deviceKey, attributeRegistrationMessage);
 
     if (!outboundMessage)
     {
@@ -135,7 +133,7 @@ void DataService::publishAttributes()
         return;
     }
 
-    if (m_connectivityService.publish(outboundMessage))
+    if (m_connectivityService.publish(outboundMessage, false))
     {
         m_persistence.removeAttributes();
     }
@@ -156,7 +154,8 @@ void DataService::publishParameters()
 
     ParametersUpdateMessage parametersUpdateMessage(parameters);
 
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, parametersUpdateMessage);
+    const std::shared_ptr<Message> outboundMessage =
+      m_protocol.makeOutboundMessage(m_deviceKey, parametersUpdateMessage);
 
     if (!outboundMessage)
     {
@@ -165,15 +164,15 @@ void DataService::publishParameters()
         return;
     }
 
-    if (m_connectivityService.publish(outboundMessage))
+    if (m_connectivityService.publish(outboundMessage, false))
     {
         m_persistence.removeAttributes();
     }
 }
 
-void DataService::  publishReadingsForPersistenceKey(const std::string& persistanceKey)
+void DataService::publishReadingsForPersistenceKey(const std::string& persistenceKey)
 {
-    const auto readings = m_persistence.getReadings(persistanceKey, PUBLISH_BATCH_ITEMS_COUNT);
+    const auto readings = m_persistence.getReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
 
     if (readings.empty())
     {
@@ -186,17 +185,17 @@ void DataService::  publishReadingsForPersistenceKey(const std::string& persista
 
     if (!outboundMessage)
     {
-        LOG(ERROR) << "Unable to create message from readings: " << persistanceKey;
-        m_persistence.removeReadings(persistanceKey, PUBLISH_BATCH_ITEMS_COUNT);
+        LOG(ERROR) << "Unable to create message from readings: " << persistenceKey;
+        m_persistence.removeReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
         return;
     }
 
-    if (m_connectivityService.publish(outboundMessage))
+    if (m_connectivityService.publish(outboundMessage, false))
     {
-        m_persistence.removeReadings(persistanceKey, PUBLISH_BATCH_ITEMS_COUNT);
+        m_persistence.removeReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
 
         // proceed to publish next batch only if publish is successful
-        publishReadingsForPersistenceKey(persistanceKey);
+        publishReadingsForPersistenceKey(persistenceKey);
     }
 }
 void DataService::registerFeed(Feed feed)
@@ -208,7 +207,8 @@ void DataService::registerFeeds(std::vector<Feed> feeds)
 {
     FeedRegistrationMessage feedRegistrationMessage(std::move(feeds));
 
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, feedRegistrationMessage);
+    const std::shared_ptr<Message> outboundMessage =
+      m_protocol.makeOutboundMessage(m_deviceKey, feedRegistrationMessage);
 
     if (!outboundMessage)
     {
@@ -216,11 +216,10 @@ void DataService::registerFeeds(std::vector<Feed> feeds)
         return;
     }
 
-    if (!m_connectivityService.publish(outboundMessage))
+    if (!m_connectivityService.publish(outboundMessage, false))
     {
         LOG(ERROR) << "Unable to publish feed registration message";
     }
-
 }
 void DataService::pullFeedValues()
 {
@@ -234,7 +233,7 @@ void DataService::pullFeedValues()
         return;
     }
 
-    if (!m_connectivityService.publish(outboundMessage))
+    if (!m_connectivityService.publish(outboundMessage, false))
     {
         LOG(ERROR) << "Unable to publish Pull Feeds Value message";
     }
@@ -251,7 +250,7 @@ void DataService::pullParameters()
         return;
     }
 
-    if (!m_connectivityService.publish(outboundMessage))
+    if (!m_connectivityService.publish(outboundMessage, false))
     {
         LOG(ERROR) << "Unable to publish Pull Parameters message";
     }
@@ -261,7 +260,6 @@ void DataService::addAttribute(Attribute attribute)
     auto attr = std::make_shared<Attribute>(attribute);
 
     m_persistence.putAttribute(attr);
-
 }
 void DataService::updateParameter(Parameters parameter)
 {

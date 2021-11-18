@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-#include "WolkBuilder.h"
-
 #include "core/InboundMessageHandler.h"
-#include "InboundPlatformMessageHandler.h"
-#include "Wolk.h"
 #include "core/connectivity/ConnectivityService.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
 #include "core/persistence/inmemory/InMemoryPersistence.h"
-#include "core/protocol/WolkaboutDataProtocol.h"
 #include "connectivity/mqtt/WolkPahoMqttClient.h"
 #include "service/data/DataService.h"
+#include "wolk/InboundPlatformMessageHandler.h"
+#include "wolk/Wolk.h"
+#include "wolk/WolkBuilder.h"
 
 #include <stdexcept>
 
@@ -44,7 +42,7 @@ WolkBuilder& WolkBuilder::ca_cert_path(const std::string& ca_cert_path)
 }
 
 WolkBuilder& WolkBuilder::feedUpdateHandler(
-  const std::function<void(const std::map<unsigned long long int, std::vector<Reading>>)>& feedUpdateHandler)
+  const std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler)
 {
     m_feedUpdateHandlerLambda = feedUpdateHandler;
     m_feedUpdateHandler.reset();
@@ -70,6 +68,13 @@ WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protoco
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize)
+{
+    m_fileDownloadDirectory = fileDownloadLocation;
+    m_maxPacketSize = maxPacketSize;
+    return *this;
+}
+
 std::unique_ptr<Wolk> WolkBuilder::build()
 {
     if (m_device.getKey().empty())
@@ -79,7 +84,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     auto wolk = std::unique_ptr<Wolk>(new Wolk(m_device));
 
-    wolk->m_dataProtocol.reset(m_dataProtocol.release());
+    wolk->m_dataProtocol = std::move(m_dataProtocol);
 
     wolk->m_persistence = m_persistence;
 
@@ -90,10 +95,12 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     wolk->m_inboundMessageHandler =
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
 
-    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [&] {
-        wolk->notifyDisonnected();
-        wolk->connect();
-    });
+    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
+                                                                             [&]
+                                                                             {
+                                                                                 wolk->notifyDisonnected();
+                                                                                 wolk->connect();
+                                                                             });
 
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
@@ -103,14 +110,8 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [&](const std::map<unsigned long long int, std::vector<Reading>> readings)
-      {
-          wolk->handleFeedUpdateCommand(readings);
-      },
-      [&](const std::vector<Parameters> parameters)
-      {
-        wolk->handleParameterCommand(parameters);
-      });
+      [&](const std::map<std::uint64_t, std::vector<Reading>>& readings) { wolk->handleFeedUpdateCommand(readings); },
+      [&](const std::vector<Parameters> parameters) { wolk->handleParameterCommand(parameters); });
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
@@ -123,10 +124,6 @@ wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>()
 {
     return build();
 }
-
-WolkBuilder::~WolkBuilder() = default;
-
-WolkBuilder::WolkBuilder(WolkBuilder&&) = default;
 
 WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}

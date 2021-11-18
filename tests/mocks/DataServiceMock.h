@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,12 @@ public:
     {
     }
 
-    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::string&, unsigned long long int), (override));
-    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::vector<std::string>&, unsigned long long int),
+    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::string&, std::uint64_t), (override));
+    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::vector<std::string>&, std::uint64_t),
                 (override));
     MOCK_METHOD(void, addActuatorStatus, (const std::string&, const std::string&, wolkabout::ActuatorStatus::State),
                 (override));
-    MOCK_METHOD(void, addAlarm, (const std::string&, bool, unsigned long long int), (override));
+    MOCK_METHOD(void, addAlarm, (const std::string&, bool, std::uint64_t), (override));
     MOCK_METHOD(void, addConfiguration, (const std::vector<wolkabout::ConfigurationItem>&), (override));
 
     MOCK_METHOD(void, publishSensorReadings, (), (override));

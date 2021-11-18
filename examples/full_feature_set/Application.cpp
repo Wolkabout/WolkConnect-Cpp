@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 
 #include "Wolk.h"
-#include "service/FirmwareInstaller.h"
-#include "utilities/ConsoleLogger.h"
-#include "utilities/FileSystemUtils.h"
-#include "utilities/json.hpp"
+#include "core/service/FirmwareInstaller.h"
+#include "core/utilities/FileSystemUtils.h"
+#include "core/utilities/Logger.h"
+#include "core/utilities/json.hpp"
 
 #include <chrono>
 #include <csignal>

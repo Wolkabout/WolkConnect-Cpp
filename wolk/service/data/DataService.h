@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,14 @@
 
 #include "core/InboundMessageHandler.h"
 #include "core/Types.h"
+#include "core/model/Attribute.h"
+#include "core/model/Feed.h"
 
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
-#include <core/model/Attribute.h>
-#include "core/model/Feed.h"
 
 namespace wolkabout
 {
@@ -34,8 +34,8 @@ class DataProtocol;
 class Persistence;
 class ConnectivityService;
 
-typedef std::function<void(std::map<unsigned long long int, std::vector<Reading>>)> FeedUpdateSetHandler;
-typedef std::function<void(std::vector<Parameters>)> ParameterSyncHandler;
+using FeedUpdateSetHandler = std::function<void(std::map<std::uint64_t, std::vector<Reading>>)>;
+using ParameterSyncHandler = std::function<void(std::vector<Parameters>)>;
 
 class DataService : public MessageListener
 {
@@ -47,7 +47,7 @@ public:
     void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
 
-    virtual void addReading(const std::string& reference, const std::string& value, unsigned long long int rtc);
+    virtual void addReading(const std::string& reference, const std::string& value, std::uint64_t rtc);
 
     virtual void addAttribute(Attribute attribute);
     virtual void updateParameter(Parameters parameter);

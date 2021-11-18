@@ -1,4 +1,4 @@
-# Copyright 2018 WolkAbout Technology s.r.o.
+# Copyright 2021 WolkAbout Technology s.r.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,10 +13,9 @@
 # limitations under the License.
 
 add_custom_target(format
-                  COMMAND "clang-format" -i -sort-includes -style=file ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES}
-                                                                       ${FULL_EXAMPLE_HEADER_FILES} ${FULL_EXAMPLE_SOURCE_FILES}
-                                                                       ${SIMPLE_EXAMPLE_HEADER_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES}
-                                                                       ${TEST_HEADER_FILES} ${TEST_SOURCE_FILES}
-                  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-                  COMMENT "[Formatting source code]"
-                  VERBATIM)
+        COMMAND "clang-format" -i -sort-includes -style=file ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES}
+        ${TEST_HEADER_FILES} ${TEST_SOURCE_FILES}
+        ${FULL_EXAMPLE_SOURCE_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES}
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
+        COMMENT "[Formatting source code]"
+        VERBATIM)

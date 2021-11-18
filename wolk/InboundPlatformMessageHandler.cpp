@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-#include "InboundPlatformMessageHandler.h"
-
 #include "core/model/Message.h"
 #include "core/utilities/Logger.h"
 #include "core/utilities/StringUtils.h"
 #include "core/protocol/Protocol.h"
+#include "wolk/InboundPlatformMessageHandler.h"
 
 #include <algorithm>
 
@@ -42,19 +41,20 @@ void InboundPlatformMessageHandler::messageReceived(const std::string& channel, 
     std::lock_guard<std::mutex> lg{m_lock};
 
     auto it = std::find_if(m_channelHandlers.begin(), m_channelHandlers.end(),
-                           [&](const std::pair<std::string, std::weak_ptr<MessageListener>>& kvp) {
-                               return StringUtils::mqttTopicMatch(kvp.first, channel);
-                           });
+                           [&](const std::pair<std::string, std::weak_ptr<MessageListener>>& kvp)
+                           { return StringUtils::mqttTopicMatch(kvp.first, channel); });
 
     if (it != m_channelHandlers.end())
     {
         auto channelHandler = it->second;
-        addToCommandBuffer([=] {
-            if (auto handler = channelHandler.lock())
-            {
-                handler->messageReceived(std::make_shared<Message>(payload, channel));
-            }
-        });
+        addToCommandBuffer(
+          [=]
+          {
+              if (auto handler = channelHandler.lock())
+              {
+                  handler->messageReceived(std::make_shared<Message>(payload, channel));
+              }
+          });
     }
     else
     {

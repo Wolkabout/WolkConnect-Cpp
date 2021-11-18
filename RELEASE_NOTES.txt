@@ -5,6 +5,10 @@
 
 WolkAbout C++11 Connector library for connecting devices to WolkAbout IoT Platform.
 
+**Version 4.0.0-prerelease**
+    - [IMPROVEMENT] - Adding support for Wolkabout IoT Platform 22.GA - The Digital Twin update
+    - [IMPROVEMENT] - Made many improvements to the CMakeLists.txt of the project to improve developing and building
+
 **Version 3.0.3**
 - [BUGFIX] - Create FM directory on initialisation.
 - [IMPROVEMENT] - expose path for ca.crt file

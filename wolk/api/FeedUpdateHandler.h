@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 WolkAbout Technology s.r.o.
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@
 #ifndef FEEDUPDATEHANDLER_H
 #define FEEDUPDATEHANDLER_H
 
+#include "core/Types.h"
+
 #include <map>
 #include <string>
 
-#include "core/Types.h"
 namespace wolkabout
 {
 class FeedUpdateHandler
@@ -33,7 +34,7 @@ public:
      * @param reference Feed reference
      * @param value Desired feed value
      */
-    virtual void handleUpdate(std::map<unsigned long long int, std::vector<Reading>>) = 0;
+    virtual void handleUpdate(std::map<std::uint64_t, std::vector<Reading>>) = 0;
 
     virtual ~FeedUpdateHandler() = default;
 };

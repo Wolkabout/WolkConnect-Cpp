@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,19 @@
  * limitations under the License.
  */
 
-#include "Wolk.h"
-
+#include "api/ParameterHandler.h"
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Device.h"
-#include "core/model/Message.h"
-#include "core/protocol/DataProtocol.h"
-#include "service/data/DataService.h"
 #include "core/utilities/Logger.h"
-#include "api/ParameterHandler.h"
+#include "service/data/DataService.h"
+#include "wolk/Wolk.h"
 
-#include <initializer_list>
 #include <memory>
-#include <sstream>
 #include <string>
 #include <thread>
-#include <utility>
 
 namespace wolkabout
 {
-
 Wolk::~Wolk() = default;
 
 WolkBuilder Wolk::newBuilder(Device device)
@@ -41,7 +34,7 @@ WolkBuilder Wolk::newBuilder(Device device)
     return WolkBuilder(device);
 }
 
-void Wolk::addReading(const std::string& reference, std::string value, unsigned long long rtc)
+void Wolk::addReading(const std::string& reference, std::string value, std::uint64_t rtc)
 {
     if (rtc == 0)
     {
@@ -58,23 +51,26 @@ void Wolk::connect()
 
 void Wolk::disconnect()
 {
-    addToCommandBuffer([=]() -> void {
-        m_connectivityService->disconnect();
-        notifyDisonnected();
-    });
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          m_connectivityService->disconnect();
+          notifyDisonnected();
+      });
 }
 
 void Wolk::publish()
 {
-    addToCommandBuffer([=]() -> void {
-        flushAttributes();
-        flushReadings();
-        flushParameters();
-    });
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          flushAttributes();
+          flushReadings();
+          flushParameters();
+      });
 }
 
-Wolk::Wolk(Device device)
-: m_device(device)
+Wolk::Wolk(Device device) : m_device(device)
 {
     m_commandBuffer = std::unique_ptr<CommandBuffer>(new CommandBuffer());
 }
@@ -84,10 +80,10 @@ void Wolk::addToCommandBuffer(std::function<void()> command)
     m_commandBuffer->pushCommand(std::make_shared<std::function<void()>>(command));
 }
 
-unsigned long long Wolk::currentRtc()
+std::uint64_t Wolk::currentRtc()
 {
     auto duration = std::chrono::high_resolution_clock::now().time_since_epoch();
-    return static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+    return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 }
 
 void Wolk::flushAttributes()
@@ -105,56 +101,62 @@ void Wolk::flushParameters()
     m_dataService->publishParameters();
 }
 
-void Wolk::handleFeedUpdateCommand(const std::map<unsigned long long int, std::vector<Reading>> readings)
+void Wolk::handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Reading>>& readings)
 {
     LOG(INFO) << "Received feed update";
 
-    addToCommandBuffer([=] {
-        if (auto provider = m_feedUpdateHandler.lock())
-        {
-            provider->handleUpdate(readings);
-        }
-        else if (m_feedUpdateHandlerLambda)
-        {
-            m_feedUpdateHandlerLambda(readings);
-        }
-    });
+    addToCommandBuffer(
+      [=]
+      {
+          if (auto provider = m_feedUpdateHandler.lock())
+          {
+              provider->handleUpdate(readings);
+          }
+          else if (m_feedUpdateHandlerLambda)
+          {
+              m_feedUpdateHandlerLambda(readings);
+          }
+      });
 }
 
 void Wolk::handleParameterCommand(const std::vector<Parameters> parameters)
 {
     LOG(INFO) << "Received parameter sync";
 
-    addToCommandBuffer([=] {
-                           if (auto provider = m_parameterHandler.lock())
-                           {
-                               provider->handleUpdate(parameters);
-                           }
-                           else if (m_parameterLambda)
-                           {
-                               m_parameterLambda(parameters);
-                           }
-                       });
+    addToCommandBuffer(
+      [=]
+      {
+          if (auto provider = m_parameterHandler.lock())
+          {
+              provider->handleUpdate(parameters);
+          }
+          else if (m_parameterLambda)
+          {
+              m_parameterLambda(parameters);
+          }
+      });
 }
 
 void Wolk::tryConnect(bool firstTime)
 {
-    addToCommandBuffer([=]() -> void {
-        if (firstTime)
-            LOG(INFO) << "Connecting...";
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          if (firstTime)
+              LOG(INFO) << "Connecting...";
 
-        if (!m_connectivityService->connect())
-        {
-            if (firstTime)
-                LOG(INFO) << "Failed to connect";
+          if (!m_connectivityService->connect())
+          {
+              if (firstTime)
+                  LOG(INFO) << "Failed to connect";
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            tryConnect(false);
-            return;
-        }
+              std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+              tryConnect(false);
+              return;
+          }
 
-        notifyConnected();
-    });
+          notifyConnected();
+      });
 }
 
 void Wolk::notifyConnected()
