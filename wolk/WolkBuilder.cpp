@@ -18,8 +18,10 @@
 #include "core/connectivity/ConnectivityService.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
 #include "core/persistence/inmemory/InMemoryPersistence.h"
-#include "connectivity/mqtt/WolkPahoMqttClient.h"
-#include "service/data/DataService.h"
+#include "core/protocol/wolkabout/WolkaboutFileManagementProtocol.h"
+#include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
+#include "wolk/service/data/DataService.h"
+#include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/InboundPlatformMessageHandler.h"
 #include "wolk/Wolk.h"
 #include "wolk/WolkBuilder.h"
@@ -71,6 +73,7 @@ WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protoco
 
 WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize)
 {
+    m_fileManagementProtocol.reset(new wolkabout::WolkaboutFileManagementProtocol);
     m_fileDownloadDirectory = fileDownloadLocation;
     m_maxPacketSize = maxPacketSize;
     return *this;
@@ -106,8 +109,6 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
 
-    wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
-
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
@@ -115,6 +116,15 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       [&](const std::vector<Parameters>& parameters) { wolk->handleParameterCommand(parameters); });
 
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
+
+    // Check if the file management should be engaged
+    if (m_fileManagementProtocol != nullptr)
+    {
+        // Create the File Management service
+        wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
+        wolk->m_fileManagementService = std::make_shared<FileManagementService>(
+          *wolk->m_fileManagementProtocol, m_fileDownloadDirectory, m_maxPacketSize);
+    }
 
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
 

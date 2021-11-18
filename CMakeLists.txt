@@ -59,12 +59,14 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/ParameterHandler.h
         wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
+        wolk/service/file_management/FileManagementService.h
         wolk/InboundPlatformMessageHandler.h
         wolk/Version.h
         wolk/Wolk.h
         wolk/WolkBuilder.h)
 set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
+        wolk/service/file_management/FileManagementService.cpp
         wolk/InboundPlatformMessageHandler.cpp
         wolk/Wolk.cpp
         wolk/WolkBuilder.cpp)

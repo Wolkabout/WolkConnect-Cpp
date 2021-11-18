@@ -19,6 +19,7 @@
 #include "core/model/Device.h"
 #include "core/utilities/Logger.h"
 #include "service/data/DataService.h"
+#include "service/file_management/FileManagementService.h"
 #include "wolk/Wolk.h"
 
 #include <memory>

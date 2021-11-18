@@ -128,6 +128,7 @@ private:
 
     std::shared_ptr<Persistence> m_persistence;
     std::unique_ptr<DataProtocol> m_dataProtocol;
+    std::unique_ptr<Protocol> m_fileManagementProtocol;
 
     std::string m_firmwareVersion;
     std::string m_fileDownloadDirectory;
