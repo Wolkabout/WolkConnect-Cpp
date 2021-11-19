@@ -221,6 +221,7 @@ void DataService::registerFeeds(std::vector<Feed> feeds)
         LOG(ERROR) << "Unable to publish feed registration message";
     }
 }
+
 void DataService::pullFeedValues()
 {
     PullFeedValuesMessage pullFeedValuesMessage;

@@ -145,7 +145,7 @@ int main(int /* argc */, char** /* argv */)
      * Logging to file could also be added here, by adding the type `Logger::Type::FILE` and passing a file path as
      * third argument.
      */
-    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
+    wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
 
     /**
      * Now we can create the device using the user provided device credentials.

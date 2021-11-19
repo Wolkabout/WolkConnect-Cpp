@@ -114,7 +114,6 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
       [&](const std::map<std::uint64_t, std::vector<Reading>>& readings) { wolk->handleFeedUpdateCommand(readings); },
       [&](const std::vector<Parameters>& parameters) { wolk->handleParameterCommand(parameters); });
-
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
     // Check if the file management should be engaged
@@ -124,6 +123,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
         wolk->m_fileManagementService = std::make_shared<FileManagementService>(
           *wolk->m_fileManagementProtocol, m_fileDownloadDirectory, m_maxPacketSize);
+        wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
     }
 
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);

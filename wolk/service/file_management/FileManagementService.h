@@ -27,6 +27,7 @@ public:
     FileManagementService(Protocol& protocol, std::string fileLocation, std::uint64_t maxPacketSize);
 
     void messageReceived(std::shared_ptr<Message> message) override;
+
     const Protocol& getProtocol() override;
 
 private:
