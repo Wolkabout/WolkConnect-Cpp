@@ -17,22 +17,44 @@
 #ifndef WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 #define WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 
+#include "core/connectivity/ConnectivityService.h"
 #include "core/InboundMessageHandler.h"
+#include "core/protocol/FileManagementProtocol.h"
 
 namespace wolkabout
 {
 class FileManagementService : public MessageListener
 {
 public:
-    FileManagementService(Protocol& protocol, std::string fileLocation, std::uint64_t maxPacketSize);
+    FileManagementService(ConnectivityService& connectivityService, FileManagementProtocol& protocol,
+                          std::string fileLocation, std::uint64_t maxPacketSize);
 
     void messageReceived(std::shared_ptr<Message> message) override;
 
     const Protocol& getProtocol() override;
 
 private:
+    void onFileUploadInit(const std::string& deviceKey, const FileUploadInitiateMessage& message);
+
+    void onFileUploadAbort(const std::string& deviceKey, const FileUploadAbortMessage& message);
+
+    void onFileBinaryResponse(const std::string& deviceKey, const FileBinaryResponseMessage& message);
+
+    void onFileUrlDownloadInit(const std::string& deviceKey, const FileUrlDownloadInitMessage& message);
+
+    void onFileUrlDownloadAbort(const std::string& deviceKey, const FileUrlDownloadAbortMessage& message);
+
+    void onFileListRequest(const std::string& deviceKey, const FileListRequestMessage& message);
+
+    void onFileDelete(const std::string& deviceKey, const FileDeleteMessage& message);
+
+    void onFilePurge(const std::string& deviceKey, const FilePurgeMessage& message);
+
+    // This is where we store the message sender
+    ConnectivityService& m_connectivityService;
+
     // This is where the protocol will be passed while the service is created.
-    Protocol& m_protocol;
+    FileManagementProtocol& m_protocol;
 
     // This is where the user parameters will be passed.
     std::string m_fileLocation;

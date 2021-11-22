@@ -18,6 +18,7 @@
 #include "core/connectivity/ConnectivityService.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
 #include "core/persistence/inmemory/InMemoryPersistence.h"
+#include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFileManagementProtocol.h"
 #include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
 #include "wolk/service/data/DataService.h"
@@ -122,7 +123,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         // Create the File Management service
         wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
         wolk->m_fileManagementService = std::make_shared<FileManagementService>(
-          *wolk->m_fileManagementProtocol, m_fileDownloadDirectory, m_maxPacketSize);
+          *wolk->m_connectivityService, *wolk->m_fileManagementProtocol, m_fileDownloadDirectory, m_maxPacketSize);
         wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
     }
 

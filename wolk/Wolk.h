@@ -195,7 +195,7 @@ private:
     Device m_device;
 
     std::unique_ptr<DataProtocol> m_dataProtocol;
-    std::unique_ptr<Protocol> m_fileManagementProtocol;
+    std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
 
     std::unique_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
