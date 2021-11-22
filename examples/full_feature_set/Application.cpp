@@ -15,7 +15,6 @@
  */
 
 #include "core/persistence/inmemory/InMemoryPersistence.h"
-#include "core/service/FirmwareInstaller.h"
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
 #include "core/utilities/json.hpp"
@@ -25,7 +24,6 @@
 #include <csignal>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <random>
 #include <string>
 #include <thread>
@@ -52,6 +50,10 @@ struct DeviceData
     std::chrono::seconds heartbeat;
     std::string firmwareVersion;
 };
+
+// Here we have some synchronization tools
+std::mutex mutex;
+std::condition_variable conditionVariable;
 
 /**
  * This class represents an object capable of storing feed values into the persistence.
@@ -114,7 +116,30 @@ public:
      */
     void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> map) override
     {
-        // TODO
+        // Go through all the timestamps
+        for (const auto& pair : map)
+        {
+            LOG(DEBUG) << "Received feed information for time: " << pair.first;
+
+            // Take the readings, and apply them
+            for (const auto& reading : pair.second)
+            {
+                LOG(DEBUG) << "Received feed information for reference '" << reading.getReference() << "'.";
+
+                // Lock the mutex
+                std::lock_guard<std::mutex> lock{mutex};
+
+                // Check the reference on the readings
+                if (reading.getReference() == "SW")
+                    m_deviceData.toggle = reading.getBoolValue();
+                else if (reading.getReference() == "HB")
+                    m_deviceData.heartbeat =
+                      std::chrono::seconds(static_cast<std::uint64_t>(reading.getNumericValue()));
+            }
+
+            // Notify the condition variable
+            conditionVariable.notify_one();
+        }
     }
 
 private:
@@ -197,18 +222,36 @@ int main(int /* argc */, char** /* argv */)
 
     while (running)
     {
-        // Generate the new value
-        deviceInfo.temperature = distribution(engine);
+        // Make place for the sleep interval
+        auto sleepInterval = std::chrono::seconds{};
 
-        // Publish the information
-        wolk->addReading("T", deviceInfo.temperature);
-        wolk->addReading("SW", deviceInfo.toggle);
-        wolk->addReading("HB", deviceInfo.heartbeat.count());
-        wolk->publish();
+        {
+            std::lock_guard<std::mutex> lock{mutex};
+
+            // Check if the heartbeat is 0
+            if (deviceInfo.heartbeat.count() == 0)
+                continue;
+
+            // Generate the new value
+            deviceInfo.temperature = distribution(engine);
+
+            // Publish the information
+            wolk->addReading("T", deviceInfo.temperature);
+            wolk->addReading("SW", deviceInfo.toggle);
+            wolk->addReading("HB", deviceInfo.heartbeat.count());
+            wolk->publish();
+
+            // Obtain the old value
+            sleepInterval = deviceInfo.heartbeat;
+        }
 
         // And sleep in the loop
         if (running)
-            std::this_thread::sleep_for(std::chrono::seconds(deviceInfo.heartbeat));
+        {
+            auto lock = std::unique_lock<std::mutex>{mutex};
+            conditionVariable.wait_for(lock, sleepInterval,
+                                       [&]() { return sleepInterval.count() != deviceInfo.heartbeat.count(); });
+        }
     }
 
     wolk->disconnect();

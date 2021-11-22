@@ -64,26 +64,20 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
     case MessageType::FEED_VALUES:
     {
         auto feedValuesMessage = m_protocol.parseFeedValues(message);
-        if (!feedValuesMessage)
-        {
+        if (feedValuesMessage == nullptr)
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
-        }
-        if (m_feedUpdateHandler)
-        {
+        else if (m_feedUpdateHandler)
             m_feedUpdateHandler(feedValuesMessage->getReadings());
-        }
+        return;
     }
     case MessageType::PARAMETER_SYNC:
     {
         auto parameterMessage = m_protocol.parseParameters(message);
-        if (!parameterMessage)
-        {
+        if (parameterMessage == nullptr)
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
-        }
         if (m_parameterSyncHandler)
-        {
             m_parameterSyncHandler(parameterMessage->getParameters());
-        }
+        return;
     }
     default:
     {
