@@ -55,21 +55,23 @@ option(POCO_BUILD_NET "" ON)
 add_subdirectory(WolkSDK-Cpp)
 
 # WolkAbout c++ Connector
+set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
+        wolk/service/data/DataService.cpp
+        wolk/service/file_management/FileManagementService.cpp
+        wolk/service/firmware_update/FirmwareUpdateService.cpp
+        wolk/InboundPlatformMessageHandler.cpp
+        wolk/Wolk.cpp
+        wolk/WolkBuilder.cpp)
 set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/ParameterHandler.h
         wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
         wolk/service/file_management/FileManagementService.h
+        wolk/service/firmware_update/FirmwareUpdateService.h
         wolk/InboundPlatformMessageHandler.h
         wolk/Version.h
         wolk/Wolk.h
         wolk/WolkBuilder.h)
-set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
-        wolk/service/data/DataService.cpp
-        wolk/service/file_management/FileManagementService.cpp
-        wolk/InboundPlatformMessageHandler.cpp
-        wolk/Wolk.cpp
-        wolk/WolkBuilder.cpp)
 
 file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE)
 
@@ -81,6 +83,13 @@ set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 add_dependencies(${PROJECT_NAME} libpoco)
 
 # Tests
+set(TEST_SOURCE_FILES tests/DataServiceTests.cpp
+        tests/DeviceTests.cpp
+        tests/InboundPlatformMessageHandlerTests.cpp
+        tests/KeepAliveServiceTests.cpp
+        tests/SQLiteFileRepositoryTests.cpp
+        tests/WolkBuilderTests.cpp
+        tests/WolkTests.cpp)
 set(TEST_HEADER_FILES tests/mocks/ActuationHandlerMock.h
         tests/mocks/ActuatorStatusProviderMock.h
         tests/mocks/ConfigurationHandlerMock.h
@@ -96,13 +105,6 @@ set(TEST_HEADER_FILES tests/mocks/ActuationHandlerMock.h
         tests/mocks/PersistenceMock.h
         tests/mocks/ProtocolMock.h
         tests/mocks/StatusProtocolMock.h)
-set(TEST_SOURCE_FILES tests/DataServiceTests.cpp
-        tests/DeviceTests.cpp
-        tests/InboundPlatformMessageHandlerTests.cpp
-        tests/KeepAliveServiceTests.cpp
-        tests/SQLiteFileRepositoryTests.cpp
-        tests/WolkBuilderTests.cpp
-        tests/WolkTests.cpp)
 
 add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
 target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
@@ -114,15 +116,12 @@ add_dependencies(${PROJECT_NAME}Tests ${PROJECT_NAME} libgtest)
 add_custom_target(tests ${PROJECT_NAME}Tests)
 add_test(gtest ${PROJECT_NAME}Tests)
 
-# Examples
-
 # Full example
 set(FULL_EXAMPLE_SOURCE_FILES examples/full_feature_set/Application.cpp)
 
 add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
 target_link_libraries(full_example ${PROJECT_NAME})
 set_target_properties(full_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-# TODO Remove
 set_target_properties(full_example PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
 # Simple example
