@@ -28,7 +28,7 @@ class FirmwareUpdateService : public MessageListener
 public:
     FirmwareUpdateService(ConnectivityService& connectivityService, FirmwareUpdateProtocol& protocol);
 
-    void messageReceived(std::shared_ptr<Message> message) override;
+    void messageReceived(std::shared_ptr<MqttMessage> message) override;
 
     const Protocol& getProtocol() override;
 

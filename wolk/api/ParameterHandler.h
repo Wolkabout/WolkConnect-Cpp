@@ -34,7 +34,7 @@ public:
      *        Must be implemented as thread safe
      * @param parameters as vector of wolkabout::Parameters
      */
-    virtual void handleUpdate(const std::vector<Parameters>& parameters) = 0;
+    virtual void handleUpdate(const std::vector<Parameter>& parameters) = 0;
 
     virtual ~ParameterHandler() = default;
 };

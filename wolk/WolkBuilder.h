@@ -95,10 +95,14 @@ public:
     /**
      * @brief Sets the Wolk module to allow file management functionality.
      * @param fileDownloadLocation The folder location for file management.
+     * @param fileTransferEnabled Whether the regular platform file transfer should be enabled.
+     * @param fileTransferUrlEnabled Whether the url transfer should be enabled.
      * @param maxPacketSize The maximum packet size for downloading chunks.
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& withFileManagement(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize = UINT64_MAX);
+    WolkBuilder& withFileManagement(const std::string& fileDownloadLocation, bool fileTransferEnabled = true,
+                                    bool fileTransferUrlEnabled = true,
+                                    std::uint64_t maxPacketSize = MQTT_MAX_MESSAGE_SIZE);
 
     WolkBuilder& withFirmwareUpdate();
 
@@ -130,9 +134,11 @@ private:
     std::unique_ptr<DataProtocol> m_dataProtocol;
     std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
 
-    std::string m_firmwareVersion;
     std::string m_fileDownloadDirectory;
+    bool m_fileTransferEnabled;
+    bool m_fileTransferUrlEnabled;
     std::uint64_t m_maxPacketSize;
+    std::string m_firmwareVersion;
 
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
     static const constexpr char* TRUST_STORE = "ca.crt";

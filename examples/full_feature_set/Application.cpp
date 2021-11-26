@@ -35,7 +35,7 @@
  */
 const std::string DEVICE_KEY = "ACFE";
 const std::string DEVICE_PASSWORD = "IO62M61QOR";
-const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
+const std::string PLATFORM_HOST = "ssl://10.0.50.228:8883";
 const std::string CA_CERT_PATH = "./ca.crt";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
 
@@ -132,8 +132,7 @@ public:
                 if (reading.getReference() == "SW")
                     m_deviceData.toggle = reading.getBoolValue();
                 else if (reading.getReference() == "HB")
-                    m_deviceData.heartbeat =
-                      std::chrono::seconds(static_cast<std::uint64_t>(reading.getNumericValue()));
+                    m_deviceData.heartbeat = std::chrono::seconds(reading.getUIntValue());
             }
 
             // Notify the condition variable
@@ -179,7 +178,7 @@ int main(int /* argc */, char** /* argv */)
      * those two will be stored by the persistence.
      */
     auto device = wolkabout::Device{DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH};
-    auto deviceInfo = DeviceData{0, false, std::chrono::seconds(3), "1.0.0-DEVELOPMENT"};
+    auto deviceInfo = DeviceData{0, false, std::chrono::seconds(60), "1.0.0-DEVELOPMENT"};
     auto infoPersistence = std::make_shared<FeedPersistence>(std::vector<std::string>{"SW", "HB"});
     auto deviceInfoHandler = std::make_shared<DeviceDataChangeHandler>(deviceInfo, infoPersistence);
 

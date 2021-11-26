@@ -120,7 +120,7 @@ void Wolk::handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Rea
       });
 }
 
-void Wolk::handleParameterCommand(const std::vector<Parameters> parameters)
+void Wolk::handleParameterCommand(const std::vector<Parameter> parameters)
 {
     LOG(INFO) << "Received parameter sync";
 
@@ -165,6 +165,9 @@ void Wolk::notifyConnected()
     LOG(INFO) << "Connection established";
 
     publish();
+
+    if (m_fileManagementService != nullptr)
+        m_fileManagementService->onConnected();
 }
 
 void Wolk::notifyDisonnected()
@@ -188,7 +191,7 @@ void Wolk::addAttribute(Attribute attribute)
 {
     addToCommandBuffer([=]() -> void { m_dataService->addAttribute(attribute); });
 }
-void Wolk::updateParameter(Parameters parameter)
+void Wolk::updateParameter(Parameter parameter)
 {
     addToCommandBuffer([=]() -> void { m_dataService->updateParameter(parameter); });
 }

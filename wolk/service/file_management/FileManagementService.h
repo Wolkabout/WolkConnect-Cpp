@@ -17,19 +17,34 @@
 #ifndef WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 #define WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 
-#include "core/connectivity/ConnectivityService.h"
 #include "core/InboundMessageHandler.h"
+#include "core/connectivity/ConnectivityService.h"
 #include "core/protocol/FileManagementProtocol.h"
+#include "core/utilities/CommandBuffer.h"
+#include "wolk/service/data/DataService.h"
+#include "wolk/service/file_management/FileListener.h"
+#include "wolk/service/file_management/FileTransferSession.h"
 
 namespace wolkabout
 {
+// Here we have a publicly available MQTT message size limit
+const std::uint32_t MQTT_MAX_MESSAGE_SIZE = 268435455;
+
 class FileManagementService : public MessageListener
 {
 public:
-    FileManagementService(ConnectivityService& connectivityService, FileManagementProtocol& protocol,
-                          std::string fileLocation, std::uint64_t maxPacketSize);
+    FileManagementService(std::string deviceKey, ConnectivityService& connectivityService, DataService& dataService,
+                          FileManagementProtocol& protocol, std::string fileLocation, bool fileTransferEnabled = true,
+                          bool fileTransferUrlEnabled = true, std::uint64_t maxPacketSize = MQTT_MAX_MESSAGE_SIZE,
+                          std::shared_ptr<FileListener> fileListener = nullptr);
 
-    void messageReceived(std::shared_ptr<Message> message) override;
+    void setFileListener(const std::shared_ptr<FileListener>& fileListener);
+
+    void onBuild();
+
+    void onConnected();
+
+    void messageReceived(std::shared_ptr<MqttMessage> message) override;
 
     const Protocol& getProtocol() override;
 
@@ -50,8 +65,77 @@ private:
 
     void onFilePurge(const std::string& deviceKey, const FilePurgeMessage& message);
 
-    // This is where we store the message sender
+    /**
+     * This is an internal method that will load a file from the filesystem, to collect the `FileInformation` object.
+     * This will determine the size and the hash of the file.
+     *
+     * @param fileName The name of the file in the folder for which the information is needed.
+     * @return The information that has been obtained about the file. If an error has occurred, an object with an empty
+     * name will be returned.
+     */
+    FileInformation obtainFileInformation(const std::string& fileName);
+
+    /**
+     * This is an internal method that will cycle through all the files in the file system, collect the
+     * FileInformation data about all of them (locally, or look into files to obtain and store locally), and send out a
+     * `FileList` message with all of that data.
+     */
+    void reportAllPresentFiles();
+
+    /**
+     * This is an internal method that will report the parameters relating to the FileTransfer functionality to the
+     * platform.
+     */
+    void reportParameters();
+
+    /**
+     * This is an internal method that can be quickly used to report that the regular transfer protocol is disabled.
+     *
+     * @param fileName The name of the file that the platform attempted to transfer.
+     */
+    void reportTransferProtocolDisabled(const std::string& fileName);
+
+    /**
+     * This is an internal method that can be quickly used to report that the url transfer protocol is disabled.
+     *
+     * @param url The url that the platform has sent out to the device to download a file from.
+     */
+    void reportUrlTransferProtocolDisabled(const std::string& url);
+
+    /**
+     * This is an internal method meant to make a shortcut to obtaining the absolute path for a file by pre-including
+     * the `m_fileLocation` variable.
+     *
+     * @param file The name of the file in the folder.
+     * @return The absolute path of a file.
+     */
+    std::string absolutePathOfFile(const std::string& file);
+
+    /**
+     * This is an internal method that will check if there exists a file listener, and if it does, it will queue up a
+     * task to notify it of a newly added file.
+     *
+     * @param fileName The name of the newly added file.
+     * @param absolutePath The absolute path of the newly added file.
+     */
+    void notifyListenerAddedFile(const std::string& fileName, const std::string& absolutePath);
+
+    /**
+     * This is an internal method that will check if there exists a file listener, and if it does, it will queue up a
+     * task to notify it of a removed file.
+     *
+     * @param fileName The name of the removed file.
+     */
+    void notifyListenerRemovedFile(const std::string& fileName);
+
+    // This is where we store the message sender and the device key information
     ConnectivityService& m_connectivityService;
+    DataService& m_dataService;
+    const std::string m_deviceKey;
+
+    // These are the indicators of which modules of the FileManagement functionality are enabled.
+    bool m_fileTransferEnabled;
+    bool m_fileTransferUrlEnabled;
 
     // This is where the protocol will be passed while the service is created.
     FileManagementProtocol& m_protocol;
@@ -59,6 +143,17 @@ private:
     // This is where the user parameters will be passed.
     std::string m_fileLocation;
     std::uint64_t m_maxPacketSize;
+
+    // This is where we locally store information about files in memory
+    std::map<std::string, FileInformation> m_files;
+
+    // And here we place the ongoing session
+    std::unique_ptr<FileTransferSession> m_session;
+
+
+    // Make place for the listener pointer
+    std::weak_ptr<FileListener> m_fileListener;
+    CommandBuffer m_commandBuffer;
 };
 }    // namespace wolkabout
 

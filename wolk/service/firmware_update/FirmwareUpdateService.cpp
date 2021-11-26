@@ -24,7 +24,7 @@ FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivitySe
 {
 }
 
-void FirmwareUpdateService::messageReceived(std::shared_ptr<Message> message) {}
+void FirmwareUpdateService::messageReceived(std::shared_ptr<MqttMessage> message) {}
 
 const Protocol& FirmwareUpdateService::getProtocol()
 {

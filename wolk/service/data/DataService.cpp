@@ -15,7 +15,7 @@
  */
 
 #include "core/connectivity/ConnectivityService.h"
-#include "core/model/Message.h"
+#include "core/model/MqttMessage.h"
 #include "core/model/Feed.h"
 #include "core/model/Attribute.h"
 #include "core/Types.h"
@@ -42,7 +42,7 @@ DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persiste
 {
 }
 
-void DataService::messageReceived(std::shared_ptr<Message> message)
+void DataService::messageReceived(std::shared_ptr<MqttMessage> message)
 {
     assert(message);
 
@@ -117,7 +117,7 @@ void DataService::publishAttributes()
 
     AttributeRegistrationMessage attributeRegistrationMessage(attributes);
 
-    const std::shared_ptr<Message> outboundMessage =
+    const std::shared_ptr<MqttMessage> outboundMessage =
       m_protocol.makeOutboundMessage(m_deviceKey, attributeRegistrationMessage);
 
     if (!outboundMessage)
@@ -135,8 +135,8 @@ void DataService::publishAttributes()
 
 void DataService::publishParameters()
 {
-    std::vector<Parameters> parameters;
-    for (auto element : m_persistence.getParameters())
+    std::vector<Parameter> parameters;
+    for (const auto& element : m_persistence.getParameters())
     {
         parameters.emplace_back(element.first, element.second);
     }
@@ -148,20 +148,18 @@ void DataService::publishParameters()
 
     ParametersUpdateMessage parametersUpdateMessage(parameters);
 
-    const std::shared_ptr<Message> outboundMessage =
+    const std::shared_ptr<MqttMessage> outboundMessage =
       m_protocol.makeOutboundMessage(m_deviceKey, parametersUpdateMessage);
 
     if (!outboundMessage)
     {
         LOG(ERROR) << "Unable to create message from parameters";
-        m_persistence.removeAttributes();
         return;
     }
 
     if (m_connectivityService.publish(outboundMessage, false))
-    {
-        m_persistence.removeAttributes();
-    }
+        for (const auto& parameter : parameters)
+            m_persistence.removeParameters(parameter.first);
 }
 
 void DataService::publishReadingsForPersistenceKey(const std::string& persistenceKey)
@@ -175,7 +173,7 @@ void DataService::publishReadingsForPersistenceKey(const std::string& persistenc
 
     FeedValuesMessage feedValuesMessage(readings);
 
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, feedValuesMessage);
+    const std::shared_ptr<MqttMessage> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, feedValuesMessage);
 
     if (!outboundMessage)
     {
@@ -201,7 +199,7 @@ void DataService::registerFeeds(std::vector<Feed> feeds)
 {
     FeedRegistrationMessage feedRegistrationMessage(std::move(feeds));
 
-    const std::shared_ptr<Message> outboundMessage =
+    const std::shared_ptr<MqttMessage> outboundMessage =
       m_protocol.makeOutboundMessage(m_deviceKey, feedRegistrationMessage);
 
     if (!outboundMessage)
@@ -220,7 +218,8 @@ void DataService::pullFeedValues()
 {
     PullFeedValuesMessage pullFeedValuesMessage;
 
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, pullFeedValuesMessage);
+    const std::shared_ptr<MqttMessage> outboundMessage =
+      m_protocol.makeOutboundMessage(m_deviceKey, pullFeedValuesMessage);
 
     if (!outboundMessage)
     {
@@ -237,7 +236,8 @@ void DataService::pullParameters()
 {
     ParametersPullMessage parametersPullMessage;
 
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, parametersPullMessage);
+    const std::shared_ptr<MqttMessage> outboundMessage =
+      m_protocol.makeOutboundMessage(m_deviceKey, parametersPullMessage);
 
     if (!outboundMessage)
     {
@@ -250,15 +250,15 @@ void DataService::pullParameters()
         LOG(ERROR) << "Unable to publish Pull Parameters message";
     }
 }
-void DataService::addAttribute(Attribute attribute)
+void DataService::addAttribute(const Attribute& attribute)
 {
     auto attr = std::make_shared<Attribute>(attribute);
 
     m_persistence.putAttribute(attr);
 }
-void DataService::updateParameter(Parameters parameter)
-{
-    m_persistence.putParameter(parameter);
-}
 
+void DataService::updateParameter(Parameter parameter)
+{
+    m_persistence.putParameter(std::move(parameter));
+}
 }    // namespace wolkabout

@@ -21,6 +21,7 @@
 #include "core/Types.h"
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
+#include "core/model/Reading.h"
 
 #include <functional>
 #include <map>
@@ -35,7 +36,7 @@ class Persistence;
 class ConnectivityService;
 
 using FeedUpdateSetHandler = std::function<void(std::map<std::uint64_t, std::vector<Reading>>)>;
-using ParameterSyncHandler = std::function<void(std::vector<Parameters>)>;
+using ParameterSyncHandler = std::function<void(std::vector<Parameter>)>;
 
 class DataService : public MessageListener
 {
@@ -44,13 +45,13 @@ public:
                 ConnectivityService& connectivityService, FeedUpdateSetHandler feedUpdateHandler,
                 ParameterSyncHandler parameterSyncHandler);
 
-    void messageReceived(std::shared_ptr<Message> message) override;
+    void messageReceived(std::shared_ptr<MqttMessage> message) override;
     const Protocol& getProtocol() override;
 
     virtual void addReading(const std::string& reference, const std::string& value, std::uint64_t rtc);
 
-    virtual void addAttribute(Attribute attribute);
-    virtual void updateParameter(Parameters parameter);
+    virtual void addAttribute(const Attribute& attribute);
+    virtual void updateParameter(Parameter parameter);
 
     virtual void registerFeed(Feed feed);
     virtual void registerFeeds(std::vector<Feed> feed);

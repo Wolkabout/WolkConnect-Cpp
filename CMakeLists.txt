@@ -58,6 +58,7 @@ add_subdirectory(WolkSDK-Cpp)
 set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
         wolk/service/file_management/FileManagementService.cpp
+        wolk/service/file_management/FileTransferSession.cpp
         wolk/service/firmware_update/FirmwareUpdateService.cpp
         wolk/InboundPlatformMessageHandler.cpp
         wolk/Wolk.cpp
@@ -66,7 +67,10 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/ParameterHandler.h
         wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
+        wolk/service/file_management/FileDownloader.h
+        wolk/service/file_management/FileListener.h
         wolk/service/file_management/FileManagementService.h
+        wolk/service/file_management/FileTransferSession.h
         wolk/service/firmware_update/FirmwareUpdateService.h
         wolk/InboundPlatformMessageHandler.h
         wolk/Version.h

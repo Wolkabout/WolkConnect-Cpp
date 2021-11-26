@@ -153,7 +153,7 @@ public:
 
     void addAttribute(Attribute attribute);
 
-    void updateParameter(Parameters parameters);
+    void updateParameter(Parameter parameters);
 
     /**
      * @brief Establishes connection with WolkAbout IoT platform
@@ -186,7 +186,7 @@ private:
     void flushParameters();
 
     void handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Reading>>& readings);
-    void handleParameterCommand(const std::vector<Parameters> parameters);
+    void handleParameterCommand(const std::vector<Parameter> parameters);
 
     void tryConnect(bool firstTime = false);
     void notifyConnected();
@@ -210,7 +210,7 @@ private:
     std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
-    std::function<void(const std::vector<Parameters>)> m_parameterLambda;
+    std::function<void(const std::vector<Parameter>)> m_parameterLambda;
     std::weak_ptr<ParameterHandler> m_parameterHandler;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;

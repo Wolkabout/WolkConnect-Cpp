@@ -72,10 +72,13 @@ WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protoco
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize)
+WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadLocation, bool fileTransferEnabled,
+                                             bool fileTransferUrlEnabled, std::uint64_t maxPacketSize)
 {
     m_fileManagementProtocol.reset(new wolkabout::WolkaboutFileManagementProtocol);
     m_fileDownloadDirectory = fileDownloadLocation;
+    m_fileTransferEnabled = fileTransferEnabled;
+    m_fileTransferUrlEnabled = fileTransferUrlEnabled;
     m_maxPacketSize = maxPacketSize;
     return *this;
 }
@@ -100,11 +103,12 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     wolk->m_inboundMessageHandler =
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
 
+    auto wolkRaw = wolk.get();
     wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
-                                                                             [&]
+                                                                             [wolkRaw]
                                                                              {
-                                                                                 wolk->notifyDisonnected();
-                                                                                 wolk->connect();
+                                                                                 wolkRaw->notifyDisonnected();
+                                                                                 wolkRaw->connect();
                                                                              });
 
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
@@ -113,8 +117,9 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [&](const std::map<std::uint64_t, std::vector<Reading>>& readings) { wolk->handleFeedUpdateCommand(readings); },
-      [&](const std::vector<Parameters>& parameters) { wolk->handleParameterCommand(parameters); });
+      [wolkRaw](const std::map<std::uint64_t, std::vector<Reading>>& readings)
+      { wolkRaw->handleFeedUpdateCommand(readings); },
+      [wolkRaw](const std::vector<Parameter>& parameters) { wolkRaw->handleParameterCommand(parameters); });
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
     // Check if the file management should be engaged
@@ -123,7 +128,9 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         // Create the File Management service
         wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
         wolk->m_fileManagementService = std::make_shared<FileManagementService>(
-          *wolk->m_connectivityService, *wolk->m_fileManagementProtocol, m_fileDownloadDirectory, m_maxPacketSize);
+          wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, *wolk->m_fileManagementProtocol,
+          m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled, m_maxPacketSize);
+        wolk->m_fileManagementService->onBuild();
         wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
     }
 
