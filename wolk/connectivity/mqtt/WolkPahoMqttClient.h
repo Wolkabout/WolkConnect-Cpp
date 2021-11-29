@@ -22,6 +22,9 @@ class WolkPahoMqttClient : public PahoMqttClient
 {
 public:
     using PahoMqttClient::PahoMqttClient;
+
+    ~WolkPahoMqttClient() override;
+
     void disconnect() override;
 };
 }    // namespace wolkabout

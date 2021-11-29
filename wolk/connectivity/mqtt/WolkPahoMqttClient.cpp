@@ -16,8 +16,12 @@
 
 #include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
 
+#include <mqtt/async_client.h>
+
 namespace wolkabout
 {
+WolkPahoMqttClient::~WolkPahoMqttClient() = default;
+
 void WolkPahoMqttClient::disconnect()
 {
     const auto lastWillTopic = getLastWillTopic();

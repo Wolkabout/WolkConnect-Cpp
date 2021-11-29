@@ -45,7 +45,7 @@ public:
                 ConnectivityService& connectivityService, FeedUpdateSetHandler feedUpdateHandler,
                 ParameterSyncHandler parameterSyncHandler);
 
-    void messageReceived(std::shared_ptr<MqttMessage> message) override;
+    void messageReceived(std::shared_ptr<Message> message) override;
     const Protocol& getProtocol() override;
 
     virtual void addReading(const std::string& reference, const std::string& value, std::uint64_t rtc);

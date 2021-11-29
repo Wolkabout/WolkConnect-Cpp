@@ -27,6 +27,7 @@
 #include "wolk/Wolk.h"
 #include "wolk/WolkBuilder.h"
 
+#include <mqtt/async_client.h>
 #include <stdexcept>
 #include <utility>
 
@@ -150,6 +151,8 @@ WolkBuilder::WolkBuilder(Device device)
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}
 , m_dataProtocol(new WolkaboutDataProtocol())
+, m_fileTransferEnabled(false)
+, m_fileTransferUrlEnabled(false)
 , m_maxPacketSize{0}
 {
 }

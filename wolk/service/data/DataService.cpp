@@ -15,7 +15,7 @@
  */
 
 #include "core/connectivity/ConnectivityService.h"
-#include "core/model/MqttMessage.h"
+#include "core/model/Message.h"
 #include "core/model/Feed.h"
 #include "core/model/Attribute.h"
 #include "core/Types.h"
@@ -42,7 +42,7 @@ DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persiste
 {
 }
 
-void DataService::messageReceived(std::shared_ptr<MqttMessage> message)
+void DataService::messageReceived(std::shared_ptr<Message> message)
 {
     assert(message);
 
@@ -108,16 +108,15 @@ void DataService::publishReadings()
 
 void DataService::publishAttributes()
 {
-    const auto attributes = m_persistence.getAttributes();
-
+    auto attributes = std::vector<Attribute>{};
+    for (const auto& attributeFromPersistence : m_persistence.getAttributes())
+        attributes.emplace_back(*attributeFromPersistence);
     if (attributes.empty())
-    {
         return;
-    }
 
     AttributeRegistrationMessage attributeRegistrationMessage(attributes);
 
-    const std::shared_ptr<MqttMessage> outboundMessage =
+    const std::shared_ptr<Message> outboundMessage =
       m_protocol.makeOutboundMessage(m_deviceKey, attributeRegistrationMessage);
 
     if (!outboundMessage)
@@ -127,10 +126,8 @@ void DataService::publishAttributes()
         return;
     }
 
-    if (m_connectivityService.publish(outboundMessage, false))
-    {
+    if (m_connectivityService.publish(outboundMessage))
         m_persistence.removeAttributes();
-    }
 }
 
 void DataService::publishParameters()
@@ -148,7 +145,7 @@ void DataService::publishParameters()
 
     ParametersUpdateMessage parametersUpdateMessage(parameters);
 
-    const std::shared_ptr<MqttMessage> outboundMessage =
+    const std::shared_ptr<Message> outboundMessage =
       m_protocol.makeOutboundMessage(m_deviceKey, parametersUpdateMessage);
 
     if (!outboundMessage)
@@ -157,23 +154,22 @@ void DataService::publishParameters()
         return;
     }
 
-    if (m_connectivityService.publish(outboundMessage, false))
+    if (m_connectivityService.publish(outboundMessage))
         for (const auto& parameter : parameters)
             m_persistence.removeParameters(parameter.first);
 }
 
 void DataService::publishReadingsForPersistenceKey(const std::string& persistenceKey)
 {
-    const auto readings = m_persistence.getReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
-
+    auto readings = std::vector<Reading>{};
+    for (const auto& readingFromPersistence : m_persistence.getReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT))
+        readings.emplace_back(*readingFromPersistence);
     if (readings.empty())
-    {
         return;
-    }
 
     FeedValuesMessage feedValuesMessage(readings);
 
-    const std::shared_ptr<MqttMessage> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, feedValuesMessage);
+    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, feedValuesMessage);
 
     if (!outboundMessage)
     {
@@ -182,7 +178,7 @@ void DataService::publishReadingsForPersistenceKey(const std::string& persistenc
         return;
     }
 
-    if (m_connectivityService.publish(outboundMessage, false))
+    if (m_connectivityService.publish(outboundMessage))
     {
         m_persistence.removeReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
 
@@ -199,7 +195,7 @@ void DataService::registerFeeds(std::vector<Feed> feeds)
 {
     FeedRegistrationMessage feedRegistrationMessage(std::move(feeds));
 
-    const std::shared_ptr<MqttMessage> outboundMessage =
+    const std::shared_ptr<Message> outboundMessage =
       m_protocol.makeOutboundMessage(m_deviceKey, feedRegistrationMessage);
 
     if (!outboundMessage)
@@ -208,7 +204,7 @@ void DataService::registerFeeds(std::vector<Feed> feeds)
         return;
     }
 
-    if (!m_connectivityService.publish(outboundMessage, false))
+    if (!m_connectivityService.publish(outboundMessage))
     {
         LOG(ERROR) << "Unable to publish feed registration message";
     }
@@ -218,8 +214,7 @@ void DataService::pullFeedValues()
 {
     PullFeedValuesMessage pullFeedValuesMessage;
 
-    const std::shared_ptr<MqttMessage> outboundMessage =
-      m_protocol.makeOutboundMessage(m_deviceKey, pullFeedValuesMessage);
+    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, pullFeedValuesMessage);
 
     if (!outboundMessage)
     {
@@ -227,7 +222,7 @@ void DataService::pullFeedValues()
         return;
     }
 
-    if (!m_connectivityService.publish(outboundMessage, false))
+    if (!m_connectivityService.publish(outboundMessage))
     {
         LOG(ERROR) << "Unable to publish Pull Feeds Value message";
     }
@@ -236,8 +231,7 @@ void DataService::pullParameters()
 {
     ParametersPullMessage parametersPullMessage;
 
-    const std::shared_ptr<MqttMessage> outboundMessage =
-      m_protocol.makeOutboundMessage(m_deviceKey, parametersPullMessage);
+    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, parametersPullMessage);
 
     if (!outboundMessage)
     {
@@ -245,7 +239,7 @@ void DataService::pullParameters()
         return;
     }
 
-    if (!m_connectivityService.publish(outboundMessage, false))
+    if (!m_connectivityService.publish(outboundMessage))
     {
         LOG(ERROR) << "Unable to publish Pull Parameters message";
     }

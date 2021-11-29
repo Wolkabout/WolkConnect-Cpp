@@ -101,8 +101,7 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& withFileManagement(const std::string& fileDownloadLocation, bool fileTransferEnabled = true,
-                                    bool fileTransferUrlEnabled = true,
-                                    std::uint64_t maxPacketSize = MQTT_MAX_MESSAGE_SIZE);
+                                    bool fileTransferUrlEnabled = true, std::uint64_t maxPacketSize = 268435455);
 
     WolkBuilder& withFirmwareUpdate();
 

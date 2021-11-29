@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "core/model/MqttMessage.h"
+#include "core/model/Message.h"
 #include "core/utilities/Logger.h"
 #include "core/utilities/StringUtils.h"
 #include "core/protocol/Protocol.h"
@@ -52,7 +52,7 @@ void InboundPlatformMessageHandler::messageReceived(const std::string& channel, 
           {
               if (auto handler = channelHandler.lock())
               {
-                  handler->messageReceived(std::make_shared<MqttMessage>(payload, channel));
+                  handler->messageReceived(std::make_shared<Message>(payload, channel));
               }
           });
     }

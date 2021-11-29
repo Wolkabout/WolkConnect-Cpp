@@ -44,7 +44,7 @@ public:
 
     void onConnected();
 
-    void messageReceived(std::shared_ptr<MqttMessage> message) override;
+    void messageReceived(std::shared_ptr<Message> message) override;
 
     const Protocol& getProtocol() override;
 

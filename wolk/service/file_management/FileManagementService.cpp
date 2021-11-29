@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "core/model/MqttMessage.h"
+#include "core/model/Message.h"
 #include "core/model/messages/ParametersUpdateMessage.h"
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
@@ -75,7 +75,7 @@ const Protocol& FileManagementService::getProtocol()
     return m_protocol;
 }
 
-void FileManagementService::messageReceived(std::shared_ptr<MqttMessage> message)
+void FileManagementService::messageReceived(std::shared_ptr<Message> message)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -187,7 +187,7 @@ void FileManagementService::onFileUploadInit(const std::string& deviceKey, const
     // Make a response status that will refuse this
     auto response = std::make_shared<FileUploadStatusMessage>(message.getName(), FileUploadStatus::ERROR,
                                                               FileUploadError::TRANSFER_PROTOCOL_DISABLED);
-    m_connectivityService.publish(m_protocol.makeOutboundMessage(deviceKey, *response), false);
+    m_connectivityService.publish(m_protocol.makeOutboundMessage(deviceKey, *response));
 }
 
 void FileManagementService::onFileUploadAbort(const std::string& deviceKey, const FileUploadAbortMessage& message)
@@ -329,13 +329,13 @@ void FileManagementService::reportAllPresentFiles()
 
     // Make the message
     auto fileList = FileListResponseMessage{fileInformationVector};
-    auto message = std::shared_ptr<MqttMessage>(m_protocol.makeOutboundMessage(m_deviceKey, fileList));
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, fileList));
     if (message == nullptr)
     {
         LOG(ERROR) << "Failed to obtain serialized 'FileList' message.";
         return;
     }
-    m_connectivityService.publish(message, false);
+    m_connectivityService.publish(message);
 }
 
 void FileManagementService::reportParameters()
@@ -361,13 +361,13 @@ void FileManagementService::reportTransferProtocolDisabled(const std::string& fi
     // Form the message
     auto status =
       FileUploadStatusMessage{fileName, FileUploadStatus::ERROR, FileUploadError::TRANSFER_PROTOCOL_DISABLED};
-    auto message = std::shared_ptr<MqttMessage>(m_protocol.makeOutboundMessage(m_deviceKey, status));
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, status));
     if (message == nullptr)
     {
         LOG(ERROR) << "Failed to report that transfer protocol is disabled -> Failed to make outbound status message.";
         return;
     }
-    m_connectivityService.publish(message, false);
+    m_connectivityService.publish(message);
 }
 
 void FileManagementService::reportUrlTransferProtocolDisabled(const std::string& url)
@@ -377,14 +377,14 @@ void FileManagementService::reportUrlTransferProtocolDisabled(const std::string&
     // Form the message
     auto status =
       FileUrlDownloadStatusMessage{url, "", FileUploadStatus::ERROR, FileUploadError::TRANSFER_PROTOCOL_DISABLED};
-    auto message = std::shared_ptr<MqttMessage>(m_protocol.makeOutboundMessage(m_deviceKey, status));
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, status));
     if (message == nullptr)
     {
         LOG(ERROR)
           << "Failed to report that url transfer protocol is disabled -> Failed to make outbound status message.";
         return;
     }
-    m_connectivityService.publish(message, false);
+    m_connectivityService.publish(message);
 }
 
 std::string FileManagementService::absolutePathOfFile(const std::string& file)
