@@ -56,7 +56,7 @@ public:
      * @param maxSize The max size of a message chunk that needs to be sent out.
      */
     FileTransferSession(const FileUploadInitiateMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback,
+                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer,
                         std::uint64_t maxSize = 268435455);
 
     /**
@@ -66,7 +66,7 @@ public:
      * @param callback The callback that the session should use to announce status and error changes.
      */
     FileTransferSession(const FileUrlDownloadInitMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback);
+                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer);
 
     /**
      * Default getter for the information if the session is a platform transfer session.
@@ -81,6 +81,13 @@ public:
      * @return Is this session a url download session.
      */
     bool isUrlDownload() const;
+
+    /**
+     * Default getter for the information if the session is done.
+     *
+     * @return Is this session done?
+     */
+    bool isDone() const;
 
     /**
      * Default getter for the name of the file.
@@ -99,12 +106,17 @@ public:
     const std::string& getUrl() const;
 
     /**
+     * This is a method that allows the user to abort the session.
+     */
+    void abort();
+
+    /**
      * This is a method that will attempt to create a chunk out of a FileBinaryResponse message.
      *
      * @param message Binary response containing bytes and hashes.
      * @return The current status of the session.
      */
-    FileUploadStatus pushChunk(const FileBinaryResponseMessage& message);
+    FileUploadError pushChunk(const FileBinaryResponseMessage& message);
 
     /**
      * This is a method that will hand out the next FileBinaryRequest if the session is in a transfer mode, and in
@@ -128,12 +140,31 @@ public:
      */
     FileUploadError getError() const;
 
+    /**
+     * Default getter for the chunks that the session has collected.
+     *
+     * @return The vector containing all the chunks the session has collected.
+     */
+    const std::vector<FileChunk>& getChunks() const;
+
 private:
+    /**
+     * This is an internal method that is used to change the internal status and error, and announce them over the
+     * callback to whoever listens to the status and error.
+     *
+     * @param status The new status value.
+     * @param error The new error value.
+     */
+    void changeStatusAndError(FileUploadStatus status, FileUploadError error);
+
     // Here are the parameters for engaging the session.
     // If the URL is set, it is always a URL download session.
     std::string m_name;
     std::string m_url;
-    std::uint64_t m_maxSize;
+
+    // Here we store the information whether the session is done
+    std::uint64_t m_retryCount;
+    bool m_done;
 
     // If the session is meant to be a file upload session, it should hold chunks.
     // And it should also use the size/hash declared by the platform
@@ -145,10 +176,11 @@ private:
     std::shared_ptr<FileDownloader> m_downloader;
 
     // Here is the place for the status and the error, and the callback
+    std::mutex m_mutex;
     FileUploadStatus m_status;
     FileUploadError m_error;
     std::function<void(FileUploadStatus, FileUploadError)> m_callback;
-    CommandBuffer m_commandBuffer;
+    CommandBuffer& m_commandBuffer;
 };
 }    // namespace wolkabout
 

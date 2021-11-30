@@ -36,7 +36,7 @@ public:
     FileManagementService(std::string deviceKey, ConnectivityService& connectivityService, DataService& dataService,
                           FileManagementProtocol& protocol, std::string fileLocation, bool fileTransferEnabled = true,
                           bool fileTransferUrlEnabled = true, std::uint64_t maxPacketSize = MQTT_MAX_MESSAGE_SIZE,
-                          std::shared_ptr<FileListener> fileListener = nullptr);
+                          const std::shared_ptr<FileListener>& fileListener = nullptr);
 
     void setFileListener(const std::shared_ptr<FileListener>& fileListener);
 
@@ -64,6 +64,29 @@ private:
     void onFileDelete(const std::string& deviceKey, const FileDeleteMessage& message);
 
     void onFilePurge(const std::string& deviceKey, const FilePurgeMessage& message);
+
+    /**
+     * This is an internal method that should be invoked to report the status of a transfer session.
+     *
+     * @param status The new FileUploadStatus value.
+     * @param error The new FileUploadError value.
+     */
+    void reportStatus(FileUploadStatus status, FileUploadError error = FileUploadError::NONE);
+
+    /**
+     * This is an internal method that should be invoked to send out a binary request message.
+     *
+     * @param message The FileBinaryRequest message requesting the next chunk.
+     */
+    void sendChunkRequest(const FileBinaryRequestMessage& message);
+
+    /**
+     * This is an internal method that should be invoked in the FileTransferSession callback.
+     *
+     * @param status The new FileUploadStatus value.
+     * @param error The new FileUploadError value.
+     */
+    void onFileSessionStatus(FileUploadStatus status, FileUploadError error = FileUploadError::NONE);
 
     /**
      * This is an internal method that will load a file from the filesystem, to collect the `FileInformation` object.
@@ -149,7 +172,6 @@ private:
 
     // And here we place the ongoing session
     std::unique_ptr<FileTransferSession> m_session;
-
 
     // Make place for the listener pointer
     std::weak_ptr<FileListener> m_fileListener;

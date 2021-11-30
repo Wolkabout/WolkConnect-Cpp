@@ -17,7 +17,7 @@
 #ifndef FEEDUPDATEHANDLER_H
 #define FEEDUPDATEHANDLER_H
 
-#include "core/Types.h"
+#include "core/model/Reading.h"
 
 #include <map>
 #include <string>

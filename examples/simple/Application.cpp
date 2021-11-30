@@ -40,7 +40,7 @@ int main(int /* argc */, char** /* argv */)
     auto payload = "0000000000000000000000000000000000000000000000000000000000000000"
                    "1111111111111111111111111111111111111111111111111111111111111111"
                    "2222222222222222222222222222222222222222222222222222222222222222";
-    auto message = wolkabout::FileBinaryResponse(payload);
+    auto message = wolkabout::FileBinaryResponseMessage(payload);
     LOG(DEBUG) << wolkabout::toString(message.getMessageType()) << ".";
 
     while (true)

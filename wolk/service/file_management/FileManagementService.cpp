@@ -30,7 +30,7 @@ FileManagementService::FileManagementService(std::string deviceKey, Connectivity
                                              DataService& dataService, FileManagementProtocol& protocol,
                                              std::string fileLocation, bool fileTransferEnabled,
                                              bool fileTransferUrlEnabled, std::uint64_t maxPacketSize,
-                                             std::shared_ptr<FileListener> fileListener)
+                                             const std::shared_ptr<FileListener>& fileListener)
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
 , m_deviceKey(std::move(deviceKey))
@@ -179,25 +179,56 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
     }
 }
 
-void FileManagementService::onFileUploadInit(const std::string& deviceKey, const FileUploadInitiateMessage& message)
+void FileManagementService::onFileUploadInit(const std::string& /** deviceKey **/,
+                                             const FileUploadInitiateMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // TODO For now a test in development
-    // Make a response status that will refuse this
-    auto response = std::make_shared<FileUploadStatusMessage>(message.getName(), FileUploadStatus::ERROR,
-                                                              FileUploadError::TRANSFER_PROTOCOL_DISABLED);
-    m_connectivityService.publish(m_protocol.makeOutboundMessage(deviceKey, *response));
+    // We need to attempt to create a session.
+    if (m_session)
+    {
+        LOG(DEBUG) << "Received a FileUploadInitiate message while a session is already ongoing. Ignoring...";
+        return;
+    }
+
+    // Create a session for this file
+    auto name = std::string(message.getName());
+    m_session = std::unique_ptr<FileTransferSession>(new FileTransferSession(
+      message,
+      [this, name](FileUploadStatus status, FileUploadError error) { this->onFileSessionStatus(status, error); },
+      m_commandBuffer));
+
+    // Obtain the first message for the session
+    auto firstMessage = m_session->getNextChunkRequest();
+    if (!firstMessage.getName().empty())
+    {
+        // Send out the status and the request
+        reportStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE);
+        sendChunkRequest(firstMessage);
+    }
 }
 
 void FileManagementService::onFileUploadAbort(const std::string& deviceKey, const FileUploadAbortMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
+
+    if (m_session)
+        m_session->abort();
 }
 
-void FileManagementService::onFileBinaryResponse(const std::string& deviceKey, const FileBinaryResponseMessage& message)
+void FileManagementService::onFileBinaryResponse(const std::string& /** deviceKey **/,
+                                                 const FileBinaryResponseMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
+
+    // Pass the message onto the session
+    if (m_session)
+    {
+        // Pass the bytes onto it
+        auto error = m_session->pushChunk(message);
+        if (error == FileUploadError::FILE_HASH_MISMATCH || !m_session->isDone())
+            sendChunkRequest(m_session->getNextChunkRequest());
+    }
 }
 
 void FileManagementService::onFileUrlDownloadInit(const std::string& deviceKey,
@@ -253,6 +284,62 @@ void FileManagementService::onFilePurge(const std::string& /** deviceKey **/, co
 
     // And report the files back
     reportAllPresentFiles();
+}
+
+void FileManagementService::sendChunkRequest(const FileBinaryRequestMessage& message)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Transform it into a protocol message and send out
+    auto parsedMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, message));
+    m_connectivityService.publish(parsedMessage);
+}
+
+void FileManagementService::reportStatus(FileUploadStatus status, FileUploadError error)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Make the message
+    auto fileName = m_session->getName();
+    auto message = FileUploadStatusMessage(fileName, status, error);
+    auto parsedMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, message));
+
+    // And publish it out
+    m_connectivityService.publish(parsedMessage);
+}
+
+void FileManagementService::onFileSessionStatus(FileUploadStatus status, FileUploadError error)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Report the status
+    reportStatus(status, error);
+
+    // If the status is that the file is ready, or it is an error, stop the session
+    if (status == FileUploadStatus::FILE_READY || status == FileUploadStatus::ERROR ||
+        status == FileUploadStatus::ABORTED)
+    {
+        // If the file is ready, create the file
+        if (status == FileUploadStatus::FILE_READY)
+        {
+            // Collect the chunks and place the file in
+            const auto& fileName = m_session->getName();
+            const auto& chunks = m_session->getChunks();
+
+            // Get the absolute path for the file
+            auto relativePath = FileSystemUtils::composePath(fileName, m_fileLocation);
+
+            // Collect all the bytes for the file
+            auto content = ByteArray{};
+            for (const auto& chunk : chunks)
+                content.insert(content.end(), chunk.bytes.cbegin(), chunk.bytes.cend());
+
+            // Place the file in the folder
+            if (!FileSystemUtils::createBinaryFileWithContent(relativePath, content))
+                LOG(ERROR) << "Failed to store the '" << fileName << "' locally.";
+        }
+        m_session.reset();
+    }
 }
 
 FileInformation FileManagementService::obtainFileInformation(const std::string& fileName)
@@ -347,10 +434,13 @@ void FileManagementService::reportParameters()
       Parameter{ParameterName::FILE_TRANSFER_PLATFORM_ENABLED, m_fileTransferEnabled ? "true" : "false"};
     auto urlTransferParameter =
       Parameter{ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"};
+    auto maximumMessageSize = Parameter{ParameterName::MAXIMUM_MESSAGE_SIZE,
+                                        std::to_string(m_maxPacketSize == MQTT_MAX_MESSAGE_SIZE ? 0 : m_maxPacketSize)};
 
     // Update using the data service
     m_dataService.updateParameter(transferParameter);
     m_dataService.updateParameter(urlTransferParameter);
+    m_dataService.updateParameter(maximumMessageSize);
     m_dataService.publishParameters();
 }
 
