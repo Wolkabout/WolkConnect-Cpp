@@ -30,7 +30,7 @@ namespace wolkabout
 {
 FileTransferSession::FileTransferSession(const FileUploadInitiateMessage& message,
                                          std::function<void(FileUploadStatus, FileUploadError)> callback,
-                                         CommandBuffer& commandBuffer, std::uint64_t maxSize)
+                                         CommandBuffer& commandBuffer)
 : m_name(message.getName())
 , m_retryCount(0)
 , m_done(false)
@@ -45,11 +45,12 @@ FileTransferSession::FileTransferSession(const FileUploadInitiateMessage& messag
 
 FileTransferSession::FileTransferSession(const FileUrlDownloadInitMessage& message,
                                          std::function<void(FileUploadStatus, FileUploadError)> callback,
-                                         CommandBuffer& commandBuffer)
+                                         CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader)
 : m_url(message.getPath())
 , m_retryCount(0)
 , m_done(false)
 , m_size(0)
+, m_downloader(std::move(fileDownloader))
 , m_status(FileUploadStatus::FILE_TRANSFER)
 , m_error(FileUploadError::NONE)
 , m_callback(std::move(callback))
@@ -82,17 +83,17 @@ const std::string& FileTransferSession::getUrl() const
     return m_url;
 }
 
-const std::string& FileTransferSession::getHash() const
-{
-    return m_hash;
-}
-
 void FileTransferSession::abort()
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Clean up the chunks
-    m_chunks.clear();
+    // Based on the type of transfer
+    if (isPlatformTransfer())
+        // Clean up the chunks
+        m_chunks.clear();
+    else
+        // Tell the downloader to abort
+        m_downloader->abortDownload();
 
     // Report the statuses properly
     m_done = true;
@@ -221,6 +222,38 @@ FileBinaryRequestMessage FileTransferSession::getNextChunkRequest()
         LOG(DEBUG) << "Successfully returned next FileBinaryRequestMessage for chunk " << m_chunks.size() << ".";
         return FileBinaryRequestMessage{m_name, m_chunks.size()};
     }
+}
+
+bool FileTransferSession::triggerDownload()
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Check that the session is related to URL download
+    if (isPlatformTransfer())
+    {
+        LOG(DEBUG) << "Failed to trigger a URL download - The session is not a URL download session.";
+        return false;
+    }
+
+    // Check if we have a downloader.
+    if (m_downloader == nullptr)
+    {
+        LOG(DEBUG) << "Failed to trigger a URL download - We are missing a FileDownloader.";
+        return false;
+    }
+
+    // Now that we have adequate information, setup everything
+    m_downloader->downloadFile(m_url,
+                               [this](FileUploadStatus status, FileUploadError error, const std::string& fileName)
+                               {
+                                   // Set the name if a name value is sent out
+                                   if (!fileName.empty())
+                                       this->m_name = fileName;
+
+                                   // Announce the status
+                                   changeStatusAndError(status, error);
+                               });
+    return true;
 }
 
 FileUploadStatus FileTransferSession::getStatus() const

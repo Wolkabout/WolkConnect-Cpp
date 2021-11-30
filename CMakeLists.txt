@@ -57,6 +57,7 @@ add_subdirectory(WolkSDK-Cpp)
 # WolkAbout c++ Connector
 set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
+        wolk/service/file_management/poco/PocoFileDownloader.cpp
         wolk/service/file_management/FileManagementService.cpp
         wolk/service/file_management/FileTransferSession.cpp
         wolk/service/firmware_update/FirmwareUpdateService.cpp
@@ -67,6 +68,7 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/ParameterHandler.h
         wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
+        wolk/service/file_management/poco/PocoFileDownloader.h
         wolk/service/file_management/FileDownloader.h
         wolk/service/file_management/FileListener.h
         wolk/service/file_management/FileManagementService.h
@@ -80,7 +82,7 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
 file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE)
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore z PocoUtil PocoCrypto PocoData PocoDataSQLite PocoFoundation Threads::Threads)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore PocoFoundation PocoCrypto PocoNet PocoNetSSL PocoUtil Threads::Threads)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")

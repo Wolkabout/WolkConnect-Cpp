@@ -39,6 +39,7 @@ FileManagementService::FileManagementService(std::string deviceKey, Connectivity
 , m_protocol(protocol)
 , m_fileLocation(std::move(fileLocation))
 , m_maxPacketSize(maxPacketSize)
+, m_downloader(m_fileTransferUrlEnabled ? std::make_shared<PocoFileDownloader>(m_commandBuffer) : nullptr)
 , m_fileListener(fileListener)
 {
     if (!(fileTransferEnabled || fileTransferUrlEnabled))
@@ -185,17 +186,15 @@ void FileManagementService::onFileUploadInit(const std::string& /** deviceKey **
     LOG(TRACE) << METHOD_INFO;
 
     // We need to attempt to create a session.
-    if (m_session)
+    if (m_session || m_session->isUrlDownload())
     {
         LOG(DEBUG) << "Received a FileUploadInitiate message while a session is already ongoing. Ignoring...";
         return;
     }
 
     // Create a session for this file
-    auto name = std::string(message.getName());
     m_session = std::unique_ptr<FileTransferSession>(new FileTransferSession(
-      message,
-      [this, name](FileUploadStatus status, FileUploadError error) { this->onFileSessionStatus(status, error); },
+      message, [this](FileUploadStatus status, FileUploadError error) { this->onFileSessionStatus(status, error); },
       m_commandBuffer));
 
     // Obtain the first message for the session
@@ -208,11 +207,12 @@ void FileManagementService::onFileUploadInit(const std::string& /** deviceKey **
     }
 }
 
-void FileManagementService::onFileUploadAbort(const std::string& deviceKey, const FileUploadAbortMessage& message)
+void FileManagementService::onFileUploadAbort(const std::string& /** deviceKey **/,
+                                              const FileUploadAbortMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    if (m_session)
+    if (m_session && m_session->getName() == message.getName())
         m_session->abort();
 }
 
@@ -222,7 +222,7 @@ void FileManagementService::onFileBinaryResponse(const std::string& /** deviceKe
     LOG(TRACE) << METHOD_INFO;
 
     // Pass the message onto the session
-    if (m_session)
+    if (m_session && m_session->isPlatformTransfer())
     {
         // Pass the bytes onto it
         auto error = m_session->pushChunk(message);
@@ -235,12 +235,30 @@ void FileManagementService::onFileUrlDownloadInit(const std::string& deviceKey,
                                                   const FileUrlDownloadInitMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
+
+    // We need to attempt to create a session.
+    if (m_session)
+    {
+        LOG(DEBUG) << "Received a FileUrlDownloadInit message while a session is already ongoing. Ignoring...";
+        return;
+    }
+
+    // Create a session for this message
+    m_session = std::unique_ptr<FileTransferSession>(new FileTransferSession(
+      message, [this](FileUploadStatus status, FileUploadError error) { this->onFileSessionStatus(status, error); },
+      m_commandBuffer, m_downloader));
+
+    // Trigger the download
+    m_session->triggerDownload();
 }
 
-void FileManagementService::onFileUrlDownloadAbort(const std::string& deviceKey,
+void FileManagementService::onFileUrlDownloadAbort(const std::string& /** deviceKey **/,
                                                    const FileUrlDownloadAbortMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
+
+    if (m_session && m_session->getUrl() == message.getPath())
+        m_session->abort();
 }
 
 void FileManagementService::onFileListRequest(const std::string& /** deviceKey **/,
@@ -300,12 +318,24 @@ void FileManagementService::reportStatus(FileUploadStatus status, FileUploadErro
     LOG(TRACE) << METHOD_INFO;
 
     // Make the message
-    auto fileName = m_session->getName();
-    auto message = FileUploadStatusMessage(fileName, status, error);
-    auto parsedMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, message));
+    auto parsedMessage = std::shared_ptr<Message>{};
+    if (m_session->isPlatformTransfer())
+    {
+        auto fileName = m_session->getName();
+        auto message = FileUploadStatusMessage(fileName, status, error);
+        parsedMessage = m_protocol.makeOutboundMessage(m_deviceKey, message);
+    }
+    else
+    {
+        auto filePath = m_session->getUrl();
+        auto fileName = m_session->getName();
+        auto message = FileUrlDownloadStatusMessage(filePath, fileName, status, error);
+        parsedMessage = m_protocol.makeOutboundMessage(m_deviceKey, message);
+    }
 
     // And publish it out
-    m_connectivityService.publish(parsedMessage);
+    if (parsedMessage != nullptr)
+        m_connectivityService.publish(parsedMessage);
 }
 
 void FileManagementService::onFileSessionStatus(FileUploadStatus status, FileUploadError error)

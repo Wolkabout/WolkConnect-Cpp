@@ -18,6 +18,7 @@
 #define WOLKABOUTCONNECTOR_FILEDOWNLOADER_H
 
 #include "core/Types.h"
+#include "core/utilities/ByteUtils.h"
 
 #include <functional>
 #include <string>
@@ -33,7 +34,28 @@ public:
     /**
      * Default virtual destructor.
      */
-    virtual ~FileDownloader() = 0;
+    virtual ~FileDownloader() = default;
+
+    /**
+     * This is the getter by which the user can get the current status of the file download.
+     *
+     * @return The file download status.
+     */
+    virtual FileUploadStatus getStatus() = 0;
+
+    /**
+     * This is the getter by which the user can get the file name of the downloaded file.
+     *
+     * @return The name of the downloaded file.
+     */
+    virtual std::string getName() = 0;
+
+    /**
+     * This is the getter by which the user can get file bytes when the file has been downloaded.
+     *
+     * @return The byte array containing all bytes of the downloaded file.
+     */
+    virtual ByteArray getBytes() = 0;
 
     /**
      * This is the method by which the FileManagementService will notify the downloader it should start downloading a

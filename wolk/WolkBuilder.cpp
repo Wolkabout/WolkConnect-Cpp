@@ -130,7 +130,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
         wolk->m_fileManagementService = std::make_shared<FileManagementService>(
           wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, *wolk->m_fileManagementProtocol,
-          m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled, m_maxPacketSize);
+          m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled,  m_maxPacketSize);
         wolk->m_fileManagementService->onBuild();
         wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
     }

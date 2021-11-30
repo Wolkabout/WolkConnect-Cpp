@@ -53,20 +53,22 @@ public:
      *
      * @param message The message that initiated an upload.
      * @param callback The callback that the session should use to announce status and error changes.
-     * @param maxSize The max size of a message chunk that needs to be sent out.
+     * @param commandBuffer The command buffer which the session will use to announce status.
      */
     FileTransferSession(const FileUploadInitiateMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer,
-                        std::uint64_t maxSize = 268435455);
+                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer);
 
     /**
      * Default constructor for the FileTransferSession in case of a url download transfer.
      *
      * @param message The message that initiated an upload.
      * @param callback The callback that the session should use to announce status and error changes.
+     * @param commandBuffer The command buffer which the session will use to announce status.
+     * @param fileDownloader The file downloader that will actually execute the file download.
      */
     FileTransferSession(const FileUrlDownloadInitMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer);
+                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer,
+                        std::shared_ptr<FileDownloader>  fileDownloader);
 
     /**
      * Default getter for the information if the session is a platform transfer session.
@@ -106,13 +108,6 @@ public:
     const std::string& getUrl() const;
 
     /**
-     * Default getter for the hash of the file.
-     *
-     * @return The hash of the file after it gets downloaded.
-     */
-    const std::string& getHash() const;
-
-    /**
      * This is a method that allows the user to abort the session.
      */
     void abort();
@@ -132,6 +127,13 @@ public:
      * @return The next request message that should be sent out. If the name is empty, that's an invalid request.
      */
     FileBinaryRequestMessage getNextChunkRequest();
+
+    /**
+     * This is a method that will start the download of a file.
+     *
+     * @return If the trigger was successful.
+     */
+    bool triggerDownload();
 
     /**
      * Default getter for the current status of the transfer session.
