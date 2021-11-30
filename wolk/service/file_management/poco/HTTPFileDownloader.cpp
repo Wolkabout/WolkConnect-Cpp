@@ -111,8 +111,10 @@ void HTTPFileDownloader::download(const std::string& url)
         auto host = extractHost(url);
         auto port = extractPort(url);
         Poco::Net::Context::Ptr context =
-          new Poco::Net::Context(Poco::Net::Context::CLIENT_USE, "", "", "", Poco::Net::Context::VERIFY_NONE, 9, false,
-                                 "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+          new Poco::Net::Context(Poco::Net::Context::TLSV1_2_CLIENT_USE, "", "", "", Poco::Net::Context::VERIFY_NONE, 9,
+                                 false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+        context->disableProtocols(Poco::Net::Context::PROTO_SSLV2 | Poco::Net::Context::PROTO_SSLV3 |
+                                  Poco::Net::Context::PROTO_TLSV1 | Poco::Net::Context::PROTO_TLSV1_1);
         m_session =
           std::unique_ptr<Poco::Net::HTTPSClientSession>{new Poco::Net::HTTPSClientSession{host, port, context}};
 
