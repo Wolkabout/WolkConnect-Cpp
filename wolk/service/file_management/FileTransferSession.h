@@ -106,6 +106,13 @@ public:
     const std::string& getUrl() const;
 
     /**
+     * Default getter for the hash of the file.
+     *
+     * @return The hash of the file after it gets downloaded.
+     */
+    const std::string& getHash() const;
+
+    /**
      * This is a method that allows the user to abort the session.
      */
     void abort();

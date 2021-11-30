@@ -44,6 +44,12 @@ public:
      */
     virtual void downloadFile(const std::string& url,
                               std::function<void(FileUploadStatus, FileUploadError, std::string)> statusCallback) = 0;
+
+    /**
+     * This is the method by which the FileManagementService will notify the downloader to try and attempt to abort the
+     * download.
+     */
+    virtual void abortDownload() = 0;
 };
 }    // namespace wolkabout
 

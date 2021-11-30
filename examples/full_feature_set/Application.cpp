@@ -193,7 +193,7 @@ int main(int /* argc */, char** /* argv */)
                   .ca_cert_path(CA_CERT_PATH)
                   .feedUpdateHandler(deviceInfoHandler)
                   .withPersistence(inMemoryPersistence)
-                  .withFileManagement(FILE_MANAGEMENT_LOCATION, true, true, 1)
+                  .withFileManagement(FILE_MANAGEMENT_LOCATION)
                   .build();
 
     /**

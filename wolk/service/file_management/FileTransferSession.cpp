@@ -22,6 +22,8 @@
 #include "core/utilities/Logger.h"
 #include "wolk/service/file_management/FileTransferSession.h"
 
+#include <iomanip>
+#include <openssl/md5.h>
 #include <utility>
 
 namespace wolkabout
@@ -78,6 +80,11 @@ const std::string& FileTransferSession::getName() const
 const std::string& FileTransferSession::getUrl() const
 {
     return m_url;
+}
+
+const std::string& FileTransferSession::getHash() const
+{
+    return m_hash;
 }
 
 void FileTransferSession::abort()
@@ -159,9 +166,30 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
     // Check if the size is now the file size
     if (collectedSize >= m_size)
     {
-        LOG(DEBUG) << "Successfully for the current FileTransferSession of file '" << m_name << "'.";
+        LOG(DEBUG) << "Collected all the bytes in FileTransferSession of file '" << m_name << "'.";
         m_done = true;
-        changeStatusAndError(FileUploadStatus::FILE_READY, FileUploadError::NONE);
+
+        // Hash the value
+        std::uint8_t hashCStr[MD5_DIGEST_LENGTH];
+        auto context = MD5_CTX();
+        MD5_Init(&context);
+
+        // Now we need to check the hash
+        for (const auto& chunk : m_chunks)
+            MD5_Update(&context, chunk.bytes.data(), chunk.bytes.size());
+        MD5_Final(hashCStr, &context);
+
+        // Put that into a string stream
+        auto hashStream = std::stringstream{};
+        for (auto i = std::uint32_t{0}; i < MD5_DIGEST_LENGTH; ++i)
+            hashStream << std::setfill('0') << std::setw(2) << std::hex << static_cast<std::int32_t>(hashCStr[i]);
+        auto hash = hashStream.str();
+
+        // Now check the hash
+        if (hash == m_hash)
+            changeStatusAndError(FileUploadStatus::FILE_READY, FileUploadError::NONE);
+        else
+            changeStatusAndError(FileUploadStatus::ERROR, FileUploadError::FILE_HASH_MISMATCH);
     }
     return FileUploadError::NONE;
 }
