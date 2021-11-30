@@ -14,38 +14,31 @@
  * limitations under the License.
  */
 
-#ifndef WOLKABOUTCONNECTOR_POCOFILEDOWNLOADER_H
-#define WOLKABOUTCONNECTOR_POCOFILEDOWNLOADER_H
+#ifndef WOLKABOUTCONNECTOR_HTTPFILEDOWNLOADER_H
+#define WOLKABOUTCONNECTOR_HTTPFILEDOWNLOADER_H
 
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/service/file_management/FileDownloader.h"
 
+#include <Poco/Net/HTTPSClientSession.h>
 #include <memory>
 #include <thread>
 #include <core/utilities/ByteUtils.h>
 
-namespace Poco
-{
-namespace Net
-{
-    class HTTPClientSession;
-}
-}    // namespace Poco
-
 namespace wolkabout
 {
-class PocoFileDownloader : public FileDownloader
+class HTTPFileDownloader : public FileDownloader
 {
 public:
     /**
      * Default constructor.
      */
-    explicit PocoFileDownloader(CommandBuffer& commandBuffer);
+    explicit HTTPFileDownloader(CommandBuffer& commandBuffer);
 
     /**
      * Overridden destructor. Will abort the download and stop the thread.
      */
-    ~PocoFileDownloader() override;
+    ~HTTPFileDownloader() override;
 
     /**
      * Overridden method from the `FileDownloader` interface.
@@ -145,9 +138,9 @@ private:
     CommandBuffer& m_commandBuffer;
 
     // Here we store the session so the session can be closed in case of abort
-    std::unique_ptr<Poco::Net::HTTPClientSession> m_session;
+    std::unique_ptr<Poco::Net::HTTPSClientSession> m_session;
     std::unique_ptr<std::thread> m_thread;
 };
 }    // namespace wolkabout
 
-#endif    // WOLKABOUTCONNECTOR_POCOFILEDOWNLOADER_H
+#endif    // WOLKABOUTCONNECTOR_HTTPFILEDOWNLOADER_H

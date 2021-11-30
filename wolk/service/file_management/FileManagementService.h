@@ -24,7 +24,7 @@
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileListener.h"
 #include "wolk/service/file_management/FileTransferSession.h"
-#include "wolk/service/file_management/poco/PocoFileDownloader.h"
+#include "wolk/service/file_management/poco/HTTPFileDownloader.h"
 
 namespace wolkabout
 {
@@ -175,7 +175,7 @@ private:
     std::unique_ptr<FileTransferSession> m_session;
 
     // This is a pointer to a file downloader that we will use. In case that is supported.
-    std::shared_ptr<PocoFileDownloader> m_downloader;
+    std::shared_ptr<HTTPFileDownloader> m_downloader;
 
     // Make place for the listener pointer
     std::weak_ptr<FileListener> m_fileListener;

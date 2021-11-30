@@ -39,7 +39,7 @@ FileManagementService::FileManagementService(std::string deviceKey, Connectivity
 , m_protocol(protocol)
 , m_fileLocation(std::move(fileLocation))
 , m_maxPacketSize(maxPacketSize)
-, m_downloader(m_fileTransferUrlEnabled ? std::make_shared<PocoFileDownloader>(m_commandBuffer) : nullptr)
+, m_downloader(m_fileTransferUrlEnabled ? std::make_shared<HTTPFileDownloader>(m_commandBuffer) : nullptr)
 , m_fileListener(fileListener)
 {
     if (!(fileTransferEnabled || fileTransferUrlEnabled))
@@ -250,6 +250,7 @@ void FileManagementService::onFileUrlDownloadInit(const std::string& deviceKey,
 
     // Trigger the download
     m_session->triggerDownload();
+    reportStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE);
 }
 
 void FileManagementService::onFileUrlDownloadAbort(const std::string& /** deviceKey **/,

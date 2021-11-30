@@ -57,7 +57,7 @@ add_subdirectory(WolkSDK-Cpp)
 # WolkAbout c++ Connector
 set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
-        wolk/service/file_management/poco/PocoFileDownloader.cpp
+        wolk/service/file_management/poco/HTTPFileDownloader.cpp
         wolk/service/file_management/FileManagementService.cpp
         wolk/service/file_management/FileTransferSession.cpp
         wolk/service/firmware_update/FirmwareUpdateService.cpp
@@ -68,7 +68,7 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/ParameterHandler.h
         wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
-        wolk/service/file_management/poco/PocoFileDownloader.h
+        wolk/service/file_management/poco/HTTPFileDownloader.h
         wolk/service/file_management/FileDownloader.h
         wolk/service/file_management/FileListener.h
         wolk/service/file_management/FileManagementService.h

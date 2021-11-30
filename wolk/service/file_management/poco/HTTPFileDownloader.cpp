@@ -15,16 +15,15 @@
  */
 
 #include "core/utilities/Logger.h"
-#include "wolk/service/file_management/poco/PocoFileDownloader.h"
+#include "wolk/service/file_management/poco/HTTPFileDownloader.h"
 
-#include <Poco/Crypto/Crypto.h>
-#include <Poco/Util/Util.h>
-#include <Poco/Net/HTTPClientSession.h>
-#include <Poco/Net/HTTPSClientSession.h>
+#include <Poco/Net/Context.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/StreamCopier.h>
+#include <Poco/Util/Util.h>
 #include <regex>
+#include <iomanip>
 
 namespace wolkabout
 {
@@ -34,33 +33,33 @@ const std::string HTTPS_PATH_PREFIX = "https://";
 const std::regex URL_REGEX = std::regex(
   R"(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
 
-PocoFileDownloader::PocoFileDownloader(CommandBuffer& commandBuffer)
+HTTPFileDownloader::HTTPFileDownloader(CommandBuffer& commandBuffer)
 : m_status(FileUploadStatus::AWAITING_DEVICE), m_commandBuffer(commandBuffer)
 {
 }
 
-PocoFileDownloader::~PocoFileDownloader()
+HTTPFileDownloader::~HTTPFileDownloader()
 {
     LOG(TRACE) << METHOD_INFO;
     stop();
 }
 
-FileUploadStatus PocoFileDownloader::getStatus()
+FileUploadStatus HTTPFileDownloader::getStatus()
 {
     return m_status;
 }
 
-std::string PocoFileDownloader::getName()
+std::string HTTPFileDownloader::getName()
 {
     return m_name;
 }
 
-ByteArray PocoFileDownloader::getBytes()
+ByteArray HTTPFileDownloader::getBytes()
 {
     return m_bytes;
 }
 
-void PocoFileDownloader::downloadFile(
+void HTTPFileDownloader::downloadFile(
   const std::string& url, std::function<void(FileUploadStatus, FileUploadError, std::string)> statusCallback)
 {
     LOG(TRACE) << METHOD_INFO;
@@ -76,10 +75,12 @@ void PocoFileDownloader::downloadFile(
     }
 
     // Start the thread that will do all the work
-    m_thread = std::unique_ptr<std::thread>{new std::thread{&PocoFileDownloader::download, this, url}};
+    if (m_thread != nullptr && m_thread->joinable())
+        m_thread->join();
+    m_thread = std::unique_ptr<std::thread>{new std::thread{&HTTPFileDownloader::download, this, url}};
 }
 
-void PocoFileDownloader::abortDownload()
+void HTTPFileDownloader::abortDownload()
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -99,55 +100,80 @@ void PocoFileDownloader::abortDownload()
     }
 }
 
-void PocoFileDownloader::download(const std::string& url)
+void HTTPFileDownloader::download(const std::string& url)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Start by creating the session
-    changeStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE, {});
-    auto host = extractHost(url);
-    auto port = extractPort(url);
-    // TODO Uncomment this!
-    //    if (url.find("https") != std::string::npos)
-    //        m_session = std::unique_ptr<Poco::Net::HTTPSClientSession>{new Poco::Net::HTTPSClientSession{host, port}};
-    //    else
-    m_session = std::unique_ptr<Poco::Net::HTTPClientSession>{new Poco::Net::HTTPClientSession{host, port}};
-
-    // Create the request
-    auto uri = extractUri(url);
-    auto request = std::unique_ptr<Poco::Net::HTTPRequest>(new Poco::Net::HTTPRequest("GET", uri));
-    m_session->sendRequest(*request);
-
-    // Await the response
-    auto response = std::unique_ptr<Poco::Net::HTTPResponse>(new Poco::Net::HTTPResponse);
-    auto outputStream = std::stringstream{};
-    Poco::StreamCopier::copyStream(m_session->receiveResponse(*response), outputStream);
-
-    // Check the code of the response
-    if (response->getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+    try
     {
-        changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, "");
-        return;
-    }
+        // Start by creating the session
+        changeStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE, {});
+        auto host = extractHost(url);
+        auto port = extractPort(url);
+        Poco::Net::Context::Ptr context =
+          new Poco::Net::Context(Poco::Net::Context::CLIENT_USE, "", "", "", Poco::Net::Context::VERIFY_NONE, 9, false,
+                                 "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
+        m_session =
+          std::unique_ptr<Poco::Net::HTTPSClientSession>{new Poco::Net::HTTPSClientSession{host, port, context}};
 
-    // Make it into a byte stream
+        // Create the request
+        auto uri = extractUri(url);
+        Poco::Net::HTTPRequest request("GET", uri);
+        m_session->sendRequest(request) << "";
+
+        // Await the response
+        Poco::Net::HTTPResponse response;
+        m_session->receiveResponse(response);
+
+        // Check the code of the response
+        if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+        {
+            changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, "");
+            return;
+        }
+
+        auto outputStream = std::stringstream{};
+        Poco::StreamCopier::copyStream(m_session->receiveResponse(response), outputStream);
+
+        // Make it into a byte stream
+        {
+            auto output = outputStream.str();
+            m_bytes.reserve(output.size());
+            m_bytes.assign(output.cbegin(), output.cend());
+        }
+        outputStream.clear();
+
+        // Decide on the name of the file
+        auto name = uri.substr(uri.rfind('/'));
+        if (name.find('?'))
+            name = name.substr(0, name.find('?'));
+        if (name.empty())
+        {
+            // Get the SHA256 of the file and name it that
+            auto hash = ByteUtils::hashSHA256(m_bytes);
+            auto hashStringStream = std::stringstream{};
+            for (const auto& hashByte : hash)
+                hashStringStream << std::setfill('0') << std::setw(2) << std::hex
+                                 << static_cast<std::int32_t>(hashByte);
+            name = hashStringStream.str();
+        }
+
+        // Now with everything set, we can announce everything
+        changeStatus(FileUploadStatus::FILE_READY, FileUploadError::NONE, name);
+    }
+    catch (const Poco::Exception& exception)
     {
-        auto output = outputStream.str();
-        m_bytes.reserve(output.size());
-        m_bytes.assign(output.cbegin(), output.cend());
+        LOG(ERROR) << "An error has occurred while downloading the file -> '" << exception.message() << "'.";
+        changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, {});
     }
-    outputStream.clear();
-
-    // Decide on the name of the file
-    auto name = uri.substr(uri.rfind('/'));
-    if (name.find('?'))
-        name = name.substr(0, name.find('?'));
-
-    // Now with everything set, we can announce everything
-    changeStatus(FileUploadStatus::FILE_READY, FileUploadError::NONE, name);
+    catch (const std::exception& exception)
+    {
+        LOG(ERROR) << "An error has occurred while downloading the file -> '" << exception.what() << "'.";
+        changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, {});
+    }
 }
 
-void PocoFileDownloader::stop()
+void HTTPFileDownloader::stop()
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -167,7 +193,7 @@ void PocoFileDownloader::stop()
     }
 }
 
-void PocoFileDownloader::changeStatus(FileUploadStatus status, FileUploadError error, const std::string& fileName)
+void HTTPFileDownloader::changeStatus(FileUploadStatus status, FileUploadError error, const std::string& fileName)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -188,7 +214,7 @@ void PocoFileDownloader::changeStatus(FileUploadStatus status, FileUploadError e
     }
 }
 
-std::string PocoFileDownloader::extractHost(std::string targetPath)
+std::string HTTPFileDownloader::extractHost(std::string targetPath)
 {
     // Manipulate the copy of the string to extract the host
     if (targetPath.find(HTTP_PATH_PREFIX) != std::string::npos)
@@ -202,7 +228,7 @@ std::string PocoFileDownloader::extractHost(std::string targetPath)
     return targetPath;
 }
 
-std::uint16_t PocoFileDownloader::extractPort(std::string targetPath)
+std::uint16_t HTTPFileDownloader::extractPort(std::string targetPath)
 {
     // Take out the HTTP(S) prefix
     if (targetPath.find(HTTP_PATH_PREFIX) != std::string::npos)
@@ -218,7 +244,7 @@ std::uint16_t PocoFileDownloader::extractPort(std::string targetPath)
     return 80;
 }
 
-std::string PocoFileDownloader::extractUri(std::string targetPath)
+std::string HTTPFileDownloader::extractUri(std::string targetPath)
 {
     // Take out the HTTP(S) prefix
     if (targetPath.find(HTTP_PATH_PREFIX) != std::string::npos)
