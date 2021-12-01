@@ -37,12 +37,6 @@ int main(int /* argc */, char** /* argv */)
     auto engine = std::mt19937(static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count()));
     auto distribution = std::uniform_real_distribution<>(-20, 80);
 
-    auto payload = "0000000000000000000000000000000000000000000000000000000000000000"
-                   "1111111111111111111111111111111111111111111111111111111111111111"
-                   "2222222222222222222222222222222222222222222222222222222222222222";
-    auto message = wolkabout::FileBinaryResponseMessage(payload);
-    LOG(DEBUG) << wolkabout::toString(message.getMessageType()) << ".";
-
     while (true)
     {
         wolk->addReading("T", distribution(engine));

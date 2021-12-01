@@ -186,7 +186,7 @@ void FileManagementService::onFileUploadInit(const std::string& /** deviceKey **
     LOG(TRACE) << METHOD_INFO;
 
     // We need to attempt to create a session.
-    if (m_session || m_session->isUrlDownload())
+    if (m_session != nullptr)
     {
         LOG(DEBUG) << "Received a FileUploadInitiate message while a session is already ongoing. Ignoring...";
         return;
@@ -237,7 +237,7 @@ void FileManagementService::onFileUrlDownloadInit(const std::string& /** deviceK
     LOG(TRACE) << METHOD_INFO;
 
     // We need to attempt to create a session.
-    if (m_session)
+    if (m_session != nullptr)
     {
         LOG(DEBUG) << "Received a FileUrlDownloadInit message while a session is already ongoing. Ignoring...";
         return;

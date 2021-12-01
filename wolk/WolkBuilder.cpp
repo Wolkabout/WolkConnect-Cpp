@@ -20,9 +20,11 @@
 #include "core/persistence/inmemory/InMemoryPersistence.h"
 #include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFileManagementProtocol.h"
+#include "core/protocol/wolkabout/WolkaboutFirmwareUpdateProtocol.h"
 #include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileManagementService.h"
+#include "wolk/service/firmware_update/FirmwareUpdateService.h"
 #include "wolk/InboundPlatformMessageHandler.h"
 #include "wolk/Wolk.h"
 #include "wolk/WolkBuilder.h"
@@ -85,11 +87,36 @@ WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protoco
 WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadLocation, bool fileTransferEnabled,
                                              bool fileTransferUrlEnabled, std::uint64_t maxPacketSize)
 {
-    m_fileManagementProtocol.reset(new wolkabout::WolkaboutFileManagementProtocol);
+    m_fileManagementProtocol =
+      std::unique_ptr<WolkaboutFileManagementProtocol>(new wolkabout::WolkaboutFileManagementProtocol);
     m_fileDownloadDirectory = fileDownloadLocation;
     m_fileTransferEnabled = fileTransferEnabled;
     m_fileTransferUrlEnabled = fileTransferUrlEnabled;
     m_maxPacketSize = maxPacketSize;
+    return *this;
+}
+
+WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> firmwareInstaller,
+                                             const std::string& workingDirectory)
+{
+    if (m_firmwareUpdateProtocol == nullptr)
+        m_firmwareUpdateProtocol =
+          std::unique_ptr<WolkaboutFirmwareUpdateProtocol>(new wolkabout::WolkaboutFirmwareUpdateProtocol);
+    m_firmwareParametersListener = nullptr;
+    m_firmwareInstaller = std::move(firmwareInstaller);
+    m_workingDirectory = workingDirectory;
+    return *this;
+}
+
+WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareParametersListener> firmwareParametersListener,
+                                             const std::string& workingDirectory)
+{
+    if (m_firmwareUpdateProtocol == nullptr)
+        m_firmwareUpdateProtocol =
+          std::unique_ptr<WolkaboutFirmwareUpdateProtocol>(new wolkabout::WolkaboutFirmwareUpdateProtocol);
+    m_firmwareInstaller = nullptr;
+    m_firmwareParametersListener = std::move(firmwareParametersListener);
+    m_workingDirectory = workingDirectory;
     return *this;
 }
 
@@ -142,6 +169,31 @@ std::unique_ptr<Wolk> WolkBuilder::build()
           m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled, m_maxPacketSize);
         wolk->m_fileManagementService->onBuild();
         wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
+    }
+
+    // Check if the firmware update should be engaged
+    if (m_firmwareUpdateProtocol != nullptr)
+    {
+        // Create the Firmware Update service
+        wolk->m_firmwareUpdateProtocol = std::move(m_firmwareUpdateProtocol);
+
+        // Build based on the module we have
+        if (m_firmwareInstaller != nullptr)
+        {
+            wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
+              wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, m_firmwareInstaller,
+              *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
+        }
+        else if (m_firmwareParametersListener != nullptr)
+        {
+            wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
+              wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, m_firmwareParametersListener,
+              *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
+        }
+
+        // And set it all up
+        wolk->m_firmwareUpdateService->onBuild();
+        wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
     }
 
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);

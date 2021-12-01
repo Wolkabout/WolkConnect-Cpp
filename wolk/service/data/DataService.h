@@ -22,6 +22,7 @@
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/model/Reading.h"
+#include "core/utilities/CommandBuffer.h"
 
 #include <functional>
 #include <map>
@@ -58,6 +59,8 @@ public:
 
     virtual void pullFeedValues();
     virtual void pullParameters();
+    virtual bool synchronizeParameters(const std::vector<ParameterName>& parameters,
+                                       std::function<void(std::vector<Parameter>)> callback);
 
     virtual void publishReadings();
 
@@ -78,6 +81,16 @@ private:
 
     FeedUpdateSetHandler m_feedUpdateHandler;
     ParameterSyncHandler m_parameterSyncHandler;
+
+    CommandBuffer m_commandBuffer;
+    struct ParameterSubscription
+    {
+        std::vector<ParameterName> parameters;
+        std::function<void(std::vector<Parameter>)> callback;
+    };
+    std::uint64_t m_iterator;
+    std::mutex m_subscriptionMutex;
+    std::map<std::uint64_t, ParameterSubscription> m_parameterSubscriptions;
 
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 };

@@ -38,6 +38,7 @@ const std::string DEVICE_PASSWORD = "IO62M61QOR";
 const std::string PLATFORM_HOST = "ssl://10.0.50.228:8883";
 const std::string CA_CERT_PATH = "./ca.crt";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
+const std::string FIRMWARE_VERSION = "4.0.0";
 
 /**
  * This is a structure definition that is a collection of all information/feeds the device will have.
@@ -47,39 +48,11 @@ struct DeviceData
     std::double_t temperature;
     bool toggle;
     std::chrono::seconds heartbeat;
-    std::string firmwareVersion;
 };
 
 // Here we have some synchronization tools
 std::mutex mutex;
 std::condition_variable conditionVariable;
-
-/**
- * This class represents an object capable of storing feed values into the persistence.
- * This can be used to retrieve old feed values after running the program to keep the device state consistent.
- */
-class FeedPersistence
-{
-public:
-    /**
-     * This is the default constructor for the feeds that will create the map for all feeds, in which values can be
-     * loaded/saved.
-     *
-     * @param feedNames The list of all feeds that will be in this session.
-     */
-    explicit FeedPersistence(const std::vector<std::string>& feedNames)
-    {
-        for (const auto& feedName : feedNames)
-            m_feeds.emplace(feedName, std::string{});
-    }
-
-private:
-    // This is the constant value representing the location of the JSON file used to load/store values.
-    static const std::string JSON_FILE_LOCATION;
-
-    // This is the place where in memory the values are going to be stored.
-    std::map<std::string, std::string> m_feeds;
-};
 
 /**
  * This is an object that is capable of handling the received data about feeds from the platform.
@@ -93,19 +66,8 @@ public:
      * Default constructor that will establish the relationship between the handler and the data.
      *
      * @param deviceData The data object in which the handler will put the data.
-     * @param persistence The optional persistence object that will be notified when the data is changed.
      */
-    explicit DeviceDataChangeHandler(DeviceData& deviceData, std::shared_ptr<FeedPersistence> persistence = nullptr)
-    : m_deviceData(deviceData), m_persistence(std::move(persistence))
-    {
-    }
-
-    /**
-     * Default setter for the persistence that will be notified by the change handler about device information.
-     *
-     * @param persistence Pointer to the new persistence that will be used by the handler.
-     */
-    void setPersistence(std::shared_ptr<FeedPersistence> persistence) { m_persistence = std::move(persistence); }
+    explicit DeviceDataChangeHandler(DeviceData& deviceData) : m_deviceData(deviceData) {}
 
     /**
      * This is the overridden method from the `FeedUpdateHandler` interface.
@@ -141,13 +103,68 @@ public:
     }
 
 private:
-    // This is where the object containing all information about the device is stored, and the optional pointer to
-    // persistence.
+    // This is where the object containing all information about the device is stored.
     DeviceData& m_deviceData;
-    std::shared_ptr<FeedPersistence> m_persistence;
 };
 
-const std::string FeedPersistence::JSON_FILE_LOCATION = "./feeds.json";
+/**
+ * This is an example implementation of the `FirmwareInstaller` interface. This class will ask the user about
+ * preferences for return values of the methods.
+ */
+class ExampleFirmwareInstaller : public wolkabout::FirmwareInstaller
+{
+public:
+    /**
+     * Default constructor for the FirmwareInstaller. Requires the folder location for FileManagement files.
+     *
+     * @param fileLocation The location where files are located.
+     */
+    explicit ExampleFirmwareInstaller(std::string fileLocation) : m_fileLocation(std::move(fileLocation)) {}
+
+    wolkabout::InstallResponse installFirmware(const std::string& fileName) override
+    {
+        // Compose the path
+        auto path = wolkabout::FileSystemUtils::composePath(fileName, m_fileLocation);
+        LOG(INFO) << "Installation for file '" << path << "' requested.";
+        return wolkabout::InstallResponse::WILL_INSTALL;
+    }
+
+    void abortFirmwareInstall() override { LOG(INFO) << "The firmware install was aborted!"; }
+
+    bool wasFirmwareInstallSuccessful(const std::string& /** oldVersion **/) override
+    {
+        return true;
+    }
+
+    std::string getFirmwareVersion() override { return FIRMWARE_VERSION; }
+
+private:
+    // Here is the folder location where files managed with FileManagement are stored.
+    std::string m_fileLocation;
+};
+
+/**
+ * This is an example implementation of the `FirmwareParametersListener` interface. This class will log the parameters
+ * once they have been received from the platform.
+ */
+class ExampleFirmwareParameterListener : public wolkabout::FirmwareParametersListener
+{
+public:
+    /**
+     * This is an overridden method from the `FirmwareParameterListener` interface.
+     * This method will be invoked once the service has received parameters regarding the firmware update.
+     *
+     * @param repository The repository link that should be checked.
+     * @param updateTime The time at which the link should be checked.
+     */
+    void receiveParameters(std::string repository, std::string updateTime) override
+    {
+        LOG(INFO) << "Firmware Update Repository: " << repository;
+        LOG(INFO) << "Firmware Update Time: " << updateTime;
+    }
+
+    std::string getFirmwareVersion() override { return FIRMWARE_VERSION; }
+};
 
 /**
  * This is interrupt logic used to stop the application from running.
@@ -178,9 +195,8 @@ int main(int /* argc */, char** /* argv */)
      * those two will be stored by the persistence.
      */
     auto device = wolkabout::Device{DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH};
-    auto deviceInfo = DeviceData{0, false, std::chrono::seconds(60), "1.0.0-DEVELOPMENT"};
-    auto infoPersistence = std::make_shared<FeedPersistence>(std::vector<std::string>{"SW", "HB"});
-    auto deviceInfoHandler = std::make_shared<DeviceDataChangeHandler>(deviceInfo, infoPersistence);
+    auto deviceInfo = DeviceData{0, false, std::chrono::seconds(60)};
+    auto deviceInfoHandler = std::make_shared<DeviceDataChangeHandler>(deviceInfo);
 
     /**
      * Now we can start creating the Wolk instance that is right for us.
@@ -194,6 +210,9 @@ int main(int /* argc */, char** /* argv */)
                   .feedUpdateHandler(deviceInfoHandler)
                   .withPersistence(inMemoryPersistence)
                   .withFileManagement(FILE_MANAGEMENT_LOCATION)
+                  // Uncomment for example ParameterListener
+                  //                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareParameterListener>())
+                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareInstaller>(FILE_MANAGEMENT_LOCATION))
                   .build();
 
     /**

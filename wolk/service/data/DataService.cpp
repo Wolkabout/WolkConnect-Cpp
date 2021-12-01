@@ -39,6 +39,7 @@ DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persiste
 , m_connectivityService{connectivityService}
 , m_feedUpdateHandler{std::move(feedUpdateHandler)}
 , m_parameterSyncHandler{std::move(parameterSyncHandler)}
+, m_iterator(0)
 {
 }
 
@@ -74,7 +75,41 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
     {
         auto parameterMessage = m_protocol.parseParameters(message);
         if (parameterMessage == nullptr)
+        {
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
+            return;
+        }
+
+        // Check if there's a subscription waiting for those parameters
+        {
+            std::lock_guard<std::mutex> lockGuard{m_subscriptionMutex};
+            for (const auto& subscription : m_parameterSubscriptions)
+            {
+                // Check if the list of parameters is the same length, and then content
+                const auto& parameters = subscription.second.parameters;
+                const auto& values = parameterMessage->getParameters();
+                if (parameterMessage->getParameters().size() != parameters.size())
+                    continue;
+                if (!std::all_of(parameters.cbegin(), parameters.cend(),
+                                 [&](const ParameterName& name)
+                                 {
+                                     return std::find_if(values.begin(), values.end(),
+                                                         [&](const Parameter& parameter)
+                                                         { return parameter.first == name; }) != values.cend();
+                                 }))
+                    continue;
+
+                // Then we found the ones for the subscription!
+                auto callback = subscription.second.callback;
+                m_commandBuffer.pushCommand(
+                  std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
+
+                // And we can clear the subscription
+                m_parameterSubscriptions.erase(subscription.first);
+                return;
+            }
+        }
+
         if (m_parameterSyncHandler)
             m_parameterSyncHandler(parameterMessage->getParameters());
         return;
@@ -244,6 +279,37 @@ void DataService::pullParameters()
         LOG(ERROR) << "Unable to publish Pull Parameters message";
     }
 }
+
+bool DataService::synchronizeParameters(const std::vector<ParameterName>& parameters,
+                                        std::function<void(std::vector<Parameter>)> callback)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Make the subscription object in the map
+    auto subscription = ParameterSubscription{parameters, std::move(callback)};
+
+    // Make the message for synchronization
+    auto synchronization = SynchronizeParametersMessage{parameters};
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, synchronization));
+    if (message == nullptr)
+    {
+        LOG(ERROR) << "Failed to synchronize parameters - Failed to parse outgoing SynchronizeParametersMessage.";
+        return false;
+    }
+
+    // Lock the subscription mutex, send the message out, and add the subscription to the map.
+    {
+        std::lock_guard<std::mutex> lockGuard{m_subscriptionMutex};
+        if (!m_connectivityService.publish(message))
+        {
+            LOG(ERROR) << "Failed to synchronize parameters - Failed to send the outgoing SynchronizeParameterMessage.";
+            return false;
+        }
+        m_parameterSubscriptions.emplace(m_iterator++, std::move(subscription));
+        return true;
+    }
+}
+
 void DataService::addAttribute(const Attribute& attribute)
 {
     auto attr = std::make_shared<Attribute>(attribute);

@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include "api/ParameterHandler.h"
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Device.h"
 #include "core/utilities/Logger.h"
-#include "service/data/DataService.h"
-#include "service/file_management/FileManagementService.h"
+#include "wolk/api/ParameterHandler.h"
+#include "wolk/service/data/DataService.h"
+#include "wolk/service/file_management/FileManagementService.h"
+#include "wolk/service/firmware_update/FirmwareUpdateService.h"
 #include "wolk/Wolk.h"
 
 #include <memory>
@@ -168,6 +169,8 @@ void Wolk::notifyConnected()
 
     if (m_fileManagementService != nullptr)
         m_fileManagementService->onConnected();
+    if (m_firmwareUpdateService != nullptr)
+        m_firmwareUpdateService->onConnected();
 }
 
 void Wolk::notifyDisonnected()

@@ -38,6 +38,7 @@ class ConnectivityService;
 class DataProtocol;
 class DataService;
 class FileManagementService;
+class FirmwareUpdateService;
 class InboundMessageHandler;
 class WolkaboutDataProtocol;
 
@@ -196,6 +197,7 @@ private:
 
     std::unique_ptr<DataProtocol> m_dataProtocol;
     std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
+    std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
 
     std::unique_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<Persistence> m_persistence;
@@ -206,6 +208,7 @@ private:
 
     std::shared_ptr<DataService> m_dataService;
     std::shared_ptr<FileManagementService> m_fileManagementService;
+    std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
 
     std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;

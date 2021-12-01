@@ -45,9 +45,9 @@ public:
 
     void onConnected();
 
-    void messageReceived(std::shared_ptr<Message> message) override;
-
     const Protocol& getProtocol() override;
+
+    void messageReceived(std::shared_ptr<Message> message) override;
 
 private:
     void onFileUploadInit(const std::string& deviceKey, const FileUploadInitiateMessage& message);

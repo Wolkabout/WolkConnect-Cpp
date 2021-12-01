@@ -17,28 +17,65 @@
 #ifndef WOLKABOUTCONNECTOR_FIRMWAREUPDATESERVICE_H
 #define WOLKABOUTCONNECTOR_FIRMWAREUPDATESERVICE_H
 
-#include "core/connectivity/ConnectivityService.h"
 #include "core/InboundMessageHandler.h"
+#include "core/connectivity/ConnectivityService.h"
 #include "core/protocol/FirmwareUpdateProtocol.h"
+#include "wolk/api/FirmwareInstaller.h"
+#include "wolk/api/FirmwareParametersListener.h"
+#include "wolk/service/data/DataService.h"
+
+#include <queue>
 
 namespace wolkabout
 {
 class FirmwareUpdateService : public MessageListener
 {
 public:
-    FirmwareUpdateService(ConnectivityService& connectivityService, FirmwareUpdateProtocol& protocol);
+    FirmwareUpdateService(std::string deviceKey, ConnectivityService& connectivityService, DataService& dataService,
+                          std::shared_ptr<FirmwareInstaller> firmwareInstaller, FirmwareUpdateProtocol& protocol,
+                          const std::string& workingDirectory = "./");
 
-    void messageReceived(std::shared_ptr<Message> message) override;
+    FirmwareUpdateService(std::string deviceKey, ConnectivityService& connectivityService, DataService& dataService,
+                          std::shared_ptr<FirmwareParametersListener> firmwareParametersListener,
+                          FirmwareUpdateProtocol& protocol, const std::string& workingDirectory = "./");
+
+    void onBuild();
+
+    void onConnected();
 
     const Protocol& getProtocol() override;
+
+    void messageReceived(std::shared_ptr<Message> message) override;
 
 private:
     void onFirmwareInstall(const std::string& deviceKey, const FirmwareUpdateInstallMessage& message);
 
     void onFirmwareAbort(const std::string& deviceKey, const FirmwareUpdateAbortMessage& message);
 
+    void sendStatusMessage(FirmwareUpdateStatus status, FirmwareUpdateError error = FirmwareUpdateError::NONE);
+
+    void queueStatusMessage(FirmwareUpdateStatus status, FirmwareUpdateError error = FirmwareUpdateError::NONE);
+
+    bool storeSessionFile();
+
+    void deleteSessionFile();
+
+    void reportParameters();
+
+    void obtainParametersAndAnnounce();
+
     // This is where we store the message sender
     ConnectivityService& m_connectivityService;
+    DataService& m_dataService;
+    const std::string m_deviceKey;
+    std::string m_sessionFile;
+
+    // Here we store messages that the service queues up to send when the connection is established
+    std::queue<std::shared_ptr<Message>> m_queue;
+
+    // There is one of two ways the firmware update service can be instantiated
+    std::shared_ptr<FirmwareInstaller> m_firmwareInstaller;
+    std::shared_ptr<FirmwareParametersListener> m_firmwareParametersListener;
 
     // This is where the protocol will be passed while the service is created.
     FirmwareUpdateProtocol& m_protocol;

@@ -55,7 +55,8 @@ option(POCO_BUILD_NET "" ON)
 add_subdirectory(WolkSDK-Cpp)
 
 # WolkAbout c++ Connector
-set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
+set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
+        wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
         wolk/service/file_management/poco/HTTPFileDownloader.cpp
         wolk/service/file_management/FileManagementService.cpp
@@ -65,12 +66,14 @@ set(LIB_SOURCE_FILES wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/Wolk.cpp
         wolk/WolkBuilder.cpp)
 set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
+        wolk/api/FileListener.h
+        wolk/api/FirmwareInstaller.h
+        wolk/api/FirmwareParametersListener.h
         wolk/api/ParameterHandler.h
         wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
         wolk/service/file_management/poco/HTTPFileDownloader.h
         wolk/service/file_management/FileDownloader.h
-        wolk/api/FileListener.h
         wolk/service/file_management/FileManagementService.h
         wolk/service/file_management/FileTransferSession.h
         wolk/service/firmware_update/FirmwareUpdateService.h
