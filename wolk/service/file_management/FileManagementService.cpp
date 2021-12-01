@@ -231,7 +231,7 @@ void FileManagementService::onFileBinaryResponse(const std::string& /** deviceKe
     }
 }
 
-void FileManagementService::onFileUrlDownloadInit(const std::string& deviceKey,
+void FileManagementService::onFileUrlDownloadInit(const std::string& /** deviceKey **/,
                                                   const FileUrlDownloadInitMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
@@ -355,19 +355,28 @@ void FileManagementService::onFileSessionStatus(FileUploadStatus status, FileUpl
         {
             // Collect the chunks and place the file in
             const auto& fileName = m_session->getName();
-            const auto& chunks = m_session->getChunks();
 
             // Get the absolute path for the file
             auto relativePath = FileSystemUtils::composePath(fileName, m_fileLocation);
 
             // Collect all the bytes for the file
             auto content = ByteArray{};
-            for (const auto& chunk : chunks)
-                content.insert(content.end(), chunk.bytes.cbegin(), chunk.bytes.cend());
+            if (m_session->isPlatformTransfer())
+            {
+                const auto& chunks = m_session->getChunks();
+                for (const auto& chunk : chunks)
+                    content.insert(content.end(), chunk.bytes.cbegin(), chunk.bytes.cend());
+            }
+            else
+            {
+                content = m_downloader->getBytes();
+            }
 
             // Place the file in the folder
             if (!FileSystemUtils::createBinaryFileWithContent(relativePath, content))
                 LOG(ERROR) << "Failed to store the '" << fileName << "' locally.";
+            else
+                notifyListenerAddedFile(fileName, absolutePathOfFile(fileName));
         }
         m_session.reset();
     }

@@ -70,7 +70,7 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/service/data/DataService.h
         wolk/service/file_management/poco/HTTPFileDownloader.h
         wolk/service/file_management/FileDownloader.h
-        wolk/service/file_management/FileListener.h
+        wolk/api/FileListener.h
         wolk/service/file_management/FileManagementService.h
         wolk/service/file_management/FileTransferSession.h
         wolk/service/firmware_update/FirmwareUpdateService.h

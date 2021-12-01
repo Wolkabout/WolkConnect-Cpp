@@ -21,8 +21,8 @@
 #include "core/connectivity/ConnectivityService.h"
 #include "core/protocol/FileManagementProtocol.h"
 #include "core/utilities/CommandBuffer.h"
+#include "wolk/api/FileListener.h"
 #include "wolk/service/data/DataService.h"
-#include "wolk/service/file_management/FileListener.h"
 #include "wolk/service/file_management/FileTransferSession.h"
 #include "wolk/service/file_management/poco/HTTPFileDownloader.h"
 
