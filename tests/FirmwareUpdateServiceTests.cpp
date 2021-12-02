@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 WolkAbout Technology s.r.o.
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef WOLKABOUTCONNECTOR_ACTUATIONHANDLERMOCK_H
-#define WOLKABOUTCONNECTOR_ACTUATIONHANDLERMOCK_H
+
+#include <any>
+#include <sstream>
 
 #define private public
 #define protected public
-#include "api/FeedUpdateHandler.h"
+#include "wolk/service/firmware_update/FirmwareUpdateService.h"
 #undef private
 #undef protected
 
-#include <gmock/gmock.h>
+#include "core/utilities/Logger.h"
 
-class ActuationHandlerMock : public wolkabout::ActuationHandler
+#include <gtest/gtest.h>
+
+using namespace wolkabout;
+
+class FirmwareUpdateServiceTests : public ::testing::Test
 {
 public:
-    MOCK_METHOD(void, handleActuation, (const std::string&, const std::string&), (override));
-};
+    static void SetUpTestCase() { Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE); }
 
-#endif    // WOLKABOUTCONNECTOR_ACTUATIONHANDLERMOCK_H
+    const std::string TAG = "FirmwareUpdateServiceTests";
+};

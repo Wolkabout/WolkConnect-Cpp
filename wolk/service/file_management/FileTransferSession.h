@@ -68,7 +68,7 @@ public:
      */
     FileTransferSession(const FileUrlDownloadInitMessage& message,
                         std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer,
-                        std::shared_ptr<FileDownloader>  fileDownloader);
+                        std::shared_ptr<FileDownloader> fileDownloader);
 
     /**
      * Default getter for the information if the session is a platform transfer session.

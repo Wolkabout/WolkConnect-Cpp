@@ -92,28 +92,19 @@ set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 add_dependencies(${PROJECT_NAME} libpoco)
 
 # Tests
-set(TEST_SOURCE_FILES tests/DataServiceTests.cpp
-        tests/DeviceTests.cpp
+set(TEST_SOURCE_FILES
+        tests/DataServiceTests.cpp
+        tests/FileManagementServiceTests.cpp
+        tests/FileTransferSessionTests.cpp
+        tests/FirmwareUpdateServiceTests.cpp
         tests/InboundPlatformMessageHandlerTests.cpp
-        tests/KeepAliveServiceTests.cpp
-        tests/SQLiteFileRepositoryTests.cpp
         tests/WolkBuilderTests.cpp
         tests/WolkTests.cpp)
-set(TEST_HEADER_FILES tests/mocks/ActuationHandlerMock.h
-        tests/mocks/ActuatorStatusProviderMock.h
-        tests/mocks/ConfigurationHandlerMock.h
-        tests/mocks/ConfigurationProviderMock.h
+set(TEST_HEADER_FILES
         tests/mocks/ConnectivityServiceMock.h
         tests/mocks/DataProtocolMock.h
-        tests/mocks/DataServiceMock.h
-        tests/mocks/FileDownloadServiceMock.h
-        tests/mocks/FileRepositoryMock.h
-        tests/mocks/InboundMessageHandlerMock.h
-        tests/mocks/KeepAliveServiceMock.h
-        tests/mocks/MessageListenerMock.h
         tests/mocks/PersistenceMock.h
-        tests/mocks/ProtocolMock.h
-        tests/mocks/StatusProtocolMock.h)
+        tests/mocks/WolkPahoMqttClientMock.h)
 
 add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
 target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)

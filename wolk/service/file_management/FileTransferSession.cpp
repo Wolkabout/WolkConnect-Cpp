@@ -23,7 +23,6 @@
 #include "wolk/service/file_management/FileTransferSession.h"
 
 #include <iomanip>
-#include <openssl/md5.h>
 #include <utility>
 
 namespace wolkabout
@@ -110,6 +109,11 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
         LOG(DEBUG) << "Failed to receive FileBinaryResponseMessage -> The transfer session is not a platform transfer.";
         return FileUploadError::TRANSFER_PROTOCOL_DISABLED;
     }
+    if (isDone())
+    {
+        LOG(DEBUG) << "Failed to receive FileBinaryResponseMessage -> The session is already over.";
+        return FileUploadError::NONE;
+    }
 
     // Check if there is a need for this chunk even
     auto collectedSize = std::uint64_t{0};
@@ -148,8 +152,8 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
     {
         if (sendHash[i] != currentHash[i])
         {
-            LOG(DEBUG) << "Failed to receive FileBinaryResponseMessage -> The previous hash of the current message and "
-                          "hash of the previous chunk do not match.";
+            LOG(DEBUG) << "Failed to receive FileBinaryResponseMessage -> The hash of the bytes currently sent out "
+                          "does not match the sent hash with them.";
             if (m_retryCount++ >= 3)
             {
                 m_done = true;
@@ -170,21 +174,11 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
         LOG(DEBUG) << "Collected all the bytes in FileTransferSession of file '" << m_name << "'.";
         m_done = true;
 
-        // Hash the value
-        std::uint8_t hashCStr[MD5_DIGEST_LENGTH];
-        auto context = MD5_CTX();
-        MD5_Init(&context);
-
-        // Now we need to check the hash
-        for (const auto& chunk : m_chunks)
-            MD5_Update(&context, chunk.bytes.data(), chunk.bytes.size());
-        MD5_Final(hashCStr, &context);
-
         // Put that into a string stream
-        auto hashStream = std::stringstream{};
-        for (auto i = std::uint32_t{0}; i < MD5_DIGEST_LENGTH; ++i)
-            hashStream << std::setfill('0') << std::setw(2) << std::hex << static_cast<std::int32_t>(hashCStr[i]);
-        auto hash = hashStream.str();
+        auto allBytes = ByteArray{};
+        for (const auto& chunk : m_chunks)
+            allBytes.insert(allBytes.cend(), chunk.bytes.cbegin(), chunk.bytes.cend());
+        auto hash = ByteUtils::toHexString(ByteUtils::hashMDA5(allBytes));
 
         // Now check the hash
         if (hash == m_hash)
@@ -203,6 +197,11 @@ FileBinaryRequestMessage FileTransferSession::getNextChunkRequest()
     if (isUrlDownload())
     {
         LOG(DEBUG) << "Failed to return FileBinaryRequestMessage -> The transfer session is not a platform transfer.";
+        return FileBinaryRequestMessage{"", 0};
+    }
+    if (isDone())
+    {
+        LOG(DEBUG) << "Failed to return FileBinaryRequestMessage -> The transfer session is already done.";
         return FileBinaryRequestMessage{"", 0};
     }
 

@@ -27,10 +27,9 @@ int main(int /* argc */, char** /* argv */)
 {
     wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
 
-    wolkabout::Device device("ADCPSH", "BA7PVLD7UD", wolkabout::OutboundDataMode::PUSH);
+    wolkabout::Device device("<DEVICE_KEY>", "<DEVICE_PASSWORD>", wolkabout::OutboundDataMode::PUSH);
 
-    std::unique_ptr<wolkabout::Wolk> wolk =
-      wolkabout::Wolk::newBuilder(device).host("integration5.wolkabout.com:2883").build();
+    std::unique_ptr<wolkabout::Wolk> wolk = wolkabout::Wolk::newBuilder(device).host("demo.wolkabout.com:2883").build();
 
     wolk->connect();
 

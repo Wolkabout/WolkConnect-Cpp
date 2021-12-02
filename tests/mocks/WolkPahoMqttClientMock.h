@@ -14,23 +14,24 @@
  * limitations under the License.
  */
 
-#ifndef WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
-#define WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
+#ifndef WOLKABOUTCONNECTOR_WOLKPAHOMQTTCLIENTMOCK_H
+#define WOLKABOUTCONNECTOR_WOLKPAHOMQTTCLIENTMOCK_H
 
-#include "core/connectivity/ConnectivityService.h"
+#include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
 
+#include <mqtt/async_client.h>
 #include <gmock/gmock.h>
 
 using namespace wolkabout;
 
-class ConnectivityServiceMock : public ConnectivityService
+class WolkPahoMqttClientMock : public WolkPahoMqttClient
 {
 public:
-    MOCK_METHOD(bool, connect, ());
+    MOCK_METHOD(bool, connect, (const std::string&, const std::string&, const std::string&, const std::string&));
     MOCK_METHOD(void, disconnect, ());
-    MOCK_METHOD(bool, reconnect, ());
     MOCK_METHOD(bool, isConnected, ());
-    MOCK_METHOD(bool, publish, (std::shared_ptr<Message>));
+    MOCK_METHOD(bool, subscribe, (const std::string&));
+    MOCK_METHOD(bool, publish, (const std::string&, const std::string&, bool));
 };
 
-#endif    // WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
+#endif    // WOLKABOUTCONNECTOR_WOLKPAHOMQTTCLIENTMOCK_H
