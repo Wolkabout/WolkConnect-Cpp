@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
+#include "core/Types.h"
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Message.h"
 #include "core/model/Feed.h"
 #include "core/model/Attribute.h"
-#include "core/Types.h"
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
 #include "core/utilities/Logger.h"

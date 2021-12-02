@@ -84,15 +84,37 @@ WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protoco
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFileManagement(const std::string& fileDownloadLocation, bool fileTransferEnabled,
-                                             bool fileTransferUrlEnabled, std::uint64_t maxPacketSize)
+WolkBuilder& WolkBuilder::withFileTransfer(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize)
 {
-    m_fileManagementProtocol =
-      std::unique_ptr<WolkaboutFileManagementProtocol>(new wolkabout::WolkaboutFileManagementProtocol);
+    if (m_firmwareUpdateProtocol == nullptr)
+        m_fileManagementProtocol =
+          std::unique_ptr<WolkaboutFileManagementProtocol>(new wolkabout::WolkaboutFileManagementProtocol);
     m_fileDownloadDirectory = fileDownloadLocation;
-    m_fileTransferEnabled = fileTransferEnabled;
-    m_fileTransferUrlEnabled = fileTransferUrlEnabled;
+    m_fileTransferEnabled = true;
+    m_fileTransferUrlEnabled = false;
+    m_fileDownloader = nullptr;
     m_maxPacketSize = maxPacketSize;
+    return *this;
+}
+
+WolkBuilder& WolkBuilder::withFileURLDownload(const std::string& fileDownloadLocation,
+                                              std::shared_ptr<FileDownloader> fileDownloader, bool transferEnabled,
+                                              std::uint64_t maxPacketSize)
+{
+    if (m_firmwareUpdateProtocol == nullptr)
+        m_fileManagementProtocol =
+          std::unique_ptr<WolkaboutFileManagementProtocol>(new wolkabout::WolkaboutFileManagementProtocol);
+    m_fileDownloadDirectory = fileDownloadLocation;
+    m_fileTransferEnabled = transferEnabled;
+    m_fileTransferUrlEnabled = true;
+    m_fileDownloader = std::move(fileDownloader);
+    m_maxPacketSize = maxPacketSize;
+    return *this;
+}
+
+WolkBuilder& WolkBuilder::withFileListener(const std::shared_ptr<FileListener>& fileListener)
+{
+    m_fileListener = fileListener;
     return *this;
 }
 
@@ -164,9 +186,23 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     {
         // Create the File Management service
         wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
+        wolk->m_fileDownloader = std::move(m_fileDownloader);
+        wolk->m_fileListener = std::move(m_fileListener);
+
         wolk->m_fileManagementService = std::make_shared<FileManagementService>(
           wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, *wolk->m_fileManagementProtocol,
-          m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled, m_maxPacketSize);
+          m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled, m_maxPacketSize,
+          wolk->m_fileDownloader, wolk->m_fileListener);
+
+        // Check if the downloader is null
+        if (m_fileTransferUrlEnabled && m_fileDownloader == nullptr)
+        {
+            wolk->m_fileDownloader =
+              std::make_shared<HTTPFileDownloader>(wolk->m_fileManagementService->getCommandBuffer());
+            wolk->m_fileManagementService->setDownloader(wolk->m_fileDownloader);
+        }
+
+        // Trigger the on build and add the listener for MQTT messages
         wolk->m_fileManagementService->onBuild();
         wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
     }

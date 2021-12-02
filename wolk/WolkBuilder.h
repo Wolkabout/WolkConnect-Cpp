@@ -26,6 +26,7 @@
 #include "wolk/api/FileListener.h"
 #include "wolk/api/FirmwareInstaller.h"
 #include "wolk/api/FirmwareParametersListener.h"
+#include "wolk/service/file_management/poco/HTTPFileDownloader.h"
 
 #include <cstdint>
 #include <functional>
@@ -98,14 +99,34 @@ public:
 
     /**
      * @brief Sets the Wolk module to allow file management functionality.
+     * @details This one is meant to enable the File Transfer, but not File URL Download.
      * @param fileDownloadLocation The folder location for file management.
-     * @param fileTransferEnabled Whether the regular platform file transfer should be enabled.
-     * @param fileTransferUrlEnabled Whether the url transfer should be enabled.
-     * @param maxPacketSize The maximum packet size for downloading chunks.
+     * @param maxPacketSize The maximum packet size for downloading chunks (in MBs).
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& withFileManagement(const std::string& fileDownloadLocation, bool fileTransferEnabled = true,
-                                    bool fileTransferUrlEnabled = true, std::uint64_t maxPacketSize = 268435455);
+    WolkBuilder& withFileTransfer(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize = 268);
+
+    /**
+     * @brief Sets the Wolk module to allow file management functionality.
+     * @details This one is meant to enable File URL Download, but can enabled File Transfer too.
+     * @param fileDownloadLocation The folder location for file management.
+     * @param fileDownloader The implementation that will download the files. By default our Poco HTTPFileDownloader.
+     * @param transferEnabled Whether the File Transfer should be enabled too.
+     * @param maxPacketSize The max packet size for downloading chunks (in MBs).
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withFileURLDownload(const std::string& fileDownloadLocation,
+                                     std::shared_ptr<FileDownloader> fileDownloader = nullptr,
+                                     bool transferEnabled = false, std::uint64_t maxPacketSize = 268);
+
+    /**
+     * @brief Sets the Wolk module file listener.
+     * @details This object will receive information about newly obtained or removed files. It will be used with
+     * `withFileListener` when the service gets created.
+     * @param fileListener A pointer to the instance of the file listener.
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withFileListener(const std::shared_ptr<FileListener>& fileListener);
 
     /**
      * @brief Sets the Wolk module to allow firmware update functionality.
@@ -159,10 +180,13 @@ private:
     std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
     std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
 
+    std::shared_ptr<FileDownloader> m_fileDownloader;
     std::string m_fileDownloadDirectory;
     bool m_fileTransferEnabled;
     bool m_fileTransferUrlEnabled;
     std::uint64_t m_maxPacketSize;
+
+    std::shared_ptr<FileListener> m_fileListener;
 
     std::shared_ptr<FirmwareInstaller> m_firmwareInstaller;
     std::string m_workingDirectory;

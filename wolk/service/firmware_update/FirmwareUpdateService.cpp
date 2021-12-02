@@ -83,6 +83,7 @@ void FirmwareUpdateService::onBuild()
             queueStatusMessage(FirmwareUpdateStatus::SUCCESS);
         else
             queueStatusMessage(FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
+        deleteSessionFile();
     }
 }
 

@@ -24,7 +24,7 @@
 #include "wolk/api/FileListener.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileTransferSession.h"
-#include "wolk/service/file_management/poco/HTTPFileDownloader.h"
+#include "wolk/service/file_management/FileDownloader.h"
 
 namespace wolkabout
 {
@@ -37,13 +37,16 @@ public:
     FileManagementService(std::string deviceKey, ConnectivityService& connectivityService, DataService& dataService,
                           FileManagementProtocol& protocol, std::string fileLocation, bool fileTransferEnabled = true,
                           bool fileTransferUrlEnabled = true, std::uint64_t maxPacketSize = MQTT_MAX_MESSAGE_SIZE,
+                          std::shared_ptr<FileDownloader> fileDownloader = nullptr,
                           const std::shared_ptr<FileListener>& fileListener = nullptr);
 
-    void setFileListener(const std::shared_ptr<FileListener>& fileListener);
+    void setDownloader(const std::shared_ptr<FileDownloader>& downloader);
 
     void onBuild();
 
     void onConnected();
+
+    CommandBuffer& getCommandBuffer();
 
     const Protocol& getProtocol() override;
 
@@ -175,7 +178,7 @@ private:
     std::unique_ptr<FileTransferSession> m_session;
 
     // This is a pointer to a file downloader that we will use. In case that is supported.
-    std::shared_ptr<HTTPFileDownloader> m_downloader;
+    std::shared_ptr<FileDownloader> m_downloader;
 
     // Make place for the listener pointer
     std::weak_ptr<FileListener> m_fileListener;

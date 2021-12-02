@@ -216,6 +216,9 @@ private:
     std::function<void(const std::vector<Parameter>)> m_parameterLambda;
     std::weak_ptr<ParameterHandler> m_parameterHandler;
 
+    std::shared_ptr<FileDownloader> m_fileDownloader;
+    std::shared_ptr<FileListener> m_fileListener;
+
     std::unique_ptr<CommandBuffer> m_commandBuffer;
 
     class ConnectivityFacade : public ConnectivityServiceListener

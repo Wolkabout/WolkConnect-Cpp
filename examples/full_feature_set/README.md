@@ -180,7 +180,7 @@ wolkabout::Device device("DEVICE_KEY", "DEVICE_PASSWORD", {});
 
 std::unique_ptr<wolkabout::Wolk> wolk =
   wolkabout::Wolk::newBuilder(device)
-    .withFileManagement(".",           // Directory where downloaded device firmware files will be stored
+    .withFileListener(".",           // Directory where downloaded device firmware files will be stored
                        1024 * 1024,    // Size of file transfer chunk, in bytes
                        urlDownloader)  //Optional UrlFileDownloader implementation for downloading files via given URL
     .build();
@@ -242,7 +242,7 @@ auto provider = std::make_shared<FirmwareVersionProviderImpl>();
 std::unique_ptr<wolkabout::Wolk> wolk =
   wolkabout::Wolk::newBuilder(device)
     // Enable file management
-    .withFileManagement(".", 1024 * 1024)
+    .withFileListener(".", 1024 * 1024)
 	// Enable firmware update
     .withFirmwareUpdate(installer, provider)
     .build();

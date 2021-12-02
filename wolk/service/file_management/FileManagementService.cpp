@@ -30,6 +30,7 @@ FileManagementService::FileManagementService(std::string deviceKey, Connectivity
                                              DataService& dataService, FileManagementProtocol& protocol,
                                              std::string fileLocation, bool fileTransferEnabled,
                                              bool fileTransferUrlEnabled, std::uint64_t maxPacketSize,
+                                             std::shared_ptr<FileDownloader> fileDownloader,
                                              const std::shared_ptr<FileListener>& fileListener)
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
@@ -39,16 +40,16 @@ FileManagementService::FileManagementService(std::string deviceKey, Connectivity
 , m_protocol(protocol)
 , m_fileLocation(std::move(fileLocation))
 , m_maxPacketSize(maxPacketSize)
-, m_downloader(m_fileTransferUrlEnabled ? std::make_shared<HTTPFileDownloader>(m_commandBuffer) : nullptr)
+, m_downloader(std::move(fileDownloader))
 , m_fileListener(fileListener)
 {
     if (!(fileTransferEnabled || fileTransferUrlEnabled))
         throw std::runtime_error("Failed to create 'FileManagementService' with both flags disabled.");
 }
 
-void FileManagementService::setFileListener(const std::shared_ptr<FileListener>& fileListener)
+void FileManagementService::setDownloader(const std::shared_ptr<FileDownloader>& downloader)
 {
-    m_fileListener = fileListener;
+    m_downloader = downloader;
 }
 
 void FileManagementService::onBuild()
@@ -69,6 +70,11 @@ void FileManagementService::onConnected()
 
     reportAllPresentFiles();
     reportParameters();
+}
+
+CommandBuffer& FileManagementService::getCommandBuffer()
+{
+    return m_commandBuffer;
 }
 
 const Protocol& FileManagementService::getProtocol()
@@ -528,8 +534,9 @@ void FileManagementService::notifyListenerAddedFile(const std::string& fileName,
     LOG(TRACE) << METHOD_INFO;
 
     // Check if a listener exists
-    if (auto listener = m_fileListener.lock())
+    if (!m_fileListener.expired())
     {
+        auto listener = m_fileListener.lock();
         m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
           [listener, fileName, absolutePath]()
           {
@@ -544,8 +551,9 @@ void FileManagementService::notifyListenerRemovedFile(const std::string& fileNam
     LOG(TRACE) << METHOD_INFO;
 
     // Check if a listener exists
-    if (auto listener = m_fileListener.lock())
+    if (!m_fileListener.expired())
     {
+        auto listener = m_fileListener.lock();
         m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
           [listener, fileName]()
           {

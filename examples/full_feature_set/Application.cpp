@@ -33,9 +33,9 @@
  * In here, you can enter the device credentials to successfully identify the device on the platform.
  * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
  */
-const std::string DEVICE_KEY = "ACFE";
-const std::string DEVICE_PASSWORD = "IO62M61QOR";
-const std::string PLATFORM_HOST = "ssl://10.0.50.228:8883";
+const std::string DEVICE_KEY = "<DEVICE_KEY>";
+const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
+const std::string PLATFORM_HOST = "ssl://demo.wolkabout.com:8883";
 const std::string CA_CERT_PATH = "./ca.crt";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
 const std::string FIRMWARE_VERSION = "4.0.0";
@@ -131,11 +131,6 @@ public:
 
     void abortFirmwareInstall() override { LOG(INFO) << "The firmware install was aborted!"; }
 
-    bool wasFirmwareInstallSuccessful(const std::string& /** oldVersion **/) override
-    {
-        return true;
-    }
-
     std::string getFirmwareVersion() override { return FIRMWARE_VERSION; }
 
 private:
@@ -164,6 +159,37 @@ public:
     }
 
     std::string getFirmwareVersion() override { return FIRMWARE_VERSION; }
+};
+
+/**
+ * This is an example implementation of the `FileListener` interface. This class will log when a file gets
+ * added/removed.
+ */
+class ExampleFileListener : public wolkabout::FileListener
+{
+public:
+    /**
+     * This is an overridden method from the `FileListener` interface. This is a method that will be invoked once a file
+     * has been added.
+     *
+     * @param fileName The name of the file that has been added.
+     * @param absolutePath The absolute path to the file that has been added.
+     */
+    void onAddedFile(const std::string& fileName, const std::string& absolutePath) override
+    {
+        LOG(INFO) << "A file has been added! -> '" << fileName << "' | '" << absolutePath << "'.";
+    }
+
+    /**
+     * This is an overridden method from the `FileListener` interface. This is a method that will be invoked once a file
+     * has been removed.
+     *
+     * @param fileName The name of the file that has been removed.
+     */
+    void onRemovedFile(const std::string& fileName) override
+    {
+        LOG(INFO) << "A file has been removed! -> '" << fileName << "'.";
+    }
 };
 
 /**
@@ -209,10 +235,14 @@ int main(int /* argc */, char** /* argv */)
                   .ca_cert_path(CA_CERT_PATH)
                   .feedUpdateHandler(deviceInfoHandler)
                   .withPersistence(inMemoryPersistence)
-                  .withFileManagement(FILE_MANAGEMENT_LOCATION)
+                  .withFileTransfer(FILE_MANAGEMENT_LOCATION)
+                  // Uncomment for FileURLDownload
+                  //                  .withFileURLDownload(FILE_MANAGEMENT_LOCATION, nullptr, true)
+                  // Uncomment for a FileListener
+                  //                  .withFileListener(std::make_shared<ExampleFileListener>())
+                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareInstaller>(FILE_MANAGEMENT_LOCATION))
                   // Uncomment for example ParameterListener
                   //                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareParameterListener>())
-                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareInstaller>(FILE_MANAGEMENT_LOCATION))
                   .build();
 
     /**
