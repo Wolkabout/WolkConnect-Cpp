@@ -154,7 +154,6 @@ if (${BUILD_EXAMPLES})
     add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
     target_link_libraries(full_example ${PROJECT_NAME})
     set_target_properties(full_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    set_target_properties(full_example PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
     # Pull example
     set(PULL_EXAMPLE_SOURCE_FILES examples/pull/Application.cpp)
@@ -162,7 +161,6 @@ if (${BUILD_EXAMPLES})
     add_executable(pull_example ${PULL_EXAMPLE_SOURCE_FILES})
     target_link_libraries(pull_example ${PROJECT_NAME})
     set_target_properties(pull_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    set_target_properties(pull_example PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
     # Register Feed and Attribute example
     set(REGISTER_EXAMPLE_SOURCE_FILES examples/register_feed_and_attribute/Application.cpp)
@@ -170,7 +168,6 @@ if (${BUILD_EXAMPLES})
     add_executable(register_example ${REGISTER_EXAMPLE_SOURCE_FILES})
     target_link_libraries(register_example ${PROJECT_NAME})
     set_target_properties(register_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    set_target_properties(register_example PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
     # Simple example
     set(SIMPLE_EXAMPLE_SOURCE_FILES examples/simple/Application.cpp)
@@ -178,7 +175,6 @@ if (${BUILD_EXAMPLES})
     add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
     target_link_libraries(simple_example ${PROJECT_NAME})
     set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    set_target_properties(simple_example PROPERTIES EXCLUDE_FROM_ALL TRUE)
 endif ()
 
 add_subdirectory(cmake)
