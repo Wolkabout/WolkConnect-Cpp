@@ -72,6 +72,19 @@ WolkBuilder& WolkBuilder::feedUpdateHandler(std::weak_ptr<FeedUpdateHandler> fee
     return *this;
 }
 
+WolkBuilder& WolkBuilder::parameterHandler(const std::function<void(std::vector<Parameter>)>& parameterHandlerLambda)
+{
+    m_parameterHandlerLambda = parameterHandlerLambda;
+    m_parameterHandler.reset();
+    return *this;
+}
+WolkBuilder& WolkBuilder::parameterHandler(std::weak_ptr<ParameterHandler> parameterHandler)
+{
+    m_parameterHandler = std::move(parameterHandler);
+    m_parameterHandlerLambda = nullptr;
+    return *this;
+}
+
 WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persistence)
 {
     m_persistence = std::move(persistence);
@@ -172,6 +185,9 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
+
+    wolk->m_parameterLambda = m_parameterHandlerLambda;
+    wolk->m_parameterHandler = m_parameterHandler;
 
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(

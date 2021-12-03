@@ -57,6 +57,9 @@ public:
     virtual void registerFeed(Feed feed);
     virtual void registerFeeds(std::vector<Feed> feed);
 
+    virtual void removeFeed(std::string reference);
+    virtual void removeFeeds(std::vector<std::string> feeds);
+
     virtual void pullFeedValues();
     virtual void pullParameters();
     virtual bool synchronizeParameters(const std::vector<ParameterName>& parameters,

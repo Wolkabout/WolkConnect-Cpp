@@ -177,10 +177,27 @@ void Wolk::notifyDisonnected()
 {
     LOG(INFO) << "Connection lost";
 }
-void Wolk::registerFeed(Feed feed)
+
+void Wolk::registerFeed(const Feed& feed)
 {
     addToCommandBuffer([=]() -> void { m_dataService->registerFeed(feed); });
 }
+
+void Wolk::registerFeeds(const std::vector<Feed>& feeds)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->registerFeeds(feeds); });
+}
+
+void Wolk::removeFeed(const std::string& reference)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->removeFeed(reference); });
+}
+
+void Wolk::removeFeeds(const std::vector<std::string>& references)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->removeFeeds(references); });
+}
+
 void Wolk::pullFeedValues()
 {
     addToCommandBuffer([=]() -> void { m_dataService->pullFeedValues(); });

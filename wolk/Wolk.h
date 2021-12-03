@@ -150,7 +150,11 @@ public:
     void pullFeedValues();
     void pullParameters();
 
-    void registerFeed(Feed feed);
+    void registerFeed(const Feed& feed);
+    void registerFeeds(const std::vector<Feed>& feeds);
+
+    void removeFeed(const std::string& reference);
+    void removeFeeds(const std::vector<std::string>& references);
 
     void addAttribute(Attribute attribute);
 

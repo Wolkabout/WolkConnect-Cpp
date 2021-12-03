@@ -86,4 +86,4 @@ wolk->disconnect();
 ```
 **Additional functionality**
 
-WolkConnect-C++ library has integrated additional features which can perform full WolkAbout IoT platform potential. Read more about full feature set example [HERE](./examples/full_feature_set/).
+WolkConnect-C++ library has integrated additional features which can perform full WolkAbout IoT platform potential. Read more about full feature set example [HERE](examples/full_feature/).

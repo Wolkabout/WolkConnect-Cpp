@@ -245,6 +245,29 @@ void DataService::registerFeeds(std::vector<Feed> feeds)
     }
 }
 
+void DataService::removeFeed(std::string reference)
+{
+    removeFeeds({std::move(reference)});
+}
+
+void DataService::removeFeeds(std::vector<std::string> feeds)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    auto removal = FeedRemovalMessage(std::move(feeds));
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, removal));
+    if (message == nullptr)
+    {
+        LOG(ERROR) << "Failed to remove feeds -> Failed to parse the outgoing 'FeedRemovalMessage'.";
+        return;
+    }
+    if (!m_connectivityService.publish(message))
+    {
+        LOG(ERROR) << "Failed to remove feeds -> Failed to publish the outgoing 'FeedRemovalMessage'.";
+        return;
+    }
+}
+
 void DataService::pullFeedValues()
 {
     PullFeedValuesMessage pullFeedValuesMessage;

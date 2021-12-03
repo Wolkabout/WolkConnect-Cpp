@@ -26,6 +26,7 @@
 #include "wolk/api/FileListener.h"
 #include "wolk/api/FirmwareInstaller.h"
 #include "wolk/api/FirmwareParametersListener.h"
+#include "wolk/api/ParameterHandler.h"
 #include "wolk/service/file_management/poco/HTTPFileDownloader.h"
 
 #include <cstdint>
@@ -80,6 +81,20 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& feedUpdateHandler(std::weak_ptr<FeedUpdateHandler> feedUpdateHandler);
+
+    /**
+     * @brief Sets parameter handler
+     * @param parameterHandlerLambda Lambda that handles parameters updates
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& parameterHandler(const std::function<void(std::vector<Parameter>)>& parameterHandlerLambda);
+
+    /**
+     * @brief Sets parameter handler
+     * @param parameterHandler Instance of wolkabout::ParameterHandler
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& parameterHandler(std::weak_ptr<ParameterHandler> parameterHandler);
 
     /**
      * @brief Sets underlying persistence mechanism to be used<br>
@@ -174,6 +189,9 @@ private:
 
     std::function<void(std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
+
+    std::function<void(std::vector<Parameter>)> m_parameterHandlerLambda;
+    std::weak_ptr<ParameterHandler> m_parameterHandler;
 
     std::shared_ptr<Persistence> m_persistence;
     std::unique_ptr<DataProtocol> m_dataProtocol;

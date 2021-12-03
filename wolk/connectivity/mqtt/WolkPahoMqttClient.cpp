@@ -16,8 +16,6 @@
 
 #include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
 
-#include <mqtt/async_client.h>
-
 namespace wolkabout
 {
 WolkPahoMqttClient::~WolkPahoMqttClient() = default;
