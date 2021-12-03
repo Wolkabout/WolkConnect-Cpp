@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
+#include "wolk/service/file_management/FileManagementService.h"
+
 #include "core/model/Message.h"
 #include "core/model/messages/ParametersUpdateMessage.h"
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
-#include "wolk/service/file_management/FileManagementService.h"
 
 #include <algorithm>
-#include <utility>
 #include <iomanip>
+#include <utility>
 
 namespace wolkabout
 {
@@ -537,12 +538,10 @@ void FileManagementService::notifyListenerAddedFile(const std::string& fileName,
     if (!m_fileListener.expired())
     {
         auto listener = m_fileListener.lock();
-        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
-          [listener, fileName, absolutePath]()
-          {
-              if (listener != nullptr)
-                  listener->onAddedFile(fileName, absolutePath);
-          }));
+        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName, absolutePath]() {
+            if (listener != nullptr)
+                listener->onAddedFile(fileName, absolutePath);
+        }));
     }
 }
 
@@ -554,12 +553,10 @@ void FileManagementService::notifyListenerRemovedFile(const std::string& fileNam
     if (!m_fileListener.expired())
     {
         auto listener = m_fileListener.lock();
-        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
-          [listener, fileName]()
-          {
-              if (listener != nullptr)
-                  listener->onRemovedFile(fileName);
-          }));
+        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName]() {
+            if (listener != nullptr)
+                listener->onRemovedFile(fileName);
+        }));
     }
 }
 }    // namespace wolkabout

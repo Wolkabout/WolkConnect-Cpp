@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "wolk/WolkBuilder.h"
+
 #include "core/InboundMessageHandler.h"
 #include "core/connectivity/ConnectivityService.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
@@ -21,13 +23,12 @@
 #include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFileManagementProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFirmwareUpdateProtocol.h"
+#include "wolk/InboundPlatformMessageHandler.h"
+#include "wolk/Wolk.h"
 #include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"
-#include "wolk/InboundPlatformMessageHandler.h"
-#include "wolk/Wolk.h"
-#include "wolk/WolkBuilder.h"
 
 #include <Poco/Crypto/CipherKey.h>
 #include <Poco/Util/ServerApplication.h>
@@ -176,12 +177,10 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
 
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
-                                                                             [wolkRaw]
-                                                                             {
-                                                                                 wolkRaw->notifyDisonnected();
-                                                                                 wolkRaw->connect();
-                                                                             });
+    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
+        wolkRaw->notifyDisonnected();
+        wolkRaw->connect();
+    });
 
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
@@ -192,8 +191,9 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::map<std::uint64_t, std::vector<Reading>>& readings)
-      { wolkRaw->handleFeedUpdateCommand(readings); },
+      [wolkRaw](const std::map<std::uint64_t, std::vector<Reading>>& readings) {
+          wolkRaw->handleFeedUpdateCommand(readings);
+      },
       [wolkRaw](const std::vector<Parameter>& parameters) { wolkRaw->handleParameterCommand(parameters); });
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 

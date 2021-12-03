@@ -21,9 +21,9 @@
 #include "wolk/service/file_management/FileDownloader.h"
 
 #include <Poco/Net/HTTPSClientSession.h>
+#include <core/utilities/ByteUtils.h>
 #include <memory>
 #include <thread>
-#include <core/utilities/ByteUtils.h>
 
 namespace wolkabout
 {

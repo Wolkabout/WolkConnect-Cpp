@@ -47,13 +47,11 @@ public:
         persistenceMock = std::make_shared<PersistenceMock>();
 
         // Set up the callback
-        _internalFeedUpdateSetHandler = [&](std::map<std::uint64_t, std::vector<Reading>> readings)
-        {
+        _internalFeedUpdateSetHandler = [&](std::map<std::uint64_t, std::vector<Reading>> readings) {
             if (feedUpdateSetHandler)
                 feedUpdateSetHandler(std::move(readings));
         };
-        _internalParameterSyncHandler = [&](std::vector<Parameter> parameters)
-        {
+        _internalParameterSyncHandler = [&](std::vector<Parameter> parameters) {
             if (parameterSyncHandler)
                 parameterSyncHandler(std::move(parameters));
         };

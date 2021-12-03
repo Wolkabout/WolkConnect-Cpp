@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
+#include "wolk/service/data/DataService.h"
+
 #include "core/Types.h"
 #include "core/connectivity/ConnectivityService.h"
-#include "core/model/Message.h"
-#include "core/model/Feed.h"
 #include "core/model/Attribute.h"
+#include "core/model/Feed.h"
+#include "core/model/Message.h"
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
 #include "core/utilities/Logger.h"
-#include "wolk/service/data/DataService.h"
 
 #include <algorithm>
 #include <cassert>
@@ -90,13 +91,11 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
                 const auto& values = parameterMessage->getParameters();
                 if (parameterMessage->getParameters().size() != parameters.size())
                     continue;
-                if (!std::all_of(parameters.cbegin(), parameters.cend(),
-                                 [&](const ParameterName& name)
-                                 {
-                                     return std::find_if(values.begin(), values.end(),
-                                                         [&](const Parameter& parameter)
-                                                         { return parameter.first == name; }) != values.cend();
-                                 }))
+                if (!std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
+                        return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
+                                   return parameter.first == name;
+                               }) != values.cend();
+                    }))
                     continue;
 
                 // Then we found the ones for the subscription!

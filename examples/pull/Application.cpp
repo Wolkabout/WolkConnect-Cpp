@@ -15,8 +15,8 @@
  */
 
 #include "core/utilities/Logger.h"
-#include "wolk/api/ParameterHandler.h"
 #include "wolk/Wolk.h"
+#include "wolk/api/ParameterHandler.h"
 
 /**
  * This is the place where user input is required for running the example.

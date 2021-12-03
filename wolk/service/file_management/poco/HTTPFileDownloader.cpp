@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-#include "core/utilities/Logger.h"
 #include "wolk/service/file_management/poco/HTTPFileDownloader.h"
+
+#include "core/utilities/Logger.h"
 
 #include <Poco/Net/Context.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/Util/Util.h>
-#include <regex>
 #include <iomanip>
+#include <regex>
 
 namespace wolkabout
 {

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
+#include "wolk/service/firmware_update/FirmwareUpdateService.h"
+
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
-#include "wolk/service/firmware_update/FirmwareUpdateService.h"
 
 #include <utility>
 
@@ -273,8 +274,7 @@ void FirmwareUpdateService::obtainParametersAndAnnounce()
     auto parameters =
       std::vector<ParameterName>{ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME};
     auto firmwareParameterListener = m_firmwareParametersListener;
-    auto callback = [firmwareParameterListener](const std::vector<Parameter>& parameters)
-    {
+    auto callback = [firmwareParameterListener](const std::vector<Parameter>& parameters) {
         // Analyze the parameters
         auto repository = std::string{};
         auto checkTime = std::string{};

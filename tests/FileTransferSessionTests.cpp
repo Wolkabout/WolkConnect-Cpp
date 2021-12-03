@@ -23,10 +23,10 @@
 #undef private
 #undef protected
 
-#include "core/model/messages/FileUploadInitiateMessage.h"
-#include "core/utilities/Logger.h"
 #include "core/model/messages/FileBinaryRequestMessage.h"
 #include "core/model/messages/FileBinaryResponseMessage.h"
+#include "core/model/messages/FileUploadInitiateMessage.h"
+#include "core/utilities/Logger.h"
 
 #include <gtest/gtest.h>
 
