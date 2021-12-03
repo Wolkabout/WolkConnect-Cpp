@@ -80,6 +80,7 @@ find_package(Threads REQUIRED)
 
 # WolkAbout c++ SDK
 option(POCO_BUILD_NET "" ON)
+option(BUILD_AWS_LOG_UPLOADER "" OFF)
 add_subdirectory(WolkSDK-Cpp)
 
 # WolkAbout c++ Connector
