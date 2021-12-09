@@ -16,17 +16,11 @@
 
 #include "core/connectivity/mqtt/PahoMqttClient.h"
 
-#include <mqtt/async_client.h>
-
 namespace wolkabout
 {
 class WolkPahoMqttClient : public PahoMqttClient
 {
 public:
-    using PahoMqttClient::PahoMqttClient;
-
-    ~WolkPahoMqttClient() override;
-
     void disconnect() override;
 };
 }    // namespace wolkabout

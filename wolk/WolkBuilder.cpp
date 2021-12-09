@@ -32,7 +32,6 @@
 
 #include <Poco/Crypto/CipherKey.h>
 #include <Poco/Util/ServerApplication.h>
-#include <mqtt/async_client.h>
 #include <stdexcept>
 #include <utility>
 

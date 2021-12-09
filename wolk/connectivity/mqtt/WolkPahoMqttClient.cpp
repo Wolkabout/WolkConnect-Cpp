@@ -18,8 +18,6 @@
 
 namespace wolkabout
 {
-WolkPahoMqttClient::~WolkPahoMqttClient() = default;
-
 void WolkPahoMqttClient::disconnect()
 {
     const auto lastWillTopic = getLastWillTopic();

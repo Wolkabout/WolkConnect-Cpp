@@ -21,8 +21,6 @@
 
 #include <gmock/gmock.h>
 
-#include <mqtt/async_client.h>
-
 using namespace wolkabout;
 
 class WolkPahoMqttClientMock : public WolkPahoMqttClient
