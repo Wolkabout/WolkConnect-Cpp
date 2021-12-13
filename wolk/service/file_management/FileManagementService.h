@@ -28,8 +28,8 @@
 
 namespace wolkabout
 {
-// Here we have a publicly available MQTT message size limit
-const std::uint32_t MQTT_MAX_MESSAGE_SIZE = 268;
+// Here we have a publicly available MQTT message size limit (in kBs)
+const std::uint32_t MQTT_MAX_MESSAGE_SIZE = 268435;
 
 class FileManagementService : public MessageListener
 {
@@ -42,13 +42,9 @@ public:
 
     const Protocol& getProtocol() override;
 
-    CommandBuffer& getCommandBuffer();
+    virtual void setup();
 
-    void setDownloader(const std::shared_ptr<FileDownloader>& downloader);
-
-    virtual void onBuild();
-
-    virtual void onConnected();
+    virtual void start();
 
     void messageReceived(std::shared_ptr<Message> message) override;
 

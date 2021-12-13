@@ -81,7 +81,7 @@ void Wolk::addToCommandBuffer(std::function<void()> command)
 
 std::uint64_t Wolk::currentRtc()
 {
-    auto duration = std::chrono::high_resolution_clock::now().time_since_epoch();
+    auto duration = std::chrono::system_clock::now().time_since_epoch();
     return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
 }
 
@@ -159,9 +159,9 @@ void Wolk::notifyConnected()
     publish();
 
     if (m_fileManagementService != nullptr)
-        m_fileManagementService->onConnected();
+        m_fileManagementService->start();
     if (m_firmwareUpdateService != nullptr)
-        m_firmwareUpdateService->onConnected();
+        m_firmwareUpdateService->connected();
 }
 
 void Wolk::notifyDisonnected()

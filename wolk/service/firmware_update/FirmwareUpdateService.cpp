@@ -33,6 +33,7 @@ FirmwareUpdateService::FirmwareUpdateService(std::string deviceKey, Connectivity
 , m_dataService(dataService)
 , m_deviceKey(std::move(deviceKey))
 , m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
+, m_installation(false)
 , m_firmwareInstaller(std::move(firmwareInstaller))
 , m_protocol(protocol)
 {
@@ -46,12 +47,13 @@ FirmwareUpdateService::FirmwareUpdateService(std::string deviceKey, Connectivity
 , m_dataService(dataService)
 , m_deviceKey(std::move(deviceKey))
 , m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
+, m_installation(false)
 , m_firmwareParametersListener(std::move(firmwareParametersListener))
 , m_protocol(protocol)
 {
 }
 
-void FirmwareUpdateService::onBuild()
+void FirmwareUpdateService::setup()
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -88,7 +90,7 @@ void FirmwareUpdateService::onBuild()
     }
 }
 
-void FirmwareUpdateService::onConnected()
+void FirmwareUpdateService::connected()
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -124,7 +126,7 @@ void FirmwareUpdateService::messageReceived(std::shared_ptr<Message> message)
     }
     if (m_firmwareInstaller == nullptr)
     {
-        LOG(ERROR) << "Failed to process received message -> The service is not in PUSH mode.";
+        LOG(ERROR) << "Failed to process received message -> The firmware installer is null.";
         return;
     }
 
@@ -164,7 +166,7 @@ void FirmwareUpdateService::onFirmwareInstall(const std::string& /** deviceKey *
     LOG(TRACE) << METHOD_INFO;
 
     // Check if there's already an installation session ongoing
-    if (FileSystemUtils::isFilePresent(m_sessionFile))
+    if (m_installation)
     {
         LOG(WARN) << "Received 'FirmwareUpdateInstallMessage' but an installation is already ongoing.";
         return;
@@ -187,6 +189,7 @@ void FirmwareUpdateService::onFirmwareInstall(const std::string& /** deviceKey *
             sendStatusMessage(FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN);
             return;
         }
+        m_installation = true;
         sendStatusMessage(FirmwareUpdateStatus::INSTALLING);
         return;
     case InstallResponse::INSTALLED:
@@ -201,7 +204,7 @@ void FirmwareUpdateService::onFirmwareAbort(const std::string& /** deviceKey **/
     LOG(TRACE) << METHOD_INFO;
 
     // Check if the session file is present
-    if (FileSystemUtils::isFilePresent(m_sessionFile))
+    if (m_installation)
         m_firmwareInstaller->abortFirmwareInstall();
 }
 
@@ -263,7 +266,6 @@ void FirmwareUpdateService::reportParameters()
     // Update using the data service
     m_dataService.updateParameter(enabledParameter);
     m_dataService.updateParameter(versionParameter);
-    m_dataService.publishParameters();
 }
 
 void FirmwareUpdateService::obtainParametersAndAnnounce()

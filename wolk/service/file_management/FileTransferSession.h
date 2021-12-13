@@ -173,7 +173,7 @@ private:
 
     // Here we store the information whether the session is done
     std::uint64_t m_retryCount;
-    bool m_done;
+    std::atomic_bool m_done;
 
     // If the session is meant to be a file upload session, it should hold chunks.
     // And it should also use the size/hash declared by the platform

@@ -37,10 +37,7 @@ const std::string HTTPS_PATH_PREFIX = "https://";
 const std::regex URL_REGEX = std::regex(
   R"(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
 
-HTTPFileDownloader::HTTPFileDownloader(CommandBuffer& commandBuffer)
-: m_status(FileUploadStatus::AWAITING_DEVICE), m_commandBuffer(commandBuffer)
-{
-}
+HTTPFileDownloader::HTTPFileDownloader() : m_status(FileUploadStatus::AWAITING_DEVICE) {}
 
 HTTPFileDownloader::~HTTPFileDownloader()
 {
@@ -48,17 +45,17 @@ HTTPFileDownloader::~HTTPFileDownloader()
     stop();
 }
 
-FileUploadStatus HTTPFileDownloader::getStatus()
+FileUploadStatus HTTPFileDownloader::getStatus() const
 {
     return m_status;
 }
 
-std::string HTTPFileDownloader::getName()
+const std::string& HTTPFileDownloader::getName() const
 {
     return m_name;
 }
 
-ByteArray HTTPFileDownloader::getBytes()
+const ByteArray& HTTPFileDownloader::getBytes() const
 {
     return m_bytes;
 }
@@ -74,6 +71,7 @@ void HTTPFileDownloader::downloadFile(
     // Check the URL with the regex
     if (!std::regex_search(url, URL_REGEX))
     {
+        LOG(ERROR) << "Rejected File Transfer - The URL is malformed, and does not pass the regex check.";
         changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, "");
         return;
     }
@@ -89,8 +87,12 @@ void HTTPFileDownloader::abortDownload()
     LOG(TRACE) << METHOD_INFO;
 
     // Check if the last sent status is not aborted, error, or ready
-    if (m_session != nullptr &&
-        (m_status == FileUploadStatus::AWAITING_DEVICE || m_status == FileUploadStatus::FILE_TRANSFER))
+    {
+        std::lock_guard<std::mutex> lockGuard{m_sessionMutex};
+        if (m_session == nullptr)
+            return;
+    }
+    if (m_status == FileUploadStatus::AWAITING_DEVICE || m_status == FileUploadStatus::FILE_TRANSFER)
     {
         {
             // Change the status to ABORTED
@@ -121,36 +123,44 @@ void HTTPFileDownloader::download(const std::string& url)
             Poco::Net::Context::Ptr context = new Poco::Net::Context(Poco::Net::Context::TLS_CLIENT_USE, "",
                                                                      Poco::Net::Context::VerificationMode::VERIFY_NONE);
             context->requireMinimumProtocol(Poco::Net::Context::PROTO_TLSV1_2);
-            m_session =
-              std::unique_ptr<Poco::Net::HTTPSClientSession>{new Poco::Net::HTTPSClientSession{host, 443, context}};
+            {
+                std::lock_guard<std::mutex> lockGuard{m_sessionMutex};
+                m_session =
+                  std::unique_ptr<Poco::Net::HTTPSClientSession>{new Poco::Net::HTTPSClientSession{host, 443, context}};
+            }
         }
         else
         {
             // Create just a plain old HTTP session
+            std::lock_guard<std::mutex> lockGuard{m_sessionMutex};
             m_session = std::unique_ptr<Poco::Net::HTTPClientSession>{new Poco::Net::HTTPClientSession{host, port}};
         }
 
         // Create the request
         auto uri = extractUri(url);
         auto request = Poco::Net::HTTPRequest("GET", uri, Poco::Net::HTTPRequest::HTTP_1_1);
-        m_session->sendRequest(request) << "";
+        auto response = Poco::Net::HTTPResponse{};
 
-        // Await the response
-        Poco::Net::HTTPResponse response;
-        auto& body = m_session->receiveResponse(response);
-
-        // Check the code of the response
-        if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
         {
-            changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, "");
-            return;
-        }
+            std::lock_guard<std::mutex> lockGuard{m_sessionMutex};
+            m_session->sendRequest(request) << "";
 
-        // Copy the response in to the bytes
-        auto contentStream = std::stringstream{};
-        Poco::StreamCopier::copyStream(body, contentStream);
-        auto content = contentStream.str();
-        m_bytes = ByteUtils::toByteArray(content);
+            // Await the response
+            auto& body = m_session->receiveResponse(response);
+
+            // Check the code of the response
+            if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
+            {
+                changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, "");
+                return;
+            }
+
+            // Copy the response in to the bytes
+            auto contentStream = std::stringstream{};
+            Poco::StreamCopier::copyStream(body, contentStream);
+            auto content = contentStream.str();
+            m_bytes = ByteUtils::toByteArray(content);
+        }
 
         // Decide on the name of the file
         auto name = uri.substr(uri.rfind('/') + 1);
@@ -187,10 +197,13 @@ void HTTPFileDownloader::stop()
     LOG(TRACE) << METHOD_INFO;
 
     // Stop the client session
-    if (m_session != nullptr)
     {
-        m_session->abort();
-        m_session.reset();
+        std::lock_guard<std::mutex> lockGuard{m_sessionMutex};
+        if (m_session != nullptr)
+        {
+            m_session->abort();
+            m_session.reset();
+        }
     }
 
     // Join the thread

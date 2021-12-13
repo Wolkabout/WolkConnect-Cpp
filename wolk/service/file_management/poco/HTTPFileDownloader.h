@@ -17,10 +17,10 @@
 #ifndef WOLKABOUTCONNECTOR_HTTPFILEDOWNLOADER_H
 #define WOLKABOUTCONNECTOR_HTTPFILEDOWNLOADER_H
 
+#include "core/utilities/ByteUtils.h"
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/service/file_management/FileDownloader.h"
 
-#include <core/utilities/ByteUtils.h>
 #include <memory>
 #include <thread>
 
@@ -40,7 +40,7 @@ public:
     /**
      * Default constructor.
      */
-    explicit HTTPFileDownloader(CommandBuffer& commandBuffer);
+    HTTPFileDownloader();
 
     /**
      * Overridden destructor. Will abort the download and stop the thread.
@@ -53,7 +53,7 @@ public:
      *
      * @return The downloading status.
      */
-    FileUploadStatus getStatus() override;
+    FileUploadStatus getStatus() const override;
 
     /**
      * Overridden method from the `FileDownloader` interface.
@@ -62,7 +62,7 @@ public:
      *
      * @return The decided name of the new file.
      */
-    std::string getName() override;
+    const std::string& getName() const override;
 
     /**
      * Overridden method from the `FileDownloader` interface.
@@ -70,7 +70,7 @@ public:
      *
      * @return Vector containing all bytes once the file has been successfully downloaded.
      */
-    ByteArray getBytes() override;
+    const ByteArray& getBytes() const override;
 
     /**
      * Overridden method from the `FileDownloader` interface that allows the user to initiate the download of the file.
@@ -142,9 +142,10 @@ private:
     std::string m_name;
     ByteArray m_bytes;
     std::function<void(FileUploadStatus, FileUploadError, std::string)> m_statusCallback;
-    CommandBuffer& m_commandBuffer;
+    CommandBuffer m_commandBuffer;
 
     // Here we store the session so the session can be closed in case of abort
+    std::mutex m_sessionMutex;
     std::unique_ptr<Poco::Net::HTTPClientSession> m_session;
     std::unique_ptr<std::thread> m_thread;
 };

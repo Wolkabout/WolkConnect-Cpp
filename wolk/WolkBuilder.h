@@ -62,14 +62,16 @@ public:
 
     /**
      * @brief Allows passing of custom CA’s public certificate file to custom WolkAbout IoT platform instance
-     * @param ca_cert_path ca.crt file system path
+     * @param caCertPath ca.crt file system path
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& ca_cert_path(const std::string& ca_cert_path);
+    WolkBuilder& caCertPath(const std::string& caCertPath);
 
     /**
      * @brief Sets feed update handler
-     * @param feedUpdateHandler Lambda that handles feed update requests
+     * @param feedUpdateHandler Lambda that handles feed update requests. Will receive a map of readings grouped by the
+     * time when the update happened. Key is a timestamp in milliseconds, and value is a vector of readings that changed
+     * at that time.
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& feedUpdateHandler(
@@ -116,10 +118,10 @@ public:
      * @brief Sets the Wolk module to allow file management functionality.
      * @details This one is meant to enable the File Transfer, but not File URL Download.
      * @param fileDownloadLocation The folder location for file management.
-     * @param maxPacketSize The maximum packet size for downloading chunks (in MBs).
+     * @param maxPacketSize The maximum packet size for downloading chunks (in KBs).
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& withFileTransfer(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize = 268);
+    WolkBuilder& withFileTransfer(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize = 268435);
 
     /**
      * @brief Sets the Wolk module to allow file management functionality.
@@ -132,7 +134,7 @@ public:
      */
     WolkBuilder& withFileURLDownload(const std::string& fileDownloadLocation,
                                      std::shared_ptr<FileDownloader> fileDownloader = nullptr,
-                                     bool transferEnabled = false, std::uint64_t maxPacketSize = 268);
+                                     bool transferEnabled = false, std::uint64_t maxPacketSize = 268435);
 
     /**
      * @brief Sets the Wolk module file listener.
@@ -184,7 +186,7 @@ public:
 
 private:
     std::string m_host;
-    std::string m_ca_cert_path;
+    std::string m_caCertPath;
     Device m_device;
 
     std::function<void(std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;

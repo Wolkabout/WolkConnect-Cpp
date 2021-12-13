@@ -131,7 +131,7 @@ int main(int /* argc */, char** /* argv */)
     // Here we will set the feed value and parameter handler
     auto wolk = wolkabout::Wolk::newBuilder(device)
                   .host(PLATFORM_HOST)
-                  .ca_cert_path(CA_CERT_PATH)
+                  .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(feedHandler)
                   .parameterHandler(parameterHandler)
                   .build();

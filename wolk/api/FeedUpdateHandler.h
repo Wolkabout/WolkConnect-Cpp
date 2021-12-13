@@ -24,19 +24,24 @@
 
 namespace wolkabout
 {
+/**
+ * This interface describes an object that can receive feed value updates.
+ */
 class FeedUpdateHandler
 {
 public:
     /**
-     * @brief Feed Update handler callback<br>
-     *        Must be implemented as non blocking<br>
-     *        Must be implemented as thread safe
-     * @param reference Feed reference
-     * @param value Desired feed value
+     * Default virtual destructor.
      */
-    virtual void handleUpdate(std::map<std::uint64_t, std::vector<Reading>>) = 0;
-
     virtual ~FeedUpdateHandler() = default;
+
+    /**
+     * This method will be invoked once new values have been received.
+     *
+     * @param readings All feed readings that have been updated. Grouped up by time when a reading change happened. Key
+     * is an epoch timestamp in milliseconds, and value is an array of readings changed at that time.
+     */
+    virtual void handleUpdate(std::map<std::uint64_t, std::vector<Reading>> readings) = 0;
 };
 }    // namespace wolkabout
 

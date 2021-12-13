@@ -20,8 +20,6 @@ namespace wolkabout
 {
 bool FirmwareInstaller::wasFirmwareInstallSuccessful(const std::string& oldVersion)
 {
-    if (oldVersion != getFirmwareVersion())
-        return true;
-    return false;
+    return oldVersion != getFirmwareVersion();
 }
 }    // namespace wolkabout

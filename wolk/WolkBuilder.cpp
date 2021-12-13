@@ -38,7 +38,11 @@
 
 namespace wolkabout
 {
-void randoMethod()
+/**
+ * This method's only purpose is to force the linker to link `PocoCrypto`, `PocoUtil` and `PocoJSON` libraries to this
+ * library. So it's temporary until I find a solution for linking the libraries.
+ */
+void randomMethod()
 {
     // Take a cipher key
     auto key = Poco::Crypto::CipherKey("aes-256");
@@ -52,10 +56,9 @@ WolkBuilder& WolkBuilder::host(const std::string& host)
     return *this;
 }
 
-WolkBuilder& WolkBuilder::ca_cert_path(const std::string& ca_cert_path)
+WolkBuilder& WolkBuilder::caCertPath(const std::string& caCertPath)
 {
-    m_ca_cert_path = ca_cert_path;
-
+    m_caCertPath = caCertPath;
     return *this;
 }
 
@@ -172,7 +175,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     auto mqttClient = std::make_shared<WolkPahoMqttClient>();
     wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(
-      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, m_ca_cert_path));
+      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, m_caCertPath));
 
     wolk->m_inboundMessageHandler =
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
@@ -214,13 +217,12 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         // Check if the downloader is null
         if (m_fileTransferUrlEnabled && m_fileDownloader == nullptr)
         {
-            wolk->m_fileDownloader =
-              std::make_shared<HTTPFileDownloader>(wolk->m_fileManagementService->getCommandBuffer());
+            wolk->m_fileDownloader = std::make_shared<HTTPFileDownloader>();
             wolk->m_fileManagementService->setDownloader(wolk->m_fileDownloader);
         }
 
         // Trigger the on build and add the listener for MQTT messages
-        wolk->m_fileManagementService->onBuild();
+        wolk->m_fileManagementService->setup();
         wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
     }
 
@@ -245,7 +247,7 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         }
 
         // And set it all up
-        wolk->m_firmwareUpdateService->onBuild();
+        wolk->m_firmwareUpdateService->setup();
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
     }
 
@@ -261,7 +263,7 @@ wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>()
 
 WolkBuilder::WolkBuilder(Device device)
 : m_host{WOLK_DEMO_HOST}
-, m_ca_cert_path{TRUST_STORE}
+, m_caCertPath{TRUST_STORE}
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}
 , m_dataProtocol(new WolkaboutDataProtocol())

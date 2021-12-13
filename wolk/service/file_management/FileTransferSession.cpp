@@ -291,8 +291,8 @@ void FileTransferSession::changeStatusAndError(FileUploadStatus status, FileUplo
         // Queue the callback call
         if (m_callback)
             m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([this, status, error]() {
-                if (this->m_callback)
-                    this->m_callback(status, error);
+                if (m_callback)
+                    m_callback(status, error);
             }));
     }
 }

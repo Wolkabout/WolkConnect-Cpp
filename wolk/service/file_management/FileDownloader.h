@@ -41,21 +41,21 @@ public:
      *
      * @return The file download status.
      */
-    virtual FileUploadStatus getStatus() = 0;
+    virtual FileUploadStatus getStatus() const = 0;
 
     /**
      * This is the getter by which the user can get the file name of the downloaded file.
      *
      * @return The name of the downloaded file.
      */
-    virtual std::string getName() = 0;
+    virtual const std::string& getName() const = 0;
 
     /**
      * This is the getter by which the user can get file bytes when the file has been downloaded.
      *
      * @return The byte array containing all bytes of the downloaded file.
      */
-    virtual ByteArray getBytes() = 0;
+    virtual const ByteArray& getBytes() const = 0;
 
     /**
      * This is the method by which the FileManagementService will notify the downloader it should start downloading a

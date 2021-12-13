@@ -48,12 +48,7 @@ FileManagementService::FileManagementService(std::string deviceKey, Connectivity
         throw std::runtime_error("Failed to create 'FileManagementService' with both flags disabled.");
 }
 
-void FileManagementService::setDownloader(const std::shared_ptr<FileDownloader>& downloader)
-{
-    m_downloader = downloader;
-}
-
-void FileManagementService::onBuild()
+void FileManagementService::setup()
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -65,17 +60,12 @@ void FileManagementService::onBuild()
     }
 }
 
-void FileManagementService::onConnected()
+void FileManagementService::start()
 {
     LOG(TRACE) << METHOD_INFO;
 
     reportAllPresentFiles();
     reportParameters();
-}
-
-CommandBuffer& FileManagementService::getCommandBuffer()
-{
-    return m_commandBuffer;
 }
 
 const Protocol& FileManagementService::getProtocol()
@@ -105,80 +95,128 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
     case MessageType::FILE_UPLOAD_INIT:
     {
         if (auto parsedMessage = m_protocol.parseFileUploadInit(message))
+        {
             if (m_fileTransferEnabled)
+            {
                 onFileUploadInit(target, *parsedMessage);
+            }
             else
+            {
                 reportTransferProtocolDisabled(parsedMessage->getName());
+            }
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse incoming 'FileUploadInitiate' message.";
+        }
         return;
     }
     case MessageType::FILE_UPLOAD_ABORT:
     {
         if (auto parsedMessage = m_protocol.parseFileUploadAbort(message))
+        {
             if (m_fileTransferEnabled)
+            {
                 onFileUploadAbort(target, *parsedMessage);
+            }
             else
+            {
                 reportTransferProtocolDisabled(parsedMessage->getName());
+            }
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse 'FileUploadAbort' message.";
+        }
         return;
     }
     case MessageType::FILE_BINARY_RESPONSE:
     {
         if (auto parsedMessage = m_protocol.parseFileBinaryResponse(message))
+        {
             if (m_fileTransferEnabled)
+            {
                 onFileBinaryResponse(target, *parsedMessage);
-            else
-                return;    // We can't report the status, since this message does not carry the file name
+            }
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse 'FileBinaryResponse' message.";
+        }
         return;
     }
     case MessageType::FILE_URL_DOWNLOAD_INIT:
     {
         if (auto parsedMessage = m_protocol.parseFileUrlDownloadInit(message))
+        {
             if (m_fileTransferUrlEnabled)
+            {
                 onFileUrlDownloadInit(target, *parsedMessage);
+            }
             else
+            {
                 reportUrlTransferProtocolDisabled(parsedMessage->getPath());
+            }
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse 'FileUrlDownloadInit' message.";
+        }
         return;
     }
     case MessageType::FILE_URL_DOWNLOAD_ABORT:
     {
         if (auto parsedMessage = m_protocol.parseFileUrlDownloadAbort(message))
+        {
             if (m_fileTransferUrlEnabled)
+            {
                 onFileUrlDownloadAbort(target, *parsedMessage);
+            }
             else
+            {
                 reportUrlTransferProtocolDisabled(parsedMessage->getPath());
+            }
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse 'FileUrlDownloadAbort' message.";
+        }
         return;
     }
     case MessageType::FILE_LIST_REQUEST:
     {
         if (auto parsedMessage = m_protocol.parseFileListRequest(message))
+        {
             onFileListRequest(target, *parsedMessage);
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse 'FileListRequest' message.";
+        }
         return;
     }
     case MessageType::FILE_DELETE:
     {
         if (auto parsedMessage = m_protocol.parseFileDelete(message))
+        {
             onFileDelete(target, *parsedMessage);
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse 'FileDelete' message.";
+        }
         return;
     }
     case MessageType::FILE_PURGE:
     {
         if (auto parsedMessage = m_protocol.parseFilePurge(message))
+        {
             onFilePurge(target, *parsedMessage);
+        }
         else
+        {
             LOG(ERROR) << "Failed to parse 'FilePurge' message.";
+        }
         return;
     }
     default:
@@ -192,7 +230,7 @@ void FileManagementService::onFileUploadInit(const std::string& /** deviceKey **
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // We need to attempt to create a session.
+    // Check whether there is a session already ongoing
     if (m_session != nullptr)
     {
         LOG(DEBUG) << "Received a FileUploadInitiate message while a session is already ongoing. Ignoring...";
@@ -385,7 +423,9 @@ void FileManagementService::onFileSessionStatus(FileUploadStatus status, FileUpl
             else
                 notifyListenerAddedFile(fileName, absolutePathOfFile(fileName));
         }
-        m_session.reset();
+
+        // Queue the session deletion
+        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([this] { m_session.reset(); }));
     }
 }
 
@@ -535,13 +575,15 @@ void FileManagementService::notifyListenerAddedFile(const std::string& fileName,
     LOG(TRACE) << METHOD_INFO;
 
     // Check if a listener exists
-    if (!m_fileListener.expired())
+    if (auto listener = m_fileListener.lock())
     {
-        auto listener = m_fileListener.lock();
-        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName, absolutePath]() {
-            if (listener != nullptr)
-                listener->onAddedFile(fileName, absolutePath);
-        }));
+        if (listener != nullptr)
+        {
+            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName, absolutePath]() {
+                if (listener != nullptr)
+                    listener->onAddedFile(fileName, absolutePath);
+            }));
+        }
     }
 }
 
@@ -550,13 +592,15 @@ void FileManagementService::notifyListenerRemovedFile(const std::string& fileNam
     LOG(TRACE) << METHOD_INFO;
 
     // Check if a listener exists
-    if (!m_fileListener.expired())
+    if (auto listener = m_fileListener.lock())
     {
-        auto listener = m_fileListener.lock();
-        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName]() {
-            if (listener != nullptr)
-                listener->onRemovedFile(fileName);
-        }));
+        if (listener != nullptr)
+        {
+            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName]() {
+                if (listener != nullptr)
+                    listener->onRemovedFile(fileName);
+            }));
+        }
     }
 }
 }    // namespace wolkabout

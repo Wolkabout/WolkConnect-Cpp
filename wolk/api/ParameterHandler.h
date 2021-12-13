@@ -23,20 +23,23 @@
 
 namespace wolkabout
 {
+/**
+ * This interface describes an object that can receive parameter value updates.
+ */
 class ParameterHandler
 {
 public:
     /**
-     * @brief When new set of device configuration values is given from platform, it will be delivered to this method.
-     *        This method should update device configuration with received configuration values.<br>
+     * Default virtual destructor.
+     */
+    virtual ~ParameterHandler() = default;
 
-     *        Must be implemented as non blocking<br>
-     *        Must be implemented as thread safe
-     * @param parameters as vector of wolkabout::Parameters
+    /**
+     * This is the method that is invoked when new parameter values are obtained.
+     *
+     * @param parameters The vector containing new parameter values.
      */
     virtual void handleUpdate(const std::vector<Parameter>& parameters) = 0;
-
-    virtual ~ParameterHandler() = default;
 };
 }    // namespace wolkabout
 

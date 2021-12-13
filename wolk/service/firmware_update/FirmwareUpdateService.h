@@ -39,9 +39,9 @@ public:
                           std::shared_ptr<FirmwareParametersListener> firmwareParametersListener,
                           FirmwareUpdateProtocol& protocol, const std::string& workingDirectory = "./");
 
-    void onBuild();
+    void setup();
 
-    void onConnected();
+    void connected();
 
     const Protocol& getProtocol() override;
 
@@ -69,6 +69,9 @@ private:
     DataService& m_dataService;
     const std::string m_deviceKey;
     std::string m_sessionFile;
+
+    // Here we store the info if a session is ongoing
+    std::atomic_bool m_installation;
 
     // Here we store messages that the service queues up to send when the connection is established
     std::queue<std::shared_ptr<Message>> m_queue;

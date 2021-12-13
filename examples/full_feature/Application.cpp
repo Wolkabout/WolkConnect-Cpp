@@ -73,12 +73,12 @@ public:
      * This is the overridden method from the `FeedUpdateHandler` interface.
      * This is the method that will receive information about a feed.
      *
-     * @param map The map containing information about updated feeds and their new value(s).
+     * @param readings The map containing information about updated feeds and their new value(s).
      */
-    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> map) override
+    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> readings) override
     {
         // Go through all the timestamps
-        for (const auto& pair : map)
+        for (const auto& pair : readings)
         {
             LOG(DEBUG) << "Received feed information for time: " << pair.first;
 
@@ -232,7 +232,7 @@ int main(int /* argc */, char** /* argv */)
     auto inMemoryPersistence = std::make_shared<wolkabout::InMemoryPersistence>();
     auto wolk = wolkabout::WolkBuilder(device)
                   .host(PLATFORM_HOST)
-                  .ca_cert_path(CA_CERT_PATH)
+                  .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(deviceInfoHandler)
                   .withPersistence(inMemoryPersistence)
                   .withFileTransfer(FILE_MANAGEMENT_LOCATION)
@@ -251,12 +251,9 @@ int main(int /* argc */, char** /* argv */)
      */
     wolk->connect();
     bool running = true;
-    sigintCall = [&](int signal) {
+    sigintCall = [&](int) {
         LOG(WARN) << "Application: Received stop signal, disconnecting...";
         running = false;
-        if (wolk)
-            wolk->disconnect();
-        exit(signal);
     };
     signal(SIGINT, sigintResponse);
 

@@ -98,7 +98,7 @@ default value already set:
 // Creating the Wolk instance
 auto wolkBuilder = wolkabout::Wolk::newBuilder(device)
         .host(PLATFORM_HOST) // Sets the MQTT broker path - used to connect with the platform
-        .ca_cert_path(CA_CERT_PATH) // Path to a `ca.crt` file - used to establish a secure connection with the platform
+        .caCertPath(CA_CERT_PATH) // Path to a `ca.crt` file - used to establish a secure connection with the platform
         .feedUpdateHandler(...) // Sets the callback which will receive FeedValues updates sent by the platform
         .parameterHandler(...) // Set the callback which will receive Parameter updates sent by the platform
         .withPersistence(...) // Sets the default message persistence - used while the connection is offline
