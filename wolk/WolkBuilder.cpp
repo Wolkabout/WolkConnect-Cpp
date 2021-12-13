@@ -32,6 +32,7 @@
 
 #include <Poco/Crypto/CipherKey.h>
 #include <Poco/Util/ServerApplication.h>
+#include <Poco/JSON/Object.h>
 #include <stdexcept>
 #include <utility>
 
@@ -42,6 +43,7 @@ void randoMethod()
     // Take a cipher key
     auto key = Poco::Crypto::CipherKey("aes-256");
     Poco::Util::ServerApplication app{};
+    auto json = Poco::JSON::Object{};
 }
 
 WolkBuilder& WolkBuilder::host(const std::string& host)
@@ -176,10 +178,12 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
 
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
-        wolkRaw->notifyDisonnected();
-        wolkRaw->connect();
-    });
+    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
+                                                                             [wolkRaw]
+                                                                             {
+                                                                                 wolkRaw->notifyDisonnected();
+                                                                                 wolkRaw->connect();
+                                                                             });
 
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
@@ -190,9 +194,8 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
       wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::map<std::uint64_t, std::vector<Reading>>& readings) {
-          wolkRaw->handleFeedUpdateCommand(readings);
-      },
+      [wolkRaw](const std::map<std::uint64_t, std::vector<Reading>>& readings)
+      { wolkRaw->handleFeedUpdateCommand(readings); },
       [wolkRaw](const std::vector<Parameter>& parameters) { wolkRaw->handleParameterCommand(parameters); });
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 

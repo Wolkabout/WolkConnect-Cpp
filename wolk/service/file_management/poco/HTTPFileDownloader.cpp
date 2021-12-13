@@ -19,8 +19,11 @@
 #include "core/utilities/Logger.h"
 
 #include <Poco/Net/Context.h>
+#include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
 #include <Poco/Net/HTTPResponse.h>
+#include <Poco/Net/HTTPSClientSession.h>
+#include <Poco/Net/SecureStreamSocket.h>
 #include <Poco/StreamCopier.h>
 #include <Poco/Util/Util.h>
 #include <iomanip>
@@ -111,22 +114,30 @@ void HTTPFileDownloader::download(const std::string& url)
         changeStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE, {});
         auto host = extractHost(url);
         auto port = extractPort(url);
-        Poco::Net::Context::Ptr context =
-          new Poco::Net::Context(Poco::Net::Context::TLSV1_2_CLIENT_USE, "", "", "", Poco::Net::Context::VERIFY_NONE, 9,
-                                 false, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH");
-        context->disableProtocols(Poco::Net::Context::PROTO_SSLV2 | Poco::Net::Context::PROTO_SSLV3 |
-                                  Poco::Net::Context::PROTO_TLSV1 | Poco::Net::Context::PROTO_TLSV1_1);
-        m_session =
-          std::unique_ptr<Poco::Net::HTTPSClientSession>{new Poco::Net::HTTPSClientSession{host, port, context}};
+
+        if (url.find(HTTPS_PATH_PREFIX) != std::string::npos)
+        {
+            // Create the SSL session with the context
+            Poco::Net::Context::Ptr context = new Poco::Net::Context(Poco::Net::Context::TLS_CLIENT_USE, "",
+                                                                     Poco::Net::Context::VerificationMode::VERIFY_NONE);
+            context->requireMinimumProtocol(Poco::Net::Context::PROTO_TLSV1_2);
+            m_session =
+              std::unique_ptr<Poco::Net::HTTPSClientSession>{new Poco::Net::HTTPSClientSession{host, 443, context}};
+        }
+        else
+        {
+            // Create just a plain old HTTP session
+            m_session = std::unique_ptr<Poco::Net::HTTPClientSession>{new Poco::Net::HTTPClientSession{host, port}};
+        }
 
         // Create the request
         auto uri = extractUri(url);
-        Poco::Net::HTTPRequest request("GET", uri);
+        auto request = Poco::Net::HTTPRequest("GET", uri, Poco::Net::HTTPRequest::HTTP_1_1);
         m_session->sendRequest(request) << "";
 
         // Await the response
         Poco::Net::HTTPResponse response;
-        m_session->receiveResponse(response);
+        auto& body = m_session->receiveResponse(response);
 
         // Check the code of the response
         if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
@@ -135,19 +146,14 @@ void HTTPFileDownloader::download(const std::string& url)
             return;
         }
 
-        auto outputStream = std::stringstream{};
-        Poco::StreamCopier::copyStream(m_session->receiveResponse(response), outputStream);
-
-        // Make it into a byte stream
-        {
-            auto output = outputStream.str();
-            m_bytes.reserve(output.size());
-            m_bytes.assign(output.cbegin(), output.cend());
-        }
-        outputStream.clear();
+        // Copy the response in to the bytes
+        auto contentStream = std::stringstream{};
+        Poco::StreamCopier::copyStream(body, contentStream);
+        auto content = contentStream.str();
+        m_bytes = ByteUtils::toByteArray(content);
 
         // Decide on the name of the file
-        auto name = uri.substr(uri.rfind('/'));
+        auto name = uri.substr(uri.rfind('/') + 1);
         if (name.find('?'))
             name = name.substr(0, name.find('?'));
         if (name.empty())

@@ -114,7 +114,7 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
 file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE)
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore PocoFoundation PocoCrypto PocoNet PocoNetSSL PocoUtil Threads::Threads)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil Threads::Threads)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")

@@ -20,10 +20,17 @@
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/service/file_management/FileDownloader.h"
 
-#include <Poco/Net/HTTPSClientSession.h>
 #include <core/utilities/ByteUtils.h>
 #include <memory>
 #include <thread>
+
+namespace Poco
+{
+namespace Net
+{
+    class HTTPClientSession;
+}
+}    // namespace Poco
 
 namespace wolkabout
 {
@@ -138,7 +145,7 @@ private:
     CommandBuffer& m_commandBuffer;
 
     // Here we store the session so the session can be closed in case of abort
-    std::unique_ptr<Poco::Net::HTTPSClientSession> m_session;
+    std::unique_ptr<Poco::Net::HTTPClientSession> m_session;
     std::unique_ptr<std::thread> m_thread;
 };
 }    // namespace wolkabout
