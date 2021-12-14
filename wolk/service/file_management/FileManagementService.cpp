@@ -17,7 +17,6 @@
 #include "wolk/service/file_management/FileManagementService.h"
 
 #include "core/model/Message.h"
-#include "core/model/messages/ParametersUpdateMessage.h"
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
 
@@ -48,7 +47,7 @@ FileManagementService::FileManagementService(std::string deviceKey, Connectivity
         throw std::runtime_error("Failed to create 'FileManagementService' with both flags disabled.");
 }
 
-void FileManagementService::setup()
+void FileManagementService::createFolder()
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -60,12 +59,63 @@ void FileManagementService::setup()
     }
 }
 
-void FileManagementService::start()
+void FileManagementService::reportAllPresentFiles()
 {
     LOG(TRACE) << METHOD_INFO;
 
-    reportAllPresentFiles();
-    reportParameters();
+    // When the platform connection is established, we want to send out the current contents of the folder.
+    auto folderContent = FileSystemUtils::listFiles(m_fileLocation);
+
+    // Check if any files in the map are not in the folder anymore
+    auto filesToErase = std::vector<std::string>{};
+    for (const auto& pair : m_files)
+    {
+        const auto folderIt = std::find(folderContent.cbegin(), folderContent.cend(), pair.first);
+        if (folderIt == folderContent.cend())
+            filesToErase.emplace_back(pair.first);
+    }
+    for (const auto& fileToErase : filesToErase)
+    {
+        m_files.erase(fileToErase);
+        LOG(DEBUG) << "Erased local FileInformation for file '" << fileToErase << "'.";
+        notifyListenerRemovedFile(fileToErase);
+    }
+
+    auto fileInformationVector = std::vector<FileInformation>{};
+    for (const auto& file : folderContent)
+    {
+        // Obtain information about the file
+        auto informationIt = m_files.find(file);
+        if (informationIt == m_files.cend())
+        {
+            // Look for it now
+            auto freshInformation = obtainFileInformation(file);
+            if (freshInformation.name.empty())
+            {
+                LOG(WARN) << "Failed to obtain FileInformation for file '" << file << "'.";
+                continue;
+            }
+
+            // Emplace it in the map
+            informationIt = m_files.emplace(file, freshInformation).first;
+            LOG(DEBUG) << "Obtained local FileInformation for file '" << file << "'.";
+            notifyListenerAddedFile(file, absolutePathOfFile(file));
+        }
+
+        // Emplace the complete information in the vector
+        fileInformationVector.emplace_back(
+          FileInformation{file, informationIt->second.size, informationIt->second.hash});
+    }
+
+    // Make the message
+    auto fileList = FileListResponseMessage{fileInformationVector};
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, fileList));
+    if (message == nullptr)
+    {
+        LOG(ERROR) << "Failed to obtain serialized 'FileList' message.";
+        return;
+    }
+    m_connectivityService.publish(message);
 }
 
 const Protocol& FileManagementService::getProtocol()
@@ -451,83 +501,6 @@ FileInformation FileManagementService::obtainFileInformation(const std::string& 
         stream << std::setw(2) << static_cast<std::int32_t>(hashByte);
     const auto hash = stream.str();
     return {fileName, size, hash};
-}
-
-void FileManagementService::reportAllPresentFiles()
-{
-    LOG(TRACE) << METHOD_INFO;
-
-    // When the platform connection is established, we want to send out the current contents of the folder.
-    auto folderContent = FileSystemUtils::listFiles(m_fileLocation);
-
-    // Check if any files in the map are not in the folder anymore
-    auto filesToErase = std::vector<std::string>{};
-    for (const auto& pair : m_files)
-    {
-        const auto folderIt = std::find(folderContent.cbegin(), folderContent.cend(), pair.first);
-        if (folderIt == folderContent.cend())
-            filesToErase.emplace_back(pair.first);
-    }
-    for (const auto& fileToErase : filesToErase)
-    {
-        m_files.erase(fileToErase);
-        LOG(DEBUG) << "Erased local FileInformation for file '" << fileToErase << "'.";
-        notifyListenerRemovedFile(fileToErase);
-    }
-
-    auto fileInformationVector = std::vector<FileInformation>{};
-    for (const auto& file : folderContent)
-    {
-        // Obtain information about the file
-        auto informationIt = m_files.find(file);
-        if (informationIt == m_files.cend())
-        {
-            // Look for it now
-            auto freshInformation = obtainFileInformation(file);
-            if (freshInformation.name.empty())
-            {
-                LOG(WARN) << "Failed to obtain FileInformation for file '" << file << "'.";
-                continue;
-            }
-
-            // Emplace it in the map
-            informationIt = m_files.emplace(file, freshInformation).first;
-            LOG(DEBUG) << "Obtained local FileInformation for file '" << file << "'.";
-            notifyListenerAddedFile(file, absolutePathOfFile(file));
-        }
-
-        // Emplace the complete information in the vector
-        fileInformationVector.emplace_back(
-          FileInformation{file, informationIt->second.size, informationIt->second.hash});
-    }
-
-    // Make the message
-    auto fileList = FileListResponseMessage{fileInformationVector};
-    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, fileList));
-    if (message == nullptr)
-    {
-        LOG(ERROR) << "Failed to obtain serialized 'FileList' message.";
-        return;
-    }
-    m_connectivityService.publish(message);
-}
-
-void FileManagementService::reportParameters()
-{
-    LOG(TRACE) << METHOD_INFO;
-
-    // Form parameter messages based on flags
-    auto transferParameter =
-      Parameter{ParameterName::FILE_TRANSFER_PLATFORM_ENABLED, m_fileTransferEnabled ? "true" : "false"};
-    auto urlTransferParameter =
-      Parameter{ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"};
-    auto maximumMessageSize = Parameter{ParameterName::MAXIMUM_MESSAGE_SIZE,
-                                        std::to_string(m_maxPacketSize == MQTT_MAX_MESSAGE_SIZE ? 0 : m_maxPacketSize)};
-
-    // Update using the data service
-    m_dataService.updateParameter(transferParameter);
-    m_dataService.updateParameter(urlTransferParameter);
-    m_dataService.updateParameter(maximumMessageSize);
 }
 
 void FileManagementService::reportTransferProtocolDisabled(const std::string& fileName)

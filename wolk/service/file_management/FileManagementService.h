@@ -42,9 +42,17 @@ public:
 
     const Protocol& getProtocol() override;
 
-    virtual void setup();
+    /**
+     * This is a createFolder method that should be invoked to loadState the folder for the FileManagement service.
+     */
+    virtual void createFolder();
 
-    virtual void start();
+    /**
+     * This is aa method that will cycle through all the files in the file system, collect the
+     * FileInformation data about all of them (locally, or look into files to obtain and store locally), and send out a
+     * `FileList` message with all of that data.
+     */
+    virtual void reportAllPresentFiles();
 
     void messageReceived(std::shared_ptr<Message> message) override;
 
@@ -97,19 +105,6 @@ private:
      * name will be returned.
      */
     FileInformation obtainFileInformation(const std::string& fileName);
-
-    /**
-     * This is an internal method that will cycle through all the files in the file system, collect the
-     * FileInformation data about all of them (locally, or look into files to obtain and store locally), and send out a
-     * `FileList` message with all of that data.
-     */
-    void reportAllPresentFiles();
-
-    /**
-     * This is an internal method that will report the parameters relating to the FileTransfer functionality to the
-     * platform.
-     */
-    void reportParameters();
 
     /**
      * This is an internal method that can be quickly used to report that the regular transfer protocol is disabled.

@@ -39,9 +39,26 @@ public:
                           std::shared_ptr<FirmwareParametersListener> firmwareParametersListener,
                           FirmwareUpdateProtocol& protocol, const std::string& workingDirectory = "./");
 
-    void setup();
+    const std::shared_ptr<FirmwareInstaller>& getFirmwareInstaller() const;
 
-    void connected();
+    const std::shared_ptr<FirmwareParametersListener>& getFirmwareParametersListener() const;
+
+    /**
+     * This is the queue containing any messages the service might want to send.
+     *
+     * @return The reference to the queue of messages.
+     */
+    std::queue<std::shared_ptr<Message>>& getQueue();
+
+    /**
+     * This is a loadState method that should be invoked to understand what the state of firmware update is.
+     */
+    void loadState();
+
+    /**
+     * This is a method that will
+     */
+    void obtainParametersAndAnnounce();
 
     const Protocol& getProtocol() override;
 
@@ -59,10 +76,6 @@ private:
     bool storeSessionFile();
 
     void deleteSessionFile();
-
-    void reportParameters();
-
-    void obtainParametersAndAnnounce();
 
     // This is where we store the message sender
     ConnectivityService& m_connectivityService;

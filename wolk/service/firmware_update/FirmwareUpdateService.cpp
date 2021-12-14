@@ -53,7 +53,22 @@ FirmwareUpdateService::FirmwareUpdateService(std::string deviceKey, Connectivity
 {
 }
 
-void FirmwareUpdateService::setup()
+const std::shared_ptr<FirmwareInstaller>& FirmwareUpdateService::getFirmwareInstaller() const
+{
+    return m_firmwareInstaller;
+}
+
+const std::shared_ptr<FirmwareParametersListener>& FirmwareUpdateService::getFirmwareParametersListener() const
+{
+    return m_firmwareParametersListener;
+}
+
+std::queue<std::shared_ptr<Message>>& FirmwareUpdateService::getQueue()
+{
+    return m_queue;
+}
+
+void FirmwareUpdateService::loadState()
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -90,23 +105,35 @@ void FirmwareUpdateService::setup()
     }
 }
 
-void FirmwareUpdateService::connected()
+void FirmwareUpdateService::obtainParametersAndAnnounce()
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Report the parameters
-    reportParameters();
-
-    // Obtain the parameters if necessary
-    if (m_firmwareParametersListener != nullptr)
-        obtainParametersAndAnnounce();
-
-    // Clean the queue
-    while (!m_queue.empty())
+    // Check if there is a parameter listener
+    if (m_firmwareParametersListener == nullptr)
     {
-        m_connectivityService.publish(m_queue.front());
-        m_queue.pop();
+        LOG(WARN) << "Cannot obtain parameters - Missing the parameter listener.";
+        return;
     }
+
+    // Subscribe to the parameters
+    auto parameters =
+      std::vector<ParameterName>{ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME};
+    auto firmwareParameterListener = m_firmwareParametersListener;
+    auto callback = [firmwareParameterListener](const std::vector<Parameter>& receivedParameters) {
+        // Analyze the parameters
+        auto repository = std::string{};
+        auto checkTime = std::string{};
+        for (const auto& parameter : receivedParameters)
+            if (parameter.first == ParameterName::FIRMWARE_UPDATE_REPOSITORY)
+                repository = parameter.second;
+            else if (parameter.first == ParameterName::FIRMWARE_UPDATE_CHECK_TIME)
+                checkTime = parameter.second;
+
+        // And call the callback
+        firmwareParameterListener->receiveParameters(repository, checkTime);
+    };
+    m_dataService.synchronizeParameters(parameters, callback);
 }
 
 const Protocol& FirmwareUpdateService::getProtocol()
@@ -246,49 +273,5 @@ bool FirmwareUpdateService::storeSessionFile()
 void FirmwareUpdateService::deleteSessionFile()
 {
     FileSystemUtils::deleteFile(m_sessionFile);
-}
-
-void FirmwareUpdateService::reportParameters()
-{
-    LOG(TRACE) << METHOD_INFO;
-
-    // Obtain the version
-    auto version = std::string{};
-    if (m_firmwareInstaller != nullptr)
-        version = m_firmwareInstaller->getFirmwareVersion();
-    else
-        version = m_firmwareParametersListener->getFirmwareVersion();
-
-    // Form the parameters
-    auto enabledParameter = Parameter{ParameterName::FIRMWARE_UPDATE_ENABLED, "true"};
-    auto versionParameter = Parameter{ParameterName::FIRMWARE_VERSION, version};
-
-    // Update using the data service
-    m_dataService.updateParameter(enabledParameter);
-    m_dataService.updateParameter(versionParameter);
-}
-
-void FirmwareUpdateService::obtainParametersAndAnnounce()
-{
-    LOG(TRACE) << METHOD_INFO;
-
-    // Subscribe to the parameters
-    auto parameters =
-      std::vector<ParameterName>{ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME};
-    auto firmwareParameterListener = m_firmwareParametersListener;
-    auto callback = [firmwareParameterListener](const std::vector<Parameter>& parameters) {
-        // Analyze the parameters
-        auto repository = std::string{};
-        auto checkTime = std::string{};
-        for (const auto& parameter : parameters)
-            if (parameter.first == ParameterName::FIRMWARE_UPDATE_REPOSITORY)
-                repository = parameter.second;
-            else if (parameter.first == ParameterName::FIRMWARE_UPDATE_CHECK_TIME)
-                checkTime = parameter.second;
-
-        // And call the callback
-        firmwareParameterListener->receiveParameters(repository, checkTime);
-    };
-    m_dataService.synchronizeParameters(parameters, callback);
 }
 }    // namespace wolkabout

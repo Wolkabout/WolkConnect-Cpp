@@ -159,9 +159,28 @@ void Wolk::notifyConnected()
     publish();
 
     if (m_fileManagementService != nullptr)
-        m_fileManagementService->start();
+    {
+        m_fileManagementService->reportAllPresentFiles();
+    }
+
     if (m_firmwareUpdateService != nullptr)
-        m_firmwareUpdateService->connected();
+    {
+        if (m_firmwareUpdateService->getFirmwareInstaller() != nullptr)
+        {
+            // Publish everything from the queue
+            while (!m_firmwareUpdateService->getQueue().empty())
+            {
+                // Get the message
+                auto message = m_firmwareUpdateService->getQueue().front();
+                m_connectivityService->publish(message);
+                m_firmwareUpdateService->getQueue().pop();
+            }
+        }
+        else if (m_firmwareUpdateService->getFirmwareParametersListener() != nullptr)
+        {
+            m_firmwareUpdateService->obtainParametersAndAnnounce();
+        }
+    }
 }
 
 void Wolk::notifyDisonnected()

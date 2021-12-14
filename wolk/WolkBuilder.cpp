@@ -219,9 +219,15 @@ std::unique_ptr<Wolk> WolkBuilder::build()
           wolk->m_fileDownloader, wolk->m_fileListener);
 
         // Trigger the on build and add the listener for MQTT messages
-        wolk->m_fileManagementService->setup();
+        wolk->m_fileManagementService->createFolder();
         wolk->m_inboundMessageHandler->addListener(wolk->m_fileManagementService);
     }
+
+    // Set the parameters about the FileTransfer
+    wolk->m_dataService->updateParameter(
+      {ParameterName::FILE_TRANSFER_PLATFORM_ENABLED, m_fileTransferEnabled ? "true" : "false"});
+    wolk->m_dataService->updateParameter(
+      {ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"});
 
     // Check if the firmware update should be engaged
     if (m_firmwareUpdateProtocol != nullptr)
@@ -244,8 +250,20 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         }
 
         // And set it all up
-        wolk->m_firmwareUpdateService->setup();
+        wolk->m_firmwareUpdateService->loadState();
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
+    }
+
+    // Set the parameters about the FirmwareUpdate
+    wolk->m_dataService->updateParameter(
+      {ParameterName::FIRMWARE_UPDATE_ENABLED, m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
+    {
+        auto firmwareVersion = std::string{};
+        if (m_firmwareInstaller != nullptr)
+            firmwareVersion = m_firmwareInstaller->getFirmwareVersion();
+        else if (m_firmwareParametersListener != nullptr)
+            firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
+        wolk->m_dataService->updateParameter({ParameterName::FIRMWARE_VERSION, firmwareVersion});
     }
 
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
