@@ -55,15 +55,15 @@ public:
      * This is the overridden method from the `wolkabout::FeedUpdateHandler` interface. This method will be invoked once
      * new feed values have been received.
      *
-     * @param map The map containing all the new feed values. Feed values are sent out grouped by their timestamp, so
-     * the key in this map is going to be time at which values have been sent, and in the value is the vector of values
-     * that have been set at that particular time.
+     * @param readings The map containing all the new feed values. Feed values are sent out grouped by their timestamp,
+     * so the key in this map is going to be time at which values have been sent, and in the value is the vector of
+     * values that have been set at that particular time.
      */
-    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> map) override
+    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> readings) override
     {
         // Go through all the timestamps - since the `std::map` sorts by key, this will always go from the oldest to
         // newest.
-        for (const auto& pair : map)
+        for (const auto& pair : readings)
         {
             // Take the readings, check if any of them interest us, and set the values in our object.
             for (const auto& reading : pair.second)
