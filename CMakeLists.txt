@@ -133,7 +133,15 @@ if (${BUILD_TESTS})
     set(TEST_HEADER_FILES
             tests/mocks/ConnectivityServiceMock.h
             tests/mocks/DataProtocolMock.h
+            tests/mocks/DataServiceMock.h
+            tests/mocks/FeedUpdateHandlerMock.h
+            tests/mocks/FileManagementProtocolMock.h
+            tests/mocks/FileManagementServiceMock.h
+            tests/mocks/FirmwareUpdateProtocolMock.h
+            tests/mocks/MessageListenerMock.h
+            tests/mocks/ParameterHandlerMock.h
             tests/mocks/PersistenceMock.h
+            tests/mocks/ProtocolMock.h
             tests/mocks/WolkPahoMqttClientMock.h)
 
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
