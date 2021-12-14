@@ -138,6 +138,7 @@ if (${BUILD_TESTS})
             tests/mocks/FileManagementProtocolMock.h
             tests/mocks/FileManagementServiceMock.h
             tests/mocks/FirmwareUpdateProtocolMock.h
+            tests/mocks/InboundMessageHandlerMock.h
             tests/mocks/MessageListenerMock.h
             tests/mocks/ParameterHandlerMock.h
             tests/mocks/PersistenceMock.h

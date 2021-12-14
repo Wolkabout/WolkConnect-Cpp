@@ -30,6 +30,7 @@
 #include "tests/mocks/DataServiceMock.h"
 #include "tests/mocks/FileManagementServiceMock.h"
 #include "tests/mocks/FileManagementProtocolMock.h"
+#include "tests/mocks/InboundMessageHandlerMock.h"
 
 #include <gtest/gtest.h>
 
@@ -139,23 +140,20 @@ TEST_F(WolkTests, WhenConnected_PublishFileList)
     waitEvents(1);
 }
 
-// TEST_F(WolkTests, DisconnectTest)
-//{
-//     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-//     ASSERT_NO_THROW(builder->withoutKeepAlive());
-//     const auto& wolk = builder->build();
-//
-//     auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new NiceMock<StatusProtocolMock>());
-//     auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
-//     auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new NiceMock<KeepAliveServiceMock>(
-//       noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
-//
-//     wolk->m_keepAliveService = std::move(keepAliveServiceMock);
-//     wolk->m_connectivityService = std::move(connectivityServiceMock);
-//
-//     EXPECT_NO_FATAL_FAILURE(wolk->disconnect());
-// }
-//
+TEST_F(WolkTests, DisconnectTest)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    const auto& wolk = builder->build();
+
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
+    auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
+
+    wolk->m_connectivityService = std::move(connectivityServiceMock);
+
+    EXPECT_NO_FATAL_FAILURE(wolk->disconnect());
+}
+
 // TEST_F(WolkTests, AddingSensors)
 //{
 //     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
@@ -286,53 +284,52 @@ TEST_F(WolkTests, WhenConnected_PublishFileList)
 //
 //     waitEvents(2);
 // }
-//
-// TEST_F(WolkTests, ConnectivityFacade)
-//{
-//     builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-//     ASSERT_NO_THROW(builder->withoutKeepAlive());
-//     const auto& wolk = builder->build();
-//
-//     const auto& inboundMessageHandlerMock =
-//       std::unique_ptr<InboundMessageHandlerMock>(new NiceMock<InboundMessageHandlerMock>());
-//
-//     bool channel1Invoked = false, channel2Invoked = false, connectionLostInvoked = false, channelsRequested = false;
-//
-//     //    This part doesn't work, since the class contains a reference, and not a pointer.
-//     //    EXPECT_CALL(*inboundMessageHandlerMock, messageReceived)
-//     //      .WillOnce([&](const std::string& channel, const std::string& message) {
-//     //          if (channel == "CHANNEL1")
-//     //              channel1Invoked = true;
-//     //          else if (channel == "CHANNEL2")
-//     //              channel2Invoked = true;
-//     //          std::cout << "InboundMessageHandlerMock: " << channel << ", " << message << std::endl;
-//     //      });
-//     //
-//     //    EXPECT_CALL(*inboundMessageHandlerMock, getChannels).WillOnce([&]() {
-//     //        channelsRequested = true;
-//     //        return std::vector<std::string>{"CHANNEL1", "CHANNEL2"};
-//     //    });
-//     //
-//     //    wolk->m_connectivityManager->m_messageHandler =
-//     //      static_cast<wolkabout::InboundMessageHandler&>(*inboundMessageHandlerMock);
-//
-//     wolk->m_connectivityManager->m_connectionLostHandler = [&]()
-//     {
-//         connectionLostInvoked = true;
-//         std::cout << "ConnectionLostHandler: Invoked!" << std::endl;
-//     };
-//
-//     //    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL1", "MESSAGE1"));
-//     //    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL2", "MESSAGE2"));
-//     //
-//     //    EXPECT_EQ(wolk->m_connectivityManager->getChannels().size(), 2);
-//
-//     EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->connectionLost());
-//
-//     std::this_thread::sleep_for(std::chrono::milliseconds(100));
-//
-//     //    EXPECT_TRUE(channel1Invoked);
-//     //    EXPECT_TRUE(channel2Invoked);
-//     EXPECT_TRUE(connectionLostInvoked);
-//     //    EXPECT_TRUE(channelsRequested);
-// }
+
+TEST_F(WolkTests, ConnectivityFacade)
+{
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    const auto& wolk = builder->build();
+
+    const auto& inboundMessageHandlerMock =
+      std::unique_ptr<InboundMessageHandlerMock>(new NiceMock<InboundMessageHandlerMock>());
+
+    bool channel1Invoked = false, channel2Invoked = false, connectionLostInvoked = false, channelsRequested = false;
+
+    //    This part doesn't work, since the class contains a reference, and not a pointer.
+    //    EXPECT_CALL(*inboundMessageHandlerMock, messageReceived)
+    //      .WillOnce([&](const std::string& channel, const std::string& message) {
+    //          if (channel == "CHANNEL1")
+    //              channel1Invoked = true;
+    //          else if (channel == "CHANNEL2")
+    //              channel2Invoked = true;
+    //          std::cout << "InboundMessageHandlerMock: " << channel << ", " << message << std::endl;
+    //      });
+    //
+    //    EXPECT_CALL(*inboundMessageHandlerMock, getChannels).WillOnce([&]() {
+    //        channelsRequested = true;
+    //        return std::vector<std::string>{"CHANNEL1", "CHANNEL2"};
+    //    });
+    //
+    //    wolk->m_connectivityManager->m_messageHandler =
+    //      static_cast<wolkabout::InboundMessageHandler&>(*inboundMessageHandlerMock);
+
+    wolk->m_connectivityManager->m_connectionLostHandler = [&]()
+    {
+        connectionLostInvoked = true;
+        std::cout << "ConnectionLostHandler: Invoked!" << std::endl;
+    };
+
+    //    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL1", "MESSAGE1"));
+    //    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->messageReceived("CHANNEL2", "MESSAGE2"));
+    //
+    //    EXPECT_EQ(wolk->m_connectivityManager->getChannels().size(), 2);
+
+    EXPECT_NO_FATAL_FAILURE(wolk->m_connectivityManager->connectionLost());
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    //    EXPECT_TRUE(channel1Invoked);
+    //    EXPECT_TRUE(channel2Invoked);
+    EXPECT_TRUE(connectionLostInvoked);
+    //    EXPECT_TRUE(channelsRequested);
+}
