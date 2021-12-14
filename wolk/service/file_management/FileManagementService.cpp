@@ -528,7 +528,6 @@ void FileManagementService::reportParameters()
     m_dataService.updateParameter(transferParameter);
     m_dataService.updateParameter(urlTransferParameter);
     m_dataService.updateParameter(maximumMessageSize);
-    m_dataService.publishParameters();
 }
 
 void FileManagementService::reportTransferProtocolDisabled(const std::string& fileName)

@@ -90,13 +90,19 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
                 const auto& parameters = subscription.second.parameters;
                 const auto& values = parameterMessage->getParameters();
                 if (parameterMessage->getParameters().size() != parameters.size())
+                {
                     continue;
-                if (!std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
-                        return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
-                                   return parameter.first == name;
-                               }) != values.cend();
-                    }))
+                }
+                auto allNamesMatching =
+                  std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
+                      return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
+                                 return parameter.first == name;
+                             }) != values.cend();
+                  });
+                if (!allNamesMatching)
+                {
                     continue;
+                }
 
                 // Then we found the ones for the subscription!
                 auto callback = subscription.second.callback;
