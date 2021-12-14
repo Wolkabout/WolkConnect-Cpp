@@ -62,7 +62,8 @@ public:
 
     virtual void pullFeedValues();
     virtual void pullParameters();
-    virtual bool synchronizeParameters(const std::vector<ParameterName>& parameters, std::function<void(std::vector<Parameter>)> callback);
+    virtual bool synchronizeParameters(const std::vector<ParameterName>& parameters,
+                                       std::function<void(std::vector<Parameter>)> callback);
 
     virtual void publishReadings();
 

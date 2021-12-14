@@ -26,11 +26,11 @@
 #include "core/utilities/Logger.h"
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/DataProtocolMock.h"
-#include "tests/mocks/PersistenceMock.h"
 #include "tests/mocks/DataServiceMock.h"
-#include "tests/mocks/FileManagementServiceMock.h"
 #include "tests/mocks/FileManagementProtocolMock.h"
+#include "tests/mocks/FileManagementServiceMock.h"
 #include "tests/mocks/InboundMessageHandlerMock.h"
+#include "tests/mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
 
@@ -313,8 +313,7 @@ TEST_F(WolkTests, ConnectivityFacade)
     //    wolk->m_connectivityManager->m_messageHandler =
     //      static_cast<wolkabout::InboundMessageHandler&>(*inboundMessageHandlerMock);
 
-    wolk->m_connectivityManager->m_connectionLostHandler = [&]()
-    {
+    wolk->m_connectivityManager->m_connectionLostHandler = [&]() {
         connectionLostInvoked = true;
         std::cout << "ConnectionLostHandler: Invoked!" << std::endl;
     };

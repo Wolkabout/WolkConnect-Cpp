@@ -19,8 +19,8 @@
 
 #define private public
 #define protected public
-#include "wolk/WolkBuilder.h"
 #include "wolk/Wolk.h"
+#include "wolk/WolkBuilder.h"
 #undef private
 #undef protected
 
@@ -87,13 +87,15 @@ TEST_F(WolkBuilderTests, MockHandlers)
 
     auto feedUpdateHandler = std::make_shared<NiceMock<FeedUpdateHandlerMock>>();
     ASSERT_NO_THROW(builder->feedUpdateHandler(feedUpdateHandler));
-    EXPECT_CALL(*feedUpdateHandler, handleUpdate)
-      .WillOnce([&](const std::map<std::uint64_t, std::vector<Reading>>&) { feedUpdated = true; });
+    EXPECT_CALL(*feedUpdateHandler, handleUpdate).WillOnce([&](const std::map<std::uint64_t, std::vector<Reading>>&) {
+        feedUpdated = true;
+    });
 
     auto parameterHandler = std::make_shared<NiceMock<ParameterHandlerMock>>();
     ASSERT_NO_THROW(builder->parameterHandler(parameterHandler));
-    EXPECT_CALL(*parameterHandler, handleUpdate)
-      .WillOnce([&](const std::vector<Parameter>&) { parameterUpdated = true; });
+    EXPECT_CALL(*parameterHandler, handleUpdate).WillOnce([&](const std::vector<Parameter>&) {
+        parameterUpdated = true;
+    });
 
     std::shared_ptr<Wolk> wolk = nullptr;
     EXPECT_NO_THROW(wolk = builder->build());
