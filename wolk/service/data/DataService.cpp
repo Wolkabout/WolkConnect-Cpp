@@ -93,14 +93,12 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
                 {
                     continue;
                 }
-                auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(),
-                                                    [&](const ParameterName& name)
-                                                    {
-                                                        return std::find_if(values.begin(), values.end(),
-                                                                            [&](const Parameter& parameter) {
-                                                                                return parameter.first == name;
-                                                                            }) != values.cend();
-                                                    });
+                auto allNamesMatching =
+                  std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
+                      return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
+                                 return parameter.first == name;
+                             }) != values.cend();
+                  });
                 if (!allNamesMatching)
                 {
                     continue;
