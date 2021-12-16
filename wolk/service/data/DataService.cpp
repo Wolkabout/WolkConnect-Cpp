@@ -93,12 +93,14 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
                 {
                     continue;
                 }
-                auto allNamesMatching =
-                  std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
-                      return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
-                                 return parameter.first == name;
-                             }) != values.cend();
-                  });
+                auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(),
+                                                    [&](const ParameterName& name)
+                                                    {
+                                                        return std::find_if(values.begin(), values.end(),
+                                                                            [&](const Parameter& parameter) {
+                                                                                return parameter.first == name;
+                                                                            }) != values.cend();
+                                                    });
                 if (!allNamesMatching)
                 {
                     continue;
@@ -133,9 +135,14 @@ const Protocol& DataService::getProtocol()
 
 void DataService::addReading(const std::string& reference, const std::string& value, std::uint64_t rtc)
 {
-    auto sensorReading = std::make_shared<Reading>(reference, value, rtc);
+    auto reading = std::make_shared<Reading>(reference, value, rtc);
+    m_persistence.putReading(reference, reading);
+}
 
-    m_persistence.putReading(reference, sensorReading);
+void DataService::addReading(const std::string& reference, const std::vector<std::string>& value, std::uint64_t rtc)
+{
+    auto reading = std::make_shared<Reading>(reference, value, rtc);
+    m_persistence.putReading(reference, reading);
 }
 
 void DataService::publishReadings()

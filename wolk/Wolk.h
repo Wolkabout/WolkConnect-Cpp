@@ -248,19 +248,24 @@ template <typename T> void Wolk::addReading(const std::string& reference, T valu
 template <typename T>
 void Wolk::addReading(const std::string& reference, std::initializer_list<T> values, std::uint64_t rtc)
 {
+    if (values.empty())
+        return;
+
     addReading(reference, std::vector<T>(values), rtc);
 }
 
 template <typename T>
 void Wolk::addReading(const std::string& reference, const std::vector<T> values, std::uint64_t rtc)
 {
+    if (values.empty())
+        return;
+
     std::vector<std::string> stringifiedValues(values.size());
     std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
                    [&](const T& value) -> std::string { return StringUtils::toString(value); });
 
     addReading(reference, stringifiedValues, rtc);
 }
-
 }    // namespace wolkabout
 
 #endif

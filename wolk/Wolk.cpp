@@ -47,6 +47,16 @@ void Wolk::addReading(const std::string& reference, std::string value, std::uint
     addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, value, rtc); });
 }
 
+void Wolk::addReading(const std::string& reference, const std::vector<std::string> values, std::uint64_t rtc)
+{
+    if (rtc == 0)
+    {
+        rtc = Wolk::currentRtc();
+    }
+
+    addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, values, rtc); });
+}
+
 void Wolk::connect()
 {
     tryConnect(true);
@@ -54,19 +64,23 @@ void Wolk::connect()
 
 void Wolk::disconnect()
 {
-    addToCommandBuffer([=]() -> void {
-        m_connectivityService->disconnect();
-        notifyDisonnected();
-    });
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          m_connectivityService->disconnect();
+          notifyDisonnected();
+      });
 }
 
 void Wolk::publish()
 {
-    addToCommandBuffer([=]() -> void {
-        flushAttributes();
-        flushReadings();
-        flushParameters();
-    });
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          flushAttributes();
+          flushReadings();
+          flushParameters();
+      });
 }
 
 Wolk::Wolk(Device device) : m_device(device)
@@ -104,52 +118,58 @@ void Wolk::handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Rea
 {
     LOG(INFO) << "Received feed update";
 
-    addToCommandBuffer([=] {
-        if (auto provider = m_feedUpdateHandler.lock())
-        {
-            provider->handleUpdate(readings);
-        }
-        else if (m_feedUpdateHandlerLambda)
-        {
-            m_feedUpdateHandlerLambda(readings);
-        }
-    });
+    addToCommandBuffer(
+      [=]
+      {
+          if (auto provider = m_feedUpdateHandler.lock())
+          {
+              provider->handleUpdate(readings);
+          }
+          else if (m_feedUpdateHandlerLambda)
+          {
+              m_feedUpdateHandlerLambda(readings);
+          }
+      });
 }
 
 void Wolk::handleParameterCommand(const std::vector<Parameter> parameters)
 {
     LOG(INFO) << "Received parameter sync";
 
-    addToCommandBuffer([=] {
-        if (auto provider = m_parameterHandler.lock())
-        {
-            provider->handleUpdate(parameters);
-        }
-        else if (m_parameterLambda)
-        {
-            m_parameterLambda(parameters);
-        }
-    });
+    addToCommandBuffer(
+      [=]
+      {
+          if (auto provider = m_parameterHandler.lock())
+          {
+              provider->handleUpdate(parameters);
+          }
+          else if (m_parameterLambda)
+          {
+              m_parameterLambda(parameters);
+          }
+      });
 }
 
 void Wolk::tryConnect(bool firstTime)
 {
-    addToCommandBuffer([=]() -> void {
-        if (firstTime)
-            LOG(INFO) << "Connecting...";
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          if (firstTime)
+              LOG(INFO) << "Connecting...";
 
-        if (!m_connectivityService->connect())
-        {
-            if (firstTime)
-                LOG(INFO) << "Failed to connect";
+          if (!m_connectivityService->connect())
+          {
+              if (firstTime)
+                  LOG(INFO) << "Failed to connect";
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            tryConnect(false);
-            return;
-        }
+              std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+              tryConnect(false);
+              return;
+          }
 
-        notifyConnected();
-    });
+          notifyConnected();
+      });
 }
 
 void Wolk::notifyConnected()

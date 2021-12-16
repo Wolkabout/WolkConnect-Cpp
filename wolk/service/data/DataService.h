@@ -50,6 +50,7 @@ public:
     const Protocol& getProtocol() override;
 
     virtual void addReading(const std::string& reference, const std::string& value, std::uint64_t rtc);
+    virtual void addReading(const std::string& reference, const std::vector<std::string>& value, std::uint64_t rtc);
 
     virtual void addAttribute(const Attribute& attribute);
     virtual void updateParameter(Parameter parameter);
