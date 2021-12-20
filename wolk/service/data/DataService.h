@@ -46,9 +46,6 @@ public:
                 ConnectivityService& connectivityService, FeedUpdateSetHandler feedUpdateHandler,
                 ParameterSyncHandler parameterSyncHandler);
 
-    void messageReceived(std::shared_ptr<Message> message) override;
-    const Protocol& getProtocol() override;
-
     virtual void addReading(const std::string& reference, const std::string& value, std::uint64_t rtc);
     virtual void addReading(const std::string& reference, const std::vector<std::string>& value, std::uint64_t rtc);
 
@@ -67,13 +64,23 @@ public:
                                        std::function<void(std::vector<Parameter>)> callback);
 
     virtual void publishReadings();
+    virtual void publishReadings(const std::string& deviceKey);
 
     virtual void publishAttributes();
 
     virtual void publishParameters();
 
+    const Protocol& getProtocol() override;
+
+    void messageReceived(std::shared_ptr<Message> message) override;
+
 private:
-    std::string getValueDelimiter(const std::string& key) const;
+    std::string makePersistenceKey(const std::string& deviceKey, const std::string& reference) const;
+
+    std::pair<std::string, std::string> parsePersistenceKey(const std::string& key) const;
+
+    std::vector<std::string> findMatchingPersistanceKeys(const std::string& deviceKey,
+                                                         const std::vector<std::string>& persistenceKeys) const;
 
     void publishReadingsForPersistenceKey(const std::string& persistenceKey);
 
@@ -96,6 +103,7 @@ private:
     std::mutex m_subscriptionMutex;
     std::map<std::uint64_t, ParameterSubscription> m_parameterSubscriptions;
 
+    static const std::string PERSISTENCE_KEY_DELIMITER;
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 };
 }    // namespace wolkabout

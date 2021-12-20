@@ -30,26 +30,11 @@
 #include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"
 
-#include <Poco/Crypto/CipherKey.h>
-#include <Poco/JSON/Object.h>
-#include <Poco/Util/ServerApplication.h>
 #include <stdexcept>
 #include <utility>
 
 namespace wolkabout
 {
-/**
- * This method's only purpose is to force the linker to link `PocoCrypto`, `PocoUtil` and `PocoJSON` libraries to this
- * library. So it's temporary until I find a solution for linking the libraries.
- */
-void randomMethod()
-{
-    // Take a cipher key
-    auto key = Poco::Crypto::CipherKey("aes-256");
-    Poco::Util::ServerApplication app{};
-    auto json = Poco::JSON::Object{};
-}
-
 WolkBuilder& WolkBuilder::host(const std::string& host)
 {
     m_host = host;

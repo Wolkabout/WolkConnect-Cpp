@@ -51,6 +51,8 @@ if (${BUILD_TESTS})
     endif ()
 endif ()
 
+# Setup the option for optional Poco file downloader
+OPTION(BUILD_POCO_HTTP_DOWNLOADER "Build the optional `FileDownloader` implementation that uses Poco" ON)
 
 # Setup the options for the examples
 OPTION(BUILD_EXAMPLES "Build the examples/runtimes for testing" ON)
@@ -79,7 +81,7 @@ include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 find_package(Threads REQUIRED)
 
 # WolkAbout c++ SDK
-option(POCO_BUILD_NET "" ON)
+option(POCO_BUILD_NET "" ${BUILD_POCO_HTTP_DOWNLOADER})
 option(BUILD_AWS_LOG_UPLOADER "" OFF)
 add_subdirectory(WolkSDK-Cpp)
 
@@ -87,10 +89,11 @@ add_subdirectory(WolkSDK-Cpp)
 set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
         wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
-        wolk/service/file_management/poco/HTTPFileDownloader.cpp
         wolk/service/file_management/FileManagementService.cpp
         wolk/service/file_management/FileTransferSession.cpp
         wolk/service/firmware_update/FirmwareUpdateService.cpp
+        wolk/service/platform_status/PlatformStatusService.cpp
+        wolk/service/registration_service/RegistrationService.cpp
         wolk/InboundPlatformMessageHandler.cpp
         wolk/Wolk.cpp
         wolk/WolkBuilder.cpp)
@@ -99,26 +102,38 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/FirmwareInstaller.h
         wolk/api/FirmwareParametersListener.h
         wolk/api/ParameterHandler.h
+        wolk/api/PlatformStatusListener.h
         wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
-        wolk/service/file_management/poco/HTTPFileDownloader.h
         wolk/service/file_management/FileDownloader.h
         wolk/service/file_management/FileManagementService.h
         wolk/service/file_management/FileTransferSession.h
         wolk/service/firmware_update/FirmwareUpdateService.h
+        wolk/service/platform_status/PlatformStatusService.h
+        wolk/service/registration_service/RegistrationService.h
         wolk/InboundPlatformMessageHandler.h
         wolk/Version.h
         wolk/Wolk.h
         wolk/WolkBuilder.h)
 
-file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE)
+file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE PATTERN "poco/HTTPFileDownloader.h" EXCLUDE)
+
+if (${BUILD_POCO_HTTP_DOWNLOADER})
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/file_management/poco/HTTPFileDownloader.cpp)
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/file_management/poco/HTTPFileDownloader.h)
+    file(COPY wolk/service/file_management/poco/HTTPFileDownloader.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/file_management/poco)
+endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil Threads::Threads)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore Threads::Threads)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-add_dependencies(${PROJECT_NAME} libpoco)
+
+if (${BUILD_POCO_HTTP_DOWNLOADER})
+    target_link_libraries(${PROJECT_NAME} PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
+    add_dependencies(${PROJECT_NAME} libpoco)
+endif ()
 
 # Tests
 if (${BUILD_TESTS})
