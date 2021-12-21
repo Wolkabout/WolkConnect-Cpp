@@ -36,55 +36,53 @@ class DataProtocol;
 class Persistence;
 class ConnectivityService;
 
-using FeedUpdateSetHandler = std::function<void(std::map<std::uint64_t, std::vector<Reading>>)>;
-using ParameterSyncHandler = std::function<void(std::vector<Parameter>)>;
+using FeedUpdateSetHandler = std::function<void(std::string, std::map<std::uint64_t, std::vector<Reading>>)>;
+using ParameterSyncHandler = std::function<void(std::string, std::vector<Parameter>)>;
 
 class DataService : public MessageListener
 {
 public:
-    DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
-                ConnectivityService& connectivityService, FeedUpdateSetHandler feedUpdateHandler,
-                ParameterSyncHandler parameterSyncHandler);
+    DataService(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
+                FeedUpdateSetHandler feedUpdateHandler, ParameterSyncHandler parameterSyncHandler);
 
-    virtual void addReading(const std::string& reference, const std::string& value, std::uint64_t rtc);
-    virtual void addReading(const std::string& reference, const std::vector<std::string>& value, std::uint64_t rtc);
+    virtual void addReading(const std::string& deviceKey, const std::string& reference, const std::string& value,
+                            std::uint64_t rtc);
+    virtual void addReading(const std::string& deviceKey, const std::string& reference,
+                            const std::vector<std::string>& value, std::uint64_t rtc);
 
-    virtual void addAttribute(const Attribute& attribute);
-    virtual void updateParameter(Parameter parameter);
+    virtual void addAttribute(const std::string& deviceKey, const Attribute& attribute);
+    virtual void updateParameter(const std::string& deviceKey, const Parameter& parameter);
 
-    virtual void registerFeed(Feed feed);
-    virtual void registerFeeds(std::vector<Feed> feed);
+    virtual void registerFeed(const std::string& deviceKey, Feed feed);
+    virtual void registerFeeds(const std::string& deviceKey, std::vector<Feed> feed);
 
-    virtual void removeFeed(std::string reference);
-    virtual void removeFeeds(std::vector<std::string> feeds);
+    virtual void removeFeed(const std::string& deviceKey, std::string reference);
+    virtual void removeFeeds(const std::string& deviceKey, std::vector<std::string> feeds);
 
-    virtual void pullFeedValues();
-    virtual void pullParameters();
-    virtual bool synchronizeParameters(const std::vector<ParameterName>& parameters,
+    virtual void pullFeedValues(const std::string& deviceKey);
+    virtual void pullParameters(const std::string& deviceKey);
+    virtual bool synchronizeParameters(const std::string& deviceKey, const std::vector<ParameterName>& parameters,
                                        std::function<void(std::vector<Parameter>)> callback);
 
     virtual void publishReadings();
     virtual void publishReadings(const std::string& deviceKey);
 
     virtual void publishAttributes();
+    virtual void publishAttributes(const std::string& deviceKey);
 
     virtual void publishParameters();
+    virtual void publishParameters(const std::string& deviceKey);
 
     const Protocol& getProtocol() override;
 
     void messageReceived(std::shared_ptr<Message> message) override;
 
 private:
-    std::string makePersistenceKey(const std::string& deviceKey, const std::string& reference) const;
+    static std::string makePersistenceKey(const std::string& deviceKey, const std::string& reference);
 
-    std::pair<std::string, std::string> parsePersistenceKey(const std::string& key) const;
-
-    std::vector<std::string> findMatchingPersistanceKeys(const std::string& deviceKey,
-                                                         const std::vector<std::string>& persistenceKeys) const;
+    static std::pair<std::string, std::string> parsePersistenceKey(const std::string& key);
 
     void publishReadingsForPersistenceKey(const std::string& persistenceKey);
-
-    const std::string m_deviceKey;
 
     DataProtocol& m_protocol;
     Persistence& m_persistence;

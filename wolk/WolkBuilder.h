@@ -75,7 +75,7 @@ public:
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& feedUpdateHandler(
-      const std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler);
+      const std::function<void(std::string, const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler);
 
     /**
      * @brief Sets feed update handler
@@ -89,7 +89,7 @@ public:
      * @param parameterHandlerLambda Lambda that handles parameters updates
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& parameterHandler(const std::function<void(std::vector<Parameter>)>& parameterHandlerLambda);
+    WolkBuilder& parameterHandler(const std::function<void(std::string, std::vector<Parameter>)>& parameterHandlerLambda);
 
     /**
      * @brief Sets parameter handler
@@ -189,10 +189,10 @@ private:
     std::string m_caCertPath;
     Device m_device;
 
-    std::function<void(std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
+    std::function<void(std::string, std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
-    std::function<void(std::vector<Parameter>)> m_parameterHandlerLambda;
+    std::function<void(std::string, std::vector<Parameter>)> m_parameterHandlerLambda;
     std::weak_ptr<ParameterHandler> m_parameterHandler;
 
     std::shared_ptr<Persistence> m_persistence;

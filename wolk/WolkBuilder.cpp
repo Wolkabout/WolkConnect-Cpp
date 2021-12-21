@@ -48,7 +48,7 @@ WolkBuilder& WolkBuilder::caCertPath(const std::string& caCertPath)
 }
 
 WolkBuilder& WolkBuilder::feedUpdateHandler(
-  const std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler)
+  const std::function<void(std::string, const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler)
 {
     m_feedUpdateHandlerLambda = feedUpdateHandler;
     m_feedUpdateHandler.reset();
@@ -62,7 +62,8 @@ WolkBuilder& WolkBuilder::feedUpdateHandler(std::weak_ptr<FeedUpdateHandler> fee
     return *this;
 }
 
-WolkBuilder& WolkBuilder::parameterHandler(const std::function<void(std::vector<Parameter>)>& parameterHandlerLambda)
+WolkBuilder& WolkBuilder::parameterHandler(
+  const std::function<void(std::string, std::vector<Parameter>)>& parameterHandlerLambda)
 {
     m_parameterHandlerLambda = parameterHandlerLambda;
     m_parameterHandler.reset();
@@ -166,10 +167,12 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
 
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
-        wolkRaw->notifyDisonnected();
-        wolkRaw->connect();
-    });
+    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
+                                                                             [wolkRaw]
+                                                                             {
+                                                                                 wolkRaw->notifyDisonnected();
+                                                                                 wolkRaw->connect();
+                                                                             });
 
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
@@ -179,11 +182,11 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
-      wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::map<std::uint64_t, std::vector<Reading>>& readings) {
-          wolkRaw->handleFeedUpdateCommand(readings);
-      },
-      [wolkRaw](const std::vector<Parameter>& parameters) { wolkRaw->handleParameterCommand(parameters); });
+      *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
+      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
+      { wolkRaw->handleFeedUpdateCommand(deviceKey, readings); },
+      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters)
+      { wolkRaw->handleParameterCommand(deviceKey, parameters); });
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
     // Check if the file management should be engaged
@@ -210,9 +213,9 @@ std::unique_ptr<Wolk> WolkBuilder::build()
 
     // Set the parameters about the FileTransfer
     wolk->m_dataService->updateParameter(
-      {ParameterName::FILE_TRANSFER_PLATFORM_ENABLED, m_fileTransferEnabled ? "true" : "false"});
+      m_device.getKey(), {ParameterName::FILE_TRANSFER_PLATFORM_ENABLED, m_fileTransferEnabled ? "true" : "false"});
     wolk->m_dataService->updateParameter(
-      {ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"});
+      m_device.getKey(), {ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"});
 
     // Check if the firmware update should be engaged
     if (m_firmwareUpdateProtocol != nullptr)
@@ -240,15 +243,15 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     }
 
     // Set the parameters about the FirmwareUpdate
-    wolk->m_dataService->updateParameter(
-      {ParameterName::FIRMWARE_UPDATE_ENABLED, m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
+    wolk->m_dataService->updateParameter(m_device.getKey(), {ParameterName::FIRMWARE_UPDATE_ENABLED,
+                                                             m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
     {
         auto firmwareVersion = std::string{};
         if (m_firmwareInstaller != nullptr)
             firmwareVersion = m_firmwareInstaller->getFirmwareVersion();
         else if (m_firmwareParametersListener != nullptr)
             firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
-        wolk->m_dataService->updateParameter({ParameterName::FIRMWARE_VERSION, firmwareVersion});
+        wolk->m_dataService->updateParameter(m_device.getKey(), {ParameterName::FIRMWARE_VERSION, firmwareVersion});
     }
 
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);

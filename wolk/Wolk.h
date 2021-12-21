@@ -190,8 +190,9 @@ private:
     void flushAttributes();
     void flushParameters();
 
-    void handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Reading>>& readings);
-    void handleParameterCommand(const std::vector<Parameter> parameters);
+    void handleFeedUpdateCommand(const std::string& deviceKey,
+                                 const std::map<std::uint64_t, std::vector<Reading>>& readings);
+    void handleParameterCommand(const std::string& deviceKey, const std::vector<Parameter>& parameters);
 
     void tryConnect(bool firstTime = false);
     void notifyConnected();
@@ -214,10 +215,11 @@ private:
     std::shared_ptr<FileManagementService> m_fileManagementService;
     std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
 
-    std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
+    std::function<void(const std::string&, const std::map<std::uint64_t, std::vector<Reading>>)>
+      m_feedUpdateHandlerLambda;
     std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
 
-    std::function<void(const std::vector<Parameter>)> m_parameterLambda;
+    std::function<void(const std::string&, const std::vector<Parameter>)> m_parameterLambda;
     std::weak_ptr<ParameterHandler> m_parameterHandler;
 
     std::shared_ptr<FileDownloader> m_fileDownloader;

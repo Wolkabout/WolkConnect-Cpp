@@ -44,7 +44,7 @@ void Wolk::addReading(const std::string& reference, std::string value, std::uint
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, value, rtc); });
+    addToCommandBuffer([=]() -> void { m_dataService->addReading(m_device.getKey(), reference, value, rtc); });
 }
 
 void Wolk::addReading(const std::string& reference, const std::vector<std::string> values, std::uint64_t rtc)
@@ -54,7 +54,7 @@ void Wolk::addReading(const std::string& reference, const std::vector<std::strin
         rtc = Wolk::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addReading(reference, values, rtc); });
+    addToCommandBuffer([=]() -> void { m_dataService->addReading(m_device.getKey(), reference, values, rtc); });
 }
 
 void Wolk::connect()
@@ -64,19 +64,23 @@ void Wolk::connect()
 
 void Wolk::disconnect()
 {
-    addToCommandBuffer([=]() -> void {
-        m_connectivityService->disconnect();
-        notifyDisonnected();
-    });
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          m_connectivityService->disconnect();
+          notifyDisonnected();
+      });
 }
 
 void Wolk::publish()
 {
-    addToCommandBuffer([=]() -> void {
-        flushAttributes();
-        flushReadings();
-        flushParameters();
-    });
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          flushAttributes();
+          flushReadings();
+          flushParameters();
+      });
 }
 
 Wolk::Wolk(Device device) : m_device(device)
@@ -110,56 +114,63 @@ void Wolk::flushParameters()
     m_dataService->publishParameters();
 }
 
-void Wolk::handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Reading>>& readings)
+void Wolk::handleFeedUpdateCommand(const std::string& deviceKey,
+                                   const std::map<std::uint64_t, std::vector<Reading>>& readings)
 {
     LOG(INFO) << "Received feed update";
 
-    addToCommandBuffer([=] {
-        if (auto provider = m_feedUpdateHandler.lock())
-        {
-            provider->handleUpdate(readings);
-        }
-        else if (m_feedUpdateHandlerLambda)
-        {
-            m_feedUpdateHandlerLambda(readings);
-        }
-    });
+    addToCommandBuffer(
+      [=]
+      {
+          if (auto provider = m_feedUpdateHandler.lock())
+          {
+              provider->handleUpdate(deviceKey, readings);
+          }
+          else if (m_feedUpdateHandlerLambda)
+          {
+              m_feedUpdateHandlerLambda(deviceKey, readings);
+          }
+      });
 }
 
-void Wolk::handleParameterCommand(const std::vector<Parameter> parameters)
+void Wolk::handleParameterCommand(const std::string& deviceKey, const std::vector<Parameter>& parameters)
 {
     LOG(INFO) << "Received parameter sync";
 
-    addToCommandBuffer([=] {
-        if (auto provider = m_parameterHandler.lock())
-        {
-            provider->handleUpdate(parameters);
-        }
-        else if (m_parameterLambda)
-        {
-            m_parameterLambda(parameters);
-        }
-    });
+    addToCommandBuffer(
+      [=]
+      {
+          if (auto provider = m_parameterHandler.lock())
+          {
+              provider->handleUpdate(deviceKey, parameters);
+          }
+          else if (m_parameterLambda)
+          {
+              m_parameterLambda(deviceKey, parameters);
+          }
+      });
 }
 
 void Wolk::tryConnect(bool firstTime)
 {
-    addToCommandBuffer([=]() -> void {
-        if (firstTime)
-            LOG(INFO) << "Connecting...";
+    addToCommandBuffer(
+      [=]() -> void
+      {
+          if (firstTime)
+              LOG(INFO) << "Connecting...";
 
-        if (!m_connectivityService->connect())
-        {
-            if (firstTime)
-                LOG(INFO) << "Failed to connect";
+          if (!m_connectivityService->connect())
+          {
+              if (firstTime)
+                  LOG(INFO) << "Failed to connect";
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-            tryConnect(false);
-            return;
-        }
+              std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+              tryConnect(false);
+              return;
+          }
 
-        notifyConnected();
-    });
+          notifyConnected();
+      });
 }
 
 void Wolk::notifyConnected()
@@ -200,40 +211,40 @@ void Wolk::notifyDisonnected()
 
 void Wolk::registerFeed(const Feed& feed)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->registerFeed(feed); });
+    addToCommandBuffer([=]() -> void { m_dataService->registerFeed(m_device.getKey(), feed); });
 }
 
 void Wolk::registerFeeds(const std::vector<Feed>& feeds)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->registerFeeds(feeds); });
+    addToCommandBuffer([=]() -> void { m_dataService->registerFeeds(m_device.getKey(), feeds); });
 }
 
 void Wolk::removeFeed(const std::string& reference)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->removeFeed(reference); });
+    addToCommandBuffer([=]() -> void { m_dataService->removeFeed(m_device.getKey(), reference); });
 }
 
 void Wolk::removeFeeds(const std::vector<std::string>& references)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->removeFeeds(references); });
+    addToCommandBuffer([=]() -> void { m_dataService->removeFeeds(m_device.getKey(), references); });
 }
 
 void Wolk::pullFeedValues()
 {
-    addToCommandBuffer([=]() -> void { m_dataService->pullFeedValues(); });
+    addToCommandBuffer([=]() -> void { m_dataService->pullFeedValues(m_device.getKey()); });
 }
 
 void Wolk::pullParameters()
 {
-    addToCommandBuffer([=]() -> void { m_dataService->pullParameters(); });
+    addToCommandBuffer([=]() -> void { m_dataService->pullParameters(m_device.getKey()); });
 }
 void Wolk::addAttribute(Attribute attribute)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->addAttribute(attribute); });
+    addToCommandBuffer([=]() -> void { m_dataService->addAttribute(m_device.getKey(), attribute); });
 }
 void Wolk::updateParameter(Parameter parameter)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->updateParameter(parameter); });
+    addToCommandBuffer([=]() -> void { m_dataService->updateParameter(m_device.getKey(), parameter); });
 }
 
 Wolk::ConnectivityFacade::ConnectivityFacade(InboundMessageHandler& handler,

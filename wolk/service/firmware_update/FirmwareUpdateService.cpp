@@ -120,7 +120,8 @@ void FirmwareUpdateService::obtainParametersAndAnnounce()
     auto parameters =
       std::vector<ParameterName>{ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME};
     auto firmwareParameterListener = m_firmwareParametersListener;
-    auto callback = [firmwareParameterListener](const std::vector<Parameter>& receivedParameters) {
+    auto callback = [firmwareParameterListener](const std::vector<Parameter>& receivedParameters)
+    {
         // Analyze the parameters
         auto repository = std::string{};
         auto checkTime = std::string{};
@@ -133,7 +134,7 @@ void FirmwareUpdateService::obtainParametersAndAnnounce()
         // And call the callback
         firmwareParameterListener->receiveParameters(repository, checkTime);
     };
-    m_dataService.synchronizeParameters(parameters, callback);
+    m_dataService.synchronizeParameters(m_deviceKey, parameters, callback);
 }
 
 const Protocol& FirmwareUpdateService::getProtocol()
