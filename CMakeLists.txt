@@ -115,7 +115,8 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/InboundPlatformMessageHandler.h
         wolk/Version.h
         wolk/Wolk.h
-        wolk/WolkBuilder.h)
+        wolk/WolkBuilder.h
+        wolk/WolkInterface.h)
 
 file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE PATTERN "poco/HTTPFileDownloader.h" EXCLUDE)
 
