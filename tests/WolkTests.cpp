@@ -203,9 +203,8 @@ TEST_F(WolkTests, HandlingReadings)
     const auto& wolk = builder->build();
 
     EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand("", {}));
-    EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand("", {}));
 
-    waitEvents(2);
+    waitEvents(1);
 }
 
 TEST_F(WolkTests, ConnectivityFacade)
