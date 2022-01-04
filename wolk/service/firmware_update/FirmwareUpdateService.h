@@ -39,7 +39,6 @@ public:
                           std::unique_ptr<FirmwareParametersListener> firmwareParametersListener,
                           FirmwareUpdateProtocol& protocol, const std::string& workingDirectory = "./");
 
-
     bool isInstaller() const;
 
     bool isParameterListener() const;

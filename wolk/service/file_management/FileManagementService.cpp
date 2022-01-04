@@ -294,8 +294,9 @@ void FileManagementService::onFileUploadInit(const std::string& deviceKey, const
     // Create a session for this file
     m_sessions.emplace(deviceKey, std::unique_ptr<FileTransferSession>(new FileTransferSession(
                                     deviceKey, message,
-                                    [this, deviceKey](FileUploadStatus status, FileUploadError error)
-                                    { this->onFileSessionStatus(deviceKey, status, error); },
+                                    [this, deviceKey](FileUploadStatus status, FileUploadError error) {
+                                        this->onFileSessionStatus(deviceKey, status, error);
+                                    },
                                     m_commandBuffer)));
 
     // Obtain the first message for the session
@@ -347,8 +348,9 @@ void FileManagementService::onFileUrlDownloadInit(const std::string& deviceKey,
     // Create a session for this message
     m_sessions[deviceKey] = std::unique_ptr<FileTransferSession>(new FileTransferSession(
       deviceKey, message,
-      [this, deviceKey](FileUploadStatus status, FileUploadError error)
-      { this->onFileSessionStatus(deviceKey, status, error); },
+      [this, deviceKey](FileUploadStatus status, FileUploadError error) {
+          this->onFileSessionStatus(deviceKey, status, error);
+      },
       m_commandBuffer, m_downloader));
 
     // Trigger the download
@@ -572,9 +574,8 @@ void FileManagementService::notifyListenerAddedFile(const std::string& deviceKey
     {
         if (listener != nullptr)
         {
-            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
-              [listener, deviceKey, fileName, absolutePath]()
-              {
+            m_commandBuffer.pushCommand(
+              std::make_shared<std::function<void()>>([listener, deviceKey, fileName, absolutePath]() {
                   if (listener != nullptr)
                       listener->onAddedFile(deviceKey, fileName, absolutePath);
               }));
@@ -591,12 +592,10 @@ void FileManagementService::notifyListenerRemovedFile(const std::string& deviceK
     {
         if (listener != nullptr)
         {
-            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
-              [listener, deviceKey, fileName]()
-              {
-                  if (listener != nullptr)
-                      listener->onRemovedFile(deviceKey, fileName);
-              }));
+            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, deviceKey, fileName]() {
+                if (listener != nullptr)
+                    listener->onRemovedFile(deviceKey, fileName);
+            }));
         }
     }
 }

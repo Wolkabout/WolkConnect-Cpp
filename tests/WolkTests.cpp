@@ -236,8 +236,7 @@ TEST_F(WolkTests, ConnectivityFacade)
     //    wolk->m_connectivityManager->m_messageHandler =
     //      static_cast<wolkabout::InboundMessageHandler&>(*inboundMessageHandlerMock);
 
-    wolk->m_connectivityManager->m_connectionLostHandler = [&]()
-    {
+    wolk->m_connectivityManager->m_connectionLostHandler = [&]() {
         connectionLostInvoked = true;
         std::cout << "ConnectionLostHandler: Invoked!" << std::endl;
     };

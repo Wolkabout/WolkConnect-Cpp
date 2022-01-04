@@ -168,12 +168,10 @@ std::unique_ptr<Wolk> WolkBuilder::build()
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
 
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
-                                                                             [wolkRaw]
-                                                                             {
-                                                                                 wolkRaw->notifyDisonnected();
-                                                                                 wolkRaw->connect();
-                                                                             });
+    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
+        wolkRaw->notifyDisonnected();
+        wolkRaw->connect();
+    });
 
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
@@ -184,10 +182,12 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     // Data service
     wolk->m_dataService = std::make_shared<DataService>(
       *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
-      { wolkRaw->handleFeedUpdateCommand(deviceKey, readings); },
-      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters)
-      { wolkRaw->handleParameterCommand(deviceKey, parameters); });
+      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
+          wolkRaw->handleFeedUpdateCommand(deviceKey, readings);
+      },
+      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
+          wolkRaw->handleParameterCommand(deviceKey, parameters);
+      });
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
     // Check if the file management should be engaged

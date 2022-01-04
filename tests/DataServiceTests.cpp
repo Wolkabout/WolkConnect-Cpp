@@ -47,14 +47,12 @@ public:
         persistenceMock = std::make_shared<PersistenceMock>();
 
         // Set up the callback
-        _internalFeedUpdateSetHandler =
-          [&](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
-        {
+        _internalFeedUpdateSetHandler = [&](const std::string& deviceKey,
+                                            const std::map<std::uint64_t, std::vector<Reading>>& readings) {
             if (feedUpdateSetHandler)
                 feedUpdateSetHandler(deviceKey, std::move(readings));
         };
-        _internalParameterSyncHandler = [&](const std::string& deviceKey, const std::vector<Parameter>& parameters)
-        {
+        _internalParameterSyncHandler = [&](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
             if (parameterSyncHandler)
                 parameterSyncHandler(deviceKey, std::move(parameters));
         };

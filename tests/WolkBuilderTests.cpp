@@ -93,8 +93,9 @@ TEST_F(WolkBuilderTests, MockHandlers)
 
     auto parameterHandler = std::make_shared<NiceMock<ParameterHandlerMock>>();
     ASSERT_NO_THROW(builder->parameterHandler(parameterHandler));
-    EXPECT_CALL(*parameterHandler, handleUpdate)
-      .WillOnce([&](const std::string&, const std::vector<Parameter>&) { parameterUpdated = true; });
+    EXPECT_CALL(*parameterHandler, handleUpdate).WillOnce([&](const std::string&, const std::vector<Parameter>&) {
+        parameterUpdated = true;
+    });
 
     std::shared_ptr<Wolk> wolk = nullptr;
     EXPECT_NO_THROW(wolk = builder->build());

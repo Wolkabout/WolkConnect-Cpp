@@ -260,8 +260,7 @@ int main(int /* argc */, char** /* argv */)
      */
     wolk->connect();
     bool running = true;
-    sigintCall = [&](int)
-    {
+    sigintCall = [&](int) {
         LOG(WARN) << "Application: Received stop signal, disconnecting...";
         conditionVariable.notify_one();
         running = false;

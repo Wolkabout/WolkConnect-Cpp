@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "core/utilities/Logger.h"
 #include "wolk/service/platform_status/PlatformStatusService.h"
+
+#include "core/utilities/Logger.h"
 
 #include <utility>
 
