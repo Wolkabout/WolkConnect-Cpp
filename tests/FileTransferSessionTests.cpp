@@ -39,6 +39,8 @@ public:
 
     const std::string TAG = "FileTransferSessionTests";
 
+    const std::string DEVICE_KEY = "DEVICE_KEY";
+
     const std::string FILE_NAME = "test.file";
 
     CommandBuffer commandBuffer;
@@ -56,7 +58,7 @@ TEST_F(FileTransferSessionTests, CreateSingleTransferChunk)
 
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
-    ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{initiate, callback, commandBuffer}));
+    ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{DEVICE_KEY, initiate, callback, commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Check some getters
@@ -102,7 +104,7 @@ TEST_F(FileTransferSessionTests, AbortFileTransfer)
 
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
-    ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{initiate, callback, commandBuffer}));
+    ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{DEVICE_KEY, initiate, callback, commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Request the first chunk

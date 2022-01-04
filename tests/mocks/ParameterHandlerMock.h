@@ -26,7 +26,7 @@ using namespace wolkabout;
 class ParameterHandlerMock : public ParameterHandler
 {
 public:
-    MOCK_METHOD(void, handleUpdate, (const std::vector<Parameter>&));
+    MOCK_METHOD(void, handleUpdate, (const std::string&, const std::vector<Parameter>&));
 };
 
 #endif    // WOLKABOUTCONNECTOR_PARAMETERHANDLERMOCK_H

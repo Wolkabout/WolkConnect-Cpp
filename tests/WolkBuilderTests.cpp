@@ -59,15 +59,16 @@ TEST_F(WolkBuilderTests, LambdaHandlers)
     std::shared_ptr<WolkBuilder> builder;
     ASSERT_NO_THROW(builder = std::make_shared<WolkBuilder>(*testDevice));
 
+    ASSERT_NO_THROW(builder->feedUpdateHandler(
+      [&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) { feedUpdated = true; }));
     ASSERT_NO_THROW(
-      builder->feedUpdateHandler([&](const std::map<std::uint64_t, std::vector<Reading>>&) { feedUpdated = true; }));
-    ASSERT_NO_THROW(builder->parameterHandler([&](const std::vector<Parameter>&) { parameterUpdated = true; }));
+      builder->parameterHandler([&](const std::string&, const std::vector<Parameter>&) { parameterUpdated = true; }));
 
     std::shared_ptr<Wolk> wolk = nullptr;
     EXPECT_NO_THROW(wolk = builder->build());
 
-    wolk->handleFeedUpdateCommand({});
-    wolk->handleParameterCommand({});
+    wolk->handleFeedUpdateCommand("", {});
+    wolk->handleParameterCommand("", {});
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_TRUE(feedUpdated);
@@ -87,21 +88,19 @@ TEST_F(WolkBuilderTests, MockHandlers)
 
     auto feedUpdateHandler = std::make_shared<NiceMock<FeedUpdateHandlerMock>>();
     ASSERT_NO_THROW(builder->feedUpdateHandler(feedUpdateHandler));
-    EXPECT_CALL(*feedUpdateHandler, handleUpdate).WillOnce([&](const std::map<std::uint64_t, std::vector<Reading>>&) {
-        feedUpdated = true;
-    });
+    EXPECT_CALL(*feedUpdateHandler, handleUpdate)
+      .WillOnce([&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) { feedUpdated = true; });
 
     auto parameterHandler = std::make_shared<NiceMock<ParameterHandlerMock>>();
     ASSERT_NO_THROW(builder->parameterHandler(parameterHandler));
-    EXPECT_CALL(*parameterHandler, handleUpdate).WillOnce([&](const std::vector<Parameter>&) {
-        parameterUpdated = true;
-    });
+    EXPECT_CALL(*parameterHandler, handleUpdate)
+      .WillOnce([&](const std::string&, const std::vector<Parameter>&) { parameterUpdated = true; });
 
     std::shared_ptr<Wolk> wolk = nullptr;
     EXPECT_NO_THROW(wolk = builder->build());
 
-    wolk->handleFeedUpdateCommand({});
-    wolk->handleParameterCommand({});
+    wolk->handleFeedUpdateCommand("", {});
+    wolk->handleParameterCommand("", {});
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     EXPECT_TRUE(feedUpdated);

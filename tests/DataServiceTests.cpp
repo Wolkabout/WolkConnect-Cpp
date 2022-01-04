@@ -47,19 +47,21 @@ public:
         persistenceMock = std::make_shared<PersistenceMock>();
 
         // Set up the callback
-        _internalFeedUpdateSetHandler = [&](std::map<std::uint64_t, std::vector<Reading>> readings) {
+        _internalFeedUpdateSetHandler =
+          [&](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
+        {
             if (feedUpdateSetHandler)
-                feedUpdateSetHandler(std::move(readings));
+                feedUpdateSetHandler(deviceKey, std::move(readings));
         };
-        _internalParameterSyncHandler = [&](std::vector<Parameter> parameters) {
+        _internalParameterSyncHandler = [&](const std::string& deviceKey, const std::vector<Parameter>& parameters)
+        {
             if (parameterSyncHandler)
-                parameterSyncHandler(std::move(parameters));
+                parameterSyncHandler(deviceKey, std::move(parameters));
         };
 
         // Create the service
-        dataService =
-          std::make_shared<DataService>(DEVICE_KEY, *dataProtocolMock, *persistenceMock, *connectivityServiceMock,
-                                        _internalFeedUpdateSetHandler, _internalParameterSyncHandler);
+        dataService = std::make_shared<DataService>(*dataProtocolMock, *persistenceMock, *connectivityServiceMock,
+                                                    _internalFeedUpdateSetHandler, _internalParameterSyncHandler);
     }
 
     static void SetUpTestCase() { Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE); }
@@ -98,7 +100,7 @@ TEST_F(DataServiceTests, RegisterSingleFeedTest)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
     // This time everything will succeed
-    ASSERT_NO_FATAL_FAILURE(dataService->registerFeed(feed));
+    ASSERT_NO_FATAL_FAILURE(dataService->registerFeed(DEVICE_KEY, feed));
 }
 
 TEST_F(DataServiceTests, RegisterSingleFeedTestFailsToPublish)
@@ -115,7 +117,7 @@ TEST_F(DataServiceTests, RegisterSingleFeedTestFailsToPublish)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
 
     // This time everything will succeed
-    ASSERT_NO_FATAL_FAILURE(dataService->registerFeed(feed));
+    ASSERT_NO_FATAL_FAILURE(dataService->registerFeed(DEVICE_KEY, feed));
 }
 
 TEST_F(DataServiceTests, RegisterSingleFeedTestFailsToParse)
@@ -130,5 +132,5 @@ TEST_F(DataServiceTests, RegisterSingleFeedTestFailsToParse)
     EXPECT_CALL(*connectivityServiceMock, publish).Times(0);
 
     // This time everything will succeed
-    ASSERT_NO_FATAL_FAILURE(dataService->registerFeed(feed));
+    ASSERT_NO_FATAL_FAILURE(dataService->registerFeed(DEVICE_KEY, feed));
 }

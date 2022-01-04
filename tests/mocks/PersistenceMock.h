@@ -30,12 +30,18 @@ public:
     MOCK_METHOD(std::vector<std::shared_ptr<Reading>>, getReadings, (const std::string&, std::uint_fast64_t));
     MOCK_METHOD(void, removeReadings, (const std::string&, std::uint_fast64_t));
     MOCK_METHOD(std::vector<std::string>, getReadingsKeys, ());
-    MOCK_METHOD(bool, putAttribute, (std::shared_ptr<Attribute>));
-    MOCK_METHOD(std::vector<std::shared_ptr<Attribute>>, getAttributes, ());
+    MOCK_METHOD(bool, putAttribute, (const std::string&, std::shared_ptr<Attribute>));
+    MOCK_METHOD((std::map<std::string, std::shared_ptr<Attribute>>), getAttributes, ());
+    MOCK_METHOD(std::shared_ptr<Attribute>, getAttributeUnderKey, (const std::string&));
     MOCK_METHOD(void, removeAttributes, ());
-    MOCK_METHOD(bool, putParameter, (Parameter));
-    MOCK_METHOD((std::map<ParameterName, std::string>), getParameters, ());
-    MOCK_METHOD(void, removeParameters, (ParameterName));
+    MOCK_METHOD(void, removeAttributes, (const std::string&));
+    MOCK_METHOD(std::vector<std::string>, getAttributeKeys, ());
+    MOCK_METHOD(bool, putParameter, (const std::string&, Parameter));
+    MOCK_METHOD((std::map<std::string, Parameter>), getParameters, ());
+    MOCK_METHOD(Parameter, getParameterForKey, (const std::string&));
+    MOCK_METHOD(void, removeParameters, ());
+    MOCK_METHOD(void, removeParameters, (const std::string&));
+    MOCK_METHOD(std::vector<std::string>, getParameterKeys, ());
     MOCK_METHOD(bool, isEmpty, ());
 };
 

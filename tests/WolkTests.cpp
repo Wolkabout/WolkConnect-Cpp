@@ -88,11 +88,11 @@ TEST_F(WolkTests, ConnectTest)
     auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
     auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
-    auto feedHandler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) {};
-    auto parameterHandler = [&](const std::vector<Parameter>&) {};
+    auto feedHandler = [&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {};
+    auto parameterHandler = [&](const std::string&, const std::vector<Parameter>&) {};
 
     auto dataServiceMock = std::unique_ptr<DataServiceMock>(new NiceMock<DataServiceMock>(
-      device->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
+      *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
 
     wolk->m_dataService = std::move(dataServiceMock);
     wolk->m_connectivityService = std::move(connectivityServiceMock);
@@ -114,16 +114,16 @@ TEST_F(WolkTests, WhenConnected_PublishFileList)
     auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
     auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
-    auto feedHandler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) {};
-    auto parameterHandler = [&](const std::vector<Parameter>&) {};
+    auto feedHandler = [&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {};
+    auto parameterHandler = [&](const std::string&, const std::vector<Parameter>&) {};
 
     auto dataServiceMock = std::unique_ptr<DataServiceMock>(new NiceMock<DataServiceMock>(
-      device->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
+      *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
 
     auto fileManagementProtocolMock =
       std::unique_ptr<FileManagementProtocolMock>(new NiceMock<FileManagementProtocolMock>);
     auto fileManagementServiceMock = std::make_shared<FileManagementServiceMock>(
-      device->getKey(), *connectivityServiceMock, *dataServiceMock, *fileManagementProtocolMock, "./");
+      *connectivityServiceMock, *dataServiceMock, *fileManagementProtocolMock, "./");
 
     wolk->m_dataService = std::move(dataServiceMock);
     wolk->m_connectivityService = std::move(connectivityServiceMock);
@@ -132,7 +132,7 @@ TEST_F(WolkTests, WhenConnected_PublishFileList)
     ON_CALL(dynamic_cast<ConnectivityServiceMock&>(*(wolk->m_connectivityService)), connect)
       .WillByDefault(testing::Return(true));
 
-    EXPECT_CALL(dynamic_cast<FileManagementServiceMock&>(*(wolk->m_fileManagementService)), reportAllPresentFiles)
+    EXPECT_CALL(dynamic_cast<FileManagementServiceMock&>(*(wolk->m_fileManagementService)), reportPresentFiles)
       .WillOnce(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
     EXPECT_NO_FATAL_FAILURE(wolk->connect());
@@ -163,21 +163,23 @@ TEST_F(WolkTests, AddingReadings)
     auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
     auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
-    auto feedHandler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) {};
-    auto parameterHandler = [&](const std::vector<Parameter>&) {};
+    auto feedHandler = [&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {};
+    auto parameterHandler = [&](const std::string&, const std::vector<Parameter>&) {};
 
     auto dataServiceMock = std::unique_ptr<DataServiceMock>(new NiceMock<DataServiceMock>(
-      device->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
+      *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
 
     wolk->m_dataService = std::move(dataServiceMock);
 
-    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
-                addReading(A<const std::string&>(), A<const std::string&>(), A<std::uint64_t>()))
+    EXPECT_CALL(
+      dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
+      addReading(A<const std::string&>(), A<const std::string&>(), A<const std::string&>(), A<std::uint64_t>()))
       .Times(1)
       .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
     EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
-                addReading(A<const std::string&>(), A<const std::vector<std::string>&>(), A<std::uint64_t>()))
+                addReading(A<const std::string&>(), A<const std::string&>(), A<const std::vector<std::string>&>(),
+                           A<std::uint64_t>()))
       .Times(1)
       .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
@@ -194,14 +196,14 @@ TEST_F(WolkTests, HandlingReadings)
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
 
     // Make a lambda that will receive feed values
-    auto handler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) { onEvent(); };
+    auto handler = [&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) { onEvent(); };
 
     builder->feedUpdateHandler(handler);
 
     const auto& wolk = builder->build();
 
-    EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand({}));
-    EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand({}));
+    EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand("", {}));
+    EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand("", {}));
 
     waitEvents(2);
 }
@@ -234,7 +236,8 @@ TEST_F(WolkTests, ConnectivityFacade)
     //    wolk->m_connectivityManager->m_messageHandler =
     //      static_cast<wolkabout::InboundMessageHandler&>(*inboundMessageHandlerMock);
 
-    wolk->m_connectivityManager->m_connectionLostHandler = [&]() {
+    wolk->m_connectivityManager->m_connectionLostHandler = [&]()
+    {
         connectionLostInvoked = true;
         std::cout << "ConnectionLostHandler: Invoked!" << std::endl;
     };
