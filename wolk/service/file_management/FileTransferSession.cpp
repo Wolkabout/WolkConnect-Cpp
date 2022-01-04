@@ -28,10 +28,11 @@
 
 namespace wolkabout
 {
-FileTransferSession::FileTransferSession(const FileUploadInitiateMessage& message,
+FileTransferSession::FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
                                          std::function<void(FileUploadStatus, FileUploadError)> callback,
                                          CommandBuffer& commandBuffer)
-: m_name(message.getName())
+: m_deviceKey(std::move(deviceKey))
+, m_name(message.getName())
 , m_retryCount(0)
 , m_done(false)
 , m_size(message.getSize())
@@ -43,10 +44,11 @@ FileTransferSession::FileTransferSession(const FileUploadInitiateMessage& messag
 {
 }
 
-FileTransferSession::FileTransferSession(const FileUrlDownloadInitMessage& message,
+FileTransferSession::FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
                                          std::function<void(FileUploadStatus, FileUploadError)> callback,
                                          CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader)
-: m_url(message.getPath())
+: m_deviceKey(std::move(deviceKey))
+, m_url(message.getPath())
 , m_retryCount(0)
 , m_done(false)
 , m_size(0)
@@ -71,6 +73,11 @@ bool FileTransferSession::isUrlDownload() const
 bool FileTransferSession::isDone() const
 {
     return m_done;
+}
+
+const std::string& FileTransferSession::getDeviceKey() const
+{
+    return m_deviceKey;
 }
 
 const std::string& FileTransferSession::getName() const
@@ -244,7 +251,8 @@ bool FileTransferSession::triggerDownload()
 
     // Now that we have adequate information, setup everything
     m_downloader->downloadFile(m_url,
-                               [this](FileUploadStatus status, FileUploadError error, const std::string& fileName) {
+                               [this](FileUploadStatus status, FileUploadError error, const std::string& fileName)
+                               {
                                    // Set the name if a name value is sent out
                                    if (!fileName.empty())
                                        this->m_name = fileName;
@@ -290,10 +298,12 @@ void FileTransferSession::changeStatusAndError(FileUploadStatus status, FileUplo
 
         // Queue the callback call
         if (m_callback)
-            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([this, status, error]() {
-                if (m_callback)
-                    m_callback(status, error);
-            }));
+            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
+              [this, status, error]()
+              {
+                  if (m_callback)
+                      m_callback(status, error);
+              }));
     }
 }
 }    // namespace wolkabout

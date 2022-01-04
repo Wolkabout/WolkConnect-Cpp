@@ -27,7 +27,7 @@
 #include "wolk/api/FirmwareInstaller.h"
 #include "wolk/api/FirmwareParametersListener.h"
 #include "wolk/api/ParameterHandler.h"
-#include "wolk/service/file_management/poco/HTTPFileDownloader.h"
+#include "wolk/service/file_management/FileDownloader.h"
 
 #include <cstdint>
 #include <functional>
@@ -89,7 +89,8 @@ public:
      * @param parameterHandlerLambda Lambda that handles parameters updates
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& parameterHandler(const std::function<void(std::string, std::vector<Parameter>)>& parameterHandlerLambda);
+    WolkBuilder& parameterHandler(
+      const std::function<void(std::string, std::vector<Parameter>)>& parameterHandlerLambda);
 
     /**
      * @brief Sets parameter handler
@@ -127,7 +128,7 @@ public:
      * @brief Sets the Wolk module to allow file management functionality.
      * @details This one is meant to enable File URL Download, but can enabled File Transfer too.
      * @param fileDownloadLocation The folder location for file management.
-     * @param fileDownloader The implementation that will download the files. By default our Poco HTTPFileDownloader.
+     * @param fileDownloader The implementation that will download the files.
      * @param transferEnabled Whether the File Transfer should be enabled too.
      * @param maxPacketSize The max packet size for downloading chunks (in MBs).
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
@@ -153,7 +154,7 @@ public:
      * @param workingDirectory The directory where the session file will be kept.
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> firmwareInstaller,
+    WolkBuilder& withFirmwareUpdate(std::unique_ptr<FirmwareInstaller> firmwareInstaller,
                                     const std::string& workingDirectory = "./");
 
     /**
@@ -165,7 +166,7 @@ public:
      * @param workingDirectory The directory where the session file will be kept.
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& withFirmwareUpdate(std::shared_ptr<FirmwareParametersListener> firmwareParametersListener,
+    WolkBuilder& withFirmwareUpdate(std::unique_ptr<FirmwareParametersListener> firmwareParametersListener,
                                     const std::string& workingDirectory = "./");
 
     /**
@@ -208,9 +209,9 @@ private:
 
     std::shared_ptr<FileListener> m_fileListener;
 
-    std::shared_ptr<FirmwareInstaller> m_firmwareInstaller;
+    std::unique_ptr<FirmwareInstaller> m_firmwareInstaller;
     std::string m_workingDirectory;
-    std::shared_ptr<FirmwareParametersListener> m_firmwareParametersListener;
+    std::unique_ptr<FirmwareParametersListener> m_firmwareParametersListener;
 
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
     static const constexpr char* TRUST_STORE = "ca.crt";

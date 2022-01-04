@@ -59,7 +59,8 @@ public:
      * so the key in this map is going to be time at which values have been sent, and in the value is the vector of
      * values that have been set at that particular time.
      */
-    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> readings) override
+    void handleUpdate(const std::string& deviceKey,
+                      const std::map<std::uint64_t, std::vector<wolkabout::Reading>>& readings) override
     {
         // Go through all the timestamps - since the `std::map` sorts by key, this will always go from the oldest to
         // newest.
@@ -106,7 +107,7 @@ public:
      * @param parameters This is a vector containing all parameter that have been changed. Since the device pulls
      * parameters, the device will receive all updates to values since the last time it has pulled values.
      */
-    void handleUpdate(const std::vector<wolkabout::Parameter>& parameters) override
+    void handleUpdate(const std::string& deviceKey, const std::vector<wolkabout::Parameter>& parameters) override
     {
         for (const auto& parameter : parameters)
             LOG(INFO) << "Received update for parameter '" << wolkabout::toString(parameter.first) << "' - Value: '"

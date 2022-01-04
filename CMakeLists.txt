@@ -81,6 +81,7 @@ include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 find_package(Threads REQUIRED)
 
 # WolkAbout c++ SDK
+option(BUILD_POCO "" ${BUILD_POCO_HTTP_DOWNLOADER})
 option(POCO_BUILD_NET "" ${BUILD_POCO_HTTP_DOWNLOADER})
 option(BUILD_AWS_LOG_UPLOADER "" OFF)
 add_subdirectory(WolkSDK-Cpp)

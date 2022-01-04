@@ -69,6 +69,7 @@ WolkBuilder& WolkBuilder::parameterHandler(
     m_parameterHandler.reset();
     return *this;
 }
+
 WolkBuilder& WolkBuilder::parameterHandler(std::weak_ptr<ParameterHandler> parameterHandler)
 {
     m_parameterHandler = std::move(parameterHandler);
@@ -122,7 +123,7 @@ WolkBuilder& WolkBuilder::withFileListener(const std::shared_ptr<FileListener>& 
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> firmwareInstaller,
+WolkBuilder& WolkBuilder::withFirmwareUpdate(std::unique_ptr<FirmwareInstaller> firmwareInstaller,
                                              const std::string& workingDirectory)
 {
     if (m_firmwareUpdateProtocol == nullptr)
@@ -134,7 +135,7 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> 
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareParametersListener> firmwareParametersListener,
+WolkBuilder& WolkBuilder::withFirmwareUpdate(std::unique_ptr<FirmwareParametersListener> firmwareParametersListener,
                                              const std::string& workingDirectory)
 {
     if (m_firmwareUpdateProtocol == nullptr)
@@ -194,17 +195,12 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     {
         // Create the File Management service
         wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
-        if (m_fileTransferUrlEnabled && m_fileDownloader == nullptr)
-        {
-            m_fileDownloader = std::make_shared<HTTPFileDownloader>();
-        }
         wolk->m_fileDownloader = std::move(m_fileDownloader);
         wolk->m_fileListener = std::move(m_fileListener);
 
         wolk->m_fileManagementService = std::make_shared<FileManagementService>(
-          wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, *wolk->m_fileManagementProtocol,
-          m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled, m_maxPacketSize,
-          wolk->m_fileDownloader, wolk->m_fileListener);
+          *wolk->m_connectivityService, *wolk->m_dataService, *wolk->m_fileManagementProtocol, m_fileDownloadDirectory,
+          m_fileTransferEnabled, m_fileTransferUrlEnabled, wolk->m_fileDownloader, wolk->m_fileListener);
 
         // Trigger the on build and add the listener for MQTT messages
         wolk->m_fileManagementService->createFolder();
@@ -227,28 +223,29 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         if (m_firmwareInstaller != nullptr)
         {
             wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-              wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, m_firmwareInstaller,
+              *wolk->m_connectivityService, *wolk->m_dataService, std::move(m_firmwareInstaller),
               *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
         }
         else if (m_firmwareParametersListener != nullptr)
         {
             wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-              wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, m_firmwareParametersListener,
+              *wolk->m_connectivityService, *wolk->m_dataService, std::move(m_firmwareParametersListener),
               *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
         }
 
         // And set it all up
-        wolk->m_firmwareUpdateService->loadState();
+        wolk->m_firmwareUpdateService->loadState(wolk->m_device.getKey());
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
     }
 
     // Set the parameters about the FirmwareUpdate
-    wolk->m_dataService->updateParameter(m_device.getKey(), {ParameterName::FIRMWARE_UPDATE_ENABLED,
-                                                             m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
+    wolk->m_dataService->updateParameter(
+      m_device.getKey(),
+      {ParameterName::FIRMWARE_UPDATE_ENABLED, wolk->m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
     {
         auto firmwareVersion = std::string{};
         if (m_firmwareInstaller != nullptr)
-            firmwareVersion = m_firmwareInstaller->getFirmwareVersion();
+            firmwareVersion = m_firmwareInstaller->getFirmwareVersion(wolk->m_device.getKey());
         else if (m_firmwareParametersListener != nullptr)
             firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
         wolk->m_dataService->updateParameter(m_device.getKey(), {ParameterName::FIRMWARE_VERSION, firmwareVersion});
@@ -269,7 +266,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_caCertPath{TRUST_STORE}
 , m_device{std::move(device)}
 , m_persistence{new InMemoryPersistence()}
-, m_dataProtocol(new WolkaboutDataProtocol())
+, m_dataProtocol{new WolkaboutDataProtocol()}
 , m_fileTransferEnabled(false)
 , m_fileTransferUrlEnabled(false)
 , m_maxPacketSize{0}

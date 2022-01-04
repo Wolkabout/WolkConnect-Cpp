@@ -18,8 +18,8 @@
 
 namespace wolkabout
 {
-bool FirmwareInstaller::wasFirmwareInstallSuccessful(const std::string& oldVersion)
+bool FirmwareInstaller::wasFirmwareInstallSuccessful(const std::string& deviceKey, const std::string& oldVersion)
 {
-    return oldVersion != getFirmwareVersion();
+    return oldVersion != getFirmwareVersion(deviceKey);
 }
 }    // namespace wolkabout

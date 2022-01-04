@@ -51,22 +51,24 @@ public:
     /**
      * Default constructor for the FileTransferSession in case of a regular file transfer.
      *
+     * @param deviceKey The device key for which this session is going on.
      * @param message The message that initiated an upload.
      * @param callback The callback that the session should use to announce status and error changes.
      * @param commandBuffer The command buffer which the session will use to announce status.
      */
-    FileTransferSession(const FileUploadInitiateMessage& message,
+    FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
                         std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer);
 
     /**
      * Default constructor for the FileTransferSession in case of a url download transfer.
      *
+     * @param deviceKey The device key for which this session is going on.
      * @param message The message that initiated an upload.
      * @param callback The callback that the session should use to announce status and error changes.
      * @param commandBuffer The command buffer which the session will use to announce status.
      * @param fileDownloader The file downloader that will actually execute the file download.
      */
-    FileTransferSession(const FileUrlDownloadInitMessage& message,
+    FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
                         std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer,
                         std::shared_ptr<FileDownloader> fileDownloader);
 
@@ -90,6 +92,13 @@ public:
      * @return Is this session done?
      */
     bool isDone() const;
+
+    /**
+     * Default getter for the device key.
+     *
+     * @return The device key for which this session is going on.
+     */
+    const std::string& getDeviceKey() const;
 
     /**
      * Default getter for the name of the file.
@@ -167,6 +176,9 @@ private:
     void changeStatusAndError(FileUploadStatus status, FileUploadError error);
 
     // Here are the parameters for engaging the session.
+    // The device for which the session is ongoing
+    std::string m_deviceKey;
+
     // If the URL is set, it is always a URL download session.
     std::string m_name;
     std::string m_url;

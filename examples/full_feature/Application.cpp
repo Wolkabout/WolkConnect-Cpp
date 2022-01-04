@@ -33,9 +33,9 @@
  * In here, you can enter the device credentials to successfully identify the device on the platform.
  * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
  */
-const std::string DEVICE_KEY = "<DEVICE_KEY>";
-const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
-const std::string PLATFORM_HOST = "ssl://demo.wolkabout.com:8883";
+const std::string DEVICE_KEY = "AWC";
+const std::string DEVICE_PASSWORD = "VZ8R3MI87R";
+const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
 const std::string CA_CERT_PATH = "./ca.crt";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
 const std::string FIRMWARE_VERSION = "4.0.0";
@@ -75,7 +75,8 @@ public:
      *
      * @param readings The map containing information about updated feeds and their new value(s).
      */
-    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> readings) override
+    void handleUpdate(const std::string& deviceKey,
+                      const std::map<std::uint64_t, std::vector<wolkabout::Reading>>& readings) override
     {
         // Go through all the timestamps
         for (const auto& pair : readings)
@@ -121,17 +122,20 @@ public:
      */
     explicit ExampleFirmwareInstaller(std::string fileLocation) : m_fileLocation(std::move(fileLocation)) {}
 
-    wolkabout::InstallResponse installFirmware(const std::string& fileName) override
+    wolkabout::InstallResponse installFirmware(const std::string& deviceKey, const std::string& fileName) override
     {
         // Compose the path
         auto path = wolkabout::FileSystemUtils::composePath(fileName, m_fileLocation);
-        LOG(INFO) << "Installation for file '" << path << "' requested.";
+        LOG(INFO) << "Installation for file '" << path << "' on device '" << deviceKey << "' requested.";
         return wolkabout::InstallResponse::WILL_INSTALL;
     }
 
-    void abortFirmwareInstall() override { LOG(INFO) << "The firmware install was aborted!"; }
+    void abortFirmwareInstall(const std::string& deviceKey) override
+    {
+        LOG(INFO) << "The firmware install on device '" << deviceKey << "' was aborted!";
+    }
 
-    std::string getFirmwareVersion() override { return FIRMWARE_VERSION; }
+    std::string getFirmwareVersion(const std::string&) override { return FIRMWARE_VERSION; }
 
 private:
     // Here is the folder location where files managed with FileManagement are stored.
@@ -172,23 +176,27 @@ public:
      * This is an overridden method from the `FileListener` interface. This is a method that will be invoked once a file
      * has been added.
      *
+     * @param deviceKey The device key for the file that has been added.
      * @param fileName The name of the file that has been added.
      * @param absolutePath The absolute path to the file that has been added.
      */
-    void onAddedFile(const std::string& fileName, const std::string& absolutePath) override
+    void onAddedFile(const std::string& deviceKey, const std::string& fileName,
+                     const std::string& absolutePath) override
     {
-        LOG(INFO) << "A file has been added! -> '" << fileName << "' | '" << absolutePath << "'.";
+        LOG(INFO) << "A file has been added! -> '" << fileName << "' | '" << absolutePath << "' (on device '"
+                  << deviceKey << "').";
     }
 
     /**
      * This is an overridden method from the `FileListener` interface. This is a method that will be invoked once a file
      * has been removed.
      *
+     * @param deviceKey The device key for the file that has been removed.
      * @param fileName The name of the file that has been removed.
      */
-    void onRemovedFile(const std::string& fileName) override
+    void onRemovedFile(const std::string& deviceKey, const std::string& fileName) override
     {
-        LOG(INFO) << "A file has been removed! -> '" << fileName << "'.";
+        LOG(INFO) << "A file has been removed! -> '" << fileName << "' (on device '" << deviceKey << "').";
     }
 };
 
@@ -239,8 +247,9 @@ int main(int /* argc */, char** /* argv */)
                   // Uncomment for FileURLDownload
                   //                  .withFileURLDownload(FILE_MANAGEMENT_LOCATION, nullptr, true)
                   // Uncomment for a FileListener
-                  //                  .withFileListener(std::make_shared<ExampleFileListener>())
-                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareInstaller>(FILE_MANAGEMENT_LOCATION))
+                  .withFileListener(std::make_shared<ExampleFileListener>())
+                  .withFirmwareUpdate(
+                    std::unique_ptr<ExampleFirmwareInstaller>(new ExampleFirmwareInstaller(FILE_MANAGEMENT_LOCATION)))
                   // Uncomment for example ParameterListener
                   //                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareParameterListener>())
                   .build();
@@ -251,8 +260,10 @@ int main(int /* argc */, char** /* argv */)
      */
     wolk->connect();
     bool running = true;
-    sigintCall = [&](int) {
+    sigintCall = [&](int)
+    {
         LOG(WARN) << "Application: Received stop signal, disconnecting...";
+        conditionVariable.notify_one();
         running = false;
     };
     signal(SIGINT, sigintResponse);

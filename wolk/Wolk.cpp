@@ -181,12 +181,12 @@ void Wolk::notifyConnected()
 
     if (m_fileManagementService != nullptr)
     {
-        m_fileManagementService->reportAllPresentFiles();
+        m_fileManagementService->reportPresentFiles(m_device.getKey());
     }
 
     if (m_firmwareUpdateService != nullptr)
     {
-        if (m_firmwareUpdateService->getFirmwareInstaller() != nullptr)
+        if (m_firmwareUpdateService->isInstaller())
         {
             // Publish everything from the queue
             while (!m_firmwareUpdateService->getQueue().empty())
@@ -197,9 +197,9 @@ void Wolk::notifyConnected()
                 m_firmwareUpdateService->getQueue().pop();
             }
         }
-        else if (m_firmwareUpdateService->getFirmwareParametersListener() != nullptr)
+        else if (m_firmwareUpdateService->isParameterListener())
         {
-            m_firmwareUpdateService->obtainParametersAndAnnounce();
+            m_firmwareUpdateService->obtainParametersAndAnnounce(m_device.getKey());
         }
     }
 }
