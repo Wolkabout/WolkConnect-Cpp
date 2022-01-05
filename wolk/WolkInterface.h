@@ -23,6 +23,7 @@
 #include "wolk/api/FeedUpdateHandler.h"
 #include "wolk/api/ParameterHandler.h"
 #include "wolk/service/data/DataService.h"
+#include "wolk/service/error/ErrorService.h"
 #include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"
 #include "wolk/service/platform_status/PlatformStatusService.h"
@@ -150,6 +151,7 @@ protected:
 
     // List of all protocols the Wolk object must hold
     std::unique_ptr<DataProtocol> m_dataProtocol;
+    std::unique_ptr<ErrorProtocol> m_errorProtocol;
     std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
     std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
     std::unique_ptr<PlatformStatusProtocol> m_platformStatusProtocol;
@@ -157,6 +159,7 @@ protected:
 
     // List of all services the Wolk object must hold
     std::shared_ptr<DataService> m_dataService;
+    std::shared_ptr<ErrorService> m_errorService;
     std::shared_ptr<FileManagementService> m_fileManagementService;
     std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
     std::shared_ptr<PlatformStatusService> m_platformStatusService;

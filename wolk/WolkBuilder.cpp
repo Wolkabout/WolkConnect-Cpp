@@ -21,6 +21,7 @@
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
 #include "core/persistence/inmemory/InMemoryPersistence.h"
 #include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
+#include "core/protocol/wolkabout/WolkaboutErrorProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFileManagementProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFirmwareUpdateProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutPlatformStatusProtocol.h"
@@ -44,7 +45,8 @@ WolkBuilder::WolkBuilder(std::vector<Device> devices)
 , m_host(WOLK_DEMO_HOST)
 , m_caCertPath(TRUST_STORE)
 , m_persistence{new InMemoryPersistence}
-, m_dataProtocol(new WolkaboutDataProtocol)
+, m_dataProtocol{new WolkaboutDataProtocol}
+, m_errorProtocol{new WolkaboutErrorProtocol}
 , m_fileTransferEnabled(false)
 , m_fileTransferUrlEnabled(false)
 , m_maxPacketSize{0}
@@ -57,6 +59,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_caCertPath{TRUST_STORE}
 , m_persistence{new InMemoryPersistence}
 , m_dataProtocol{new WolkaboutDataProtocol}
+, m_errorProtocol{new WolkaboutErrorProtocol}
 , m_fileTransferEnabled(false)
 , m_fileTransferUrlEnabled(false)
 , m_maxPacketSize{0}
@@ -116,9 +119,12 @@ WolkBuilder& WolkBuilder::withPersistence(std::unique_ptr<Persistence> persisten
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protocol)
+WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protocol,
+                                           std::unique_ptr<ErrorProtocol> errorProtocol)
 {
     m_dataProtocol = std::move(protocol);
+    if (errorProtocol != nullptr)
+        m_errorProtocol = std::move(errorProtocol);
     return *this;
 }
 
@@ -246,6 +252,7 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 
     // Set the data service, the only required service
     wolk->m_dataProtocol = std::move(m_dataProtocol);
+    wolk->m_errorProtocol = std::move(m_errorProtocol);
     wolk->m_persistence = std::move(m_persistence);
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
@@ -259,7 +266,9 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
       [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
           wolkRaw->handleParameterCommand(deviceKey, parameters);
       });
+    wolk->m_errorService = std::make_shared<ErrorService>(*wolk->m_errorProtocol);
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
+    wolk->m_inboundMessageHandler->addListener(wolk->m_errorService);
 
     // Check if the file management should be engaged
     if (m_fileManagementProtocol != nullptr)

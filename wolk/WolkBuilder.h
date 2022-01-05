@@ -20,6 +20,7 @@
 #include "core/model/Device.h"
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
+#include "core/protocol/ErrorProtocol.h"
 #include "core/protocol/FileManagementProtocol.h"
 #include "core/protocol/FirmwareUpdateProtocol.h"
 #include "core/protocol/PlatformStatusProtocol.h"
@@ -133,10 +134,12 @@ public:
     /**
      * @brief withDataProtocol Defines which data protocol to use
      * @param Protocol unique_ptr to wolkabout::DataProtocol implementation
+     * @param errorProtocol unique_ptr to wolkabout::ErrorProtocol implementation
      * @return Reference to current wolkabout::WolkBuilder instance (Provides
      * fluent interface)
      */
-    WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol);
+    WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol,
+                                  std::unique_ptr<ErrorProtocol> errorProtocol = nullptr);
 
     /**
      * @brief Sets the Wolk module to allow file management functionality.
@@ -248,6 +251,7 @@ private:
 
     // Here is the place for all the protocols that are being held
     std::unique_ptr<DataProtocol> m_dataProtocol;
+    std::unique_ptr<ErrorProtocol> m_errorProtocol;
     std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
     std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
     std::unique_ptr<PlatformStatusProtocol> m_platformStatusProtocol;
