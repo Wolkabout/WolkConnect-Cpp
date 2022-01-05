@@ -41,6 +41,10 @@ public:
 
     const Protocol& getProtocol() override;
 
+    bool isFileTransferEnabled() const;
+
+    bool isFileTransferUrlEnabled() const;
+
     /**
      * This is a createFolder method that should be invoked to loadState the folder for the FileManagement service.
      */

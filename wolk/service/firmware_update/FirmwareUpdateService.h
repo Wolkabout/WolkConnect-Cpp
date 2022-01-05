@@ -43,6 +43,8 @@ public:
 
     bool isParameterListener() const;
 
+    std::string getVersionForDevice(const std::string& deviceKey);
+
     /**
      * This is the queue containing any messages the service might want to send.
      *

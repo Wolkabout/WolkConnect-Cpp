@@ -18,7 +18,7 @@
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
 #include "core/utilities/json.hpp"
-#include "wolk/Wolk.h"
+#include "wolk/WolkSingle.h"
 
 #include <chrono>
 #include <csignal>
@@ -237,22 +237,24 @@ int main(int /* argc */, char** /* argv */)
      * We will also create some in memory persistence so messages can get buffered if the platform connection gets
      * interrupted.
      */
-    auto inMemoryPersistence = std::make_shared<wolkabout::InMemoryPersistence>();
-    auto wolk = wolkabout::WolkBuilder(device)
-                  .host(PLATFORM_HOST)
-                  .caCertPath(CA_CERT_PATH)
-                  .feedUpdateHandler(deviceInfoHandler)
-                  .withPersistence(inMemoryPersistence)
-                  .withFileTransfer(FILE_MANAGEMENT_LOCATION)
-                  // Uncomment for FileURLDownload
-                  //                  .withFileURLDownload(FILE_MANAGEMENT_LOCATION, nullptr, true)
-                  // Uncomment for a FileListener
-                  .withFileListener(std::make_shared<ExampleFileListener>())
-                  .withFirmwareUpdate(
-                    std::unique_ptr<ExampleFirmwareInstaller>(new ExampleFirmwareInstaller(FILE_MANAGEMENT_LOCATION)))
-                  // Uncomment for example ParameterListener
-                  //                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareParameterListener>())
-                  .build();
+    auto inMemoryPersistence = std::unique_ptr<wolkabout::InMemoryPersistence>(new wolkabout::InMemoryPersistence);
+    auto wolk = std::unique_ptr<wolkabout::WolkSingle>(dynamic_cast<wolkabout::WolkSingle*>(
+      wolkabout::WolkBuilder(device)
+        .host(PLATFORM_HOST)
+        .caCertPath(CA_CERT_PATH)
+        .feedUpdateHandler(deviceInfoHandler)
+        .withPersistence(std::move(inMemoryPersistence))
+        .withFileTransfer(FILE_MANAGEMENT_LOCATION)
+        // Uncomment for FileURLDownload
+        //                  .withFileURLDownload(FILE_MANAGEMENT_LOCATION, nullptr, true)
+        // Uncomment for a FileListener
+        .withFileListener(std::make_shared<ExampleFileListener>())
+        .withFirmwareUpdate(
+          std::unique_ptr<ExampleFirmwareInstaller>(new ExampleFirmwareInstaller(FILE_MANAGEMENT_LOCATION)))
+        // Uncomment for example ParameterListener
+        //                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareParameterListener>())
+        .build()
+        .release()));
 
     /**
      * Now we can start the running logic of the connector. We will connect to the platform, and start running a loop

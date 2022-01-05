@@ -25,8 +25,8 @@
 
 namespace wolkabout
 {
-InboundPlatformMessageHandler::InboundPlatformMessageHandler(std::string deviceKey)
-: m_deviceKey{std::move(deviceKey)}, m_commandBuffer{new CommandBuffer()}
+InboundPlatformMessageHandler::InboundPlatformMessageHandler(std::vector<std::string> deviceKeys)
+: m_deviceKeys{std::move(deviceKeys)}, m_commandBuffer{new CommandBuffer}
 {
 }
 
@@ -74,11 +74,50 @@ void InboundPlatformMessageHandler::addListener(std::weak_ptr<MessageListener> l
 
     if (auto handler = listener.lock())
     {
-        for (const auto& channel : handler->getProtocol().getInboundChannelsForDevice(m_deviceKey))
+        for (const auto& channel : handler->getProtocol().getInboundChannels())
         {
             LOG(DEBUG) << "Adding listener for channel: " << channel;
             m_channelHandlers[channel] = listener;
-            m_subscriptionList.push_back(channel);
+            m_subscriptionList.emplace_back(channel);
+        }
+
+        for (const auto& deviceKey : m_deviceKeys)
+        {
+            for (const auto& channel : handler->getProtocol().getInboundChannelsForDevice(deviceKey))
+            {
+                LOG(DEBUG) << "Adding listener for channel: " << channel;
+                m_channelHandlers[channel] = listener;
+                m_subscriptionList.emplace_back(channel);
+            }
+        }
+
+        m_listeners.emplace_back(listener);
+    }
+}
+
+void InboundPlatformMessageHandler::addDevice(const std::string& deviceKey)
+{
+    std::lock_guard<std::mutex> locker{m_lock};
+
+    for (const auto& listener : m_listeners)
+    {
+        if (auto handler = listener.lock())
+        {
+            for (const auto& channel : handler->getProtocol().getInboundChannels())
+            {
+                LOG(DEBUG) << "Adding listener for channel: " << channel;
+                m_channelHandlers[channel] = listener;
+                m_subscriptionList.emplace_back(channel);
+            }
+
+            for (const auto& channel : handler->getProtocol().getInboundChannelsForDevice(deviceKey))
+            {
+                LOG(DEBUG) << "Adding listener for channel: " << channel;
+                m_channelHandlers[channel] = listener;
+                m_subscriptionList.emplace_back(channel);
+            }
+
+            m_deviceKeys.emplace_back(deviceKey);
         }
     }
 }

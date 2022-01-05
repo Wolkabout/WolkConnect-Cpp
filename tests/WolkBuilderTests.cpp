@@ -19,8 +19,8 @@
 
 #define private public
 #define protected public
-#include "wolk/Wolk.h"
 #include "wolk/WolkBuilder.h"
+#include "wolk/WolkSingle.h"
 #undef private
 #undef protected
 
@@ -64,7 +64,7 @@ TEST_F(WolkBuilderTests, LambdaHandlers)
     ASSERT_NO_THROW(
       builder->parameterHandler([&](const std::string&, const std::vector<Parameter>&) { parameterUpdated = true; }));
 
-    std::shared_ptr<Wolk> wolk = nullptr;
+    std::shared_ptr<WolkSingle> wolk = nullptr;
     EXPECT_NO_THROW(wolk = builder->build());
 
     wolk->handleFeedUpdateCommand("", {});
@@ -97,7 +97,7 @@ TEST_F(WolkBuilderTests, MockHandlers)
         parameterUpdated = true;
     });
 
-    std::shared_ptr<Wolk> wolk = nullptr;
+    std::shared_ptr<WolkSingle> wolk = nullptr;
     EXPECT_NO_THROW(wolk = builder->build());
 
     wolk->handleFeedUpdateCommand("", {});

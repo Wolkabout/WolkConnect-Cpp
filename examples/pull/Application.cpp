@@ -15,7 +15,7 @@
  */
 
 #include "core/utilities/Logger.h"
-#include "wolk/Wolk.h"
+#include "wolk/WolkSingle.h"
 #include "wolk/api/ParameterHandler.h"
 
 /**
@@ -130,12 +130,12 @@ int main(int /* argc */, char** /* argv */)
 
     // And here we create the wolk session
     // Here we will set the feed value and parameter handler
-    auto wolk = wolkabout::Wolk::newBuilder(device)
+    auto wolk = wolkabout::WolkSingle::newBuilder(device)
                   .host(PLATFORM_HOST)
                   .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(feedHandler)
                   .parameterHandler(parameterHandler)
-                  .build();
+                  .buildWolkSingle();
 
     // And now we will periodically connect, pull values, maybe even send some of our own, and then disconnect
     while (true)

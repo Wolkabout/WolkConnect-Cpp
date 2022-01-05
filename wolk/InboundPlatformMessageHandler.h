@@ -30,9 +30,9 @@ namespace wolkabout
 class InboundPlatformMessageHandler : public InboundMessageHandler
 {
 public:
-    InboundPlatformMessageHandler(std::string deviceKey);
+    explicit InboundPlatformMessageHandler(std::vector<std::string> deviceKeys);
 
-    ~InboundPlatformMessageHandler();
+    ~InboundPlatformMessageHandler() override;
 
     void messageReceived(const std::string& channel, const std::string& message) override;
 
@@ -40,12 +40,16 @@ public:
 
     void addListener(std::weak_ptr<MessageListener> listener) override;
 
+    void addDevice(const std::string& deviceKey);
+
 private:
     void addToCommandBuffer(std::function<void()> command);
 
-    std::string m_deviceKey;
+    std::vector<std::string> m_deviceKeys;
 
     std::unique_ptr<CommandBuffer> m_commandBuffer;
+
+    std::vector<std::weak_ptr<MessageListener>> m_listeners;
 
     std::vector<std::string> m_subscriptionList;
 

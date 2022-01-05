@@ -1,0 +1,123 @@
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "wolk/WolkSingle.h"
+
+#include "wolk/WolkBuilder.h"
+
+namespace wolkabout
+{
+WolkBuilder WolkSingle::newBuilder(Device device)
+{
+    return WolkBuilder(device);
+}
+
+void WolkSingle::addReading(const std::string& reference, std::string value, std::uint64_t rtc)
+{
+    if (rtc == 0)
+    {
+        rtc = WolkSingle::currentRtc();
+    }
+
+    addToCommandBuffer([=]() -> void { m_dataService->addReading(m_device.getKey(), reference, value, rtc); });
+}
+
+void WolkSingle::addReading(const std::string& reference, const std::vector<std::string>& values, std::uint64_t rtc)
+{
+    if (rtc == 0)
+    {
+        rtc = WolkSingle::currentRtc();
+    }
+
+    addToCommandBuffer([=]() -> void { m_dataService->addReading(m_device.getKey(), reference, values, rtc); });
+}
+
+void WolkSingle::registerFeed(const Feed& feed)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->registerFeed(m_device.getKey(), feed); });
+}
+
+void WolkSingle::registerFeeds(const std::vector<Feed>& feeds)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->registerFeeds(m_device.getKey(), feeds); });
+}
+
+void WolkSingle::removeFeed(const std::string& reference)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->removeFeed(m_device.getKey(), reference); });
+}
+
+void WolkSingle::removeFeeds(const std::vector<std::string>& references)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->removeFeeds(m_device.getKey(), references); });
+}
+
+void WolkSingle::pullFeedValues()
+{
+    addToCommandBuffer([=]() -> void { m_dataService->pullFeedValues(m_device.getKey()); });
+}
+
+void WolkSingle::pullParameters()
+{
+    addToCommandBuffer([=]() -> void { m_dataService->pullParameters(m_device.getKey()); });
+}
+
+void WolkSingle::addAttribute(Attribute attribute)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->addAttribute(m_device.getKey(), attribute); });
+}
+
+void WolkSingle::updateParameter(Parameter parameter)
+{
+    addToCommandBuffer([=]() -> void { m_dataService->updateParameter(m_device.getKey(), parameter); });
+}
+
+WolkInterfaceType WolkSingle::getType()
+{
+    return WolkInterfaceType::SingleDevice;
+}
+
+WolkSingle::WolkSingle(Device device) : m_device(std::move(device)) {}
+
+void WolkSingle::notifyConnected()
+{
+    WolkInterface::notifyConnected();
+
+    if (m_fileManagementService != nullptr)
+    {
+        m_fileManagementService->reportPresentFiles(m_device.getKey());
+    }
+
+    if (m_firmwareUpdateService != nullptr)
+    {
+        if (m_firmwareUpdateService->isInstaller())
+        {
+            // Publish everything from the queue
+            while (!m_firmwareUpdateService->getQueue().empty())
+            {
+                // Get the message
+                auto message = m_firmwareUpdateService->getQueue().front();
+                m_connectivityService->publish(message);
+                m_firmwareUpdateService->getQueue().pop();
+            }
+        }
+        else if (m_firmwareUpdateService->isParameterListener())
+        {
+            m_firmwareUpdateService->obtainParametersAndAnnounce(m_device.getKey());
+        }
+    }
+}
+}    // namespace wolkabout

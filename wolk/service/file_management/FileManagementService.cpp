@@ -128,6 +128,16 @@ const Protocol& FileManagementService::getProtocol()
     return m_protocol;
 }
 
+bool FileManagementService::isFileTransferEnabled() const
+{
+    return m_fileTransferEnabled;
+}
+
+bool FileManagementService::isFileTransferUrlEnabled() const
+{
+    return m_fileTransferUrlEnabled;
+}
+
 void FileManagementService::messageReceived(std::shared_ptr<Message> message)
 {
     LOG(TRACE) << METHOD_INFO;

@@ -57,6 +57,17 @@ bool FirmwareUpdateService::isParameterListener() const
     return m_firmwareParametersListener != nullptr;
 }
 
+std::string FirmwareUpdateService::getVersionForDevice(const std::string& deviceKey)
+
+{
+    auto firmwareVersion = std::string{};
+    if (m_firmwareInstaller != nullptr)
+        firmwareVersion = m_firmwareInstaller->getFirmwareVersion(deviceKey);
+    else if (m_firmwareParametersListener != nullptr)
+        firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
+    return firmwareVersion;
+}
+
 std::queue<std::shared_ptr<Message>>& FirmwareUpdateService::getQueue()
 {
     return m_queue;

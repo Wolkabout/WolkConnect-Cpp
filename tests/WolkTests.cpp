@@ -19,7 +19,7 @@
 
 #define private public
 #define protected public
-#include "wolk/Wolk.h"
+#include "wolk/WolkSingle.h"
 #undef private
 #undef protected
 
@@ -76,7 +76,7 @@ TEST_F(WolkTests, Notifies)
     auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
     EXPECT_NO_FATAL_FAILURE(wolk->notifyConnected());
-    EXPECT_NO_FATAL_FAILURE(wolk->notifyDisonnected());
+    EXPECT_NO_FATAL_FAILURE(wolk->notifyDisconnected());
 }
 
 TEST_F(WolkTests, ConnectTest)

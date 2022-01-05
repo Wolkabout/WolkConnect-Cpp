@@ -96,8 +96,10 @@ set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
         wolk/service/platform_status/PlatformStatusService.cpp
         wolk/service/registration_service/RegistrationService.cpp
         wolk/InboundPlatformMessageHandler.cpp
-        wolk/Wolk.cpp
-        wolk/WolkBuilder.cpp)
+        wolk/WolkBuilder.cpp
+        wolk/WolkInterface.cpp
+        wolk/WolkMulti.cpp
+        wolk/WolkSingle.cpp)
 set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/FileListener.h
         wolk/api/FirmwareInstaller.h
@@ -114,9 +116,11 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/service/registration_service/RegistrationService.h
         wolk/InboundPlatformMessageHandler.h
         wolk/Version.h
-        wolk/Wolk.h
         wolk/WolkBuilder.h
-        wolk/WolkInterface.h)
+        wolk/WolkInterface.h
+        wolk/WolkInterfaceType.h
+        wolk/WolkMulti.h
+        wolk/WolkSingle.h)
 
 file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE PATTERN "poco/HTTPFileDownloader.h" EXCLUDE)
 
@@ -201,6 +205,13 @@ if (${BUILD_EXAMPLES})
     add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
     target_link_libraries(simple_example ${PROJECT_NAME})
     set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+
+    # Subdevices example
+    set(SUBDEVICES_EXAMPLE_SOURCE_FILES examples/subdevices/Application.cpp)
+
+    add_executable(subdevices_example ${SUBDEVICES_EXAMPLE_SOURCE_FILES})
+    target_link_libraries(subdevices_example ${PROJECT_NAME})
+    set_target_properties(subdevices_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 endif ()
 
 # Create the install rule

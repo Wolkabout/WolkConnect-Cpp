@@ -15,7 +15,7 @@
  */
 
 #include "core/utilities/Logger.h"
-#include "wolk/Wolk.h"
+#include "wolk/WolkSingle.h"
 
 #include <random>
 
@@ -53,7 +53,7 @@ int main(int /* argc */, char** /* argv */)
     auto device = wolkabout::Device(DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH);
 
     // And here we create the wolk session
-    auto wolk = wolkabout::Wolk::newBuilder(device).host(PLATFORM_HOST).build();
+    auto wolk = wolkabout::WolkSingle::newBuilder(device).host(PLATFORM_HOST).buildWolkSingle();
     wolk->connect();
 
     // And now we will periodically (and endlessly) send a random temperature value.
