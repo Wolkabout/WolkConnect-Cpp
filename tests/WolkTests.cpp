@@ -71,7 +71,7 @@ public:
 TEST_F(WolkTests, Notifies)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
-    const auto& wolk = builder->build();
+    const auto wolk = builder->build();
 
     auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
@@ -82,7 +82,7 @@ TEST_F(WolkTests, Notifies)
 TEST_F(WolkTests, ConnectTest)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
-    const auto& wolk = builder->build();
+    const auto wolk = builder->build();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
     auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
@@ -108,7 +108,7 @@ TEST_F(WolkTests, ConnectTest)
 TEST_F(WolkTests, WhenConnected_PublishFileList)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
-    const auto& wolk = builder->build();
+    const auto wolk = builder->build();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
     auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
@@ -143,7 +143,7 @@ TEST_F(WolkTests, WhenConnected_PublishFileList)
 TEST_F(WolkTests, DisconnectTest)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
-    const auto& wolk = builder->build();
+    const auto wolk = builder->build();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
     auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
@@ -157,7 +157,7 @@ TEST_F(WolkTests, DisconnectTest)
 TEST_F(WolkTests, AddingReadings)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
-    const auto& wolk = builder->build();
+    const auto wolk = builder->buildWolkSingle();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
     auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
@@ -200,7 +200,7 @@ TEST_F(WolkTests, HandlingReadings)
 
     builder->feedUpdateHandler(handler);
 
-    const auto& wolk = builder->build();
+    const auto wolk = builder->build();
 
     EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand("", {}));
 
@@ -210,7 +210,7 @@ TEST_F(WolkTests, HandlingReadings)
 TEST_F(WolkTests, ConnectivityFacade)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
-    const auto& wolk = builder->build();
+    const auto wolk = builder->build();
 
     const auto& inboundMessageHandlerMock =
       std::unique_ptr<InboundMessageHandlerMock>(new NiceMock<InboundMessageHandlerMock>());

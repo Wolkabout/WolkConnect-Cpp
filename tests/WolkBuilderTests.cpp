@@ -65,7 +65,7 @@ TEST_F(WolkBuilderTests, LambdaHandlers)
       builder->parameterHandler([&](const std::string&, const std::vector<Parameter>&) { parameterUpdated = true; }));
 
     std::shared_ptr<WolkSingle> wolk = nullptr;
-    EXPECT_NO_THROW(wolk = builder->build());
+    EXPECT_NO_THROW(wolk = builder->buildWolkSingle());
 
     wolk->handleFeedUpdateCommand("", {});
     wolk->handleParameterCommand("", {});
@@ -98,7 +98,7 @@ TEST_F(WolkBuilderTests, MockHandlers)
     });
 
     std::shared_ptr<WolkSingle> wolk = nullptr;
-    EXPECT_NO_THROW(wolk = builder->build());
+    EXPECT_NO_THROW(wolk = builder->buildWolkSingle());
 
     wolk->handleFeedUpdateCommand("", {});
     wolk->handleParameterCommand("", {});
@@ -117,5 +117,5 @@ TEST_F(WolkBuilderTests, OtherProperties)
     EXPECT_NO_THROW(builder->host("some_other_host"));
     EXPECT_NO_THROW(builder->caCertPath("some_ca_cert_path"));
     EXPECT_NO_THROW(builder->withDataProtocol(std::unique_ptr<DataProtocolMock>(new DataProtocolMock)));
-    EXPECT_NO_THROW(builder->withPersistence(std::make_shared<PersistenceMock>()));
+    EXPECT_NO_THROW(builder->withPersistence(std::unique_ptr<PersistenceMock>(new PersistenceMock)));
 }
