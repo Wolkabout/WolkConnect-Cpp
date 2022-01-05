@@ -35,6 +35,7 @@ int main(int /* argc */, char** /* argv */)
     wolk->connect();
 
     wolk->addReading(deviceOne.getKey(), "π", 3.14);
+    wolk->publish();
     wolk->pullFeedValues(deviceTwo.getKey());
     wolk->pullParameters(deviceTwo.getKey());
 
@@ -44,6 +45,7 @@ int main(int /* argc */, char** /* argv */)
     // Now let's add a new device
     wolk->addDevice(deviceThree);
     wolk->addReading(deviceThree.getKey(), "APM", 400);
+    wolk->publish();
 
     // We can sleep again
     std::this_thread::sleep_for(std::chrono::seconds(5));
