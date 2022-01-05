@@ -237,12 +237,11 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 
     // Connect the ConnectivityService with the ConnectivityManager.
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager = std::make_shared<WolkInterface::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
-                                                                                      [wolkRaw]
-                                                                                      {
-                                                                                          wolkRaw->notifyDisconnected();
-                                                                                          wolkRaw->connect();
-                                                                                      });
+    wolk->m_connectivityManager =
+      std::make_shared<WolkInterface::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
+          wolkRaw->notifyDisconnected();
+          wolkRaw->connect();
+      });
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
 
     // Set the data service, the only required service
@@ -254,10 +253,12 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     wolk->m_parameterHandler = m_parameterHandler;
     wolk->m_dataService = std::make_shared<DataService>(
       *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
-      { wolkRaw->handleFeedUpdateCommand(deviceKey, readings); },
-      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters)
-      { wolkRaw->handleParameterCommand(deviceKey, parameters); });
+      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
+          wolkRaw->handleFeedUpdateCommand(deviceKey, readings);
+      },
+      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
+          wolkRaw->handleParameterCommand(deviceKey, parameters);
+      });
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
     // Check if the file management should be engaged
