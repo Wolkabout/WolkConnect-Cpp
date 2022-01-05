@@ -193,6 +193,13 @@ public:
                                     const std::string& workingDirectory = "./");
 
     /**
+     * @brief Sets the Wolk module to allow listening to `p2d/platform_status` messages.
+     * @param platformStatusListener The listener of the messages.
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withPlatformStatus(std::unique_ptr<PlatformStatusListener> platformStatusListener);
+
+    /**
      * @brief Builds a WolkInterface instance.
      * @param type The type of the WolkInterface that the builder should build.
      * @return Wolk instance as std::unique_ptr<WolkInterface>. This should be cast.
@@ -260,7 +267,7 @@ private:
     std::unique_ptr<FirmwareParametersListener> m_firmwareParametersListener;
 
     // Here is the place for the platform status listener
-    std::shared_ptr<PlatformStatusListener> m_platformStatusListener;
+    std::unique_ptr<PlatformStatusListener> m_platformStatusListener;
 
     // These are the default values that are going to be used for the connection parameters
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";

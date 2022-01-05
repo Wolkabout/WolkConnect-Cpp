@@ -17,6 +17,16 @@
 #include "core/utilities/Logger.h"
 #include "wolk/WolkMulti.h"
 
+class ExamplePlatformStatusListener : public wolkabout::PlatformStatusListener
+{
+public:
+    void platformStatus(wolkabout::ConnectivityStatus status) override
+    {
+        LOG(INFO) << "Received `platform_status`: '"
+                  << (status == wolkabout::ConnectivityStatus::CONNECTED ? "CONNECTED" : "OFFLINE") << "'.";
+    }
+};
+
 int main(int /* argc */, char** /* argv */)
 {
     // This is the logger setup. Here you can set up the level of logging you would like enabled.
@@ -31,6 +41,7 @@ int main(int /* argc */, char** /* argv */)
     auto wolk = wolkabout::WolkMulti::newBuilder({deviceOne, deviceTwo})
                   .host("tcp://localhost:1883")
                   .withFileTransfer("./files")
+                  .withPlatformStatus(std::unique_ptr<ExamplePlatformStatusListener>(new ExamplePlatformStatusListener))
                   .buildWolkMulti();
     wolk->connect();
 

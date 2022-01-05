@@ -23,7 +23,7 @@
 namespace wolkabout
 {
 PlatformStatusService::PlatformStatusService(PlatformStatusProtocol& protocol,
-                                             std::shared_ptr<PlatformStatusListener> listener)
+                                             std::unique_ptr<PlatformStatusListener> listener)
 : m_protocol(protocol), m_listener(std::move(listener))
 {
 }

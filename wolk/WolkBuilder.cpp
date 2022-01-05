@@ -23,6 +23,8 @@
 #include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFileManagementProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFirmwareUpdateProtocol.h"
+#include "core/protocol/wolkabout/WolkaboutPlatformStatusProtocol.h"
+#include "core/protocol/wolkabout/WolkaboutRegistrationProtocol.h"
 #include "core/utilities/Logger.h"
 #include "wolk/InboundPlatformMessageHandler.h"
 #include "wolk/WolkMulti.h"
@@ -178,6 +180,15 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::unique_ptr<FirmwareParametersL
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListener> platformStatusListener)
+{
+    if (m_platformStatusProtocol == nullptr)
+        m_platformStatusProtocol =
+          std::unique_ptr<WolkaboutPlatformStatusProtocol>(new wolkabout::WolkaboutPlatformStatusProtocol);
+    m_platformStatusListener = std::move(platformStatusListener);
+    return *this;
+}
+
 std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 {
     LOG(TRACE) << METHOD_INFO;
@@ -226,11 +237,12 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 
     // Connect the ConnectivityService with the ConnectivityManager.
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager =
-      std::make_shared<WolkInterface::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
-          wolkRaw->notifyDisconnected();
-          wolkRaw->connect();
-      });
+    wolk->m_connectivityManager = std::make_shared<WolkInterface::ConnectivityFacade>(*wolk->m_inboundMessageHandler,
+                                                                                      [wolkRaw]
+                                                                                      {
+                                                                                          wolkRaw->notifyDisconnected();
+                                                                                          wolkRaw->connect();
+                                                                                      });
     wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
 
     // Set the data service, the only required service
@@ -242,12 +254,10 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     wolk->m_parameterHandler = m_parameterHandler;
     wolk->m_dataService = std::make_shared<DataService>(
       *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
-          wolkRaw->handleFeedUpdateCommand(deviceKey, readings);
-      },
-      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
-          wolkRaw->handleParameterCommand(deviceKey, parameters);
-      });
+      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
+      { wolkRaw->handleFeedUpdateCommand(deviceKey, readings); },
+      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters)
+      { wolkRaw->handleParameterCommand(deviceKey, parameters); });
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
 
     // Check if the file management should be engaged
@@ -320,6 +330,7 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
         wolk->m_platformStatusProtocol = std::move(m_platformStatusProtocol);
         wolk->m_platformStatusService =
           std::make_shared<PlatformStatusService>(*wolk->m_platformStatusProtocol, std::move(m_platformStatusListener));
+        wolk->m_inboundMessageHandler->addListener(wolk->m_platformStatusService);
     }
 
     return wolk;
