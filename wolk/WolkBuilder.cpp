@@ -47,6 +47,7 @@ WolkBuilder::WolkBuilder(std::vector<Device> devices)
 , m_persistence{new InMemoryPersistence}
 , m_dataProtocol{new WolkaboutDataProtocol}
 , m_errorProtocol{new WolkaboutErrorProtocol}
+, m_errorRetainTime{1000}
 , m_fileTransferEnabled(false)
 , m_fileTransferUrlEnabled(false)
 , m_maxPacketSize{0}
@@ -60,6 +61,7 @@ WolkBuilder::WolkBuilder(Device device)
 , m_persistence{new InMemoryPersistence}
 , m_dataProtocol{new WolkaboutDataProtocol}
 , m_errorProtocol{new WolkaboutErrorProtocol}
+, m_errorRetainTime{1000}
 , m_fileTransferEnabled(false)
 , m_fileTransferUrlEnabled(false)
 , m_maxPacketSize{0}
@@ -119,12 +121,18 @@ WolkBuilder& WolkBuilder::withPersistence(std::unique_ptr<Persistence> persisten
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protocol,
-                                           std::unique_ptr<ErrorProtocol> errorProtocol)
+WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protocol)
 {
     m_dataProtocol = std::move(protocol);
-    if (errorProtocol != nullptr)
-        m_errorProtocol = std::move(errorProtocol);
+    return *this;
+}
+
+WolkBuilder& WolkBuilder::withErrorProtocol(std::chrono::milliseconds errorRetainTime,
+                                            std::unique_ptr<ErrorProtocol> protocol)
+{
+    m_errorRetainTime = errorRetainTime;
+    if (protocol != nullptr)
+        m_errorProtocol = std::move(protocol);
     return *this;
 }
 
@@ -266,9 +274,10 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
       [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
           wolkRaw->handleParameterCommand(deviceKey, parameters);
       });
-    wolk->m_errorService = std::make_shared<ErrorService>(*wolk->m_errorProtocol);
+    wolk->m_errorService = std::make_shared<ErrorService>(*wolk->m_errorProtocol, m_errorRetainTime);
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
     wolk->m_inboundMessageHandler->addListener(wolk->m_errorService);
+    wolk->m_errorService->start();
 
     // Check if the file management should be engaged
     if (m_fileManagementProtocol != nullptr)

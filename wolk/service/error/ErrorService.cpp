@@ -16,14 +16,146 @@
 
 #include "wolk/service/error/ErrorService.h"
 
+#include "core/utilities/Logger.h"
+
 namespace wolkabout
 {
-ErrorService::ErrorService(const ErrorProtocol& protocol) : m_protocol(protocol) {}
+const std::chrono::milliseconds TIMER_PERIOD = std::chrono::milliseconds{10};
 
-void ErrorService::messageReceived(std::shared_ptr<Message> message) {}
+ErrorService::ErrorService(ErrorProtocol& protocol, std::chrono::milliseconds retainTime)
+: m_protocol(protocol), m_retainTime(std::move(retainTime))
+{
+}
+
+ErrorService::~ErrorService()
+{
+    stop();
+}
+
+void ErrorService::start()
+{
+    LOG(TRACE) << METHOD_INFO;
+    m_timer.run(TIMER_PERIOD, [&] { timerRuntime(); });
+}
+
+void ErrorService::stop()
+{
+    LOG(TRACE) << METHOD_INFO;
+    m_timer.stop();
+}
+
+std::unique_ptr<ErrorMessage> ErrorService::checkCacheForMessage(const std::string& deviceKey)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Lock to prevent any race conditions
+    std::lock_guard<std::mutex> lock{m_cacheMutex};
+
+    // Check whether there is a map entry in cache for the device at all
+    const auto deviceMessagesIt = m_cached.find(deviceKey);
+    if (deviceMessagesIt == m_cached.cend())
+        return nullptr;
+    auto& deviceMessages = deviceMessagesIt->second;
+    if (deviceMessages.empty())
+        return nullptr;
+
+    // Make place for the message, and remove it from the map
+    auto message = std::unique_ptr<ErrorMessage>{deviceMessages.begin()->second.release()};
+    deviceMessages.erase(deviceMessages.begin());
+    return message;
+}
+
+std::unique_ptr<ErrorMessage> ErrorService::awaitMessage(const std::string& deviceKey,
+                                                         std::chrono::milliseconds timeout)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Make the lock for the mutex and start waiting
+    {
+        std::lock_guard<std::mutex> lock{m_cvMutex};
+        if (m_mutexes.find(deviceKey) == m_mutexes.cend())
+            m_mutexes.emplace(deviceKey, std::unique_ptr<std::mutex>{new std::mutex});
+    }
+    auto deviceLock = std::unique_lock<std::mutex>{*m_mutexes[deviceKey]};
+    {
+        std::lock_guard<std::mutex> lock{m_cvMutex};
+        if (m_conditionVariables.find(deviceKey) == m_conditionVariables.cend())
+            m_conditionVariables.emplace(deviceKey,
+                                         std::unique_ptr<std::condition_variable>{new std::condition_variable});
+    }
+    m_conditionVariables[deviceKey]->wait_for(deviceLock, timeout);
+    return checkCacheForMessage(deviceKey);
+}
+
+std::unique_ptr<ErrorMessage> ErrorService::checkOrAwaitError(const std::string& deviceKey,
+                                                              std::chrono::milliseconds timeout)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Check the cache first
+    auto cacheResult = checkCacheForMessage(deviceKey);
+    if (cacheResult != nullptr)
+        return cacheResult;
+    return awaitMessage(deviceKey, timeout);
+}
+
+void ErrorService::messageReceived(std::shared_ptr<Message> message)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Try to parse the message
+    auto errorMessage = m_protocol.parseError(message);
+    if (errorMessage == nullptr)
+    {
+        LOG(ERROR) << "Failed to parse incoming 'ErrorMessage' - Not a valid 'ErrorMessage'.";
+        return;
+    }
+    const auto deviceKey = errorMessage->getDeviceKey();    // DO NOT TAKE A REFERENCE HERE! We need it to be a copy
+    LOG(DEBUG) << "Received 'ErrorMessage' for device '" << deviceKey << "' -> '" << errorMessage->getMessage() << "'.";
+
+    // Add the message into the cache and notify the condition variable
+    {
+        std::lock_guard<std::mutex> lock{m_cacheMutex};
+        if (m_cached.find(deviceKey) == m_cached.cend())
+            m_cached.emplace(deviceKey, DeviceErrorMessages{});
+        m_cached[deviceKey].emplace(errorMessage->getArrivalTime(), std::move(errorMessage));
+    }
+
+    // Find out if there's a condition variable and notify it
+    {
+        std::lock_guard<std::mutex> lock{m_cvMutex};
+        if (m_conditionVariables.find(deviceKey) != m_conditionVariables.cend())
+            m_conditionVariables[deviceKey]->notify_one();
+    }
+}
 
 const Protocol& ErrorService::getProtocol()
 {
     return m_protocol;
+}
+
+void ErrorService::timerRuntime()
+{
+    // Lock the mutex, check all the messages.
+    std::lock_guard<std::mutex> lock{m_cacheMutex};
+    const auto now = std::chrono::system_clock::now();
+    for (auto& deviceErrors : m_cached)
+    {
+        // Collect all the iterators that need to be removed
+        const auto& messages = deviceErrors.second;
+        auto removingIterators = std::vector<DeviceErrorMessages::const_iterator>{};
+        for (auto it = messages.cbegin(); it != messages.cend(); ++it)
+        {
+            if (now - it->first >= m_retainTime)
+            {
+                LOG(TRACE) << "Removing a cached message for device '" << deviceErrors.first << "'.";
+                removingIterators.emplace_back(it);
+            }
+        }
+
+        // Remove the iterators
+        for (const auto& removingIterator : removingIterators)
+            deviceErrors.second.erase(removingIterator);
+    }
 }
 }    // namespace wolkabout

@@ -85,6 +85,11 @@ void WolkSingle::updateParameter(Parameter parameter)
     addToCommandBuffer([=]() -> void { m_dataService->updateParameter(m_device.getKey(), parameter); });
 }
 
+std::unique_ptr<ErrorMessage> WolkSingle::awaitError(std::chrono::milliseconds timeout)
+{
+    return m_errorService->checkOrAwaitError(m_device.getKey(), timeout);
+}
+
 WolkInterfaceType WolkSingle::getType()
 {
     return WolkInterfaceType::SingleDevice;

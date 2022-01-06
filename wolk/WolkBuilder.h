@@ -134,12 +134,20 @@ public:
     /**
      * @brief withDataProtocol Defines which data protocol to use
      * @param Protocol unique_ptr to wolkabout::DataProtocol implementation
-     * @param errorProtocol unique_ptr to wolkabout::ErrorProtocol implementation
-     * @return Reference to current wolkabout::WolkBuilder instance (Provides
-     * fluent interface)
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol,
-                                  std::unique_ptr<ErrorProtocol> errorProtocol = nullptr);
+    WolkBuilder& withDataProtocol(std::unique_ptr<DataProtocol> protocol);
+
+    /**
+     * @brief withErrorProtocol Defines which error protocol to use
+     * @param errorRetainTime The time defining how long will the error messages be retained. The default retain time is
+     * 1s (1000ms).
+     * @param protocol Unique_ptr to wolkabout::ErrorProtocol implementation (providing nullptr will still refer to
+     * default one)
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withErrorProtocol(std::chrono::milliseconds errorRetainTime,
+                                   std::unique_ptr<ErrorProtocol> protocol = nullptr);
 
     /**
      * @brief Sets the Wolk module to allow file management functionality.
@@ -252,6 +260,7 @@ private:
     // Here is the place for all the protocols that are being held
     std::unique_ptr<DataProtocol> m_dataProtocol;
     std::unique_ptr<ErrorProtocol> m_errorProtocol;
+    std::chrono::milliseconds m_errorRetainTime;
     std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
     std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
     std::unique_ptr<PlatformStatusProtocol> m_platformStatusProtocol;

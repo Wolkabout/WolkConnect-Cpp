@@ -219,7 +219,7 @@ int main(int /* argc */, char** /* argv */)
      * Logging to file could also be added here, by adding the type `Logger::Type::FILE` and passing a file path as
      * third argument.
      */
-    wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
+    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
 
     /**
      * Now we can create the device using the user provided device credentials.
@@ -229,7 +229,7 @@ int main(int /* argc */, char** /* argv */)
      * those two will be stored by the persistence.
      */
     auto device = wolkabout::Device{DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH};
-    auto deviceInfo = DeviceData{0, false, std::chrono::seconds(60)};
+    auto deviceInfo = DeviceData{0, false, std::chrono::seconds(5)};
     auto deviceInfoHandler = std::make_shared<DeviceDataChangeHandler>(deviceInfo);
 
     /**
@@ -238,23 +238,21 @@ int main(int /* argc */, char** /* argv */)
      * interrupted.
      */
     auto inMemoryPersistence = std::unique_ptr<wolkabout::InMemoryPersistence>(new wolkabout::InMemoryPersistence);
-    auto wolk = std::unique_ptr<wolkabout::WolkSingle>(dynamic_cast<wolkabout::WolkSingle*>(
-      wolkabout::WolkBuilder(device)
-        .host(PLATFORM_HOST)
-        .caCertPath(CA_CERT_PATH)
-        .feedUpdateHandler(deviceInfoHandler)
-        .withPersistence(std::move(inMemoryPersistence))
-        .withFileTransfer(FILE_MANAGEMENT_LOCATION)
-        // Uncomment for FileURLDownload
-        //                  .withFileURLDownload(FILE_MANAGEMENT_LOCATION, nullptr, true)
-        // Uncomment for a FileListener
-        .withFileListener(std::make_shared<ExampleFileListener>())
-        .withFirmwareUpdate(
-          std::unique_ptr<ExampleFirmwareInstaller>(new ExampleFirmwareInstaller(FILE_MANAGEMENT_LOCATION)))
-        // Uncomment for example ParameterListener
-        //                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareParameterListener>())
-        .build()
-        .release()));
+    auto wolk = wolkabout::WolkBuilder(device)
+                  .host(PLATFORM_HOST)
+                  .caCertPath(CA_CERT_PATH)
+                  .feedUpdateHandler(deviceInfoHandler)
+                  .withPersistence(std::move(inMemoryPersistence))
+                  .withFileTransfer(FILE_MANAGEMENT_LOCATION)
+                  // Uncomment for FileURLDownload
+                  //                  .withFileURLDownload(FILE_MANAGEMENT_LOCATION, nullptr, true)
+                  // Uncomment for a FileListener
+                  .withFileListener(std::make_shared<ExampleFileListener>())
+                  .withFirmwareUpdate(
+                    std::unique_ptr<ExampleFirmwareInstaller>(new ExampleFirmwareInstaller(FILE_MANAGEMENT_LOCATION)))
+                  // Uncomment for example ParameterListener
+                  //                  .withFirmwareUpdate(std::make_shared<ExampleFirmwareParameterListener>())
+                  .buildWolkSingle();
 
     /**
      * Now we can start the running logic of the connector. We will connect to the platform, and start running a loop
@@ -295,6 +293,12 @@ int main(int /* argc */, char** /* argv */)
             wolk->addReading("SW", deviceInfo.toggle);
             wolk->addReading("HB", deviceInfo.heartbeat.count());
             wolk->publish();
+
+            // Check if there's any errors
+            if (auto error = wolk->awaitError())
+                LOG(INFO) << "Received error - '" << error->getMessage() << "'.";
+            else
+                LOG(INFO) << "Received no errors for device.";
 
             // Obtain the old value
             sleepInterval = deviceInfo.heartbeat;

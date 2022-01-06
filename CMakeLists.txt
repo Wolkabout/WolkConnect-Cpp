@@ -147,6 +147,7 @@ endif ()
 if (${BUILD_TESTS})
     set(TEST_SOURCE_FILES
             tests/DataServiceTests.cpp
+            tests/ErrorServiceTests.cpp
             tests/FileManagementServiceTests.cpp
             tests/FileTransferSessionTests.cpp
             tests/FirmwareUpdateServiceTests.cpp
@@ -157,6 +158,7 @@ if (${BUILD_TESTS})
             tests/mocks/ConnectivityServiceMock.h
             tests/mocks/DataProtocolMock.h
             tests/mocks/DataServiceMock.h
+            tests/mocks/ErrorProtocolMock.h
             tests/mocks/FeedUpdateHandlerMock.h
             tests/mocks/FileManagementProtocolMock.h
             tests/mocks/FileManagementServiceMock.h
