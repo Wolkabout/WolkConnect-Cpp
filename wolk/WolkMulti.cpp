@@ -57,6 +57,13 @@ bool WolkMulti::addDevice(Device device)
 void WolkMulti::addReading(const std::string& deviceKey, const std::string& reference, std::string value,
                            std::uint64_t rtc)
 {
+    //    Now, I'd really like to add this check in the `addReading` call, but I think this method is called too often
+    //    to think that it's okay to constantly check the device key that is passed in the call of this method. if
+    //    (!isDeviceInList(deviceKey))
+    //    {
+    //        LOG(WARN) << "Ignoring call of 'addReading' - Device '" << deviceKey << "' is not added.";
+    //        return;
+    //    }
     if (rtc == 0)
         rtc = WolkMulti::currentRtc();
     addToCommandBuffer([=]() -> void { m_dataService->addReading(deviceKey, reference, value, rtc); });
@@ -65,6 +72,13 @@ void WolkMulti::addReading(const std::string& deviceKey, const std::string& refe
 void WolkMulti::addReading(const std::string& deviceKey, const std::string& reference,
                            const std::vector<std::string>& values, std::uint64_t rtc)
 {
+    //    Now, I'd really like to add this check in the `addReading` call, but I think this method is called too often
+    //    to think that it's okay to constantly check the device key that is passed in the call of this method. if
+    //    (!isDeviceInList(deviceKey))
+    //    {
+    //        LOG(WARN) << "Ignoring call of 'addReading' - Device '" << deviceKey << "' is not added.";
+    //        return;
+    //    }
     if (rtc == 0)
         rtc = WolkMulti::currentRtc();
     addToCommandBuffer([=]() -> void { m_dataService->addReading(deviceKey, reference, values, rtc); });
@@ -72,42 +86,101 @@ void WolkMulti::addReading(const std::string& deviceKey, const std::string& refe
 
 void WolkMulti::registerFeed(const std::string& deviceKey, const Feed& feed)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'registerFeed' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->registerFeed(deviceKey, feed); });
 }
 
 void WolkMulti::registerFeeds(const std::string& deviceKey, const std::vector<Feed>& feeds)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'registerFeeds' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->registerFeeds(deviceKey, feeds); });
 }
 
 void WolkMulti::removeFeed(const std::string& deviceKey, const std::string& reference)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'removeFeed' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->removeFeed(deviceKey, reference); });
 }
 
 void WolkMulti::removeFeeds(const std::string& deviceKey, const std::vector<std::string>& references)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'removeFeeds' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->removeFeeds(deviceKey, references); });
 }
 
 void WolkMulti::pullFeedValues(const std::string& deviceKey)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'pullFeedValues' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->pullFeedValues(deviceKey); });
 }
 
 void WolkMulti::pullParameters(const std::string& deviceKey)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'pullParameters' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->pullParameters(deviceKey); });
 }
 
 void WolkMulti::addAttribute(const std::string& deviceKey, Attribute attribute)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'addAttribute' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->addAttribute(deviceKey, attribute); });
 }
 
 void WolkMulti::updateParameter(const std::string& deviceKey, Parameter parameter)
 {
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'updateParameter' - Device '" << deviceKey << "' is not added.";
+        return;
+    }
+
     addToCommandBuffer([=]() -> void { m_dataService->updateParameter(deviceKey, parameter); });
+}
+
+std::unique_ptr<ErrorMessage> WolkMulti::awaitError(const std::string& deviceKey, std::chrono::milliseconds timeout)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'awaitError' - Device '" << deviceKey << "' is not added.";
+        return nullptr;
+    }
+
+    return m_errorService->checkOrAwaitError(deviceKey, timeout);
 }
 
 WolkInterfaceType WolkMulti::getType()
