@@ -139,6 +139,7 @@ private:
     ErrorProtocol& m_protocol;
 
     // Here we store cached error messages
+    bool m_working;
     Timer m_timer;
     std::chrono::milliseconds m_retainTime;
     std::mutex m_cacheMutex;

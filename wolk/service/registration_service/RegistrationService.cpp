@@ -20,31 +20,65 @@
 
 namespace wolkabout
 {
-RegistrationService::RegistrationService(RegistrationProtocol& protocol, ErrorService& errorService)
-: m_protocol(protocol), m_errorService(errorService)
+RegistrationService::RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService,
+                                         ErrorService& errorService)
+: m_protocol(protocol), m_connectivityService(connectivityService), m_errorService(errorService)
 {
 }
 
-bool RegistrationService::registerDevice(DeviceInformation information, Feeds feeds, Parameters parameters,
-                                         Attributes attributes)
+std::unique_ptr<ErrorMessage> RegistrationService::registerDevice(const std::string& deviceKey,
+                                                                  DeviceIdentificationInformation information,
+                                                                  Feeds feeds, Parameters parameters,
+                                                                  Attributes attributes)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    return false;
+    return nullptr;
 }
 
-bool RegistrationService::removeDevices(std::vector<std::string> deviceKeys)
+std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::string& deviceKey,
+                                                                 std::vector<std::string> deviceKeys)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    return false;
+    return nullptr;
 }
 
-std::unique_ptr<std::vector<DeviceInformation>> RegistrationService::obtainDevices(TimePoint timestampFrom,
-                                                                                   std::string deviceType,
-                                                                                   std::string externalId)
+std::unique_ptr<std::vector<DeviceIdentificationInformation>> RegistrationService::obtainDevices(
+  const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType, std::string externalId,
+  std::chrono::milliseconds timeout)
 {
     LOG(TRACE) << METHOD_INFO;
+    const auto errorPrefix = "Failed to obtain devices";
+
+    // Create the message and the local query object
+    const auto request = RegisteredDevicesRequestMessage{
+      std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch()), deviceType, externalId};
+    const auto query = DeviceQueryData{timestampFrom, deviceType, externalId};
+
+    // Parse the message
+    auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, request)};
+    if (message == nullptr)
+    {
+        LOG(ERROR) << errorPrefix << " -> Failed to generate outgoing `RegisteredDevicesRequest` message.";
+        return nullptr;
+    }
+
+    // Send out the message
+    if (!m_connectivityService.publish(message))
+    {
+        LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `RegisteredDevicesRequest` message.";
+        return nullptr;
+    }
+
+    // Now that we have successfully published the message, put our object for receiving the response in the map, and
+    // wait for it.
+    {
+        std::lock_guard<std::mutex> lock{m_mutex};
+        m_responses.emplace(query, nullptr);
+    }
+    auto lock = std::unique_lock<std::mutex>{m_mutex};
+    m_conditionVariable.wait_for(lock, timeout);
 
     return {};
 }

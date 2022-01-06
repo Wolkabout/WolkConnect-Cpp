@@ -23,13 +23,18 @@ namespace wolkabout
 const std::chrono::milliseconds TIMER_PERIOD = std::chrono::milliseconds{10};
 
 ErrorService::ErrorService(ErrorProtocol& protocol, std::chrono::milliseconds retainTime)
-: m_protocol(protocol), m_retainTime(std::move(retainTime))
+: m_protocol(protocol), m_working(true), m_retainTime(std::move(retainTime))
 {
 }
 
 ErrorService::~ErrorService()
 {
     stop();
+
+    // Also stop all the condition variables
+    std::lock_guard<std::mutex> lock{m_cvMutex};
+    for (const auto& device : m_conditionVariables)
+        device.second->notify_all();
 }
 
 void ErrorService::start()
@@ -120,8 +125,14 @@ bool ErrorService::awaitMessage(const std::string& deviceKey, std::chrono::milli
             m_conditionVariables.emplace(deviceKey,
                                          std::unique_ptr<std::condition_variable>{new std::condition_variable});
     }
-    m_conditionVariables[deviceKey]->wait_for(deviceLock, timeout);
-    return peekMessagesForDevice(deviceKey) != start;
+
+    // Check whether the count of messages changed
+    auto different = false;
+    m_conditionVariables[deviceKey]->wait_for(deviceLock, timeout, [&] {
+        different = peekMessagesForDevice(deviceKey) != start;
+        return !m_working || different;
+    });
+    return different ? different : peekMessagesForDevice(deviceKey) != start;
 }
 
 std::unique_ptr<ErrorMessage> ErrorService::obtainOrAwaitMessageForDevice(const std::string& deviceKey,

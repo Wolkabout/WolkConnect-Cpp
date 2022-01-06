@@ -24,6 +24,7 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
+#include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/ErrorProtocolMock.h"
 #include "tests/mocks/ErrorServiceMock.h"
 #include "tests/mocks/RegistrationProtocolMock.h"
@@ -40,9 +41,10 @@ public:
 
     void SetUp() override
     {
+        connectivityServiceMock = std::make_shared<NiceMock<ConnectivityServiceMock>>();
         errorServiceMock = std::make_shared<NiceMock<ErrorServiceMock>>(errorProtocolMock, RETAIN_TIME);
-        service =
-          std::unique_ptr<RegistrationService>{new RegistrationService{registrationProtocolMock, *errorServiceMock}};
+        service = std::unique_ptr<RegistrationService>{
+          new RegistrationService{registrationProtocolMock, *connectivityServiceMock, *errorServiceMock}};
     }
 
     void TearDown() override { service.reset(); }
@@ -52,6 +54,8 @@ public:
     ErrorProtocolMock errorProtocolMock;
 
     RegistrationProtocolMock registrationProtocolMock;
+
+    std::shared_ptr<ConnectivityServiceMock> connectivityServiceMock;
 
     std::shared_ptr<ErrorServiceMock> errorServiceMock;
 
