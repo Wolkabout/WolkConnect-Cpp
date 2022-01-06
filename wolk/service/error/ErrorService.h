@@ -68,13 +68,28 @@ public:
     void stop() override;
 
     /**
-     * This method is used to check whether the cache contains an error message for a device.
-     * If it does, that message is removed from the cache and returned.
+     * This method is used to check whether the cache currently is at all holding an error message for a device.
+     *
+     * @param deviceKey The device key for which the cache is checked.
+     * @return Whether the cache is holding at least one message for the device.
+     */
+    virtual std::uint64_t peekMessagesForDevice(const std::string& deviceKey);
+
+    /**
+     * This method is used to force obtain the first message from the cache of the device.
      *
      * @param deviceKey The device key for which the cache is checked.
      * @return A pointer to the ErrorMessage from cache. A nullptr if no messages for the device are in cache.
      */
-    std::unique_ptr<ErrorMessage> checkCacheForMessage(const std::string& deviceKey);
+    virtual std::unique_ptr<ErrorMessage> obtainFirstMessageForDevice(const std::string& deviceKey);
+
+    /**
+     * This method is used to force obtain the last message from the cache of the device.
+     *
+     * @param deviceKey The device key for which a message is being obtained.
+     * @return A pointer to the ErrorMessage from cache. A nullptr if not messages for the device are in cache.
+     */
+    virtual std::unique_ptr<ErrorMessage> obtainLastMessageForDevice(const std::string& deviceKey);
 
     /**
      * This method is used to await a message to be added into the cache for a device key.
@@ -84,7 +99,7 @@ public:
      * @param timeout The maximum time the message will be waited for.
      * @return A pointer to the ErrorMessage that has arrived. A nullptr if no messages arrived for the device.
      */
-    std::unique_ptr<ErrorMessage> awaitMessage(const std::string& deviceKey, std::chrono::milliseconds timeout);
+    virtual bool awaitMessage(const std::string& deviceKey, std::chrono::milliseconds timeout);
 
     /**
      * This is the method that other services can use to check or await an ErrorMessage. This will first check if an
@@ -95,8 +110,8 @@ public:
      * @return A pointer to an ErrorMessage if a message for the device key has been found in the cache, or has been
      * awaited. Nullptr if neither.
      */
-    std::unique_ptr<ErrorMessage> checkOrAwaitError(const std::string& deviceKey,
-                                                    std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    virtual std::unique_ptr<ErrorMessage> obtainOrAwaitMessageForDevice(const std::string& deviceKey,
+                                                                        std::chrono::milliseconds timeout);
 
     /**
      * This is the overridden method from the `MessageListener` interface.

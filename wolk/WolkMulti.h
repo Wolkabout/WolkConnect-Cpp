@@ -65,7 +65,8 @@ public:
 
     void updateParameter(const std::string& deviceKey, Parameter parameters);
 
-    std::unique_ptr<ErrorMessage> awaitError(const std::string& deviceKey, std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    std::unique_ptr<ErrorMessage> awaitError(const std::string& deviceKey,
+                                             std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
 
     WolkInterfaceType getType() override;
 

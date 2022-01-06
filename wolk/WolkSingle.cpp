@@ -87,7 +87,7 @@ void WolkSingle::updateParameter(Parameter parameter)
 
 std::unique_ptr<ErrorMessage> WolkSingle::awaitError(std::chrono::milliseconds timeout)
 {
-    return m_errorService->checkOrAwaitError(m_device.getKey(), timeout);
+    return m_errorService->obtainOrAwaitMessageForDevice(m_device.getKey(), timeout);
 }
 
 WolkInterfaceType WolkSingle::getType()

@@ -180,7 +180,7 @@ std::unique_ptr<ErrorMessage> WolkMulti::awaitError(const std::string& deviceKey
         return nullptr;
     }
 
-    return m_errorService->checkOrAwaitError(deviceKey, timeout);
+    return m_errorService->obtainOrAwaitMessageForDevice(deviceKey, timeout);
 }
 
 WolkInterfaceType WolkMulti::getType()

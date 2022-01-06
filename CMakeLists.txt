@@ -152,6 +152,7 @@ if (${BUILD_TESTS})
             tests/FileTransferSessionTests.cpp
             tests/FirmwareUpdateServiceTests.cpp
             tests/InboundPlatformMessageHandlerTests.cpp
+            tests/RegistrationServiceTests.cpp
             tests/WolkBuilderTests.cpp
             tests/WolkTests.cpp)
     set(TEST_HEADER_FILES
@@ -159,6 +160,7 @@ if (${BUILD_TESTS})
             tests/mocks/DataProtocolMock.h
             tests/mocks/DataServiceMock.h
             tests/mocks/ErrorProtocolMock.h
+            tests/mocks/ErrorServiceMock.h
             tests/mocks/FeedUpdateHandlerMock.h
             tests/mocks/FileManagementProtocolMock.h
             tests/mocks/FileManagementServiceMock.h
@@ -168,6 +170,7 @@ if (${BUILD_TESTS})
             tests/mocks/ParameterHandlerMock.h
             tests/mocks/PersistenceMock.h
             tests/mocks/ProtocolMock.h
+            tests/mocks/RegistrationProtocolMock.h
             tests/mocks/WolkPahoMqttClientMock.h)
 
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})

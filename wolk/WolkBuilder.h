@@ -211,6 +211,14 @@ public:
     WolkBuilder& withPlatformStatus(std::unique_ptr<PlatformStatusListener> platformStatusListener);
 
     /**
+     * @brief Sets the Wolk module to allow device registration.
+     * @param protocol The protocol that will be used for registration. If remained as nullptr, default one will be
+     * used.
+     * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
+     */
+    WolkBuilder& withRegistration(std::unique_ptr<RegistrationProtocol> protocol = nullptr);
+
+    /**
      * @brief Builds a WolkInterface instance.
      * @param type The type of the WolkInterface that the builder should build.
      * @return Wolk instance as std::unique_ptr<WolkInterface>. This should be cast.

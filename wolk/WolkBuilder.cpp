@@ -203,6 +203,16 @@ WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListe
     return *this;
 }
 
+WolkBuilder& WolkBuilder::withRegistration(std::unique_ptr<RegistrationProtocol> protocol)
+{
+    if (protocol == nullptr)
+        m_registrationProtocol =
+          std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol);
+    else
+        m_registrationProtocol = std::move(protocol);
+    return *this;
+}
+
 std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 {
     LOG(TRACE) << METHOD_INFO;
@@ -342,7 +352,7 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
         wolk->m_dataService->updateParameter(device.getKey(), {ParameterName::FIRMWARE_VERSION, firmwareVersion});
     }
 
-    // Check if the platform status service needs to be introduces
+    // Check if the platform status service needs to be introduced
     if (m_platformStatusProtocol != nullptr)
     {
         // Create the service
@@ -350,6 +360,16 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
         wolk->m_platformStatusService =
           std::make_shared<PlatformStatusService>(*wolk->m_platformStatusProtocol, std::move(m_platformStatusListener));
         wolk->m_inboundMessageHandler->addListener(wolk->m_platformStatusService);
+    }
+
+    // Check if the registration service needs to be introduces
+    if (m_registrationProtocol != nullptr)
+    {
+        // Create the service
+        wolk->m_registrationProtocol = std::move(m_registrationProtocol);
+        wolk->m_registrationService =
+          std::make_shared<RegistrationService>(*wolk->m_registrationProtocol, *wolk->m_errorService);
+        wolk->m_inboundMessageHandler->addListener(wolk->m_registrationService);
     }
 
     return wolk;

@@ -44,7 +44,21 @@ void ErrorService::stop()
     m_timer.stop();
 }
 
-std::unique_ptr<ErrorMessage> ErrorService::checkCacheForMessage(const std::string& deviceKey)
+std::uint64_t ErrorService::peekMessagesForDevice(const std::string& deviceKey)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Lock to prevent any race conditions
+    std::lock_guard<std::mutex> lock{m_cacheMutex};
+
+    // Check whether there is a map entry in cache for the device at all
+    const auto deviceMessagesIt = m_cached.find(deviceKey);
+    if (deviceMessagesIt == m_cached.cend())
+        return 0;
+    return deviceMessagesIt->second.size();
+}
+
+std::unique_ptr<ErrorMessage> ErrorService::obtainFirstMessageForDevice(const std::string& deviceKey)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -65,12 +79,35 @@ std::unique_ptr<ErrorMessage> ErrorService::checkCacheForMessage(const std::stri
     return message;
 }
 
-std::unique_ptr<ErrorMessage> ErrorService::awaitMessage(const std::string& deviceKey,
-                                                         std::chrono::milliseconds timeout)
+std::unique_ptr<ErrorMessage> ErrorService::obtainLastMessageForDevice(const std::string& deviceKey)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Lock to prevent any race conditions
+    std::lock_guard<std::mutex> lock{m_cacheMutex};
+
+    // Check whether there is a map entry in cache for the device at all
+    const auto deviceMessagesIt = m_cached.find(deviceKey);
+    if (deviceMessagesIt == m_cached.cend())
+        return nullptr;
+    auto& deviceMessages = deviceMessagesIt->second;
+    if (deviceMessages.empty())
+        return nullptr;
+
+    // Make place for the message, and remove it from the map
+    auto lastIterator = deviceMessages.end();
+    --lastIterator;
+    auto message = std::unique_ptr<ErrorMessage>{lastIterator->second.release()};
+    deviceMessages.erase(lastIterator);
+    return message;
+}
+
+bool ErrorService::awaitMessage(const std::string& deviceKey, std::chrono::milliseconds timeout)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Make the lock for the mutex and start waiting
+    auto start = peekMessagesForDevice(deviceKey);
     {
         std::lock_guard<std::mutex> lock{m_cvMutex};
         if (m_mutexes.find(deviceKey) == m_mutexes.cend())
@@ -84,19 +121,22 @@ std::unique_ptr<ErrorMessage> ErrorService::awaitMessage(const std::string& devi
                                          std::unique_ptr<std::condition_variable>{new std::condition_variable});
     }
     m_conditionVariables[deviceKey]->wait_for(deviceLock, timeout);
-    return checkCacheForMessage(deviceKey);
+    return peekMessagesForDevice(deviceKey) != start;
 }
 
-std::unique_ptr<ErrorMessage> ErrorService::checkOrAwaitError(const std::string& deviceKey,
-                                                              std::chrono::milliseconds timeout)
+std::unique_ptr<ErrorMessage> ErrorService::obtainOrAwaitMessageForDevice(const std::string& deviceKey,
+                                                                          std::chrono::milliseconds timeout)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Check the cache first
-    auto cacheResult = checkCacheForMessage(deviceKey);
+    auto cacheResult = obtainFirstMessageForDevice(deviceKey);
     if (cacheResult != nullptr)
         return cacheResult;
-    return awaitMessage(deviceKey, timeout);
+    if (awaitMessage(deviceKey, timeout))
+        return obtainFirstMessageForDevice(deviceKey);
+    else
+        return nullptr;
 }
 
 void ErrorService::messageReceived(std::shared_ptr<Message> message)
