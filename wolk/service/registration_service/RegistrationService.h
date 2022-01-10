@@ -23,45 +23,25 @@
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/protocol/RegistrationProtocol.h"
+#include "core/utilities/Service.h"
 #include "wolk/service/error/ErrorService.h"
 
 #include <unordered_map>
 
 namespace wolkabout
 {
-// Making some type aliases that will make method signatures more readable
-using Feeds = std::vector<Feed>;
-using Parameters = std::map<ParameterName, std::string>;
-using Attributes = std::vector<Attribute>;
-// This struct is used to group the information that identifies a new device.
-struct DeviceIdentificationInformation
-{
-public:
-    explicit DeviceIdentificationInformation(std::string name, std::string key = "", std::string guid = "")
-    : m_name(std::move(name)), m_key(std::move(key)), m_guid(std::move(guid))
-    {
-    }
-
-    const std::string& getName() const { return m_name; }
-
-    const std::string& getKey() const { return m_key; }
-
-    const std::string& getGuid() const { return m_guid; }
-
-private:
-    std::string m_name;
-    std::string m_key;
-    std::string m_guid;
-};
 // This struct is used to group the query information that is used to generate a request towards the platform.
 // Based on these, the request will be linked with a response.
 struct DeviceQueryData
 {
 public:
-    explicit DeviceQueryData(TimePoint timestampFrom, std::string deviceType = "", std::string externalId = "")
-    : m_timestampFrom(std::move(timestampFrom))
+    explicit DeviceQueryData(TimePoint timestampFrom, std::string deviceType = "", std::string externalId = "",
+                             std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback = {})
+    : m_timestampFrom(
+        std::move(std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch())))
     , m_deviceType(std::move(deviceType))
     , m_externalId(std::move(externalId))
+    , m_callback(std::move(callback))
     {
     }
 
@@ -70,6 +50,11 @@ public:
     const std::string& getDeviceType() const { return m_deviceType; }
 
     const std::string& getExternalId() const { return m_externalId; }
+
+    const std::function<void(const std::vector<RegisteredDeviceInformation>&)>& getCallback() const
+    {
+        return m_callback;
+    }
 
     bool operator==(const DeviceQueryData& rvalue) const
     {
@@ -81,7 +66,11 @@ private:
     TimePoint m_timestampFrom;
     std::string m_deviceType;
     std::string m_externalId;
+
+    // Optionally, the query can have a callback that should be called
+    std::function<void(const std::vector<RegisteredDeviceInformation>&)> m_callback;
 };
+
 // Define a hash function for the DeviceQueryData.
 struct DeviceQueryDataHash
 {
@@ -100,7 +89,7 @@ public:
  * This is the service that is responsible for registering/removing devices, and also obtaining information about
  * devices.
  */
-class RegistrationService : public MessageListener
+class RegistrationService : public MessageListener, public Service
 {
 public:
     /**
@@ -114,43 +103,80 @@ public:
                                  ErrorService& errorService);
 
     /**
+     * Overridden constructor. Will stop all running condition variables.
+     */
+    ~RegistrationService() override;
+
+    /**
+     * This is the overridden method from the `utilities::Service` interface.
+     * This method will allow the service to function properly.
+     */
+    void start() override;
+
+    /**
+     * This is the overridden method from the `utilities::Service` interface.
+     * This method will stop the workings of the service, close all ongoing condition variables.
+     */
+    void stop() override;
+
+    /**
      * This method is used to send a device registration request.
      *
-     * @param deviceKey The key of the device trying to register the device.
-     * @param information The basic identifying information about a device.
-     * @param feeds The list of feeds that the device has.
-     * @param parameters The list of parameters values for the device.
-     * @param attributes The list of attributes that the device has.
+     * @param deviceKey The key of the device trying to register the devices.
+     * @param devices The list of devices that the user would like to register.
+     * @param timeout The time the method will maximally wait for an error to appear.
      * @return If nothing has gone wrong, this will be {@code: nullptr}. Otherwise a value will be passed, with a
      * further explanation of the error.
      */
-    std::unique_ptr<ErrorMessage> registerDevice(const std::string& deviceKey,
-                                                 DeviceIdentificationInformation information, Feeds feeds,
-                                                 Parameters parameters, Attributes attributes);
+    std::unique_ptr<ErrorMessage> registerDevices(const std::string& deviceKey,
+                                                  const std::vector<DeviceRegistrationData>& devices,
+                                                  std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
 
     /**
      * This method is used to send a device deletion request.
      *
      * @param deviceKey The key of the device trying to delete the devices.
      * @param deviceKeys The list of device keys that should be deleted.
+     * @param timeout The time the method will maximally wait for an error to appear.
      * @return If nothing has gone wrong, this will be {@code: nullptr}. Otherwise a value will be passed, with a
      * further explanation of the error.
      */
-    std::unique_ptr<ErrorMessage> removeDevices(const std::string& deviceKey, std::vector<std::string> deviceKeys);
+    std::unique_ptr<ErrorMessage> removeDevices(const std::string& deviceKey, std::vector<std::string> deviceKeys,
+                                                std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
 
     /**
-     * This method is used to obtain a list of devices.
+     * This method is used to obtain a list of devices. This is the synchronous version of the method that will attempt
+     * to await the response.
      *
      * @param deviceKey The key of the device trying to obtain the list of devices.
      * @param timestampFrom The timestamp from which devices will be queried.
      * @param deviceType The type of devices that are queried.
      * @param externalId The external id of a device, if you have such a value to query a single device.
+     * @param timeout The maximum wait the method will await the response.
      * @return The list of devices obtained. Will be a {@code: nullptr} if unable to obtain devices, empty vector if the
      * platform returned no devices, or filled with devices if everything has gone successfully.
      */
-    std::unique_ptr<std::vector<DeviceIdentificationInformation>> obtainDevices(
-      const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {}, std::string externalId = {},
-      std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    std::unique_ptr<std::vector<RegisteredDeviceInformation>> obtainDevices(const std::string& deviceKey,
+                                                                            std::chrono::milliseconds timeout,
+                                                                            TimePoint timestampFrom,
+                                                                            std::string deviceType = {},
+                                                                            std::string externalId = {});
+
+    /**
+     * This method is used to obtain a list of devices. This is the asynchronous version of the method that will call a
+     * callback once a response has been received.
+     *
+     * @param deviceKey The key of the device trying to obtain the list of devices.
+     * @param timestampFrom The timestamp from which devices will be queried.
+     * @param deviceType The type of devices that are queried.
+     * @param externalId The external id of a device, if you have such a value to query a single device.
+     * @param callback The callback that will be invoked once a response has been received.
+     * @return Whether the request was successfully sent out. If this is false, that means that the callback will never
+     * be called.
+     */
+    bool obtainDevices(const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {},
+                       std::string externalId = {},
+                       std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback = {});
 
     /**
      * This method is overridden from the `MessageListener` interface.
@@ -177,6 +203,9 @@ private:
 
     // And here we have the reference of the error service.
     ErrorService& m_errorService;
+
+    // Make place for the running status
+    std::atomic_bool m_running;
 
     // Make place for the requests for devices
     std::mutex m_mutex;
