@@ -163,6 +163,7 @@ if (${BUILD_TESTS})
             tests/mocks/ErrorProtocolMock.h
             tests/mocks/ErrorServiceMock.h
             tests/mocks/FeedUpdateHandlerMock.h
+            tests/mocks/FileDownloaderMock.h
             tests/mocks/FileManagementProtocolMock.h
             tests/mocks/FileManagementServiceMock.h
             tests/mocks/FirmwareUpdateProtocolMock.h
