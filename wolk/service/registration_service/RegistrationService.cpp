@@ -68,8 +68,8 @@ std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::st
     }
 
     // Make the message that will be sent out
-    const auto request = DeviceRegistrationMessage{devices};
-    const auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, request)};
+    const auto message =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, DeviceRegistrationMessage{devices})};
     if (message == nullptr)
     {
         const auto errorMessage = "Failed to generate the outgoing message.";
@@ -114,8 +114,8 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
     }
 
     // Make the message that will be sent out
-    const auto request = DeviceRemovalMessage{deviceKeys};
-    const auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, request)};
+    const auto message =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, DeviceRemovalMessage{deviceKeys})};
     if (message == nullptr)
     {
         const auto errorMessage = "Failed to generate the outgoing message.";
@@ -157,13 +157,12 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
         return nullptr;
     }
 
-    // Create the message and the local query object
-    const auto request = RegisteredDevicesRequestMessage{
-      std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch()), deviceType, externalId};
-    const auto query = DeviceQueryData{timestampFrom, deviceType, externalId};
-
     // Parse the message
-    auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, request)};
+    const auto query = DeviceQueryData{timestampFrom, deviceType, externalId};
+    auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(
+      deviceKey, RegisteredDevicesRequestMessage{
+                   std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch()), deviceType,
+                   externalId})};
     if (message == nullptr)
     {
         LOG(ERROR) << errorPrefix << " -> Failed to generate outgoing `RegisteredDevicesRequest` message.";

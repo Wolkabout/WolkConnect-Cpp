@@ -127,6 +127,40 @@ TEST_F(RegistrationServiceTests, RegisterDevicesSentSuccessfully)
               nullptr);
 }
 
+TEST_F(RegistrationServiceTests, RegisterDevicesReceiveError)
+{
+    // Make the protocol return a nullptr for the parsing
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const DeviceRegistrationMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    // Set up the error service to return an error message
+    const auto delay = std::chrono::milliseconds{50};
+    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(0));
+    EXPECT_CALL(*errorServiceMock, awaitMessage)
+      .WillOnce(
+        [&](const std::string&, std::chrono::milliseconds)
+        {
+            std::this_thread::sleep_for(delay);
+            return true;
+        });
+    EXPECT_CALL(*errorServiceMock, obtainFirstMessageForDevice)
+      .WillOnce(
+        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
+
+    // Call the service and measure the execution time
+    const auto start = std::chrono::system_clock::now();
+    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}),
+              nullptr);
+    const auto duration = std::chrono::system_clock::now() - start;
+    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+    const auto tolerable = delay * 1.25;
+    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
+              << "ms) - Delay time: " << tolerable.count() << "ms.";
+    ASSERT_LT(durationMs, tolerable);
+}
+
 TEST_F(RegistrationServiceTests, RemoveDevicesNotRunning)
 {
     // Stop the service
@@ -175,6 +209,39 @@ TEST_F(RegistrationServiceTests, RemoveDevicesSentSuccessfully)
 
     // Call the service
     ASSERT_EQ(service->removeDevices(DEVICE_KEY, {"DeviceKey"}), nullptr);
+}
+
+TEST_F(RegistrationServiceTests, RemoveDevicesReceiveError)
+{
+    // Make the protocol return a nullptr for the parsing
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const DeviceRemovalMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    // Set up the error service to return an error message
+    const auto delay = std::chrono::milliseconds{50};
+    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(0));
+    EXPECT_CALL(*errorServiceMock, awaitMessage)
+      .WillOnce(
+        [&](const std::string&, std::chrono::milliseconds)
+        {
+            std::this_thread::sleep_for(delay);
+            return true;
+        });
+    EXPECT_CALL(*errorServiceMock, obtainFirstMessageForDevice)
+      .WillOnce(
+        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
+
+    // Call the service and measure the execution time
+    const auto start = std::chrono::system_clock::now();
+    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}), nullptr);
+    const auto duration = std::chrono::system_clock::now() - start;
+    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+    const auto tolerable = delay * 1.25;
+    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
+              << "ms) - Delay time: " << tolerable.count() << "ms.";
+    ASSERT_LT(durationMs, tolerable);
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesNotRunning)
@@ -301,12 +368,14 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedArrayNoCallback)
 
     // Make a response arrive 50ms after the send
     const auto delay = std::chrono::milliseconds{50};
-    timer.start(delay, [&] {
-        service->messageReceived(
-          std::make_shared<wolkabout::Message>("p2d/" + DEVICE_KEY + "/registered_devices",
-                                               std::string(R"({"timestampFrom":)" + std::to_string(timeFrom.count())) +
-                                                 R"(,"deviceType":"","externalId","","matchingDevices":[]})"));
-    });
+    timer.start(delay,
+                [&]
+                {
+                    service->messageReceived(std::make_shared<wolkabout::Message>(
+                      "p2d/" + DEVICE_KEY + "/registered_devices",
+                      std::string(R"({"timestampFrom":)" + std::to_string(timeFrom.count())) +
+                        R"(,"deviceType":"","externalId","","matchingDevices":[]})"));
+                });
 
     // Call the service to expect the response
     const auto start = std::chrono::system_clock::now();
@@ -338,12 +407,14 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedDevicesInArrayWithCallback)
 
     // Make a response arrive 50ms after the send
     const auto delay = std::chrono::milliseconds{50};
-    timer.start(delay, [&] {
-        service->messageReceived(
-          std::make_shared<wolkabout::Message>("p2d/" + DEVICE_KEY + "/registered_devices",
-                                               std::string(R"({"timestampFrom":)" + std::to_string(timeFrom.count())) +
-                                                 R"(,"deviceType":"","externalId","","matchingDevices":]})"));
-    });
+    timer.start(delay,
+                [&]
+                {
+                    service->messageReceived(std::make_shared<wolkabout::Message>(
+                      "p2d/" + DEVICE_KEY + "/registered_devices",
+                      std::string(R"({"timestampFrom":)" + std::to_string(timeFrom.count())) +
+                        R"(,"deviceType":"","externalId","","matchingDevices":]})"));
+                });
 
     // Make the mutex and the condition variable
     auto called = false;
@@ -353,7 +424,8 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedDevicesInArrayWithCallback)
     // Call the service to expect the response
     const auto start = std::chrono::system_clock::now();
     ASSERT_NO_FATAL_FAILURE(service->obtainDevicesAsync(DEVICE_KEY, TimePoint(timeFrom), {}, {},
-                                                        [&](const std::vector<RegisteredDeviceInformation>& vector) {
+                                                        [&](const std::vector<RegisteredDeviceInformation>& vector)
+                                                        {
                                                             called = true;
                                                             EXPECT_FALSE(vector.empty());
                                                             conditionVariable.notify_one();

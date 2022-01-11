@@ -121,6 +121,11 @@ TEST_F(ErrorServiceTests, OneMessageObtainFromCacheMapExistsButNoMessage)
     ASSERT_EQ(service->obtainFirstMessageForDevice(DEVICE_KEY), nullptr);
 }
 
+TEST_F(ErrorServiceTests, ObtainLastNeverThere)
+{
+    ASSERT_EQ(service->obtainLastMessageForDevice(DEVICE_KEY), nullptr);
+}
+
 TEST_F(ErrorServiceTests, OneMessageObtainLastFromCache)
 {
     // Add the message
@@ -135,15 +140,28 @@ TEST_F(ErrorServiceTests, OneMessageObtainLastFromCache)
     EXPECT_NE(message->getArrivalTime().time_since_epoch().count(), 0);
 }
 
+TEST_F(ErrorServiceTests, OneMessageObtainLastFromCacheMapExistsButNoMessage)
+{
+    // Add the message and start the timer
+    addTestMessageToService();
+    service->start();
+
+    // Wait for retain time (plus 25% of the time, just to make sure)
+    std::this_thread::sleep_for(RETAIN_TIME * 1.25);
+    ASSERT_EQ(service->obtainLastMessageForDevice(DEVICE_KEY), nullptr);
+}
+
 TEST_F(ErrorServiceTests, AwaitOneMessageTest)
 {
     // Prepare a task that will add the message
     auto delay = std::chrono::milliseconds{25};
     Timer timer;
-    timer.start(delay, [&]() {
-        addTestMessageToService();
-        service->m_conditionVariables[DEVICE_KEY]->notify_one();
-    });
+    timer.start(delay,
+                [&]()
+                {
+                    addTestMessageToService();
+                    service->m_conditionVariables[DEVICE_KEY]->notify_one();
+                });
 
     // Now await the message
     auto start = std::chrono::system_clock::now();

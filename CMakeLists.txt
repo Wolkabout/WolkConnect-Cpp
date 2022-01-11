@@ -152,6 +152,7 @@ if (${BUILD_TESTS})
             tests/FileTransferSessionTests.cpp
             tests/FirmwareUpdateServiceTests.cpp
             tests/InboundPlatformMessageHandlerTests.cpp
+            tests/PlatformStatusServiceTests.cpp
             tests/RegistrationServiceTests.cpp
             tests/WolkBuilderTests.cpp
             tests/WolkTests.cpp)
@@ -169,6 +170,8 @@ if (${BUILD_TESTS})
             tests/mocks/MessageListenerMock.h
             tests/mocks/ParameterHandlerMock.h
             tests/mocks/PersistenceMock.h
+            tests/mocks/PlatformStatusListenerMock.h
+            tests/mocks/PlatformStatusProtocolMock.h
             tests/mocks/ProtocolMock.h
             tests/mocks/RegistrationProtocolMock.h
             tests/mocks/WolkPahoMqttClientMock.h)
