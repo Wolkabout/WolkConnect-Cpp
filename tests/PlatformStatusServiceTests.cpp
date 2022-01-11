@@ -24,8 +24,8 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "tests/mocks/PlatformStatusProtocolMock.h"
 #include "tests/mocks/PlatformStatusListenerMock.h"
+#include "tests/mocks/PlatformStatusProtocolMock.h"
 
 #include <gtest/gtest.h>
 
@@ -79,12 +79,10 @@ TEST_F(PlatformStatusServiceTests, ParsedIncomingMessageCalledListener)
     std::mutex mutex;
     std::condition_variable conditionVariable;
     EXPECT_CALL(*platformStatusListenerMock, platformStatus(ConnectivityStatus::CONNECTED))
-      .WillOnce(
-        [&](ConnectivityStatus)
-        {
-            called = true;
-            conditionVariable.notify_one();
-        });
+      .WillOnce([&](ConnectivityStatus) {
+          called = true;
+          conditionVariable.notify_one();
+      });
 
     // Pass the message
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
@@ -102,8 +100,7 @@ TEST_F(PlatformStatusServiceTests, ParsedIncomingMessageCalledCallback)
     std::mutex mutex;
     std::condition_variable conditionVariable;
     auto status = ConnectivityStatus::CONNECTED;
-    auto callback = [&](ConnectivityStatus received)
-    {
+    auto callback = [&](ConnectivityStatus received) {
         if (received == wolkabout::ConnectivityStatus::CONNECTED)
         {
             called = true;
