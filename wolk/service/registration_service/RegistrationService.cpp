@@ -144,8 +144,8 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
 }
 
 std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::obtainDevices(
-  const std::string& deviceKey, std::chrono::milliseconds timeout, TimePoint timestampFrom, std::string deviceType,
-  std::string externalId)
+  const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType, std::string externalId,
+  std::chrono::milliseconds timeout)
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain devices";
@@ -203,7 +203,7 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
         if (it != m_responses.cend())
         {
             response = std::move(it->second);
-            m_responses.erase(query);
+            m_responses.erase(it);
         }
     }
     if (response == nullptr)
@@ -219,9 +219,9 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
     return data;
 }
 
-bool RegistrationService::obtainDevices(const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType,
-                                        std::string externalId,
-                                        std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback)
+bool RegistrationService::obtainDevicesAsync(
+  const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType, std::string externalId,
+  std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback)
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain devices";

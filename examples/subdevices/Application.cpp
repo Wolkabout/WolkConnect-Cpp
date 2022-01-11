@@ -42,6 +42,7 @@ int main(int /* argc */, char** /* argv */)
                   .host("tcp://localhost:1883")
                   .withFileTransfer("./files")
                   .withPlatformStatus(std::unique_ptr<ExamplePlatformStatusListener>(new ExamplePlatformStatusListener))
+                  .withErrorProtocol(std::chrono::minutes{10})
                   .buildWolkMulti();
     wolk->connect();
 
@@ -52,14 +53,27 @@ int main(int /* argc */, char** /* argv */)
 
     // Now we can sleep a little bit
     std::this_thread::sleep_for(std::chrono::seconds(5));
-
-    // Now let's add a new device
     wolk->addDevice(deviceThree);
-    wolk->addReading(deviceThree.getKey(), "APM", 400);
-    wolk->publish();
 
-    // We can sleep again
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    // Put them in an array
+    auto devices = {deviceOne, deviceTwo, deviceThree};
+
+    while (true)
+    {
+        // Now let's add a new device
+        wolk->addReading(deviceThree.getKey(), "APM", 400);
+        wolk->publish();
+
+        // We can sleep again
+        std::this_thread::sleep_for(std::chrono::seconds(5));
+
+        // Do some things for the devices
+        for (const auto& device : devices)
+        {
+            LOG(INFO) << "Count of errors for device: '" << device.getKey() << "' -> "
+                      << wolk->peekErrorCount(device.getKey()) << ".";
+        }
+    }
 
     // And that's it
     return 0;

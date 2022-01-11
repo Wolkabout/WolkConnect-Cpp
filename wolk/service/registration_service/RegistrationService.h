@@ -156,11 +156,9 @@ public:
      * @return The list of devices obtained. Will be a {@code: nullptr} if unable to obtain devices, empty vector if the
      * platform returned no devices, or filled with devices if everything has gone successfully.
      */
-    std::unique_ptr<std::vector<RegisteredDeviceInformation>> obtainDevices(const std::string& deviceKey,
-                                                                            std::chrono::milliseconds timeout,
-                                                                            TimePoint timestampFrom,
-                                                                            std::string deviceType = {},
-                                                                            std::string externalId = {});
+    std::unique_ptr<std::vector<RegisteredDeviceInformation>> obtainDevices(
+      const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {}, std::string externalId = {},
+      std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
 
     /**
      * This method is used to obtain a list of devices. This is the asynchronous version of the method that will call a
@@ -174,9 +172,9 @@ public:
      * @return Whether the request was successfully sent out. If this is false, that means that the callback will never
      * be called.
      */
-    bool obtainDevices(const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {},
-                       std::string externalId = {},
-                       std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback = {});
+    bool obtainDevicesAsync(const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {},
+                            std::string externalId = {},
+                            std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback = {});
 
     /**
      * This method is overridden from the `MessageListener` interface.

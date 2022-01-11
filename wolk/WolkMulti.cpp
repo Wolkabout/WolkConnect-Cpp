@@ -38,8 +38,10 @@ bool WolkMulti::addDevice(Device device)
 
     // Otherwise, add the device
     m_devices.emplace_back(device);
-    auto& handler = dynamic_cast<InboundPlatformMessageHandler&>(*m_inboundMessageHandler);
-    handler.addDevice(device.getKey());
+    {
+        auto& handler = dynamic_cast<InboundPlatformMessageHandler&>(*m_inboundMessageHandler);
+        handler.addDevice(device.getKey());
+    }
 
     // Publish the parameters for the device
     reportFileManagementParametersForDevice(device);
@@ -61,7 +63,7 @@ void WolkMulti::addReading(const std::string& deviceKey, const std::string& refe
     //    to think that it's okay to constantly check the device key that is passed in the call of this method. if
     //    (!isDeviceInList(deviceKey))
     //    {
-    //        LOG(WARN) << "Ignoring call of 'addReading' - Device '" << deviceKey << "' is not added.";
+    //        LOG(WARN) << "Ignoring call of 'addReading' - Device '" << deviceKey << "' has not been added.";
     //        return;
     //    }
     if (rtc == 0)
@@ -76,7 +78,7 @@ void WolkMulti::addReading(const std::string& deviceKey, const std::string& refe
     //    to think that it's okay to constantly check the device key that is passed in the call of this method. if
     //    (!isDeviceInList(deviceKey))
     //    {
-    //        LOG(WARN) << "Ignoring call of 'addReading' - Device '" << deviceKey << "' is not added.";
+    //        LOG(WARN) << "Ignoring call of 'addReading' - Device '" << deviceKey << "' has not been added.";
     //        return;
     //    }
     if (rtc == 0)
@@ -88,7 +90,7 @@ void WolkMulti::registerFeed(const std::string& deviceKey, const Feed& feed)
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'registerFeed' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'registerFeed' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
@@ -99,7 +101,7 @@ void WolkMulti::registerFeeds(const std::string& deviceKey, const std::vector<Fe
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'registerFeeds' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'registerFeeds' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
@@ -110,7 +112,7 @@ void WolkMulti::removeFeed(const std::string& deviceKey, const std::string& refe
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'removeFeed' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'removeFeed' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
@@ -121,7 +123,7 @@ void WolkMulti::removeFeeds(const std::string& deviceKey, const std::vector<std:
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'removeFeeds' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'removeFeeds' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
@@ -132,7 +134,7 @@ void WolkMulti::pullFeedValues(const std::string& deviceKey)
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'pullFeedValues' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'pullFeedValues' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
@@ -143,7 +145,7 @@ void WolkMulti::pullParameters(const std::string& deviceKey)
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'pullParameters' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'pullParameters' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
@@ -154,7 +156,7 @@ void WolkMulti::addAttribute(const std::string& deviceKey, Attribute attribute)
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'addAttribute' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'addAttribute' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
@@ -165,18 +167,154 @@ void WolkMulti::updateParameter(const std::string& deviceKey, Parameter paramete
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'updateParameter' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'updateParameter' - Device '" << deviceKey << "' has not been added.";
         return;
     }
 
     addToCommandBuffer([=]() -> void { m_dataService->updateParameter(deviceKey, parameter); });
 }
 
-std::unique_ptr<ErrorMessage> WolkMulti::awaitError(const std::string& deviceKey, std::chrono::milliseconds timeout)
+bool WolkMulti::registerDevice(const std::string& deviceKey, const DeviceRegistrationData& device,
+                               std::chrono::milliseconds timeout)
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'awaitError' - Device '" << deviceKey << "' is not added.";
+        LOG(WARN) << "Ignoring call of 'registerDevice' - Device '" << deviceKey << "' has not been added.";
+        return false;
+    }
+
+    // Check whether there has been an error returned
+    auto error = m_registrationService->registerDevices(deviceKey, {device}, timeout);
+    if (error)
+    {
+        LOG(ERROR) << "An error occurred during the `registerDevice` call -> '" << error->getMessage() << "'.";
+        return false;
+    }
+    return true;
+}
+
+bool WolkMulti::registerDevices(const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
+                                std::chrono::milliseconds timeout)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'registerDevices' - Device '" << deviceKey << "' has not been added.";
+        return false;
+    }
+
+    // Check whether there has been an error returned
+    auto error = m_registrationService->registerDevices(deviceKey, devices, timeout);
+    if (error)
+    {
+        LOG(ERROR) << "An error occurred during the `registerDevices` call -> '" << error->getMessage() << "'.";
+        return false;
+    }
+    return true;
+}
+
+bool WolkMulti::removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove,
+                             std::chrono::milliseconds timeout)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'removeDevice' - Device '" << deviceKey << "' has not been added.";
+        return false;
+    }
+
+    // Check whether there has been an error returned
+    auto error = m_registrationService->removeDevices(deviceKey, {deviceKeyToRemove}, timeout);
+    if (error)
+    {
+        LOG(ERROR) << "An error occurred during the `removeDevice` call -> '" << error->getMessage() << "'.";
+        return false;
+    }
+    return true;
+}
+
+bool WolkMulti::removeDevices(const std::string& deviceKey, const std::vector<std::string>& deviceKeysToRemove,
+                              std::chrono::milliseconds timeout)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'removeDevices' - Device '" << deviceKey << "' has not been added.";
+        return false;
+    }
+
+    // Check whether there has been an error returned
+    auto error = m_registrationService->removeDevices(deviceKey, deviceKeysToRemove, timeout);
+    if (error)
+    {
+        LOG(ERROR) << "An error occurred during the `removeDevices` call -> '" << error->getMessage() << "'.";
+        return false;
+    }
+    return true;
+}
+
+std::unique_ptr<std::vector<RegisteredDeviceInformation>> WolkMulti::obtainDevices(const std::string& deviceKey,
+                                                                                   TimePoint timestampFrom,
+                                                                                   std::string deviceType,
+                                                                                   std::string externalId,
+                                                                                   std::chrono::milliseconds timeout)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'updateParameter' - Device '" << deviceKey << "' has not been added.";
+        return nullptr;
+    }
+    return m_registrationService->obtainDevices(deviceKey, timestampFrom, deviceType, externalId, timeout);
+}
+
+bool WolkMulti::obtainDevicesAsync(const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType,
+                                   std::string externalId,
+                                   std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'updateParameter' - Device '" << deviceKey << "' has not been added.";
+        return false;
+    }
+    return m_registrationService->obtainDevicesAsync(deviceKey, timestampFrom, deviceType, externalId, callback);
+}
+
+std::uint64_t WolkMulti::peekErrorCount(const std::string& deviceKey)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'peekErrorCount' - Device '" << deviceKey << "' has not been added.";
+        return UINT64_MAX;
+    }
+
+    return m_errorService->peekMessagesForDevice(deviceKey);
+}
+
+std::unique_ptr<ErrorMessage> WolkMulti::dequeueMessage(const std::string& deviceKey)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'dequeueMessage' - Device '" << deviceKey << "' has not been added.";
+        return nullptr;
+    }
+
+    return m_errorService->obtainFirstMessageForDevice(deviceKey);
+}
+
+std::unique_ptr<ErrorMessage> WolkMulti::popMessage(const std::string& deviceKey)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'popMessage' - Device '" << deviceKey << "' has not been added.";
+        return nullptr;
+    }
+
+    return m_errorService->obtainLastMessageForDevice(deviceKey);
+}
+
+std::unique_ptr<ErrorMessage> WolkMulti::obtainOrAwaitError(const std::string& deviceKey,
+                                                            std::chrono::milliseconds timeout)
+{
+    if (!isDeviceInList(deviceKey))
+    {
+        LOG(WARN) << "Ignoring call of 'obtainOrAwaitError' - Device '" << deviceKey << "' has not been added.";
         return nullptr;
     }
 

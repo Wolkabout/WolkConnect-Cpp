@@ -183,20 +183,20 @@ TEST_F(RegistrationServiceTests, ObtainDevicesNotRunning)
     service->stop();
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::milliseconds{100},
-                                     std::chrono::system_clock::now() - std::chrono::seconds(60)),
+    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::milliseconds{100},
+                                          std::chrono::system_clock::now() - std::chrono::seconds(60)),
               nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
     // Call the service (async)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)), false);
+    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)), false);
     EXPECT_TRUE(service->m_responses.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesAsyncNoCallback)
 {
     // Call the service (async)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)), false);
+    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)), false);
     EXPECT_TRUE(service->m_responses.empty());
 }
 
@@ -209,14 +209,14 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToFormMessage)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::milliseconds{100},
-                                     std::chrono::system_clock::now() - std::chrono::seconds(60)),
+    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::milliseconds{100},
+                                          std::chrono::system_clock::now() - std::chrono::seconds(60)),
               nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
     // Call the service (async)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {},
-                                     [&](const std::vector<RegisteredDeviceInformation>&) {}),
+    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {},
+                                          {}, [&](const std::vector<RegisteredDeviceInformation>&) {}),
               false);
     EXPECT_TRUE(service->m_responses.empty());
 }
@@ -231,14 +231,14 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToPublish)
     EXPECT_CALL(*connectivityServiceMock, publish).WillRepeatedly(Return(false));
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::milliseconds{100},
-                                     std::chrono::system_clock::now() - std::chrono::seconds(60)),
+    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::milliseconds{100},
+                                          std::chrono::system_clock::now() - std::chrono::seconds(60)),
               nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
     // Call the service (async)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {},
-                                     [&](const std::vector<RegisteredDeviceInformation>&) {}),
+    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {},
+                                          {}, [&](const std::vector<RegisteredDeviceInformation>&) {}),
               false);
     EXPECT_TRUE(service->m_responses.empty());
 }
@@ -254,7 +254,8 @@ TEST_F(RegistrationServiceTests, ObtainDevicesNothingGotPushed)
 
     // Call the service
     const auto start = std::chrono::system_clock::now();
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, timeout, std::chrono::system_clock::now() - std::chrono::seconds(60)),
+    ASSERT_EQ(
+      service->obtainDevicesAsync(DEVICE_KEY, timeout, std::chrono::system_clock::now() - std::chrono::seconds(60)),
               nullptr);
     EXPECT_TRUE(service->m_responses.empty());
     const auto duration = std::chrono::system_clock::now() - start;
@@ -279,7 +280,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesExecutionAborted)
 
     // And measure the execution time
     const auto start = std::chrono::system_clock::now();
-    EXPECT_EQ(service->obtainDevices(DEVICE_KEY, timeout, std::chrono::system_clock::now()), nullptr);
+    EXPECT_EQ(service->obtainDevicesAsync(DEVICE_KEY, timeout, std::chrono::system_clock::now()), nullptr);
     const auto duration = std::chrono::system_clock::now() - start;
     const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     const auto tolerable = delay * 1.25;
@@ -314,7 +315,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedArrayNoCallback)
     // Call the service to expect the response
     const auto start = std::chrono::system_clock::now();
     auto vector = std::unique_ptr<std::vector<RegisteredDeviceInformation>>{};
-    ASSERT_NO_FATAL_FAILURE(vector = service->obtainDevices(DEVICE_KEY, timeout, TimePoint(timeFrom)));
+    ASSERT_NO_FATAL_FAILURE(vector = service->obtainDevicesAsync(DEVICE_KEY, timeout, TimePoint(timeFrom)));
     const auto duration = std::chrono::system_clock::now() - start;
     const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     const auto tolerable = delay * 1.25;
@@ -355,12 +356,13 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedDevicesInArrayWithCallback)
 
     // Call the service to expect the response
     const auto start = std::chrono::system_clock::now();
-    ASSERT_NO_FATAL_FAILURE(service->obtainDevices(DEVICE_KEY, TimePoint(timeFrom), {}, {},
-                                                   [&](const std::vector<RegisteredDeviceInformation>& vector) {
-                                                       called = true;
-                                                       EXPECT_FALSE(vector.empty());
-                                                       conditionVariable.notify_one();
-                                                   }));
+    ASSERT_NO_FATAL_FAILURE(service->obtainDevicesAsync(DEVICE_KEY, TimePoint(timeFrom), {}, {},
+                                                        [&](const std::vector<RegisteredDeviceInformation>& vector)
+                                                        {
+                                                            called = true;
+                                                            EXPECT_FALSE(vector.empty());
+                                                            conditionVariable.notify_one();
+                                                        }));
 
     // Wait for the condition variable to be done waiting
     auto lock = std::unique_lock<std::mutex>{mutex};
