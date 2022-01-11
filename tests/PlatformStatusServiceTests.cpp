@@ -75,19 +75,33 @@ TEST_F(PlatformStatusServiceTests, ParsedIncomingMessageCalledListener)
       .WillOnce(Return(ByMove(std::unique_ptr<PlatformStatusMessage>{new PlatformStatusMessage{status}})));
 
     // Except the listener to be called
-    EXPECT_CALL(*platformStatusListenerMock, platformStatus(ConnectivityStatus::CONNECTED)).Times(1);
+    std::atomic_bool called{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    EXPECT_CALL(*platformStatusListenerMock, platformStatus(ConnectivityStatus::CONNECTED))
+      .WillOnce(
+        [&](ConnectivityStatus)
+        {
+            called = true;
+            conditionVariable.notify_one();
+        });
 
     // Pass the message
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!called)
+    {
+        auto lock = std::unique_lock<std::mutex>{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
 }
 
 TEST_F(PlatformStatusServiceTests, ParsedIncomingMessageCalledCallback)
 {
     // Create the callback that will be invoked
+    std::atomic_bool called{false};
     std::mutex mutex;
     std::condition_variable conditionVariable;
     auto status = ConnectivityStatus::CONNECTED;
-    auto called = false;
     auto callback = [&](ConnectivityStatus received)
     {
         if (received == wolkabout::ConnectivityStatus::CONNECTED)
