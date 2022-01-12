@@ -251,8 +251,7 @@ bool FileTransferSession::triggerDownload()
 
     // Now that we have adequate information, setup everything
     m_downloader->downloadFile(m_url,
-                               [this](FileUploadStatus status, FileUploadError error, const std::string& fileName)
-                               {
+                               [this](FileUploadStatus status, FileUploadError error, const std::string& fileName) {
                                    // Set the name if a name value is sent out
                                    if (!fileName.empty())
                                        this->m_name = fileName;
@@ -302,12 +301,10 @@ void FileTransferSession::changeStatusAndError(FileUploadStatus status, FileUplo
 
         // Queue the callback call
         if (m_callback)
-            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
-              [this, status, error]()
-              {
-                  if (m_callback)
-                      m_callback(status, error);
-              }));
+            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([this, status, error]() {
+                if (m_callback)
+                    m_callback(status, error);
+            }));
     }
 }
 }    // namespace wolkabout

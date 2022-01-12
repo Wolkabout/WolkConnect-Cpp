@@ -164,8 +164,10 @@ if (${BUILD_TESTS})
             tests/mocks/ErrorServiceMock.h
             tests/mocks/FeedUpdateHandlerMock.h
             tests/mocks/FileDownloaderMock.h
+            tests/mocks/FileListenerMock.h
             tests/mocks/FileManagementProtocolMock.h
             tests/mocks/FileManagementServiceMock.h
+            tests/mocks/FileTransferSessionMock.h
             tests/mocks/FirmwareUpdateProtocolMock.h
             tests/mocks/InboundMessageHandlerMock.h
             tests/mocks/MessageListenerMock.h

@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-#include <any>
-#include <sstream>
+#ifndef WOLKABOUTCONNECTOR_FILELISTENERMOCK_H
+#define WOLKABOUTCONNECTOR_FILELISTENERMOCK_H
 
-#define private public
-#define protected public
-#include "wolk/service/firmware_update/FirmwareUpdateService.h"
-#undef private
-#undef protected
+#include "wolk/api/FileListener.h"
 
-#include "core/utilities/Logger.h"
-
-#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 using namespace wolkabout;
 
-class FirmwareUpdateServiceTests : public ::testing::Test
+class FileListenerMock : public FileListener
 {
 public:
-    static void SetUpTestCase() { Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE); }
+    MOCK_METHOD(void, onAddedFile, (const std::string&, const std::string&, const std::string&));
+    MOCK_METHOD(void, onRemovedFile, (const std::string&, const std::string&));
 };
+
+#endif    // WOLKABOUTCONNECTOR_FILELISTENERMOCK_H

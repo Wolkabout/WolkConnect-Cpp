@@ -130,8 +130,7 @@ TEST_F(FileTransferSessionTests, MultiChunkSession)
     auto initiate = FileUploadInitiateMessage{FILE_NAME, bytes.size(), ByteUtils::toHexString(hash)};
 
     // Create the two chunks
-    auto firstMessage = [&]
-    {
+    auto firstMessage = [&] {
         auto currentBytes = ByteArray(32, 0);
         const auto firstBytes = ByteArray(64, 65);
         for (const auto& byte : firstBytes)
@@ -140,8 +139,7 @@ TEST_F(FileTransferSessionTests, MultiChunkSession)
             currentBytes.emplace_back(byte);
         return currentBytes;
     }();
-    auto secondMessage = [&]
-    {
+    auto secondMessage = [&] {
         auto currentBytes = std::vector<std::uint8_t>{firstMessage.cend() - 32, firstMessage.cend()};
         const auto secondBytes = ByteArray(36, 65);
         for (const auto& byte : secondBytes)
@@ -184,8 +182,7 @@ TEST_F(FileTransferSessionTests, TransferMoreThanNecessaryBytes)
     auto initiate = FileUploadInitiateMessage{FILE_NAME, bytes.size(), ByteUtils::toHexString(hash)};
 
     // Create the two chunks
-    auto firstMessage = [&]
-    {
+    auto firstMessage = [&] {
         auto currentBytes = ByteArray(32, 0);
         const auto firstBytes = ByteArray(100, 65);
         for (const auto& byte : firstBytes)
@@ -225,8 +222,7 @@ TEST_F(FileTransferSessionTests, PushCurrentChunkHashToLimits)
     auto initiate = FileUploadInitiateMessage{FILE_NAME, bytes.size(), ByteUtils::toHexString(hash)};
 
     // Create the two chunks
-    auto firstMessage = [&]
-    {
+    auto firstMessage = [&] {
         auto currentBytes = ByteArray(32, 0);
         const auto firstBytes = ByteArray(100, 65);
         for (const auto& byte : firstBytes)
@@ -271,8 +267,7 @@ TEST_F(FileTransferSessionTests, SecondChunkRepeatedlyGetsThePreviousHashWrong)
     auto initiate = FileUploadInitiateMessage{FILE_NAME, bytes.size(), ByteUtils::toHexString(hash)};
 
     // Create the two chunks
-    auto firstMessage = [&]
-    {
+    auto firstMessage = [&] {
         auto currentBytes = ByteArray(32, 0);
         const auto firstBytes = ByteArray(64, 65);
         for (const auto& byte : firstBytes)
@@ -281,8 +276,7 @@ TEST_F(FileTransferSessionTests, SecondChunkRepeatedlyGetsThePreviousHashWrong)
             currentBytes.emplace_back(byte);
         return currentBytes;
     }();
-    auto secondMessage = [&]
-    {
+    auto secondMessage = [&] {
         auto currentBytes = std::vector<std::uint8_t>{firstMessage.cend() - 64, firstMessage.cend() - 32};
         const auto secondBytes = ByteArray(36, 65);
         for (const auto& byte : secondBytes)
@@ -332,8 +326,7 @@ TEST_F(FileTransferSessionTests, MultiChunkFinalHashIsNotRight)
     auto initiate = FileUploadInitiateMessage{FILE_NAME, bytes.size(), ByteUtils::toHexString(hash)};
 
     // Create the two chunks
-    auto firstMessage = [&]
-    {
+    auto firstMessage = [&] {
         auto currentBytes = ByteArray(32, 0);
         const auto firstBytes = ByteArray(64, 65);
         for (const auto& byte : firstBytes)
@@ -342,8 +335,7 @@ TEST_F(FileTransferSessionTests, MultiChunkFinalHashIsNotRight)
             currentBytes.emplace_back(byte);
         return currentBytes;
     }();
-    auto secondMessage = [&]
-    {
+    auto secondMessage = [&] {
         auto currentBytes = std::vector<std::uint8_t>{firstMessage.cend() - 32, firstMessage.cend()};
         const auto secondBytes = ByteArray(36, 69);
         for (const auto& byte : secondBytes)
@@ -437,8 +429,7 @@ TEST_F(FileTransferSessionTests, InvalidUrlSessionThings)
 TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
 {
     // React to the response from the session
-    auto callback = [&](FileUploadStatus status, FileUploadError)
-    {
+    auto callback = [&](FileUploadStatus status, FileUploadError) {
         if (status == wolkabout::FileUploadStatus::FILE_READY)
             conditionVariable.notify_one();
     };
@@ -460,17 +451,13 @@ TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
     // Expect the call on the downloader
     const auto delay = std::chrono::milliseconds{50};
     EXPECT_CALL(*fileDownloaderMock, downloadFile)
-      .WillOnce(
-        [&](std::string downloadUrl,
-            std::function<void(FileUploadStatus, FileUploadError, const std::string&)> statusCallback)
-        {
-            if (downloadUrl == url)
-                timer.start(delay,
-                            [this, statusCallback] {
-                                statusCallback(wolkabout::FileUploadStatus::FILE_READY,
-                                               wolkabout::FileUploadError::NONE, FILE_NAME);
-                            });
-        });
+      .WillOnce([&](std::string downloadUrl,
+                    std::function<void(FileUploadStatus, FileUploadError, const std::string&)> statusCallback) {
+          if (downloadUrl == url)
+              timer.start(delay, [this, statusCallback] {
+                  statusCallback(wolkabout::FileUploadStatus::FILE_READY, wolkabout::FileUploadError::NONE, FILE_NAME);
+              });
+      });
 
     // Now wait for the condition variable to be invoked
     auto timeout = std::chrono::milliseconds{100};
@@ -497,8 +484,7 @@ TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
 TEST_F(FileTransferSessionTests, AbortUrlTransfer)
 {
     // React to the response from the session
-    auto callback = [&](FileUploadStatus status, FileUploadError)
-    {
+    auto callback = [&](FileUploadStatus status, FileUploadError) {
         if (status == FileUploadStatus::ABORTED)
             conditionVariable.notify_one();
     };

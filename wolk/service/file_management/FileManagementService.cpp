@@ -294,6 +294,13 @@ void FileManagementService::onFileUploadInit(const std::string& deviceKey, const
 {
     LOG(TRACE) << METHOD_INFO;
 
+    // Check the message
+    if (message.getName().empty() || message.getSize() == 0 || message.getHash().empty())
+    {
+        LOG(DEBUG) << "Received a FileUploadInitiate message that is not valid. Ignoring...";
+        return;
+    }
+
     // Check whether there is a session already ongoing
     if (m_sessions.find(deviceKey) != m_sessions.cend() && m_sessions[deviceKey] != nullptr)
     {
@@ -429,20 +436,22 @@ void FileManagementService::reportStatus(const std::string& deviceKey, FileUploa
         return;
 
     // Make the message
-    auto parsedMessage = std::shared_ptr<Message>{};
-    if (m_sessions[deviceKey]->isPlatformTransfer())
-    {
-        auto fileName = m_sessions[deviceKey]->getName();
-        auto message = FileUploadStatusMessage(fileName, status, error);
-        parsedMessage = m_protocol.makeOutboundMessage(deviceKey, message);
-    }
-    else
-    {
-        auto filePath = m_sessions[deviceKey]->getUrl();
-        auto fileName = m_sessions[deviceKey]->getName();
-        auto message = FileUrlDownloadStatusMessage(filePath, fileName, status, error);
-        parsedMessage = m_protocol.makeOutboundMessage(deviceKey, message);
-    }
+    const auto& session = m_sessions[deviceKey];
+    auto parsedMessage = [&]() -> std::shared_ptr<Message> {
+        if (m_sessions[deviceKey]->isPlatformTransfer())
+        {
+            auto fileName = session->getName();
+            auto message = FileUploadStatusMessage(fileName, status, error);
+            return m_protocol.makeOutboundMessage(deviceKey, message);
+        }
+        else
+        {
+            auto filePath = session->getUrl();
+            auto fileName = session->getName();
+            auto message = FileUrlDownloadStatusMessage(filePath, fileName, status, error);
+            return m_protocol.makeOutboundMessage(deviceKey, message);
+        }
+    }();
 
     // And publish it out
     if (parsedMessage != nullptr)
@@ -455,6 +464,11 @@ void FileManagementService::sendChunkRequest(const std::string& deviceKey, const
 
     // Transform it into a protocol message and send out
     auto parsedMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, message));
+    if (parsedMessage == nullptr)
+    {
+        LOG(ERROR) << "Failed to generate outgoing chunk request message for device '" << deviceKey << "'.";
+        return;
+    }
     m_connectivityService.publish(parsedMessage);
 }
 
@@ -467,44 +481,52 @@ void FileManagementService::onFileSessionStatus(const std::string& deviceKey, Fi
     reportStatus(deviceKey, status, error);
 
     // If the status is that the file is ready, or it is an error, stop the session
-    if (status == FileUploadStatus::FILE_READY || status == FileUploadStatus::ERROR ||
-        status == FileUploadStatus::ABORTED)
+    switch (status)
     {
-        // If the file is ready, create the file
-        if (status == FileUploadStatus::FILE_READY)
+    case FileUploadStatus::FILE_READY:
+    {
+        // Collect the chunks and place the file in
+        const auto& fileName = m_sessions[deviceKey]->getName();
+
+        // Get the absolute path for the file
+        auto deviceFolder = FileSystemUtils::composePath(m_sessions[deviceKey]->getDeviceKey(), m_fileLocation);
+        if (!FileSystemUtils::isDirectoryPresent(deviceFolder))
+            FileSystemUtils::createDirectory(deviceFolder);
+        auto relativePath = FileSystemUtils::composePath(fileName, deviceFolder);
+
+        // Collect all the bytes for the file
+        auto content = ByteArray{};
+        if (m_sessions[deviceKey]->isPlatformTransfer())
         {
-            // Collect the chunks and place the file in
-            const auto& fileName = m_sessions[deviceKey]->getName();
-
-            // Get the absolute path for the file
-            auto deviceFolder = FileSystemUtils::composePath(m_sessions[deviceKey]->getDeviceKey(), m_fileLocation);
-            if (!FileSystemUtils::isDirectoryPresent(deviceFolder))
-                FileSystemUtils::createDirectory(deviceFolder);
-            auto relativePath = FileSystemUtils::composePath(fileName, deviceFolder);
-
-            // Collect all the bytes for the file
-            auto content = ByteArray{};
-            if (m_sessions[deviceKey]->isPlatformTransfer())
-            {
-                const auto& chunks = m_sessions[deviceKey]->getChunks();
-                for (const auto& chunk : chunks)
-                    content.insert(content.end(), chunk.bytes.cbegin(), chunk.bytes.cend());
-            }
-            else
-            {
-                content = m_downloader->getBytes();
-            }
-
-            // Place the file in the folder
-            if (!FileSystemUtils::createBinaryFileWithContent(relativePath, content))
-                LOG(ERROR) << "Failed to store the '" << fileName << "' locally.";
-            else
-                notifyListenerAddedFile(deviceKey, fileName, absolutePathOfFile(deviceKey, fileName));
+            const auto& chunks = m_sessions[deviceKey]->getChunks();
+            for (const auto& chunk : chunks)
+                content.insert(content.end(), chunk.bytes.cbegin(), chunk.bytes.cend());
+        }
+        else
+        {
+            content = m_downloader->getBytes();
         }
 
+        // Place the file in the folder
+        if (!FileSystemUtils::createBinaryFileWithContent(relativePath, content))
+        {
+            LOG(ERROR) << "Failed to store the '" << fileName << "' locally.";
+            reportStatus(deviceKey, FileUploadStatus::ERROR, FileUploadError::FILE_SYSTEM_ERROR);
+        }
+        else
+        {
+            notifyListenerAddedFile(deviceKey, fileName, absolutePathOfFile(deviceKey, fileName));
+        }
+    }
+    case FileUploadStatus::ERROR:
+    case FileUploadStatus::ABORTED:
+    {
         // Queue the session deletion
         m_commandBuffer.pushCommand(
           std::make_shared<std::function<void()>>([this, deviceKey] { m_sessions[deviceKey].reset(); }));
+    }
+    default:
+        break;
     }
 }
 

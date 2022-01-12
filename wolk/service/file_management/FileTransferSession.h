@@ -73,32 +73,37 @@ public:
                         std::shared_ptr<FileDownloader> fileDownloader);
 
     /**
+     * Default virtual destructor.
+     */
+    virtual ~FileTransferSession() = default;
+
+    /**
      * Default getter for the information if the session is a platform transfer session.
      *
      * @return Is this session a platform transfer session.
      */
-    bool isPlatformTransfer() const;
+    virtual bool isPlatformTransfer() const;
 
     /**
      * Default getter for the information if the session is a url download session.
      *
      * @return Is this session a url download session.
      */
-    bool isUrlDownload() const;
+    virtual bool isUrlDownload() const;
 
     /**
      * Default getter for the information if the session is done.
      *
      * @return Is this session done?
      */
-    bool isDone() const;
+    virtual bool isDone() const;
 
     /**
      * Default getter for the device key.
      *
      * @return The device key for which this session is going on.
      */
-    const std::string& getDeviceKey() const;
+    virtual const std::string& getDeviceKey() const;
 
     /**
      * Default getter for the name of the file.
@@ -106,7 +111,7 @@ public:
      *
      * @return The name of the file being obtained through this session.
      */
-    const std::string& getName() const;
+    virtual const std::string& getName() const;
 
     /**
      * Default getter for the URL of the file.
@@ -114,12 +119,12 @@ public:
      *
      * @return The URL from which a file will be obtained.
      */
-    const std::string& getUrl() const;
+    virtual const std::string& getUrl() const;
 
     /**
      * This is a method that allows the user to abort the session.
      */
-    void abort();
+    virtual void abort();
 
     /**
      * This is a method that will attempt to create a chunk out of a FileBinaryResponse message.
@@ -127,7 +132,7 @@ public:
      * @param message Binary response containing bytes and hashes.
      * @return The current status of the session.
      */
-    FileUploadError pushChunk(const FileBinaryResponseMessage& message);
+    virtual FileUploadError pushChunk(const FileBinaryResponseMessage& message);
 
     /**
      * This is a method that will hand out the next FileBinaryRequest if the session is in a transfer mode, and in
@@ -135,35 +140,35 @@ public:
      *
      * @return The next request message that should be sent out. If the name is empty, that's an invalid request.
      */
-    FileBinaryRequestMessage getNextChunkRequest();
+    virtual FileBinaryRequestMessage getNextChunkRequest();
 
     /**
      * This is a method that will start the download of a file.
      *
      * @return If the trigger was successful.
      */
-    bool triggerDownload();
+    virtual bool triggerDownload();
 
     /**
      * Default getter for the current status of the transfer session.
      *
      * @return The current status of the transfer.
      */
-    FileUploadStatus getStatus() const;
+    virtual FileUploadStatus getStatus() const;
 
     /**
      * Default getter for the error of the transfer session.
      *
      * @return The current error of the transfer. Could be `NONE`.
      */
-    FileUploadError getError() const;
+    virtual FileUploadError getError() const;
 
     /**
      * Default getter for the chunks that the session has collected.
      *
      * @return The vector containing all the chunks the session has collected.
      */
-    const std::vector<FileChunk>& getChunks() const;
+    virtual const std::vector<FileChunk>& getChunks() const;
 
 private:
     /**
