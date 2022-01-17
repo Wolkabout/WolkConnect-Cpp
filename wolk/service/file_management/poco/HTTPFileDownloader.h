@@ -53,7 +53,7 @@ public:
      *
      * @return The downloading status.
      */
-    FileUploadStatus getStatus() const override;
+    FileTransferStatus getStatus() const override;
 
     /**
      * Overridden method from the `FileDownloader` interface.
@@ -79,7 +79,7 @@ public:
      * @param statusCallback The status callback that should be used to notify the sender of new status changes.
      */
     void downloadFile(const std::string& url,
-                      std::function<void(FileUploadStatus, FileUploadError, std::string)> statusCallback) override;
+                      std::function<void(FileTransferStatus, FileTransferError, std::string)> statusCallback) override;
 
     /**
      * Overridden method from the `FileDownloader` interface that allows the user to abort the downloading of the file.
@@ -106,7 +106,7 @@ private:
      * @param error The new error value.
      * @param fileName The new file name value.
      */
-    void changeStatus(FileUploadStatus status, FileUploadError error = FileUploadError::NONE,
+    void changeStatus(FileTransferStatus status, FileTransferError error = FileTransferError::NONE,
                       const std::string& fileName = "");
 
     /**
@@ -138,10 +138,10 @@ private:
 
     // Here is everything regarding the status
     std::mutex m_mutex;
-    FileUploadStatus m_status;
+    FileTransferStatus m_status;
     std::string m_name;
     ByteArray m_bytes;
-    std::function<void(FileUploadStatus, FileUploadError, std::string)> m_statusCallback;
+    std::function<void(FileTransferStatus, FileTransferError, std::string)> m_statusCallback;
     CommandBuffer m_commandBuffer;
 
     // Here we store the session so the session can be closed in case of abort

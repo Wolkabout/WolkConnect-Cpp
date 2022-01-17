@@ -57,7 +57,7 @@ public:
      * @param commandBuffer The command buffer which the session will use to announce status.
      */
     FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer);
+                        std::function<void(FileTransferStatus, FileTransferError)> callback, CommandBuffer& commandBuffer);
 
     /**
      * Default constructor for the FileTransferSession in case of a url download transfer.
@@ -69,7 +69,7 @@ public:
      * @param fileDownloader The file downloader that will actually execute the file download.
      */
     FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer,
+                        std::function<void(FileTransferStatus, FileTransferError)> callback, CommandBuffer& commandBuffer,
                         std::shared_ptr<FileDownloader> fileDownloader);
 
     /**
@@ -132,7 +132,7 @@ public:
      * @param message Binary response containing bytes and hashes.
      * @return The current status of the session.
      */
-    virtual FileUploadError pushChunk(const FileBinaryResponseMessage& message);
+    virtual FileTransferError pushChunk(const FileBinaryResponseMessage& message);
 
     /**
      * This is a method that will hand out the next FileBinaryRequest if the session is in a transfer mode, and in
@@ -154,14 +154,14 @@ public:
      *
      * @return The current status of the transfer.
      */
-    virtual FileUploadStatus getStatus() const;
+    virtual FileTransferStatus getStatus() const;
 
     /**
      * Default getter for the error of the transfer session.
      *
      * @return The current error of the transfer. Could be `NONE`.
      */
-    virtual FileUploadError getError() const;
+    virtual FileTransferError getError() const;
 
     /**
      * Default getter for the chunks that the session has collected.
@@ -178,7 +178,7 @@ private:
      * @param status The new status value.
      * @param error The new error value.
      */
-    void changeStatusAndError(FileUploadStatus status, FileUploadError error);
+    void changeStatusAndError(FileTransferStatus status, FileTransferError error);
 
     // Here are the parameters for engaging the session.
     // The device for which the session is ongoing
@@ -203,9 +203,9 @@ private:
 
     // Here is the place for the status and the error, and the callback
     std::mutex m_mutex;
-    FileUploadStatus m_status;
-    FileUploadError m_error;
-    std::function<void(FileUploadStatus, FileUploadError)> m_callback;
+    FileTransferStatus m_status;
+    FileTransferError m_error;
+    std::function<void(FileTransferStatus, FileTransferError)> m_callback;
     CommandBuffer& m_commandBuffer;
 };
 }    // namespace wolkabout

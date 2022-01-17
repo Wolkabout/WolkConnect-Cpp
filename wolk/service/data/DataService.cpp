@@ -48,14 +48,14 @@ void DataService::addReading(const std::string& deviceKey, const std::string& re
                              std::uint64_t rtc)
 {
     auto reading = std::make_shared<Reading>(reference, value, rtc);
-    m_persistence.putReading(makePersistenceKey(deviceKey, reference), reading);
+    m_persistence.putReading(makePersistenceKey(deviceKey, reference), *reading);
 }
 
 void DataService::addReading(const std::string& deviceKey, const std::string& reference,
                              const std::vector<std::string>& value, std::uint64_t rtc)
 {
     auto reading = std::make_shared<Reading>(reference, value, rtc);
-    m_persistence.putReading(makePersistenceKey(deviceKey, reference), reading);
+    m_persistence.putReading(makePersistenceKey(deviceKey, reference), *reading);
 }
 
 void DataService::addAttribute(const std::string& deviceKey, const Attribute& attribute)
@@ -221,7 +221,8 @@ void DataService::publishAttributes()
     {
         // Make a lambda that will delete all these attributes from persistence
         const auto& deviceKey = deviceAttributes.first;
-        auto deleteAllAttributes = [&]() {
+        auto deleteAllAttributes = [&]()
+        {
             for (const auto& attribute : deviceAttributes.second)
                 m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
         };
@@ -259,7 +260,8 @@ void DataService::publishAttributes(const std::string& deviceKey)
         return;
 
     // Make a lambda that will delete all these attributes from persistence
-    auto deleteAllAttributes = [&]() {
+    auto deleteAllAttributes = [&]()
+    {
         for (const auto& attribute : attributes)
             m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
     };
@@ -304,7 +306,8 @@ void DataService::publishParameters()
     {
         // Make a lambda that will delete all these parameters from persistence
         const auto& deviceKey = deviceParameters.first;
-        auto deleteAllParameters = [&]() {
+        auto deleteAllParameters = [&]()
+        {
             for (const auto& parameter : deviceParameters.second)
                 m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
         };
@@ -342,7 +345,8 @@ void DataService::publishParameters(const std::string& deviceKey)
         return;
 
     // Make a lambda that will delete all these parameters from persistence
-    auto deleteAllParameters = [&]() {
+    auto deleteAllParameters = [&]()
+    {
         for (const auto& parameter : parameters)
             m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
     };
@@ -369,14 +373,14 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
 {
     assert(message);
 
-    const std::string deviceKey = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
+    const std::string deviceKey = m_protocol.getDeviceKey(*message);
     if (deviceKey.empty())
     {
         LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
         return;
     }
 
-    switch (m_protocol.getMessageType(message))
+    switch (m_protocol.getMessageType(*message))
     {
     case MessageType::FEED_VALUES:
     {
@@ -408,12 +412,14 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
                 {
                     continue;
                 }
-                auto allNamesMatching =
-                  std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
-                      return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
-                                 return parameter.first == name;
-                             }) != values.cend();
-                  });
+                auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(),
+                                                    [&](const ParameterName& name)
+                                                    {
+                                                        return std::find_if(values.begin(), values.end(),
+                                                                            [&](const Parameter& parameter) {
+                                                                                return parameter.first == name;
+                                                                            }) != values.cend();
+                                                    });
                 if (!allNamesMatching)
                 {
                     continue;

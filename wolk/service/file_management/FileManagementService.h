@@ -80,11 +80,11 @@ private:
      * This is an internal method that should be invoked to report the status of a transfer session.
      *
      * @param deviceKey The device key for which the status is reported.
-     * @param status The new FileUploadStatus value.
-     * @param error The new FileUploadError value.
+     * @param status The new FileTransferStatus value.
+     * @param error The new FileTransferError value.
      */
-    void reportStatus(const std::string& deviceKey, FileUploadStatus status,
-                      FileUploadError error = FileUploadError::NONE);
+    void reportStatus(const std::string& deviceKey, FileTransferStatus status,
+                      FileTransferError error = FileTransferError::NONE);
 
     /**
      * This is an internal method that should be invoked to send out a binary request message.
@@ -97,11 +97,11 @@ private:
     /**
      * This is an internal method that should be invoked in the FileTransferSession callback.
      *
-     * @param status The new FileUploadStatus value.
-     * @param error The new FileUploadError value.
+     * @param status The new FileTransferStatus value.
+     * @param error The new FileTransferError value.
      */
-    void onFileSessionStatus(const std::string& deviceKey, FileUploadStatus status,
-                             FileUploadError error = FileUploadError::NONE);
+    void onFileSessionStatus(const std::string& deviceKey, FileTransferStatus status,
+                             FileTransferError error = FileTransferError::NONE);
 
     /**
      * This is an internal method that will load a file from the filesystem, to collect the `FileInformation` object.

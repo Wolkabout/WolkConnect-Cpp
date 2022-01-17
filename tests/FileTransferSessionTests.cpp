@@ -71,7 +71,7 @@ TEST_F(FileTransferSessionTests, TransferSessionTriggerDownload)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
     ASSERT_NE(session, nullptr);
     EXPECT_FALSE(session->triggerDownload());
 }
@@ -84,7 +84,7 @@ TEST_F(FileTransferSessionTests, CreateSingleTransferChunk)
     auto initiate = FileUploadInitiateMessage{FILE_NAME, bytes.size(), ByteUtils::toHexString(hash)};
 
     // Create the callback
-    auto callback = [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {};
+    auto callback = [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {};
 
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
@@ -100,8 +100,8 @@ TEST_F(FileTransferSessionTests, CreateSingleTransferChunk)
     auto request = FileBinaryRequestMessage{"", 0};
     ASSERT_NO_FATAL_FAILURE(request = session->getNextChunkRequest());
     ASSERT_EQ(request.getName(), FILE_NAME);
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_TRANSFER);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_TRANSFER);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Return the bytes right away
     auto payload = ByteArray(32, 0);
@@ -110,12 +110,12 @@ TEST_F(FileTransferSessionTests, CreateSingleTransferChunk)
     for (const auto& byte : ByteUtils::hashSHA256(bytes))
         payload.emplace_back(byte);
     auto response = FileBinaryResponseMessage{ByteUtils::toString(payload)};
-    ASSERT_EQ(session->pushChunk(response), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(response), FileTransferError::NONE);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_READY);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_READY);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Expect that the next request returned is not valid
     ASSERT_NO_FATAL_FAILURE(request = session->getNextChunkRequest());
@@ -152,26 +152,26 @@ TEST_F(FileTransferSessionTests, MultiChunkSession)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
 
     // Check the values
     ASSERT_FALSE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_TRANSFER);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_TRANSFER);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Get the second chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}), FileTransferError::NONE);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_READY);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_READY);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 }
 
 TEST_F(FileTransferSessionTests, TransferMoreThanNecessaryBytes)
@@ -195,22 +195,22 @@ TEST_F(FileTransferSessionTests, TransferMoreThanNecessaryBytes)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_READY);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_READY);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Malfunctions hahaha
     session->m_done = false;
     ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}),
-              FileUploadError::UNSUPPORTED_FILE_SIZE);
+              FileTransferError::UNSUPPORTED_FILE_SIZE);
     ASSERT_TRUE(session->getNextChunkRequest().getName().empty());
 }
 
@@ -235,28 +235,28 @@ TEST_F(FileTransferSessionTests, PushCurrentChunkHashToLimits)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
     for (auto i = 0; i < 3; ++i)
         ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}),
-                  FileUploadError::FILE_HASH_MISMATCH);
+                  FileTransferError::FILE_HASH_MISMATCH);
 
     // Check the values
     ASSERT_FALSE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_TRANSFER);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_TRANSFER);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Push it to limits
     ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}),
-              FileUploadError::RETRY_COUNT_EXCEEDED);
+              FileTransferError::RETRY_COUNT_EXCEEDED);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::ERROR);
-    EXPECT_EQ(session->getError(), FileUploadError::RETRY_COUNT_EXCEEDED);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR);
+    EXPECT_EQ(session->getError(), FileTransferError::RETRY_COUNT_EXCEEDED);
 }
 
 TEST_F(FileTransferSessionTests, SecondChunkRepeatedlyGetsThePreviousHashWrong)
@@ -289,33 +289,33 @@ TEST_F(FileTransferSessionTests, SecondChunkRepeatedlyGetsThePreviousHashWrong)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
 
     // Check the values
     ASSERT_FALSE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_TRANSFER);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_TRANSFER);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Get the second chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
     for (auto i = 0; i < 3; ++i)
         ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}),
-                  FileUploadError::FILE_HASH_MISMATCH);
+                  FileTransferError::FILE_HASH_MISMATCH);
     ASSERT_FALSE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_TRANSFER);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_TRANSFER);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Check the values
     ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}),
-              FileUploadError::RETRY_COUNT_EXCEEDED);
+              FileTransferError::RETRY_COUNT_EXCEEDED);
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::ERROR);
-    EXPECT_EQ(session->getError(), FileUploadError::RETRY_COUNT_EXCEEDED);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR);
+    EXPECT_EQ(session->getError(), FileTransferError::RETRY_COUNT_EXCEEDED);
 }
 
 TEST_F(FileTransferSessionTests, MultiChunkFinalHashIsNotRight)
@@ -348,26 +348,26 @@ TEST_F(FileTransferSessionTests, MultiChunkFinalHashIsNotRight)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
 
     // Check the values
     ASSERT_FALSE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_TRANSFER);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_TRANSFER);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Get the second chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}), FileTransferError::NONE);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::ERROR);
-    EXPECT_EQ(session->getError(), FileUploadError::FILE_HASH_MISMATCH);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR);
+    EXPECT_EQ(session->getError(), FileTransferError::FILE_HASH_MISMATCH);
 }
 
 TEST_F(FileTransferSessionTests, AbortFileTransfer)
@@ -378,7 +378,7 @@ TEST_F(FileTransferSessionTests, AbortFileTransfer)
     auto initiate = FileUploadInitiateMessage{FILE_NAME, bytes.size(), ByteUtils::toHexString(hash)};
 
     // Create the callback
-    auto callback = [&](FileUploadStatus /** status **/, FileUploadError /** error **/) {};
+    auto callback = [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {};
 
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
@@ -392,8 +392,8 @@ TEST_F(FileTransferSessionTests, AbortFileTransfer)
 
     // Now abort the session
     ASSERT_NO_FATAL_FAILURE(session->abort());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::ABORTED);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ABORTED);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
 
     // Expect that you can't push a chunk now, nor get the next request
     ASSERT_NO_FATAL_FAILURE(request = session->getNextChunkRequest());
@@ -405,14 +405,14 @@ TEST_F(FileTransferSessionTests, AbortFileTransfer)
         payload.emplace_back(byte);
     auto response = FileBinaryResponseMessage(ByteUtils::toString(payload));
     ASSERT_TRUE(session->getChunks().empty());
-    ASSERT_EQ(session->pushChunk(response), FileUploadError::NONE);
+    ASSERT_EQ(session->pushChunk(response), FileTransferError::NONE);
     ASSERT_TRUE(session->getChunks().empty());
 }
 
 TEST_F(FileTransferSessionTests, InvalidUrlSessionThings)
 {
     // React to the response from the session
-    auto callback = [&](FileUploadStatus, FileUploadError) {};
+    auto callback = [&](FileTransferStatus, FileTransferError) {};
 
     // Make the session
     auto url = "https://test.url/" + FILE_NAME;
@@ -422,15 +422,15 @@ TEST_F(FileTransferSessionTests, InvalidUrlSessionThings)
 
     // Expect that you can't start this
     EXPECT_FALSE(session->triggerDownload());
-    EXPECT_EQ(session->pushChunk(FileBinaryResponseMessage{""}), FileUploadError::TRANSFER_PROTOCOL_DISABLED);
+    EXPECT_EQ(session->pushChunk(FileBinaryResponseMessage{""}), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
     EXPECT_TRUE(session->getNextChunkRequest().getName().empty());
 }
 
 TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
 {
     // React to the response from the session
-    auto callback = [&](FileUploadStatus status, FileUploadError) {
-        if (status == wolkabout::FileUploadStatus::FILE_READY)
+    auto callback = [&](FileTransferStatus status, FileTransferError) {
+        if (status == wolkabout::FileTransferStatus::FILE_READY)
             conditionVariable.notify_one();
     };
 
@@ -452,10 +452,10 @@ TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
     const auto delay = std::chrono::milliseconds{50};
     EXPECT_CALL(*fileDownloaderMock, downloadFile)
       .WillOnce([&](std::string downloadUrl,
-                    std::function<void(FileUploadStatus, FileUploadError, const std::string&)> statusCallback) {
+                    std::function<void(FileTransferStatus, FileTransferError, const std::string&)> statusCallback) {
           if (downloadUrl == url)
               timer.start(delay, [this, statusCallback] {
-                  statusCallback(wolkabout::FileUploadStatus::FILE_READY, wolkabout::FileUploadError::NONE, FILE_NAME);
+                  statusCallback(wolkabout::FileTransferStatus::FILE_READY, wolkabout::FileTransferError::NONE, FILE_NAME);
               });
       });
 
@@ -476,16 +476,16 @@ TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
 
     // And check the session
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::FILE_READY);
-    EXPECT_EQ(session->getError(), FileUploadError::NONE);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::FILE_READY);
+    EXPECT_EQ(session->getError(), FileTransferError::NONE);
     EXPECT_EQ(session->getName(), FILE_NAME);
 }
 
 TEST_F(FileTransferSessionTests, AbortUrlTransfer)
 {
     // React to the response from the session
-    auto callback = [&](FileUploadStatus status, FileUploadError) {
-        if (status == FileUploadStatus::ABORTED)
+    auto callback = [&](FileTransferStatus status, FileTransferError) {
+        if (status == FileTransferStatus::ABORTED)
             conditionVariable.notify_one();
     };
 
@@ -502,7 +502,7 @@ TEST_F(FileTransferSessionTests, AbortUrlTransfer)
 
     auto timeout = std::chrono::milliseconds{100};
 
-    if (session->getStatus() != FileUploadStatus::ABORTED)
+    if (session->getStatus() != FileTransferStatus::ABORTED)
     {
         const auto start = std::chrono::system_clock::now();
         auto lock = std::unique_lock<std::mutex>{mutex};
@@ -513,5 +513,5 @@ TEST_F(FileTransferSessionTests, AbortUrlTransfer)
         LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
                   << "ms) - Timeout time: " << timeout.count() << "ms.";
     }
-    EXPECT_EQ(session->getStatus(), FileUploadStatus::ABORTED);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ABORTED);
 }

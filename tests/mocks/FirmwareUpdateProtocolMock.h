@@ -26,10 +26,13 @@ using namespace wolkabout;
 class FirmwareUpdateProtocolMock : public FirmwareUpdateProtocol
 {
 public:
+    // Protocol methods
     MOCK_METHOD(std::vector<std::string>, getInboundChannels, (), (const));
     MOCK_METHOD(std::vector<std::string>, getInboundChannelsForDevice, (const std::string&), (const));
-    MOCK_METHOD(MessageType, getMessageType, (std::shared_ptr<Message>));
-    MOCK_METHOD(std::string, extractDeviceKeyFromChannel, (const std::string&), (const));
+    MOCK_METHOD(MessageType, getMessageType, (const Message&));
+    MOCK_METHOD(DeviceType, getDeviceType, (const Message&));
+    MOCK_METHOD(std::string, getDeviceKey, (const Message&), (const));
+    // FirmwareUpdateProtocol methods
     MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage,
                 (const std::string&, const FirmwareUpdateStatusMessage&));
     MOCK_METHOD(std::unique_ptr<FirmwareUpdateInstallMessage>, parseFirmwareUpdateInstall,

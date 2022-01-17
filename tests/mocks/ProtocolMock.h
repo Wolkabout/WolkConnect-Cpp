@@ -28,8 +28,9 @@ class ProtocolMock : public Protocol
 public:
     MOCK_METHOD(std::vector<std::string>, getInboundChannels, (), (const));
     MOCK_METHOD(std::vector<std::string>, getInboundChannelsForDevice, (const std::string&), (const));
-    MOCK_METHOD(MessageType, getMessageType, (std::shared_ptr<Message>));
-    MOCK_METHOD(std::string, extractDeviceKeyFromChannel, (const std::string&), (const));
+    MOCK_METHOD(MessageType, getMessageType, (const Message&));
+    MOCK_METHOD(DeviceType, getDeviceType, (const Message&));
+    MOCK_METHOD(std::string, getDeviceKey, (const Message&), (const));
 };
 
 #endif    // WOLKABOUTCONNECTOR_PROTOCOLMOCK_H

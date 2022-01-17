@@ -26,7 +26,7 @@ using namespace wolkabout;
 class PersistenceMock : public Persistence
 {
 public:
-    MOCK_METHOD(bool, putReading, (const std::string&, std::shared_ptr<Reading>));
+    MOCK_METHOD(bool, putReading, (const std::string&, const Reading&));
     MOCK_METHOD(std::vector<std::shared_ptr<Reading>>, getReadings, (const std::string&, std::uint_fast64_t));
     MOCK_METHOD(void, removeReadings, (const std::string&, std::uint_fast64_t));
     MOCK_METHOD(std::vector<std::string>, getReadingsKeys, ());

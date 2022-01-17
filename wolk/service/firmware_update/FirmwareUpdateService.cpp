@@ -125,7 +125,8 @@ void FirmwareUpdateService::obtainParametersAndAnnounce(const std::string& devic
     // Subscribe to the parameters
     auto parameters =
       std::vector<ParameterName>{ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME};
-    auto callback = [this](const std::vector<Parameter>& receivedParameters) {
+    auto callback = [this](const std::vector<Parameter>& receivedParameters)
+    {
         // Analyze the parameters
         auto repository = std::string{};
         auto checkTime = std::string{};
@@ -163,8 +164,8 @@ void FirmwareUpdateService::messageReceived(std::shared_ptr<Message> message)
     }
 
     // Look for the device this message is targeting
-    auto type = m_protocol.getMessageType(message);
-    auto target = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
+    auto type = m_protocol.getMessageType(*message);
+    auto target = m_protocol.getDeviceKey(*message);
     LOG(TRACE) << "Received message '" << toString(type) << "' for target '" << target << "'.";
 
     // Parse the received message based on the type

@@ -159,7 +159,7 @@ TEST_F(FileManagementServiceTests, ReceiveMessageInvalidMessages)
 
     // One where the message type is not handled by this service
     EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::UNKNOWN));
-    EXPECT_CALL(fileManagementProtocolMock, extractDeviceKeyFromChannel).WillOnce(Return(""));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(""));
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
 }
 
@@ -246,8 +246,8 @@ TEST_F(FileManagementServiceTests, ReportTransferDisabledValid)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
       .WillOnce([&](const std::string&, const FileUploadStatusMessage& message) {
-          EXPECT_EQ(message.getStatus(), FileUploadStatus::ERROR);
-          EXPECT_EQ(message.getError(), FileUploadError::TRANSFER_PROTOCOL_DISABLED);
+          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
+          EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
           return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
       });
     ASSERT_NO_FATAL_FAILURE(service->reportTransferProtocolDisabled(DEVICE_KEY, TEST_FILE));
@@ -268,8 +268,8 @@ TEST_F(FileManagementServiceTests, ReportUrlDownloadDisabledValid)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
       .WillOnce([&](const std::string&, const FileUrlDownloadStatusMessage& message) {
-          EXPECT_EQ(message.getStatus(), FileUploadStatus::ERROR);
-          EXPECT_EQ(message.getError(), FileUploadError::TRANSFER_PROTOCOL_DISABLED);
+          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
+          EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
           return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
       });
     ASSERT_NO_FATAL_FAILURE(service->reportUrlTransferProtocolDisabled(DEVICE_KEY, TEST_FILE));
@@ -326,7 +326,7 @@ TEST_F(FileManagementServiceTests, SendChunkRequest)
 
 TEST_F(FileManagementServiceTests, ReportStatusForNonExistingSession)
 {
-    ASSERT_NO_FATAL_FAILURE(service->reportStatus(DEVICE_KEY, wolkabout::FileUploadStatus::FILE_TRANSFER));
+    ASSERT_NO_FATAL_FAILURE(service->reportStatus(DEVICE_KEY, wolkabout::FileTransferStatus::FILE_TRANSFER));
 }
 
 TEST_F(FileManagementServiceTests, ReportStatusForTransfer)
@@ -341,16 +341,16 @@ TEST_F(FileManagementServiceTests, ReportStatusForTransfer)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
       .WillOnce([&](const std::string&, const FileUploadStatusMessage& status) -> std::unique_ptr<wolkabout::Message> {
-          if (status.getStatus() == wolkabout::FileUploadStatus::FILE_READY &&
-              status.getError() == wolkabout::FileUploadError::UNSUPPORTED_FILE_SIZE)
+          if (status.getStatus() == wolkabout::FileTransferStatus::FILE_READY &&
+              status.getError() == wolkabout::FileTransferError::UNSUPPORTED_FILE_SIZE)
               return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
           return nullptr;
       });
     EXPECT_CALL(*connectivityServiceMock, publish);
 
     // And now report the session
-    ASSERT_NO_FATAL_FAILURE(service->reportStatus(DEVICE_KEY, wolkabout::FileUploadStatus::FILE_READY,
-                                                  wolkabout::FileUploadError::UNSUPPORTED_FILE_SIZE));
+    ASSERT_NO_FATAL_FAILURE(service->reportStatus(DEVICE_KEY, wolkabout::FileTransferStatus::FILE_READY,
+                                                  wolkabout::FileTransferError::UNSUPPORTED_FILE_SIZE));
 }
 
 TEST_F(FileManagementServiceTests, ReportStatusForUrlDownload)
@@ -367,21 +367,21 @@ TEST_F(FileManagementServiceTests, ReportStatusForUrlDownload)
                 makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
       .WillOnce(
         [&](const std::string&, const FileUrlDownloadStatusMessage& status) -> std::unique_ptr<wolkabout::Message> {
-            if (status.getStatus() == wolkabout::FileUploadStatus::FILE_READY &&
-                status.getError() == wolkabout::FileUploadError::UNSUPPORTED_FILE_SIZE)
+            if (status.getStatus() == wolkabout::FileTransferStatus::FILE_READY &&
+                status.getError() == wolkabout::FileTransferError::UNSUPPORTED_FILE_SIZE)
                 return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
             return nullptr;
         });
     EXPECT_CALL(*connectivityServiceMock, publish);
 
     // And now report the session
-    ASSERT_NO_FATAL_FAILURE(service->reportStatus(DEVICE_KEY, wolkabout::FileUploadStatus::FILE_READY,
-                                                  wolkabout::FileUploadError::UNSUPPORTED_FILE_SIZE));
+    ASSERT_NO_FATAL_FAILURE(service->reportStatus(DEVICE_KEY, wolkabout::FileTransferStatus::FILE_READY,
+                                                  wolkabout::FileTransferError::UNSUPPORTED_FILE_SIZE));
 }
 
 TEST_F(FileManagementServiceTests, OnSessionStatus)
 {
-    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileUploadStatus::FILE_TRANSFER));
+    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::FILE_TRANSFER));
 }
 
 TEST_F(FileManagementServiceTests, OnSessionStatusAborted)
@@ -397,7 +397,7 @@ TEST_F(FileManagementServiceTests, OnSessionStatusAborted)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call session status
-    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileUploadStatus::ABORTED));
+    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::ABORTED));
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
 
     // Check that it was deleted
@@ -417,7 +417,7 @@ TEST_F(FileManagementServiceTests, OnSessionStatusError)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call session status
-    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileUploadStatus::ERROR));
+    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::ERROR));
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
 
     // Check that it was deleted
@@ -442,7 +442,7 @@ TEST_F(FileManagementServiceTests, OnSessionStatusReadyPlatformTransfer)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call session status
-    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileUploadStatus::FILE_READY));
+    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::FILE_READY));
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
 
     // Check that it was deleted
@@ -472,7 +472,7 @@ TEST_F(FileManagementServiceTests, OnSessionStatusReadyUrlDownload)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call session status
-    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileUploadStatus::FILE_READY));
+    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::FILE_READY));
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
 
     // Check that it was deleted
@@ -505,7 +505,7 @@ TEST_F(FileManagementServiceTests, OnSessionStatusReadyInvalidName)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call session status
-    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileUploadStatus::FILE_READY));
+    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::FILE_READY));
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
 
     // Check that it was deleted
@@ -551,10 +551,10 @@ TEST_F(FileManagementServiceTests, TransferBinaryResponse)
     auto session = std::unique_ptr<FileTransferSessionMock>{new FileTransferSessionMock};
     EXPECT_CALL(*session, isPlatformTransfer).Times(4).WillRepeatedly(Return(true));
     EXPECT_CALL(*session, pushChunk)
-      .WillOnce(Return(FileUploadError::FILE_HASH_MISMATCH))
-      .WillOnce(Return(FileUploadError::FILE_HASH_MISMATCH))
-      .WillOnce(Return(FileUploadError::FILE_HASH_MISMATCH))
-      .WillOnce(Return(FileUploadError::NONE));
+      .WillOnce(Return(FileTransferError::FILE_HASH_MISMATCH))
+      .WillOnce(Return(FileTransferError::FILE_HASH_MISMATCH))
+      .WillOnce(Return(FileTransferError::FILE_HASH_MISMATCH))
+      .WillOnce(Return(FileTransferError::NONE));
     EXPECT_CALL(*session, isDone).WillOnce(Return(true));
     EXPECT_CALL(*session, getNextChunkRequest).Times(3).WillRepeatedly([&]() {
         return FileBinaryRequestMessage{TEST_FILE, 0};
@@ -575,7 +575,7 @@ TEST_F(FileManagementServiceTests, DISABLED_StartTransferSession)
 {
     // Make the message that will be returned
     EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_UPLOAD_INIT));
-    EXPECT_CALL(fileManagementProtocolMock, extractDeviceKeyFromChannel).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
     EXPECT_CALL(fileManagementProtocolMock, parseFileUploadInit)
       .WillOnce(Return(ByMove(std::unique_ptr<FileUploadInitiateMessage>{
         new FileUploadInitiateMessage{TEST_FILE, TEST_FILE_SIZE, TEST_FILE_HASH}})));

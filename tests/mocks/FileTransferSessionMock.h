@@ -31,7 +31,7 @@ class FileTransferSessionMock : public FileTransferSession
 public:
     FileTransferSessionMock()
     : FileTransferSession(
-        "", FileUploadInitiateMessage{"", 0, ""}, [&](FileUploadStatus, FileUploadError) {}, buffer)
+        "", FileUploadInitiateMessage{"", 0, ""}, [&](FileTransferStatus, FileTransferError) {}, buffer)
     {
     }
 
@@ -44,11 +44,11 @@ public:
     MOCK_METHOD(const std::string&, getName, (), (const));
     MOCK_METHOD(const std::string&, getUrl, (), (const));
     MOCK_METHOD(void, abort, ());
-    MOCK_METHOD(FileUploadError, pushChunk, (const FileBinaryResponseMessage&));
+    MOCK_METHOD(FileTransferError, pushChunk, (const FileBinaryResponseMessage&));
     MOCK_METHOD(FileBinaryRequestMessage, getNextChunkRequest, ());
     MOCK_METHOD(bool, triggerDownload, ());
-    MOCK_METHOD(FileUploadStatus, getStatus, (), (const));
-    MOCK_METHOD(FileUploadError, getError, (), (const));
+    MOCK_METHOD(FileTransferStatus, getStatus, (), (const));
+    MOCK_METHOD(FileTransferError, getError, (), (const));
     MOCK_METHOD(const std::vector<FileChunk>&, getChunks, (), (const));
 
 private:
