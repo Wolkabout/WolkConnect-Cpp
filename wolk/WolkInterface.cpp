@@ -31,6 +31,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 WolkInterface::~WolkInterface() = default;
 
 void WolkInterface::connect()
@@ -194,4 +196,5 @@ std::vector<std::string> WolkInterface::ConnectivityFacade::getChannels() const
 {
     return m_messageHandler.getChannels();
 }
+}    // namespace connect
 }    // namespace wolkabout

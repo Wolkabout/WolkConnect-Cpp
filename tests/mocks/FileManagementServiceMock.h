@@ -23,7 +23,7 @@
 
 #include <utility>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class FileManagementServiceMock : public FileManagementService
 {

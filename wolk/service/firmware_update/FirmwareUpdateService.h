@@ -17,8 +17,8 @@
 #ifndef WOLKABOUTCONNECTOR_FIRMWAREUPDATESERVICE_H
 #define WOLKABOUTCONNECTOR_FIRMWAREUPDATESERVICE_H
 
-#include "core/InboundMessageHandler.h"
 #include "core/connectivity/ConnectivityService.h"
+#include "core/connectivity/InboundMessageHandler.h"
 #include "core/protocol/FirmwareUpdateProtocol.h"
 #include "wolk/api/FirmwareInstaller.h"
 #include "wolk/api/FirmwareParametersListener.h"
@@ -27,6 +27,8 @@
 #include <queue>
 
 namespace wolkabout
+{
+namespace connect
 {
 class FirmwareUpdateService : public MessageListener
 {
@@ -101,6 +103,7 @@ private:
     // This is where the protocol will be passed while the service is created.
     FirmwareUpdateProtocol& m_protocol;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FIRMWAREUPDATESERVICE_H

@@ -29,11 +29,12 @@
 #include "core/model/messages/FileUrlDownloadInitMessage.h"
 #include "core/utilities/Logger.h"
 #include "core/utilities/Timer.h"
-#include "tests/mocks/FileDownloaderMock.h"
+#include "mocks/FileDownloaderMock.h"
 
 #include <gtest/gtest.h>
 
 using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class FileTransferSessionTests : public ::testing::Test
 {

@@ -55,7 +55,7 @@ int main(int /* argc */, char** /* argv */)
 
     // And here we create the wolk session
     auto wolk =
-      wolkabout::WolkSingle::newBuilder(device).host(PLATFORM_HOST).caCertPath(CA_CERT_PATH).buildWolkSingle();
+      wolkabout::connect::WolkSingle::newBuilder(device).host(PLATFORM_HOST).caCertPath(CA_CERT_PATH).buildWolkSingle();
     wolk->connect();
 
     // Now we will register a feed, see `wolkabout::FeedType` and `wolkabout::Unit` for more options.

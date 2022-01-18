@@ -17,9 +17,9 @@
 #ifndef WOLKABOUTCONNECTOR_REGISTRATIONSERVICE_H
 #define WOLKABOUTCONNECTOR_REGISTRATIONSERVICE_H
 
-#include "core/InboundMessageHandler.h"
 #include "core/Types.h"
 #include "core/connectivity/ConnectivityService.h"
+#include "core/connectivity/InboundMessageHandler.h"
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/protocol/RegistrationProtocol.h"
@@ -29,6 +29,8 @@
 #include <unordered_map>
 
 namespace wolkabout
+{
+namespace connect
 {
 // This struct is used to group the query information that is used to generate a request towards the platform.
 // Based on these, the request will be linked with a response.
@@ -211,6 +213,7 @@ private:
     std::unordered_map<DeviceQueryData, std::unique_ptr<RegisteredDevicesResponseMessage>, DeviceQueryDataHash>
       m_responses;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_REGISTRATIONSERVICE_H

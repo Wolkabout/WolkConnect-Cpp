@@ -26,11 +26,14 @@
 
 namespace wolkabout
 {
+// Forward declaring some messages from the SDK
 class FileBinaryRequestMessage;
 class FileBinaryResponseMessage;
 class FileUploadInitiateMessage;
 class FileUrlDownloadInitMessage;
 
+namespace connect
+{
 /**
  * This structure represents a single chunk that is always received in exactly one `FileBinaryResponse` message.
  */
@@ -209,6 +212,7 @@ private:
     std::function<void(FileTransferStatus, FileTransferError)> m_callback;
     CommandBuffer& m_commandBuffer;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FILETRANSFERSESSION_H

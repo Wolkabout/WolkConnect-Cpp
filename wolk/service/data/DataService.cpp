@@ -31,6 +31,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 const std::string DataService::PERSISTENCE_KEY_DELIMITER = "+";
 
 DataService::DataService(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
@@ -492,4 +494,5 @@ void DataService::publishReadingsForPersistenceKey(const std::string& persistenc
         publishReadingsForPersistenceKey(persistenceKey);
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

@@ -22,6 +22,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 PlatformStatusService::PlatformStatusService(PlatformStatusProtocol& protocol,
                                              std::unique_ptr<PlatformStatusListener> listener)
 : m_protocol(protocol), m_listener(std::move(listener))
@@ -62,4 +64,5 @@ const Protocol& PlatformStatusService::getProtocol()
 {
     return m_protocol;
 }
+}    // namespace connect
 }    // namespace wolkabout

@@ -17,8 +17,8 @@
 #ifndef WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 #define WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 
-#include "core/InboundMessageHandler.h"
 #include "core/connectivity/ConnectivityService.h"
+#include "core/connectivity/InboundMessageHandler.h"
 #include "core/protocol/FileManagementProtocol.h"
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/api/FileListener.h"
@@ -27,6 +27,8 @@
 #include "wolk/service/file_management/FileTransferSession.h"
 
 namespace wolkabout
+{
+namespace connect
 {
 // Here we have an alias for a map of files stored for a single device
 using DeviceFiles = std::map<std::string, FileInformation>;
@@ -187,6 +189,7 @@ private:
     std::weak_ptr<FileListener> m_fileListener;
     CommandBuffer m_commandBuffer;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H

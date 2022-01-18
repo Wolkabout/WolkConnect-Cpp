@@ -24,13 +24,13 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "tests/mocks/PlatformStatusListenerMock.h"
-#include "tests/mocks/PlatformStatusProtocolMock.h"
+#include "mocks/PlatformStatusListenerMock.h"
+#include "mocks/PlatformStatusProtocolMock.h"
 
 #include <gtest/gtest.h>
 
 using namespace ::testing;
-using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class PlatformStatusServiceTests : public ::testing::Test
 {

@@ -21,6 +21,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This interface defines an object capable of receiving information that the connectivity status of the gateway has
  * changed.
@@ -40,6 +42,7 @@ public:
      */
     virtual void platformStatus(ConnectivityStatus status) = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_PLATFORMSTATUSLISTENER_H

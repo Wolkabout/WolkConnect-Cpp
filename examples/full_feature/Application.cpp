@@ -59,7 +59,7 @@ std::condition_variable conditionVariable;
  * It will interact with the DeviceData object in which it store the information. It can also notify the persistence, so
  * the cold-storage information can be updated too.
  */
-class DeviceDataChangeHandler : public wolkabout::FeedUpdateHandler
+class DeviceDataChangeHandler : public wolkabout::connect::FeedUpdateHandler
 {
 public:
     /**
@@ -112,7 +112,7 @@ private:
  * This is an example implementation of the `FirmwareInstaller` interface. This class will ask the user about
  * preferences for return values of the methods.
  */
-class ExampleFirmwareInstaller : public wolkabout::FirmwareInstaller
+class ExampleFirmwareInstaller : public wolkabout::connect::FirmwareInstaller
 {
 public:
     /**
@@ -122,12 +122,13 @@ public:
      */
     explicit ExampleFirmwareInstaller(std::string fileLocation) : m_fileLocation(std::move(fileLocation)) {}
 
-    wolkabout::InstallResponse installFirmware(const std::string& deviceKey, const std::string& fileName) override
+    wolkabout::connect::InstallResponse installFirmware(const std::string& deviceKey,
+                                                        const std::string& fileName) override
     {
         // Compose the path
         auto path = wolkabout::FileSystemUtils::composePath(fileName, m_fileLocation);
         LOG(INFO) << "Installation for file '" << path << "' on device '" << deviceKey << "' requested.";
-        return wolkabout::InstallResponse::WILL_INSTALL;
+        return wolkabout::connect::InstallResponse::WILL_INSTALL;
     }
 
     void abortFirmwareInstall(const std::string& deviceKey) override
@@ -146,7 +147,7 @@ private:
  * This is an example implementation of the `FirmwareParametersListener` interface. This class will log the parameters
  * once they have been received from the platform.
  */
-class ExampleFirmwareParameterListener : public wolkabout::FirmwareParametersListener
+class ExampleFirmwareParameterListener : public wolkabout::connect::FirmwareParametersListener
 {
 public:
     /**
@@ -169,7 +170,7 @@ public:
  * This is an example implementation of the `FileListener` interface. This class will log when a file gets
  * added/removed.
  */
-class ExampleFileListener : public wolkabout::FileListener
+class ExampleFileListener : public wolkabout::connect::FileListener
 {
 public:
     /**
@@ -238,7 +239,7 @@ int main(int /* argc */, char** /* argv */)
      * interrupted.
      */
     auto inMemoryPersistence = std::unique_ptr<wolkabout::InMemoryPersistence>(new wolkabout::InMemoryPersistence);
-    auto wolk = wolkabout::WolkBuilder(device)
+    auto wolk = wolkabout::connect::WolkBuilder(device)
                   .host(PLATFORM_HOST)
                   .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(deviceInfoHandler)

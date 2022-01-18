@@ -19,6 +19,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This is an enumeration for every type of Wolk interface that can be built.
  */
@@ -27,6 +29,7 @@ enum class WolkInterfaceType
     SingleDevice,
     MultiDevice
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_WOLKINTERFACETYPE_H

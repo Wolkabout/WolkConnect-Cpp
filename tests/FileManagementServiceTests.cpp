@@ -25,18 +25,18 @@
 
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
-#include "tests/mocks/ConnectivityServiceMock.h"
-#include "tests/mocks/DataProtocolMock.h"
-#include "tests/mocks/DataServiceMock.h"
-#include "tests/mocks/FileDownloaderMock.h"
-#include "tests/mocks/FileListenerMock.h"
-#include "tests/mocks/FileManagementProtocolMock.h"
-#include "tests/mocks/FileTransferSessionMock.h"
-#include "tests/mocks/PersistenceMock.h"
+#include "mocks/ConnectivityServiceMock.h"
+#include "mocks/DataProtocolMock.h"
+#include "mocks/DataServiceMock.h"
+#include "mocks/FileDownloaderMock.h"
+#include "mocks/FileListenerMock.h"
+#include "mocks/FileManagementProtocolMock.h"
+#include "mocks/FileTransferSessionMock.h"
+#include "mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 using namespace ::testing;
 
 class FileManagementServiceTests : public ::testing::Test

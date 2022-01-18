@@ -21,7 +21,7 @@
 
 #include <gmock/gmock.h>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class FeedUpdateHandlerMock : public FeedUpdateHandler
 {

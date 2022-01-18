@@ -37,8 +37,6 @@
 namespace wolkabout
 {
 // Forward declaring handlers, and some other helping objects
-class FileDownloader;
-class FileListener;
 class InboundMessageHandler;
 class Persistence;
 
@@ -48,6 +46,12 @@ class FileManagementProtocol;
 class FirmwareUpdateProtocol;
 class PlatformStatusProtocol;
 class RegistrationProtocol;
+
+namespace connect
+{
+// Forward declare some API entities
+class FileDownloader;
+class FileListener;
 
 // This is an alias for a lambda expression that can listen to the Wolk object's connection status.
 using ConnectionStatusListener = std::function<void(bool)>;
@@ -183,6 +187,7 @@ protected:
         std::function<void()> m_connectionLostHandler;
     };
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLK_INTERFACE_H

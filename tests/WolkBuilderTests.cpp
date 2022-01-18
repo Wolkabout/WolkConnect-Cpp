@@ -32,7 +32,7 @@
 
 #include <gmock/gmock.h>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 using namespace ::testing;
 
 class WolkBuilderTests : public ::testing::Test
@@ -83,8 +83,8 @@ TEST_F(WolkBuilderTests, MockHandlers)
     bool feedUpdated = false;
     bool parameterUpdated = false;
 
-    std::shared_ptr<wolkabout::WolkBuilder> builder;
-    ASSERT_NO_THROW(builder = std::make_shared<wolkabout::WolkBuilder>(*testDevice));
+    std::shared_ptr<WolkBuilder> builder;
+    ASSERT_NO_THROW(builder = std::make_shared<WolkBuilder>(*testDevice));
 
     auto feedUpdateHandler = std::make_shared<NiceMock<FeedUpdateHandlerMock>>();
     ASSERT_NO_THROW(builder->feedUpdateHandler(feedUpdateHandler));
@@ -111,8 +111,8 @@ TEST_F(WolkBuilderTests, MockHandlers)
 TEST_F(WolkBuilderTests, OtherProperties)
 {
     const auto testDevice = std::make_shared<Device>("TEST_KEY", "TEST_PASSWORD", OutboundDataMode::PUSH);
-    std::shared_ptr<wolkabout::WolkBuilder> builder;
-    ASSERT_NO_THROW(builder = std::make_shared<wolkabout::WolkBuilder>(*testDevice));
+    std::shared_ptr<WolkBuilder> builder;
+    ASSERT_NO_THROW(builder = std::make_shared<WolkBuilder>(*testDevice));
 
     EXPECT_NO_THROW(builder->host("some_other_host"));
     EXPECT_NO_THROW(builder->caCertPath("some_ca_cert_path"));

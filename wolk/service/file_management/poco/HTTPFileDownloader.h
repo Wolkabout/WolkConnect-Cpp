@@ -34,6 +34,8 @@ namespace Net
 
 namespace wolkabout
 {
+namespace connect
+{
 class HTTPFileDownloader : public FileDownloader
 {
 public:
@@ -149,6 +151,7 @@ private:
     std::unique_ptr<Poco::Net::HTTPClientSession> m_session;
     std::unique_ptr<std::thread> m_thread;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_HTTPFILEDOWNLOADER_H

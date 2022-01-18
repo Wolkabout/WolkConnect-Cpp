@@ -20,6 +20,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 WolkBuilder WolkSingle::newBuilder(Device device)
 {
     return WolkBuilder(device);
@@ -125,4 +127,5 @@ void WolkSingle::notifyConnected()
         }
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

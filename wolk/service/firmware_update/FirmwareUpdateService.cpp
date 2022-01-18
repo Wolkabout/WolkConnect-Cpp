@@ -23,6 +23,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 const std::string SESSION_FILE = ".fw-session";
 
 FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivityService, DataService& dataService,
@@ -283,4 +285,5 @@ void FirmwareUpdateService::deleteSessionFile(const std::string& deviceKey)
 {
     FileSystemUtils::deleteFile(m_sessionFile + "_" + deviceKey);
 }
+}    // namespace connect
 }    // namespace wolkabout

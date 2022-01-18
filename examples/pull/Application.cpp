@@ -41,7 +41,7 @@ struct DeviceData
  * This is an implementation of a class that is able to receive new feed values from the platform.
  * When the device is going to pull feed values, this object is going to receive the values.
  */
-class FeedChangeHandler : public wolkabout::FeedUpdateHandler
+class FeedChangeHandler : public wolkabout::connect::FeedUpdateHandler
 {
 public:
     /**
@@ -97,7 +97,7 @@ private:
  * This is an implementation of a class that can receive parameter value updates, in the same way FeedChangeHandler can
  * receive feed updates. When the device decides to pull the values, this object will receive the values.
  */
-class ParameterChangeHandler : public wolkabout::ParameterHandler
+class ParameterChangeHandler : public wolkabout::connect::ParameterHandler
 {
 public:
     /**
@@ -130,7 +130,7 @@ int main(int /* argc */, char** /* argv */)
 
     // And here we create the wolk session
     // Here we will set the feed value and parameter handler
-    auto wolk = wolkabout::WolkSingle::newBuilder(device)
+    auto wolk = wolkabout::connect::WolkSingle::newBuilder(device)
                   .host(PLATFORM_HOST)
                   .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(feedHandler)

@@ -21,8 +21,11 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
- * This is an enumeration containing all responses the user can return when the `installFirmware` command was invoked.
+ * This is an enumeration containing all responses the user can return when the `installFirmware` command was
+ * invoked.
  */
 enum class InstallResponse
 {
@@ -44,8 +47,8 @@ public:
     virtual ~FirmwareInstaller() = default;
 
     /**
-     * This is the method with which the service notifies the user implemented FirmwareInstaller that an installation
-     * command has been received.
+     * This is the method with which the service notifies the user implemented FirmwareInstaller that an
+     * installation command has been received.
      *
      * @param fileName The name of the file
      */
@@ -72,6 +75,7 @@ public:
      */
     virtual std::string getFirmwareVersion(const std::string& deviceKey) = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FIRMWAREINSTALLER_H

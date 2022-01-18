@@ -17,14 +17,16 @@
 #ifndef WOLK_MULTI_H
 #define WOLK_MULTI_H
 
+#include "core/connectivity/InboundPlatformMessageHandler.h"
 #include "core/utilities/StringUtils.h"
-#include "wolk/InboundPlatformMessageHandler.h"
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkInterface.h"
 
 #include <algorithm>
 
 namespace wolkabout
+{
+namespace connect
 {
 class WolkMulti final : public WolkInterface
 {
@@ -182,6 +184,7 @@ void WolkMulti::addReading(const std::string& deviceKey, const std::string& refe
 
     addReading(deviceKey, reference, stringifiedValues, rtc);
 }
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLK_MULTI_H

@@ -17,7 +17,7 @@
 #include "core/utilities/Logger.h"
 #include "wolk/WolkMulti.h"
 
-class ExamplePlatformStatusListener : public wolkabout::PlatformStatusListener
+class ExamplePlatformStatusListener : public wolkabout::connect::PlatformStatusListener
 {
 public:
     void platformStatus(wolkabout::ConnectivityStatus status) override
@@ -38,7 +38,7 @@ int main(int /* argc */, char** /* argv */)
     auto deviceThree = wolkabout::Device{"ThirdDevice", "", wolkabout::OutboundDataMode::PUSH};
 
     // And now we can create the wolk session
-    auto wolk = wolkabout::WolkMulti::newBuilder({deviceOne, deviceTwo})
+    auto wolk = wolkabout::connect::WolkMulti::newBuilder({deviceOne, deviceTwo})
                   .host("tcp://localhost:1883")
                   .withFileTransfer("./files")
                   .withPlatformStatus(std::unique_ptr<ExamplePlatformStatusListener>(new ExamplePlatformStatusListener))

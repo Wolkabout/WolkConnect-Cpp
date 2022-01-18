@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 #define WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 
-#include "core/InboundMessageHandler.h"
+#include "core/connectivity/InboundMessageHandler.h"
 #include "core/protocol/PlatformStatusProtocol.h"
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/api/PlatformStatusListener.h"
@@ -25,6 +25,8 @@
 #include <functional>
 
 namespace wolkabout
+{
+namespace connect
 {
 // This is the type alias for a callback capable of receiving a ConnectivityStatus value.
 using PlatformStatusCallback = std::function<void(ConnectivityStatus)>;
@@ -79,6 +81,7 @@ private:
     // Here we have the command buffer that will execute external calls.
     CommandBuffer m_commandBuffer;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H

@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_ERRORSERVICE_H
 #define WOLKABOUTCONNECTOR_ERRORSERVICE_H
 
-#include "core/InboundMessageHandler.h"
+#include "core/connectivity/InboundMessageHandler.h"
 #include "core/protocol/ErrorProtocol.h"
 #include "core/utilities/Service.h"
 #include "core/utilities/Timer.h"
@@ -29,6 +29,8 @@
 #include <queue>
 
 namespace wolkabout
+{
+namespace connect
 {
 // Type alias for the metadata of an ErrorMessage.
 using TimePoint = std::chrono::system_clock::time_point;
@@ -151,6 +153,7 @@ private:
     std::map<std::string, std::unique_ptr<std::mutex>> m_mutexes;
     std::map<std::string, std::unique_ptr<std::condition_variable>> m_conditionVariables;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_ERRORSERVICE_H

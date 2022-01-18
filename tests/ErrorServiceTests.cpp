@@ -24,12 +24,13 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "tests/mocks/ErrorProtocolMock.h"
+#include "mocks/ErrorProtocolMock.h"
 
 #include <gtest/gtest.h>
 
 using namespace ::testing;
 using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class ErrorServiceTests : public ::testing::Test
 {

@@ -23,6 +23,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 WolkBuilder WolkMulti::newBuilder(std::vector<Device> devices)
 {
     return WolkBuilder(devices);
@@ -429,4 +431,5 @@ void WolkMulti::notifyConnected()
         reportFirmwareUpdateForDevice(device);
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

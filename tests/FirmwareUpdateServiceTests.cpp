@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 
 using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class FirmwareUpdateServiceTests : public ::testing::Test
 {

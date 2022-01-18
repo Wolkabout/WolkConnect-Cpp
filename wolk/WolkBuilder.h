@@ -42,6 +42,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 // Forward declare all the Wolk classes that can be outputs from this builder.
 class WolkInterface;
 class WolkMulti;
@@ -294,6 +296,7 @@ private:
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
     static const constexpr char* TRUST_STORE = "ca.crt";
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif

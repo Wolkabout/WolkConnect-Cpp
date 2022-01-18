@@ -20,6 +20,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 RegistrationService::RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService,
                                          ErrorService& errorService)
 : m_protocol(protocol), m_connectivityService(connectivityService), m_errorService(errorService), m_running(false)
@@ -308,4 +310,5 @@ const Protocol& RegistrationService::getProtocol()
 {
     return m_protocol;
 }
+}    // namespace connect
 }    // namespace wolkabout

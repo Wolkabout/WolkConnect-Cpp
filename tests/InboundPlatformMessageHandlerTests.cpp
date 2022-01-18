@@ -19,7 +19,7 @@
 
 #define private public
 #define protected public
-#include "wolk/InboundPlatformMessageHandler.h"
+#include "core/connectivity/InboundPlatformMessageHandler.h"
 #undef private
 #undef protected
 

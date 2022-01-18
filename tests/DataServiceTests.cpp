@@ -27,14 +27,14 @@
 #include "core/Types.h"
 #include "core/model/Feed.h"
 #include "core/utilities/Logger.h"
-#include "tests/mocks/ConnectivityServiceMock.h"
-#include "tests/mocks/DataProtocolMock.h"
-#include "tests/mocks/PersistenceMock.h"
+#include "mocks/ConnectivityServiceMock.h"
+#include "mocks/DataProtocolMock.h"
+#include "mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
 
 using namespace ::testing;
-using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class DataServiceTests : public ::testing::Test
 {

@@ -20,6 +20,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 const std::chrono::milliseconds TIMER_PERIOD = std::chrono::milliseconds{10};
 
 ErrorService::ErrorService(ErrorProtocol& protocol, std::chrono::milliseconds retainTime)
@@ -209,4 +211,5 @@ void ErrorService::timerRuntime()
             deviceErrors.second.erase(removingIterator);
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

@@ -26,6 +26,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 FileManagementService::FileManagementService(ConnectivityService& connectivityService, DataService& dataService,
                                              FileManagementProtocol& protocol, std::string fileLocation,
                                              bool fileTransferEnabled, bool fileTransferUrlEnabled,
@@ -632,4 +634,5 @@ void FileManagementService::notifyListenerRemovedFile(const std::string& deviceK
         }
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

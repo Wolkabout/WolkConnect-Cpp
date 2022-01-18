@@ -16,9 +16,11 @@
 
 #include "wolk/WolkBuilder.h"
 
-#include "core/InboundMessageHandler.h"
 #include "core/connectivity/ConnectivityService.h"
+#include "core/connectivity/InboundMessageHandler.h"
+#include "core/connectivity/InboundPlatformMessageHandler.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
+#include "core/connectivity/mqtt/PahoMqttClient.h"
 #include "core/persistence/inmemory/InMemoryPersistence.h"
 #include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutErrorProtocol.h"
@@ -27,10 +29,8 @@
 #include "core/protocol/wolkabout/WolkaboutPlatformStatusProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutRegistrationProtocol.h"
 #include "core/utilities/Logger.h"
-#include "wolk/InboundPlatformMessageHandler.h"
 #include "wolk/WolkMulti.h"
 #include "wolk/WolkSingle.h"
-#include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"
@@ -39,6 +39,8 @@
 #include <utility>
 
 namespace wolkabout
+{
+namespace connect
 {
 WolkBuilder::WolkBuilder(std::vector<Device> devices)
 : m_devices(std::move(devices))
@@ -241,7 +243,7 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
       std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(deviceKeys));
 
     // Now create the ConnectivityService.
-    auto mqttClient = std::make_shared<WolkPahoMqttClient>();
+    auto mqttClient = std::make_shared<PahoMqttClient>();
     switch (type)
     {
     case WolkInterfaceType::SingleDevice:
@@ -413,8 +415,9 @@ std::unique_ptr<WolkMulti> WolkBuilder::buildWolkMulti()
     return std::unique_ptr<WolkMulti>(dynamic_cast<WolkMulti*>(build(WolkInterfaceType::MultiDevice).release()));
 }
 
-wolkabout::WolkBuilder::operator std::unique_ptr<WolkInterface>()
+WolkBuilder::operator std::unique_ptr<WolkInterface>()
 {
     return build();
 }
+}    // namespace connect
 }    // namespace wolkabout

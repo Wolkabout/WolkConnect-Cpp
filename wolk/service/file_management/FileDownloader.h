@@ -25,6 +25,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This interface represents an object that is capable of downloading a file, using the given url.
  */
@@ -74,6 +76,7 @@ public:
      */
     virtual void abortDownload() = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FILEDOWNLOADER_H

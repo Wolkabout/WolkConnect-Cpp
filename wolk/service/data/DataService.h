@@ -17,8 +17,8 @@
 #ifndef DATASERVICE_H
 #define DATASERVICE_H
 
-#include "core/InboundMessageHandler.h"
 #include "core/Types.h"
+#include "core/connectivity/InboundMessageHandler.h"
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/model/Reading.h"
@@ -32,10 +32,13 @@
 
 namespace wolkabout
 {
+// Forward declare some interfaces from the SDK
 class DataProtocol;
 class Persistence;
 class ConnectivityService;
 
+namespace connect
+{
 using FeedUpdateSetHandler = std::function<void(std::string, std::map<std::uint64_t, std::vector<Reading>>)>;
 using ParameterSyncHandler = std::function<void(std::string, std::vector<Parameter>)>;
 
@@ -104,6 +107,7 @@ private:
     static const std::string PERSISTENCE_KEY_DELIMITER;
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif

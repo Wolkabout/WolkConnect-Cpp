@@ -28,6 +28,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 FileTransferSession::FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
                                          std::function<void(FileTransferStatus, FileTransferError)> callback,
                                          CommandBuffer& commandBuffer)
@@ -307,4 +309,5 @@ void FileTransferSession::changeStatusAndError(FileTransferStatus status, FileTr
             }));
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

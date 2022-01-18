@@ -34,6 +34,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 // Here we store prefixes used by the static methods.
 const std::string HTTP_PATH_PREFIX = "http://";
 const std::string HTTPS_PATH_PREFIX = "https://";
@@ -294,4 +296,5 @@ std::string HTTPFileDownloader::extractUri(std::string targetPath)
         return targetPath.substr(targetPath.find('/'));
     return "/";
 }
+}    // namespace connect
 }    // namespace wolkabout

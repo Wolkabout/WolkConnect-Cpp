@@ -24,17 +24,17 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "tests/mocks/ConnectivityServiceMock.h"
-#include "tests/mocks/DataProtocolMock.h"
-#include "tests/mocks/DataServiceMock.h"
-#include "tests/mocks/FileManagementProtocolMock.h"
-#include "tests/mocks/FileManagementServiceMock.h"
-#include "tests/mocks/InboundMessageHandlerMock.h"
-#include "tests/mocks/PersistenceMock.h"
+#include "mocks/ConnectivityServiceMock.h"
+#include "mocks/DataProtocolMock.h"
+#include "mocks/DataServiceMock.h"
+#include "mocks/FileManagementProtocolMock.h"
+#include "mocks/FileManagementServiceMock.h"
+#include "mocks/InboundMessageHandlerMock.h"
+#include "mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 using namespace ::testing;
 
 class WolkTests : public Test
@@ -47,7 +47,7 @@ public:
     std::shared_ptr<wolkabout::Device> device =
       std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD", OutboundDataMode::PUSH);
 
-    std::shared_ptr<wolkabout::WolkBuilder> builder;
+    std::shared_ptr<WolkBuilder> builder;
 
     std::mutex mutex;
     std::condition_variable cv;
@@ -70,7 +70,7 @@ public:
 
 TEST_F(WolkTests, Notifies)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    builder = std::make_shared<WolkBuilder>(*device);
     const auto wolk = builder->build();
 
     auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
@@ -81,7 +81,7 @@ TEST_F(WolkTests, Notifies)
 
 TEST_F(WolkTests, ConnectTest)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    builder = std::make_shared<WolkBuilder>(*device);
     const auto wolk = builder->build();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
@@ -107,7 +107,7 @@ TEST_F(WolkTests, ConnectTest)
 
 TEST_F(WolkTests, WhenConnected_PublishFileList)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    builder = std::make_shared<WolkBuilder>(*device);
     const auto wolk = builder->build();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
@@ -142,7 +142,7 @@ TEST_F(WolkTests, WhenConnected_PublishFileList)
 
 TEST_F(WolkTests, DisconnectTest)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    builder = std::make_shared<WolkBuilder>(*device);
     const auto wolk = builder->build();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
@@ -156,7 +156,7 @@ TEST_F(WolkTests, DisconnectTest)
 
 TEST_F(WolkTests, AddingReadings)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    builder = std::make_shared<WolkBuilder>(*device);
     const auto wolk = builder->buildWolkSingle();
 
     auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
@@ -193,7 +193,7 @@ TEST_F(WolkTests, AddingReadings)
 
 TEST_F(WolkTests, HandlingReadings)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    builder = std::make_shared<WolkBuilder>(*device);
 
     // Make a lambda that will receive feed values
     auto handler = [&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) { onEvent(); };
@@ -209,7 +209,7 @@ TEST_F(WolkTests, HandlingReadings)
 
 TEST_F(WolkTests, ConnectivityFacade)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
+    builder = std::make_shared<WolkBuilder>(*device);
     const auto wolk = builder->build();
 
     const auto& inboundMessageHandlerMock =

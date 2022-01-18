@@ -31,6 +31,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This is one of the Wolk objects. This is the Wolk object that is meant for a single device.
  * This is more of the default behaviour for the `WolkConnect-Cpp`.
@@ -191,6 +193,7 @@ void WolkSingle::addReading(const std::string& reference, const std::vector<T>& 
 
     addReading(reference, stringifiedValues, rtc);
 }
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif

@@ -99,7 +99,6 @@ endif ()
 
 # WolkAbout c++ Connector
 set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
-        wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
         wolk/service/error/ErrorService.cpp
         wolk/service/file_management/FileManagementService.cpp
@@ -107,7 +106,6 @@ set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
         wolk/service/firmware_update/FirmwareUpdateService.cpp
         wolk/service/platform_status/PlatformStatusService.cpp
         wolk/service/registration_service/RegistrationService.cpp
-        wolk/InboundPlatformMessageHandler.cpp
         wolk/WolkBuilder.cpp
         wolk/WolkInterface.cpp
         wolk/WolkMulti.cpp
@@ -118,7 +116,6 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/FirmwareParametersListener.h
         wolk/api/ParameterHandler.h
         wolk/api/PlatformStatusListener.h
-        wolk/connectivity/mqtt/WolkPahoMqttClient.h
         wolk/service/data/DataService.h
         wolk/service/error/ErrorService.h
         wolk/service/file_management/FileDownloader.h
@@ -127,7 +124,6 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/service/firmware_update/FirmwareUpdateService.h
         wolk/service/platform_status/PlatformStatusService.h
         wolk/service/registration_service/RegistrationService.h
-        wolk/InboundPlatformMessageHandler.h
         wolk/Version.h
         wolk/WolkBuilder.h
         wolk/WolkInterface.h
@@ -144,7 +140,7 @@ if (${BUILD_POCO_HTTP_DOWNLOADER})
 endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} Threads::Threads libWolkAboutCore.so.3.1.0 libWolkAboutCoreUtility.so.3.1.0)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore Threads::Threads)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
@@ -169,31 +165,20 @@ if (${BUILD_TESTS})
             tests/WolkBuilderTests.cpp
             tests/WolkTests.cpp)
     set(TEST_HEADER_FILES
-            tests/mocks/ConnectivityServiceMock.h
-            tests/mocks/DataProtocolMock.h
             tests/mocks/DataServiceMock.h
-            tests/mocks/ErrorProtocolMock.h
             tests/mocks/ErrorServiceMock.h
             tests/mocks/FeedUpdateHandlerMock.h
             tests/mocks/FileDownloaderMock.h
             tests/mocks/FileListenerMock.h
-            tests/mocks/FileManagementProtocolMock.h
             tests/mocks/FileManagementServiceMock.h
             tests/mocks/FileTransferSessionMock.h
-            tests/mocks/FirmwareUpdateProtocolMock.h
-            tests/mocks/InboundMessageHandlerMock.h
-            tests/mocks/MessageListenerMock.h
             tests/mocks/ParameterHandlerMock.h
-            tests/mocks/PersistenceMock.h
             tests/mocks/PlatformStatusListenerMock.h
-            tests/mocks/PlatformStatusProtocolMock.h
-            tests/mocks/ProtocolMock.h
-            tests/mocks/RegistrationProtocolMock.h
-            tests/mocks/WolkPahoMqttClientMock.h)
+            )
 
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
     target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
-    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
+    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include WolkSDK-Cpp/tests)
     set_target_properties(${PROJECT_NAME}Tests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     set_target_properties(${PROJECT_NAME}Tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
     add_dependencies(${PROJECT_NAME}Tests ${PROJECT_NAME} libgtest)

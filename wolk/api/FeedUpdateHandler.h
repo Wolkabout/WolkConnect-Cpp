@@ -24,6 +24,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This interface describes an object that can receive feed value updates.
  */
@@ -39,12 +41,13 @@ public:
      * This method will be invoked once new values have been received.
      *
      * @param deviceKey The key of the device for which feed values have updated.
-     * @param readings All feed readings that have been updated. Grouped up by time when a reading change happened. Key
-     * is an epoch timestamp in milliseconds, and value is an array of readings changed at that time.
+     * @param readings All feed readings that have been updated. Grouped up by time when a reading change happened.
+     * Key is an epoch timestamp in milliseconds, and value is an array of readings changed at that time.
      */
     virtual void handleUpdate(const std::string& deviceKey,
                               const std::map<std::uint64_t, std::vector<Reading>>& readings) = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif
