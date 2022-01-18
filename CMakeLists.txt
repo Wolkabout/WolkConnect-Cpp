@@ -86,6 +86,17 @@ option(POCO_BUILD_NET "" ${BUILD_POCO_HTTP_DOWNLOADER})
 option(BUILD_AWS_LOG_UPLOADER "" OFF)
 add_subdirectory(WolkSDK-Cpp)
 
+# Define the version of the library
+set(WOLKCONNECT_VERSION_MAJOR 4)
+set(WOLKCONNECT_VERSION_MINOR 0)
+set(WOLKCONNECT_VERSION_PATCH 0)
+set(WOLKCONNECT_VERSION_SUFFIX prerelease)
+
+set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH}")
+if (NOT "${WOLKCONNECT_VERSION_SUFFIX}" STREQUAL "")
+    set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_STRING}-${WOLKCONNECT_VERSION_SUFFIX}")
+endif ()
+
 # WolkAbout c++ Connector
 set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
         wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
@@ -133,10 +144,11 @@ if (${BUILD_POCO_HTTP_DOWNLOADER})
 endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore Threads::Threads)
+target_link_libraries(${PROJECT_NAME} Threads::Threads libWolkAboutCore.so.3.1.0 libWolkAboutCoreUtility.so.3.1.0)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_STRING} SOVERSION ${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH})
 
 if (${BUILD_POCO_HTTP_DOWNLOADER})
     target_link_libraries(${PROJECT_NAME} PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
