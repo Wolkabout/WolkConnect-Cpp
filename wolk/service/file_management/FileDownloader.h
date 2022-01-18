@@ -64,8 +64,9 @@ public:
      * @param url The url from which a file should be downloaded.
      * @param statusCallback The callback by which the downloader should report status updates and or name changes.
      */
-    virtual void downloadFile(const std::string& url,
-                              std::function<void(FileTransferStatus, FileTransferError, std::string)> statusCallback) = 0;
+    virtual void downloadFile(
+      const std::string& url,
+      std::function<void(FileTransferStatus, FileTransferError, std::string)> statusCallback) = 0;
 
     /**
      * This is the method by which the FileManagementService will notify the downloader to try and attempt to abort the

@@ -57,7 +57,8 @@ public:
      * @param commandBuffer The command buffer which the session will use to announce status.
      */
     FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
-                        std::function<void(FileTransferStatus, FileTransferError)> callback, CommandBuffer& commandBuffer);
+                        std::function<void(FileTransferStatus, FileTransferError)> callback,
+                        CommandBuffer& commandBuffer);
 
     /**
      * Default constructor for the FileTransferSession in case of a url download transfer.
@@ -69,8 +70,8 @@ public:
      * @param fileDownloader The file downloader that will actually execute the file download.
      */
     FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
-                        std::function<void(FileTransferStatus, FileTransferError)> callback, CommandBuffer& commandBuffer,
-                        std::shared_ptr<FileDownloader> fileDownloader);
+                        std::function<void(FileTransferStatus, FileTransferError)> callback,
+                        CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader);
 
     /**
      * Default virtual destructor.

@@ -71,7 +71,8 @@ TEST_F(FileTransferSessionTests, TransferSessionTriggerDownload)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {},
+      commandBuffer}));
     ASSERT_NE(session, nullptr);
     EXPECT_FALSE(session->triggerDownload());
 }
@@ -152,12 +153,14 @@ TEST_F(FileTransferSessionTests, MultiChunkSession)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {},
+      commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}),
+              FileTransferError::NONE);
 
     // Check the values
     ASSERT_FALSE(session->isDone());
@@ -166,7 +169,8 @@ TEST_F(FileTransferSessionTests, MultiChunkSession)
 
     // Get the second chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}), FileTransferError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}),
+              FileTransferError::NONE);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
@@ -195,12 +199,14 @@ TEST_F(FileTransferSessionTests, TransferMoreThanNecessaryBytes)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {},
+      commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}),
+              FileTransferError::NONE);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
@@ -235,7 +241,8 @@ TEST_F(FileTransferSessionTests, PushCurrentChunkHashToLimits)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {},
+      commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
@@ -289,12 +296,14 @@ TEST_F(FileTransferSessionTests, SecondChunkRepeatedlyGetsThePreviousHashWrong)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {},
+      commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}),
+              FileTransferError::NONE);
 
     // Check the values
     ASSERT_FALSE(session->isDone());
@@ -348,12 +357,14 @@ TEST_F(FileTransferSessionTests, MultiChunkFinalHashIsNotRight)
     // Make place for the session
     auto session = std::unique_ptr<FileTransferSession>{};
     ASSERT_NO_FATAL_FAILURE(session.reset(new FileTransferSession{
-      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {}, commandBuffer}));
+      DEVICE_KEY, initiate, [&](FileTransferStatus /** status **/, FileTransferError /** error **/) {},
+      commandBuffer}));
     ASSERT_NE(session, nullptr);
 
     // Get the first chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}), FileTransferError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(firstMessage)}),
+              FileTransferError::NONE);
 
     // Check the values
     ASSERT_FALSE(session->isDone());
@@ -362,7 +373,8 @@ TEST_F(FileTransferSessionTests, MultiChunkFinalHashIsNotRight)
 
     // Get the second chunk request message
     ASSERT_NO_FATAL_FAILURE(session->getNextChunkRequest());
-    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}), FileTransferError::NONE);
+    ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}),
+              FileTransferError::NONE);
 
     // Check the values
     ASSERT_TRUE(session->isDone());
@@ -455,7 +467,8 @@ TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
                     std::function<void(FileTransferStatus, FileTransferError, const std::string&)> statusCallback) {
           if (downloadUrl == url)
               timer.start(delay, [this, statusCallback] {
-                  statusCallback(wolkabout::FileTransferStatus::FILE_READY, wolkabout::FileTransferError::NONE, FILE_NAME);
+                  statusCallback(wolkabout::FileTransferStatus::FILE_READY, wolkabout::FileTransferError::NONE,
+                                 FILE_NAME);
               });
       });
 

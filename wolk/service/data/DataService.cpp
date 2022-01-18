@@ -221,8 +221,7 @@ void DataService::publishAttributes()
     {
         // Make a lambda that will delete all these attributes from persistence
         const auto& deviceKey = deviceAttributes.first;
-        auto deleteAllAttributes = [&]()
-        {
+        auto deleteAllAttributes = [&]() {
             for (const auto& attribute : deviceAttributes.second)
                 m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
         };
@@ -260,8 +259,7 @@ void DataService::publishAttributes(const std::string& deviceKey)
         return;
 
     // Make a lambda that will delete all these attributes from persistence
-    auto deleteAllAttributes = [&]()
-    {
+    auto deleteAllAttributes = [&]() {
         for (const auto& attribute : attributes)
             m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
     };
@@ -306,8 +304,7 @@ void DataService::publishParameters()
     {
         // Make a lambda that will delete all these parameters from persistence
         const auto& deviceKey = deviceParameters.first;
-        auto deleteAllParameters = [&]()
-        {
+        auto deleteAllParameters = [&]() {
             for (const auto& parameter : deviceParameters.second)
                 m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
         };
@@ -345,8 +342,7 @@ void DataService::publishParameters(const std::string& deviceKey)
         return;
 
     // Make a lambda that will delete all these parameters from persistence
-    auto deleteAllParameters = [&]()
-    {
+    auto deleteAllParameters = [&]() {
         for (const auto& parameter : parameters)
             m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
     };
@@ -412,14 +408,12 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
                 {
                     continue;
                 }
-                auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(),
-                                                    [&](const ParameterName& name)
-                                                    {
-                                                        return std::find_if(values.begin(), values.end(),
-                                                                            [&](const Parameter& parameter) {
-                                                                                return parameter.first == name;
-                                                                            }) != values.cend();
-                                                    });
+                auto allNamesMatching =
+                  std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
+                      return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
+                                 return parameter.first == name;
+                             }) != values.cend();
+                  });
                 if (!allNamesMatching)
                 {
                     continue;
