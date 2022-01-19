@@ -28,7 +28,7 @@ namespace Poco
 {
 namespace Net
 {
-    class HTTPClientSession;
+class HTTPClientSession;
 }
 }    // namespace Poco
 

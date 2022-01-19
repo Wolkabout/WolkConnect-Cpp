@@ -27,8 +27,8 @@
 #include <Poco/Net/HTTPSClientSession.h>
 #include <Poco/Net/SecureStreamSocket.h>
 #include <Poco/StreamCopier.h>
-#include <Poco/Util/Util.h>
 #include <Poco/Util/ServerApplication.h>
+#include <Poco/Util/Util.h>
 #include <iomanip>
 #include <regex>
 
