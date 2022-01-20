@@ -27,7 +27,8 @@ namespace connect
 enum class WolkInterfaceType
 {
     SingleDevice,
-    MultiDevice
+    MultiDevice,
+    Gateway
 };
 }    // namespace connect
 }    // namespace wolkabout

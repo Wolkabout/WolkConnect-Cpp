@@ -37,7 +37,7 @@ namespace connect
  * This is one of the Wolk objects. This is the Wolk object that is meant for a single device.
  * This is more of the default behaviour for the `WolkConnect-Cpp`.
  */
-class WolkSingle final : public WolkInterface
+class WolkSingle : public WolkInterface
 {
     friend class WolkBuilder;
 
