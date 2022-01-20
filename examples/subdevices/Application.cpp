@@ -15,6 +15,7 @@
  */
 
 #include "core/utilities/Logger.h"
+#include "wolk/WolkBuilder.h"
 #include "wolk/WolkMulti.h"
 
 class ExamplePlatformStatusListener : public wolkabout::connect::PlatformStatusListener

@@ -18,6 +18,7 @@
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
 #include "core/utilities/json.hpp"
+#include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 
 #include <chrono>

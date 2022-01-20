@@ -15,6 +15,7 @@
  */
 
 #include "core/utilities/Logger.h"
+#include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 #include "wolk/api/ParameterHandler.h"
 
