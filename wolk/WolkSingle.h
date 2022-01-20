@@ -20,7 +20,6 @@
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Device.h"
 #include "core/utilities/StringUtils.h"
-#include "wolk/WolkBuilder.h"
 #include "wolk/WolkInterface.h"
 
 #include <algorithm>
@@ -33,6 +32,7 @@ namespace wolkabout
 {
 namespace connect
 {
+class WolkBuilder;
 /**
  * This is one of the Wolk objects. This is the Wolk object that is meant for a single device.
  * This is more of the default behaviour for the `WolkConnect-Cpp`.
@@ -47,7 +47,7 @@ public:
      * @param device wolkabout::Device
      * @return wolkabout::WolkBuilder instance
      */
-    static WolkBuilder newBuilder(Device device);
+    static connect::WolkBuilder newBuilder(Device device);
 
     /**
      * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
@@ -157,7 +157,7 @@ public:
 
     WolkInterfaceType getType() override;
 
-private:
+protected:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 
     explicit WolkSingle(Device device);

@@ -19,6 +19,7 @@
 
 #define private public
 #define protected public
+#include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 #undef private
 #undef protected

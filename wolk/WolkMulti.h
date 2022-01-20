@@ -26,14 +26,18 @@
 
 namespace wolkabout
 {
+class Device;
+
 namespace connect
 {
-class WolkMulti final : public WolkInterface
+class WolkBuilder;
+
+class WolkMulti : public WolkInterface
 {
     friend class WolkBuilder;
 
 public:
-    static WolkBuilder newBuilder(std::vector<Device> devices = {});
+    static connect::WolkBuilder newBuilder(std::vector<Device> devices = {});
 
     bool addDevice(Device device);
 

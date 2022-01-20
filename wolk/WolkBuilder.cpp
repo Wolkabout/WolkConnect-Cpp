@@ -233,6 +233,8 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
         wolk.reset(new WolkMulti{m_devices});
         break;
     }
+    default:
+        throw std::runtime_error("Unsupported type of `WolkInterface` for this builder.");
     }
 
     // Create the inbound message handler that will route all the messages by topic to their right destination
@@ -245,14 +247,6 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     auto mqttClient = std::make_shared<PahoMqttClient>();
     switch (type)
     {
-    case WolkInterfaceType::SingleDevice:
-    {
-        const auto& device = m_devices.front();
-        wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(new MqttConnectivityService(
-          mqttClient, device.getKey(), device.getPassword(), m_host, m_caCertPath,
-          ByteUtils::toUUIDString(ByteUtils::generateRandomBytes(ByteUtils::UUID_VECTOR_SIZE))));
-        break;
-    }
     case WolkInterfaceType::MultiDevice:
     {
         wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(new MqttConnectivityService(
@@ -260,14 +254,24 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
           ByteUtils::toUUIDString(ByteUtils::generateRandomBytes(ByteUtils::UUID_VECTOR_SIZE))));
         break;
     }
+    default:
+    {
+        const auto& device = m_devices.front();
+        wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(new MqttConnectivityService(
+          mqttClient, device.getKey(), device.getPassword(), m_host, m_caCertPath,
+          ByteUtils::toUUIDString(ByteUtils::generateRandomBytes(ByteUtils::UUID_VECTOR_SIZE))));
+        break;
+    }
     }
 
     // Connect the ConnectivityService with the ConnectivityManager.
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityService->onConnectionLost([wolkRaw] {
-        wolkRaw->notifyDisconnected();
-        wolkRaw->tryConnect(true);
-    });
+    wolk->m_connectivityService->onConnectionLost(
+      [wolkRaw]
+      {
+          wolkRaw->notifyDisconnected();
+          wolkRaw->tryConnect(true);
+      });
     wolk->m_connectivityService->setListner(wolk->m_inboundMessageHandler);
 
     // Set the data service, the only required service
@@ -280,12 +284,10 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     wolk->m_parameterHandler = m_parameterHandler;
     wolk->m_dataService = std::make_shared<DataService>(
       *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
-          wolkRaw->handleFeedUpdateCommand(deviceKey, readings);
-      },
-      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
-          wolkRaw->handleParameterCommand(deviceKey, parameters);
-      });
+      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
+      { wolkRaw->handleFeedUpdateCommand(deviceKey, readings); },
+      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters)
+      { wolkRaw->handleParameterCommand(deviceKey, parameters); });
     wolk->m_errorService = std::make_shared<ErrorService>(*wolk->m_errorProtocol, m_errorRetainTime);
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
     wolk->m_inboundMessageHandler->addListener(wolk->m_errorService);
