@@ -15,6 +15,7 @@
  */
 
 #include "wolk/WolkSingle.h"
+
 #include "wolk/WolkBuilder.h"
 
 namespace wolkabout

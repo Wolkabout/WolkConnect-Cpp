@@ -266,12 +266,10 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 
     // Connect the ConnectivityService with the ConnectivityManager.
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityService->onConnectionLost(
-      [wolkRaw]
-      {
-          wolkRaw->notifyDisconnected();
-          wolkRaw->tryConnect(true);
-      });
+    wolk->m_connectivityService->onConnectionLost([wolkRaw] {
+        wolkRaw->notifyDisconnected();
+        wolkRaw->tryConnect(true);
+    });
     wolk->m_connectivityService->setListner(wolk->m_inboundMessageHandler);
 
     // Set the data service, the only required service
@@ -284,10 +282,12 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     wolk->m_parameterHandler = m_parameterHandler;
     wolk->m_dataService = std::make_shared<DataService>(
       *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
-      { wolkRaw->handleFeedUpdateCommand(deviceKey, readings); },
-      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters)
-      { wolkRaw->handleParameterCommand(deviceKey, parameters); });
+      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
+          wolkRaw->handleFeedUpdateCommand(deviceKey, readings);
+      },
+      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
+          wolkRaw->handleParameterCommand(deviceKey, parameters);
+      });
     wolk->m_errorService = std::make_shared<ErrorService>(*wolk->m_errorProtocol, m_errorRetainTime);
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
     wolk->m_inboundMessageHandler->addListener(wolk->m_errorService);
