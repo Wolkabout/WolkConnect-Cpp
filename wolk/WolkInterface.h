@@ -149,8 +149,7 @@ protected:
 
     // Here are entities related to an MQTT connection.
     std::unique_ptr<ConnectivityService> m_connectivityService;
-    std::unique_ptr<InboundMessageHandler> m_inboundMessageHandler;
-    std::shared_ptr<ConnectivityFacade> m_connectivityManager;
+    std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
     std::unique_ptr<Persistence> m_persistence;
 
     // List of all protocols the Wolk object must hold
@@ -171,21 +170,6 @@ protected:
 
     // Here is the command buffer that should be used
     std::unique_ptr<CommandBuffer> m_commandBuffer;
-
-    // This is the definition of the class that will handle the MQTT messages.
-    class ConnectivityFacade : public ConnectivityServiceListener
-    {
-    public:
-        ConnectivityFacade(InboundMessageHandler& handler, std::function<void()> connectionLostHandler);
-
-        void messageReceived(const std::string& channel, const std::string& message) override;
-        void connectionLost() override;
-        std::vector<std::string> getChannels() const override;
-
-    private:
-        InboundMessageHandler& m_messageHandler;
-        std::function<void()> m_connectionLostHandler;
-    };
 };
 }    // namespace connect
 }    // namespace wolkabout

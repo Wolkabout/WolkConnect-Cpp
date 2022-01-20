@@ -265,12 +265,11 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 
     // Connect the ConnectivityService with the ConnectivityManager.
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager =
-      std::make_shared<WolkInterface::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
-          wolkRaw->notifyDisconnected();
-          wolkRaw->connect();
-      });
-    wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
+    wolk->m_connectivityService->onConnectionLost([wolkRaw] {
+        wolkRaw->notifyDisconnected();
+        wolkRaw->tryConnect(true);
+    });
+    wolk->m_connectivityService->setListner(wolk->m_inboundMessageHandler);
 
     // Set the data service, the only required service
     wolk->m_dataProtocol = std::move(m_dataProtocol);

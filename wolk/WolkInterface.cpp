@@ -175,26 +175,5 @@ void WolkInterface::addToCommandBuffer(std::function<void()> command)
 {
     m_commandBuffer->pushCommand(std::make_shared<std::function<void()>>(command));
 }
-
-WolkInterface::ConnectivityFacade::ConnectivityFacade(InboundMessageHandler& handler,
-                                                      std::function<void()> connectionLostHandler)
-: m_messageHandler{handler}, m_connectionLostHandler{std::move(connectionLostHandler)}
-{
-}
-
-void WolkInterface::ConnectivityFacade::messageReceived(const std::string& channel, const std::string& message)
-{
-    m_messageHandler.messageReceived(channel, message);
-}
-
-void WolkInterface::ConnectivityFacade::connectionLost()
-{
-    m_connectionLostHandler();
-}
-
-std::vector<std::string> WolkInterface::ConnectivityFacade::getChannels() const
-{
-    return m_messageHandler.getChannels();
-}
 }    // namespace connect
 }    // namespace wolkabout
