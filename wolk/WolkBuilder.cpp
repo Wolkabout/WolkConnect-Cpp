@@ -239,8 +239,7 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     auto deviceKeys = std::vector<std::string>{};
     for (const auto& device : m_devices)
         deviceKeys.emplace_back(device.getKey());
-    wolk->m_inboundMessageHandler =
-      std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(deviceKeys));
+    wolk->m_inboundMessageHandler = std::make_shared<InboundPlatformMessageHandler>(deviceKeys);
 
     // Now create the ConnectivityService.
     auto mqttClient = std::make_shared<PahoMqttClient>();
