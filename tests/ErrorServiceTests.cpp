@@ -92,7 +92,7 @@ TEST_F(ErrorServiceTests, OneMessageInCacheDeleted)
     service->start();
 
     // Wait for retain time (plus 25% of the time, just to make sure)
-    std::this_thread::sleep_for(RETAIN_TIME * 1.25);
+    std::this_thread::sleep_for(RETAIN_TIME * 1.5);
     EXPECT_TRUE(service->m_cached[DEVICE_KEY].empty());
 }
 
@@ -118,7 +118,7 @@ TEST_F(ErrorServiceTests, OneMessageObtainFromCacheMapExistsButNoMessage)
     service->start();
 
     // Wait for retain time (plus 25% of the time, just to make sure)
-    std::this_thread::sleep_for(RETAIN_TIME * 1.25);
+    std::this_thread::sleep_for(RETAIN_TIME * 1.5);
     ASSERT_EQ(service->obtainFirstMessageForDevice(DEVICE_KEY), nullptr);
 }
 
@@ -148,7 +148,7 @@ TEST_F(ErrorServiceTests, OneMessageObtainLastFromCacheMapExistsButNoMessage)
     service->start();
 
     // Wait for retain time (plus 25% of the time, just to make sure)
-    std::this_thread::sleep_for(RETAIN_TIME * 1.25);
+    std::this_thread::sleep_for(RETAIN_TIME * 1.5);
     ASSERT_EQ(service->obtainLastMessageForDevice(DEVICE_KEY), nullptr);
 }
 
@@ -157,10 +157,12 @@ TEST_F(ErrorServiceTests, AwaitOneMessageTest)
     // Prepare a task that will add the message
     auto delay = std::chrono::milliseconds{25};
     Timer timer;
-    timer.start(delay, [&]() {
-        addTestMessageToService();
-        service->m_conditionVariables[DEVICE_KEY]->notify_one();
-    });
+    timer.start(delay,
+                [&]()
+                {
+                    addTestMessageToService();
+                    service->m_conditionVariables[DEVICE_KEY]->notify_one();
+                });
 
     // Now await the message
     auto start = std::chrono::system_clock::now();
@@ -168,10 +170,10 @@ TEST_F(ErrorServiceTests, AwaitOneMessageTest)
     ASSERT_NO_FATAL_FAILURE(message = service->obtainOrAwaitMessageForDevice(DEVICE_KEY, std::chrono::seconds(1)));
     auto duration = std::chrono::system_clock::now() - start;
     auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    auto tolerable = delay * 1.25;
+    auto tolerable = delay * 1.5;
     LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
               << "ms) - Delay time: " << tolerable.count() << "ms.";
-    ASSERT_LT(durationMs, tolerable);
+    ASSERT_LT(durationMs.count(), tolerable.count());
     ASSERT_NE(message, nullptr);
     EXPECT_EQ(message->getDeviceKey(), DEVICE_KEY);
     EXPECT_EQ(message->getMessage(), TEST_CONTENT);
@@ -196,10 +198,10 @@ TEST_F(ErrorServiceTests, FullMessageArrivalTest)
     ASSERT_NO_FATAL_FAILURE(message = service->obtainOrAwaitMessageForDevice(DEVICE_KEY, std::chrono::seconds(1)));
     auto duration = std::chrono::system_clock::now() - start;
     auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    auto tolerable = delay * 1.25;
+    auto tolerable = delay * 1.5;
     LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
               << "ms) - Delay time: " << tolerable.count() << "ms.";
-    ASSERT_LT(durationMs, tolerable);
+    ASSERT_LT(durationMs.count(), tolerable.count());
     ASSERT_NE(message, nullptr);
     EXPECT_EQ(message->getDeviceKey(), DEVICE_KEY);
     EXPECT_EQ(message->getMessage(), TEST_CONTENT);

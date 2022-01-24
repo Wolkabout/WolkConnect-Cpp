@@ -483,10 +483,10 @@ TEST_F(FileTransferSessionTests, SimpleUrlDownloadSession)
     conditionVariable.wait_for(lock, timeout);
     const auto duration = std::chrono::system_clock::now() - start;
     const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    const auto tolerable = delay * 1.25;
+    const auto tolerable = delay * 1.5;
     LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
               << "ms) - Delay time: " << tolerable.count() << "ms.";
-    ASSERT_LT(durationMs, tolerable);
+    ASSERT_LT(durationMs.count(), tolerable.count());
 
     // And check the session
     ASSERT_TRUE(session->isDone());

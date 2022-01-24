@@ -185,7 +185,7 @@ TEST_F(FileManagementServiceTests, NotifyAddedFileTest)
         const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
         LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
                   << "ms) - Timeout time: " << timeout.count() << "ms.";
-        ASSERT_LT(durationMs, timeout);
+        ASSERT_LT(durationMs.count(), timeout.count());
     }
     EXPECT_TRUE(called);
 }
@@ -211,7 +211,7 @@ TEST_F(FileManagementServiceTests, NotifyRemovedFileTest)
         const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
         LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
                   << "ms) - Timeout time: " << timeout.count() << "ms.";
-        ASSERT_LT(durationMs, timeout);
+        ASSERT_LT(durationMs.count(), timeout.count());
     }
     EXPECT_TRUE(called);
 }
