@@ -157,12 +157,10 @@ TEST_F(ErrorServiceTests, AwaitOneMessageTest)
     // Prepare a task that will add the message
     auto delay = std::chrono::milliseconds{25};
     Timer timer;
-    timer.start(delay,
-                [&]()
-                {
-                    addTestMessageToService();
-                    service->m_conditionVariables[DEVICE_KEY]->notify_one();
-                });
+    timer.start(delay, [&]() {
+        addTestMessageToService();
+        service->m_conditionVariables[DEVICE_KEY]->notify_one();
+    });
 
     // Now await the message
     auto start = std::chrono::system_clock::now();
