@@ -316,6 +316,19 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
           device.getKey(), {ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"});
     }
 
+    // Set the parameters about the FirmwareUpdate
+    for (const auto& device : m_devices)
+    {
+        wolk->m_dataService->updateParameter(device.getKey(), {ParameterName::FIRMWARE_UPDATE_ENABLED,
+                                                               m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
+        auto firmwareVersion = std::string{};
+        if (m_firmwareInstaller != nullptr)
+            firmwareVersion = m_firmwareInstaller->getFirmwareVersion(device.getKey());
+        else if (m_firmwareParametersListener != nullptr)
+            firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
+        wolk->m_dataService->updateParameter(device.getKey(), {ParameterName::FIRMWARE_VERSION, firmwareVersion});
+    }
+
     // Check if the firmware update should be engaged
     if (m_firmwareUpdateProtocol != nullptr)
     {
@@ -340,20 +353,6 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
         for (const auto& device : m_devices)
             wolk->m_firmwareUpdateService->loadState(device.getKey());
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
-    }
-
-    // Set the parameters about the FirmwareUpdate
-    for (const auto& device : m_devices)
-    {
-        wolk->m_dataService->updateParameter(
-          device.getKey(),
-          {ParameterName::FIRMWARE_UPDATE_ENABLED, wolk->m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
-        auto firmwareVersion = std::string{};
-        if (m_firmwareInstaller != nullptr)
-            firmwareVersion = m_firmwareInstaller->getFirmwareVersion(device.getKey());
-        else if (m_firmwareParametersListener != nullptr)
-            firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
-        wolk->m_dataService->updateParameter(device.getKey(), {ParameterName::FIRMWARE_VERSION, firmwareVersion});
     }
 
     // Check if the platform status service needs to be introduced
