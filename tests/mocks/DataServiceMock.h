@@ -45,8 +45,11 @@ public:
     MOCK_METHOD(bool, synchronizeParameters,
                 (const std::string&, const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>));
     MOCK_METHOD(void, publishReadings, ());
+    MOCK_METHOD(void, publishReadings, (const std::string&));
     MOCK_METHOD(void, publishAttributes, ());
+    MOCK_METHOD(void, publishAttributes, (const std::string&));
     MOCK_METHOD(void, publishParameters, ());
+    MOCK_METHOD(void, publishParameters, (const std::string&));
 };
 
 #endif    // WOLKABOUTCONNECTOR_DATASERVICEMOCK_H

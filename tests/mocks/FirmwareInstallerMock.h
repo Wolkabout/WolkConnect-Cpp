@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Wolkabout s.r.o.
+ * Copyright 2022 Wolkabout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-#ifndef WOLKABOUTCONNECTOR_FEEDUPDATEHANDLERMOCK_H
-#define WOLKABOUTCONNECTOR_FEEDUPDATEHANDLERMOCK_H
+#ifndef WOLKGATEWAY_FIRMWAREINSTALLERMOCK_H
+#define WOLKGATEWAY_FIRMWAREINSTALLERMOCK_H
 
-#include "wolk/api/FeedUpdateHandler.h"
+#include "wolk/api/FirmwareInstaller.h"
 
 #include <gmock/gmock.h>
 
-using namespace wolkabout;
 using namespace wolkabout::connect;
 
-class FeedUpdateHandlerMock : public FeedUpdateHandler
+class FirmwareInstallerMock : public FirmwareInstaller
 {
 public:
-    MOCK_METHOD(void, handleUpdate, (const std::string&, (const std::map<std::uint64_t, std::vector<Reading>>&)));
+    MOCK_METHOD(InstallResponse, installFirmware, (const std::string&, const std::string&));
+    MOCK_METHOD(void, abortFirmwareInstall, (const std::string&));
+    MOCK_METHOD(bool, wasFirmwareInstallSuccessful, (const std::string&, const std::string&));
+    MOCK_METHOD(std::string, getFirmwareVersion, (const std::string&));
 };
 
-#endif    // WOLKABOUTCONNECTOR_FEEDUPDATEHANDLERMOCK_H
+#endif    // WOLKGATEWAY_FIRMWAREINSTALLERMOCK_H
