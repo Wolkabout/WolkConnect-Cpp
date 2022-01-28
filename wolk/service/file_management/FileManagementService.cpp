@@ -398,9 +398,10 @@ void FileManagementService::onFileDelete(const std::string& deviceKey, const Fil
     LOG(TRACE) << METHOD_INFO;
 
     // Go through the list of files
+    const auto devicePath = FileSystemUtils::composePath(deviceKey, m_fileLocation);
     for (const auto& file : message.getFiles())
     {
-        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, m_fileLocation)))
+        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, devicePath)))
         {
             m_files.erase(file);
             notifyListenerRemovedFile(deviceKey, file);
@@ -416,9 +417,10 @@ void FileManagementService::onFilePurge(const std::string& deviceKey, const File
     LOG(TRACE) << METHOD_INFO;
 
     // Just delete all the contents of the file
-    for (const auto& file : FileSystemUtils::listFiles(m_fileLocation))
+    const auto devicePath = FileSystemUtils::composePath(deviceKey, m_fileLocation);
+    for (const auto& file : FileSystemUtils::listFiles(devicePath))
     {
-        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, m_fileLocation)))
+        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, devicePath)))
         {
             m_files.erase(file);
             notifyListenerRemovedFile(deviceKey, file);

@@ -778,6 +778,21 @@ TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlAbortDisabled)
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
 }
 
+TEST_F(FileManagementServiceTests, FileListRequestHappyFlow)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_LIST_REQUEST));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileListRequest)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileListRequestMessage>{new FileListRequestMessage{}})));
+    // Set up the response to not parse
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileListResponseMessage&>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
 TEST_F(FileManagementServiceTests, FileListRequestDoesntParse)
 {
     // Set up the message mock calls
@@ -786,6 +801,39 @@ TEST_F(FileManagementServiceTests, FileListRequestDoesntParse)
     EXPECT_CALL(fileManagementProtocolMock, parseFileListRequest).WillOnce(Return(ByMove(nullptr)));
     // Call the method
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, FileDeleteHappyFlow)
+{
+    // Add file to the directory
+    const auto devicePath = FileSystemUtils::composePath(DEVICE_KEY, fileLocation);
+    ASSERT_TRUE(FileSystemUtils::createDirectory(devicePath));
+    ASSERT_TRUE(
+      FileSystemUtils::createFileWithContent(FileSystemUtils::composePath(TEST_FILE, devicePath), "Hello World!"));
+    std::atomic_bool callbackCalled{false};
+    EXPECT_CALL(*fileListenerMock, onRemovedFile(DEVICE_KEY, TEST_FILE))
+      .Times(1)
+      .WillOnce([&](const std::string&, const std::string&) {
+          callbackCalled = true;
+          conditionVariable.notify_one();
+      });
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_DELETE));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileDelete)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileDeleteMessage>{new FileDeleteMessage{{TEST_FILE}}})));
+    // Set up the response to not parse
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileListResponseMessage&>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
 }
 
 TEST_F(FileManagementServiceTests, FileDeleteDoesntParse)
@@ -798,6 +846,39 @@ TEST_F(FileManagementServiceTests, FileDeleteDoesntParse)
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
 }
 
+TEST_F(FileManagementServiceTests, FilePurgeHappyFlow)
+{
+    // Add file to the directory
+    const auto devicePath = FileSystemUtils::composePath(DEVICE_KEY, fileLocation);
+    ASSERT_TRUE(FileSystemUtils::createDirectory(devicePath));
+    ASSERT_TRUE(
+      FileSystemUtils::createFileWithContent(FileSystemUtils::composePath(TEST_FILE, devicePath), "Hello World!"));
+    std::atomic_bool callbackCalled{false};
+    EXPECT_CALL(*fileListenerMock, onRemovedFile(DEVICE_KEY, TEST_FILE))
+      .Times(1)
+      .WillOnce([&](const std::string&, const std::string&) {
+          callbackCalled = true;
+          conditionVariable.notify_one();
+      });
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_PURGE));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFilePurge)
+      .WillOnce(Return(ByMove(std::unique_ptr<FilePurgeMessage>{new FilePurgeMessage{}})));
+    // Set up the response to not parse
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileListResponseMessage&>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
+}
+
 TEST_F(FileManagementServiceTests, FilePurgeDoesntParse)
 {
     // Set up the message mock calls
@@ -806,4 +887,39 @@ TEST_F(FileManagementServiceTests, FilePurgeDoesntParse)
     EXPECT_CALL(fileManagementProtocolMock, parseFilePurge).WillOnce(Return(ByMove(nullptr)));
     // Call the method
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReportFilesOneFileFromMapOneObtained)
+{
+    // Add file to the directory
+    const auto devicePath = FileSystemUtils::composePath(DEVICE_KEY, fileLocation);
+    ASSERT_TRUE(FileSystemUtils::createDirectory(devicePath));
+    ASSERT_TRUE(
+      FileSystemUtils::createFileWithContent(FileSystemUtils::composePath(TEST_FILE, devicePath), "Hello World!"));
+    ASSERT_TRUE(FileSystemUtils::createFileWithContent(FileSystemUtils::composePath(TEST_FILE + "2", devicePath),
+                                                       "Hello World!"));
+    // Set up the value in the cache
+    service->m_files.emplace(
+      DEVICE_KEY, std::map<std::string, FileInformation>{{TEST_FILE, {TEST_FILE, TEST_FILE_SIZE, TEST_FILE_HASH}}});
+
+    // And check the report
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileListResponseMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    ASSERT_NO_FATAL_FAILURE(service->reportPresentFiles(DEVICE_KEY));
+}
+
+TEST_F(FileManagementServiceTests, ReportFilesOneButFailsToObtainFileInformation)
+{
+    // Add file to the directory
+    const auto devicePath = FileSystemUtils::composePath(DEVICE_KEY, fileLocation);
+    ASSERT_TRUE(FileSystemUtils::createDirectory(devicePath));
+    ASSERT_TRUE(
+      FileSystemUtils::createFileWithContent(FileSystemUtils::composePath(TEST_FILE, devicePath), "Hello World!"));
+    chmod(FileSystemUtils::composePath(TEST_FILE, devicePath).c_str(), 200);
+    // And check the report
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileListResponseMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    ASSERT_NO_FATAL_FAILURE(service->reportPresentFiles(DEVICE_KEY));
 }
