@@ -120,6 +120,8 @@ public:
     const std::uint64_t TEST_FILE_SIZE = 256;
     const std::string TEST_FILE_HASH = "test.hash";
 
+    const std::string TEST_PATH = "http://test.location/test.file";
+
 private:
     FeedUpdateSetHandler _internalFeedUpdateSetHandler;
     ParameterSyncHandler _internalParameterSyncHandler;
@@ -576,21 +578,202 @@ TEST_F(FileManagementServiceTests, TransferBinaryResponse)
         ASSERT_NO_FATAL_FAILURE(service->onFileBinaryResponse(DEVICE_KEY, FileBinaryResponseMessage{""}));
 }
 
-TEST_F(FileManagementServiceTests, DISABLED_StartTransferSession)
+TEST_F(FileManagementServiceTests, UrlDownloadInitAlreadyExistingSession)
 {
-    // Make the message that will be returned
+    // Emplace the session
+    auto session = std::unique_ptr<FileTransferSessionMock>{new FileTransferSessionMock};
+    service->m_sessions[DEVICE_KEY] = std::move(session);
+    ASSERT_NO_FATAL_FAILURE(service->onFileUrlDownloadInit(DEVICE_KEY, FileUrlDownloadInitMessage{TEST_PATH}));
+}
+
+TEST_F(FileManagementServiceTests, UrlDownloadInit)
+{
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
+      .WillOnce(Return(ByMove(nullptr)))
+      .WillOnce([&](const std::string&, const FileUrlDownloadStatusMessage&) {
+          conditionVariable.notify_one();
+          return nullptr;
+      });
+    ASSERT_NO_FATAL_FAILURE(service->onFileUrlDownloadInit(DEVICE_KEY, FileUrlDownloadInitMessage{TEST_PATH}));
+    ASSERT_NE(service->m_sessions[DEVICE_KEY], nullptr);
+    service->onFileUrlDownloadAbort(DEVICE_KEY, FileUrlDownloadAbortMessage{TEST_PATH});
+    auto lock = std::unique_lock<std::mutex>{mutex};
+    conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileTransferInitFailedToParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_UPLOAD_INIT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUploadInit).WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileTransferInitEnabled)
+{
+    // Set up the message mock calls
     EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_UPLOAD_INIT));
     EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
     EXPECT_CALL(fileManagementProtocolMock, parseFileUploadInit)
       .WillOnce(Return(ByMove(std::unique_ptr<FileUploadInitiateMessage>{
         new FileUploadInitiateMessage{TEST_FILE, TEST_FILE_SIZE, TEST_FILE_HASH}})));
-    EXPECT_CALL(*connectivityServiceMock, publish).Times(2);
+    // Set up the internal calls - we're going to already emplace a session in
+    auto session = std::unique_ptr<FileTransferSessionMock>{new FileTransferSessionMock};
+    service->m_sessions[DEVICE_KEY] = std::move(session);
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileTransferInitDisabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_UPLOAD_INIT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUploadInit)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileUploadInitiateMessage>{
+        new FileUploadInitiateMessage{TEST_FILE, TEST_FILE_SIZE, TEST_FILE_HASH}})));
+    // Set up the internal calls - not enabled.
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
-      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
-    EXPECT_CALL(fileManagementProtocolMock,
-                makeOutboundMessage(A<const std::string&>(), A<const FileBinaryRequestMessage&>()))
-      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+      .WillOnce(Return(ByMove(nullptr)));
+    service->m_fileTransferEnabled = false;
+    // Call the method
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
-    EXPECT_NE(service->m_sessions[DEVICE_KEY], nullptr);
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileTransferAbortFailedToParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_UPLOAD_ABORT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUploadAbort).WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileTransferAbortEnabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_UPLOAD_ABORT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUploadAbort)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileUploadAbortMessage>{new FileUploadAbortMessage{TEST_FILE}})));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileTransferAbortDisabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_UPLOAD_ABORT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUploadAbort)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileUploadAbortMessage>{new FileUploadAbortMessage{TEST_FILE}})));
+    // Set up the internal calls - not enabled.
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    service->m_fileTransferEnabled = false;
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileBinaryResponseFailedToParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_BINARY_RESPONSE));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileBinaryResponse).WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileBinaryResponseEnabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_BINARY_RESPONSE));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileBinaryResponse)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileBinaryResponseMessage>{new FileBinaryResponseMessage{""}})));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlInitFailedToParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_URL_DOWNLOAD_INIT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUrlDownloadInit).WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlInitEnabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_URL_DOWNLOAD_INIT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUrlDownloadInit)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileUrlDownloadInitMessage>{new FileUrlDownloadInitMessage{TEST_PATH}})));
+    // Set up the internal calls - we're going to already emplace a session in
+    auto session = std::unique_ptr<FileTransferSessionMock>{new FileTransferSessionMock};
+    service->m_sessions[DEVICE_KEY] = std::move(session);
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlInitDisabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_URL_DOWNLOAD_INIT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUrlDownloadInit)
+      .WillOnce(Return(ByMove(std::unique_ptr<FileUrlDownloadInitMessage>{new FileUrlDownloadInitMessage{TEST_PATH}})));
+    // Set up the internal calls - not enabled.
+    EXPECT_CALL(fileManagementProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    service->m_fileTransferUrlEnabled = false;
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlAbortFailedToParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_URL_DOWNLOAD_ABORT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUrlDownloadAbort).WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlAbortEnabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_URL_DOWNLOAD_ABORT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUrlDownloadAbort)
+      .WillOnce(
+        Return(ByMove(std::unique_ptr<FileUrlDownloadAbortMessage>{new FileUrlDownloadAbortMessage{TEST_FILE}})));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlAbortDisabled)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_URL_DOWNLOAD_ABORT));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileUrlDownloadAbort)
+      .WillOnce(
+        Return(ByMove(std::unique_ptr<FileUrlDownloadAbortMessage>{new FileUrlDownloadAbortMessage{TEST_FILE}})));
+    // Set up the internal calls - not enabled.
+    service->m_fileTransferEnabled = false;
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
 }
