@@ -773,7 +773,37 @@ TEST_F(FileManagementServiceTests, ReceiveMessageFileUrlAbortDisabled)
       .WillOnce(
         Return(ByMove(std::unique_ptr<FileUrlDownloadAbortMessage>{new FileUrlDownloadAbortMessage{TEST_FILE}})));
     // Set up the internal calls - not enabled.
-    service->m_fileTransferEnabled = false;
+    service->m_fileTransferUrlEnabled = false;
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, FileListRequestDoesntParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_LIST_REQUEST));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileListRequest).WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, FileDeleteDoesntParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_DELETE));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFileDelete).WillOnce(Return(ByMove(nullptr)));
+    // Call the method
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(FileManagementServiceTests, FilePurgeDoesntParse)
+{
+    // Set up the message mock calls
+    EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_PURGE));
+    EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(fileManagementProtocolMock, parseFilePurge).WillOnce(Return(ByMove(nullptr)));
     // Call the method
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
 }
