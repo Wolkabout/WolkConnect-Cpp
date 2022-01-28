@@ -140,6 +140,10 @@ public:
      */
     void addReading(const std::string& reference, const std::vector<std::string>& values, std::uint64_t rtc = 0);
 
+    void addReading(const Reading& reading);
+
+    void addReadings(const std::vector<Reading>& readings);
+
     void pullFeedValues();
     void pullParameters();
 

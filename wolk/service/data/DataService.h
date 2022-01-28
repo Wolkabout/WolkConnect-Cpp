@@ -53,6 +53,9 @@ public:
     virtual void addReading(const std::string& deviceKey, const std::string& reference,
                             const std::vector<std::string>& value, std::uint64_t rtc);
 
+    virtual void addReading(const std::string& deviceKey, const Reading& reading);
+    virtual void addReadings(const std::string& deviceKey, const std::vector<Reading>& readings);
+
     virtual void addAttribute(const std::string& deviceKey, const Attribute& attribute);
     virtual void updateParameter(const std::string& deviceKey, const Parameter& parameter);
 

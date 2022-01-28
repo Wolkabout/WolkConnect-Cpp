@@ -49,15 +49,24 @@ DataService::DataService(DataProtocol& protocol, Persistence& persistence, Conne
 void DataService::addReading(const std::string& deviceKey, const std::string& reference, const std::string& value,
                              std::uint64_t rtc)
 {
-    auto reading = std::make_shared<Reading>(reference, value, rtc);
-    m_persistence.putReading(makePersistenceKey(deviceKey, reference), *reading);
+    m_persistence.putReading(makePersistenceKey(deviceKey, reference), Reading{reference, value, rtc});
 }
 
 void DataService::addReading(const std::string& deviceKey, const std::string& reference,
                              const std::vector<std::string>& value, std::uint64_t rtc)
 {
-    auto reading = std::make_shared<Reading>(reference, value, rtc);
-    m_persistence.putReading(makePersistenceKey(deviceKey, reference), *reading);
+    m_persistence.putReading(makePersistenceKey(deviceKey, reference), Reading{reference, value, rtc});
+}
+
+void DataService::addReading(const std::string& deviceKey, const Reading& reading)
+{
+    m_persistence.putReading(makePersistenceKey(deviceKey, reading.getReference()), reading);
+}
+
+void DataService::addReadings(const std::string& deviceKey, const std::vector<Reading>& readings)
+{
+    for (const auto& reading : readings)
+        m_persistence.putReading(makePersistenceKey(deviceKey, reading.getReference()), reading);
 }
 
 void DataService::addAttribute(const std::string& deviceKey, const Attribute& attribute)

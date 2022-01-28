@@ -88,6 +88,16 @@ void WolkMulti::addReading(const std::string& deviceKey, const std::string& refe
     addToCommandBuffer([=]() -> void { m_dataService->addReading(deviceKey, reference, values, rtc); });
 }
 
+void WolkMulti::addReading(const std::string& deviceKey, const Reading& reading)
+{
+    addToCommandBuffer([this, deviceKey, reading] { m_dataService->addReading(deviceKey, reading); });
+}
+
+void WolkMulti::addReadings(const std::string& deviceKey, const std::vector<Reading>& readings)
+{
+    addToCommandBuffer([this, deviceKey, readings] { m_dataService->addReadings(deviceKey, readings); });
+}
+
 void WolkMulti::registerFeed(const std::string& deviceKey, const Feed& feed)
 {
     if (!isDeviceInList(deviceKey))

@@ -58,6 +58,10 @@ public:
     void addReading(const std::string& deviceKey, const std::string& reference, const std::vector<std::string>& values,
                     std::uint64_t rtc = 0);
 
+    void addReading(const std::string& deviceKey, const Reading& reading);
+
+    void addReadings(const std::string& deviceKey, const std::vector<Reading>& readings);
+
     void pullFeedValues(const std::string& deviceKey);
     void pullParameters(const std::string& deviceKey);
 

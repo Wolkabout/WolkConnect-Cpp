@@ -47,6 +47,16 @@ void WolkSingle::addReading(const std::string& reference, const std::vector<std:
     addToCommandBuffer([=]() -> void { m_dataService->addReading(m_device.getKey(), reference, values, rtc); });
 }
 
+void WolkSingle::addReading(const Reading& reading)
+{
+    addToCommandBuffer([this, reading] { m_dataService->addReading(m_device.getKey(), reading); });
+}
+
+void WolkSingle::addReadings(const std::vector<Reading>& readings)
+{
+    addToCommandBuffer([this, readings] { m_dataService->addReadings(m_device.getKey(), readings); });
+}
+
 void WolkSingle::registerFeed(const Feed& feed)
 {
     addToCommandBuffer([=]() -> void { m_dataService->registerFeed(m_device.getKey(), feed); });
