@@ -17,7 +17,7 @@ project(WolkAboutConnector C CXX)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}     -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
                                             -Wdisabled-optimization                                                    \
@@ -171,8 +171,7 @@ if (${BUILD_TESTS})
             tests/mocks/FileManagementServiceMock.h
             tests/mocks/FileTransferSessionMock.h
             tests/mocks/ParameterHandlerMock.h
-            tests/mocks/PlatformStatusListenerMock.h
-            )
+            tests/mocks/PlatformStatusListenerMock.h)
 
     enable_testing()
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
@@ -227,12 +226,3 @@ install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
-## Add the format target
-#add_custom_target(format
-#        COMMAND "clang-format" -i -sort-includes -style=file ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES}
-#        ${TEST_HEADER_FILES} ${TEST_SOURCE_FILES} ${FULL_EXAMPLE_SOURCE_FILES} ${PULL_EXAMPLE_SOURCE_FILES}
-#        ${REGISTER_EXAMPLE_SOURCE_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES}
-#        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-#        COMMENT "[Formatting source code]"
-#        VERBATIM)

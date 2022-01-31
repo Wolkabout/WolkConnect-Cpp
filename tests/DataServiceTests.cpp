@@ -47,14 +47,12 @@ public:
         persistenceMock = std::make_shared<PersistenceMock>();
 
         // Set up the callback
-        _internalFeedUpdateSetHandler =
-          [&](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings)
-        {
+        _internalFeedUpdateSetHandler = [&](const std::string& deviceKey,
+                                            const std::map<std::uint64_t, std::vector<Reading>>& readings) {
             if (feedUpdateSetHandler)
                 feedUpdateSetHandler(deviceKey, std::move(readings));
         };
-        _internalParameterSyncHandler = [&](const std::string& deviceKey, const std::vector<Parameter>& parameters)
-        {
+        _internalParameterSyncHandler = [&](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
             if (parameterSyncHandler)
                 parameterSyncHandler(deviceKey, std::move(parameters));
         };
@@ -187,10 +185,9 @@ TEST_F(DataServiceTests, RegisterSingleFeedTest)
 {
     auto feed = Feed{"Test Feed", "T", FeedType::IN_OUT, Unit::AMPERE};
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<FeedRegistrationMessage>()))
-      .WillOnce(
-        [&](const std::string&, const FeedRegistrationMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const FeedRegistrationMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
     ASSERT_NO_FATAL_FAILURE(service->registerFeed(DEVICE_KEY, feed));
 }
@@ -199,10 +196,9 @@ TEST_F(DataServiceTests, RegisterSingleFeedTestFailsToPublish)
 {
     auto feed = Feed{"Test Feed", "T", FeedType::IN_OUT, Unit::AMPERE};
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<FeedRegistrationMessage>()))
-      .WillOnce(
-        [&](const std::string&, const FeedRegistrationMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const FeedRegistrationMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
     ASSERT_NO_FATAL_FAILURE(service->registerFeed(DEVICE_KEY, feed));
 }
@@ -219,10 +215,9 @@ TEST_F(DataServiceTests, RegisterSingleFeedTestFailsToParse)
 TEST_F(DataServiceTests, RemoveSingleFeedTest)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<FeedRemovalMessage>()))
-      .WillOnce(
-        [&](const std::string&, const FeedRemovalMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const FeedRemovalMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
     ASSERT_NO_FATAL_FAILURE(service->removeFeed(DEVICE_KEY, "TestFeed"));
 }
@@ -230,10 +225,9 @@ TEST_F(DataServiceTests, RemoveSingleFeedTest)
 TEST_F(DataServiceTests, RemoveSingleFeedTestFailsToPublish)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<FeedRemovalMessage>()))
-      .WillOnce(
-        [&](const std::string&, const FeedRemovalMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const FeedRemovalMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
     ASSERT_NO_FATAL_FAILURE(service->removeFeed(DEVICE_KEY, "TestFeed"));
 }
@@ -249,10 +243,9 @@ TEST_F(DataServiceTests, RemoveSingleFeedTestFailsToParse)
 TEST_F(DataServiceTests, PullFeedTest)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<PullFeedValuesMessage>()))
-      .WillOnce(
-        [&](const std::string&, const PullFeedValuesMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const PullFeedValuesMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
     ASSERT_NO_FATAL_FAILURE(service->pullFeedValues(DEVICE_KEY));
 }
@@ -260,10 +253,9 @@ TEST_F(DataServiceTests, PullFeedTest)
 TEST_F(DataServiceTests, PullFeedTestFailsToPublish)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<PullFeedValuesMessage>()))
-      .WillOnce(
-        [&](const std::string&, const PullFeedValuesMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const PullFeedValuesMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
     ASSERT_NO_FATAL_FAILURE(service->pullFeedValues(DEVICE_KEY));
 }
@@ -279,10 +271,9 @@ TEST_F(DataServiceTests, PullFeedTestFailsToParse)
 TEST_F(DataServiceTests, PullParameterTest)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersPullMessage>()))
-      .WillOnce(
-        [&](const std::string&, const ParametersPullMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const ParametersPullMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
     ASSERT_NO_FATAL_FAILURE(service->pullParameters(DEVICE_KEY));
 }
@@ -290,10 +281,9 @@ TEST_F(DataServiceTests, PullParameterTest)
 TEST_F(DataServiceTests, PullParameterTestFailsToPublish)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersPullMessage>()))
-      .WillOnce(
-        [&](const std::string&, const ParametersPullMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const ParametersPullMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
     ASSERT_NO_FATAL_FAILURE(service->pullParameters(DEVICE_KEY));
 }
@@ -309,10 +299,9 @@ TEST_F(DataServiceTests, PullParameterTestFailsToParse)
 TEST_F(DataServiceTests, SynchronizeParametersTest)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<SynchronizeParametersMessage>()))
-      .WillOnce(
-        [&](const std::string&, const SynchronizeParametersMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const SynchronizeParametersMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
     ASSERT_NO_FATAL_FAILURE(service->synchronizeParameters(DEVICE_KEY, {}, [](const std::vector<Parameter>&) {}));
 }
@@ -320,10 +309,9 @@ TEST_F(DataServiceTests, SynchronizeParametersTest)
 TEST_F(DataServiceTests, SynchronizeParametersTestFailsToPublish)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<SynchronizeParametersMessage>()))
-      .WillOnce(
-        [&](const std::string&, const SynchronizeParametersMessage&) {
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const SynchronizeParametersMessage&) {
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
     ASSERT_NO_FATAL_FAILURE(service->synchronizeParameters(DEVICE_KEY, {}, [](const std::vector<Parameter>&) {}));
 }
@@ -342,7 +330,4 @@ TEST_F(DataServiceTests, PublishReadings)
     ASSERT_NO_FATAL_FAILURE(service->publishReadings(DEVICE_KEY));
 }
 
-TEST_F(DataServiceTests, PublishAttributes)
-{
-
-}
+TEST_F(DataServiceTests, PublishAttributes) {}

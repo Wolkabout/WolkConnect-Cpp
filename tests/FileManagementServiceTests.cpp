@@ -44,14 +44,12 @@ class FileManagementServiceTests : public ::testing::Test
 public:
     void SetUp() override
     {
-        _internalFeedUpdateSetHandler =
-          [&](std::string deviceKey, std::map<std::uint64_t, std::vector<Reading>> readings)
-        {
+        _internalFeedUpdateSetHandler = [&](std::string deviceKey,
+                                            std::map<std::uint64_t, std::vector<Reading>> readings) {
             if (feedUpdateSetHandler)
                 feedUpdateSetHandler(std::move(deviceKey), std::move(readings));
         };
-        _internalParameterSyncHandler = [&](std::string deviceKey, std::vector<Parameter> parameters)
-        {
+        _internalParameterSyncHandler = [&](std::string deviceKey, std::vector<Parameter> parameters) {
             if (parameterSyncHandler)
                 parameterSyncHandler(std::move(deviceKey), std::move(parameters));
         };
@@ -172,12 +170,10 @@ TEST_F(FileManagementServiceTests, NotifyAddedFileTest)
     // Make the listener invoke the condition variable
     std::atomic_bool called{false};
     EXPECT_CALL(*fileListenerMock, onAddedFile)
-      .WillOnce(
-        [&](const std::string&, const std::string&, const std::string&)
-        {
-            called = true;
-            conditionVariable.notify_one();
-        });
+      .WillOnce([&](const std::string&, const std::string&, const std::string&) {
+          called = true;
+          conditionVariable.notify_one();
+      });
 
     // Call the service and measure the execution time
     const auto timeout = std::chrono::milliseconds{100};
@@ -200,13 +196,10 @@ TEST_F(FileManagementServiceTests, NotifyRemovedFileTest)
 {
     // Make the listener invoke the condition variable
     std::atomic_bool called{false};
-    EXPECT_CALL(*fileListenerMock, onRemovedFile)
-      .WillOnce(
-        [&](const std::string&, const std::string&)
-        {
-            called = true;
-            conditionVariable.notify_one();
-        });
+    EXPECT_CALL(*fileListenerMock, onRemovedFile).WillOnce([&](const std::string&, const std::string&) {
+        called = true;
+        conditionVariable.notify_one();
+    });
 
     // Call the service and measure the execution time
     const auto timeout = std::chrono::milliseconds{100};
@@ -254,13 +247,11 @@ TEST_F(FileManagementServiceTests, ReportTransferDisabledValid)
     // Make the protocol fail to return
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
-      .WillOnce(
-        [&](const std::string&, const FileUploadStatusMessage& message)
-        {
-            EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
-            EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const FileUploadStatusMessage& message) {
+          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
+          EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     ASSERT_NO_FATAL_FAILURE(service->reportTransferProtocolDisabled(DEVICE_KEY, TEST_FILE));
 }
 
@@ -278,13 +269,11 @@ TEST_F(FileManagementServiceTests, ReportUrlDownloadDisabledValid)
     // Make the protocol fail to return
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
-      .WillOnce(
-        [&](const std::string&, const FileUrlDownloadStatusMessage& message)
-        {
-            EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
-            EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
-            return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-        });
+      .WillOnce([&](const std::string&, const FileUrlDownloadStatusMessage& message) {
+          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
+          EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
+          return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+      });
     ASSERT_NO_FATAL_FAILURE(service->reportUrlTransferProtocolDisabled(DEVICE_KEY, TEST_FILE));
 }
 
@@ -353,14 +342,12 @@ TEST_F(FileManagementServiceTests, ReportStatusForTransfer)
     // Check that the protocol and connectivity service get called
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
-      .WillOnce(
-        [&](const std::string&, const FileUploadStatusMessage& status) -> std::unique_ptr<wolkabout::Message>
-        {
-            if (status.getStatus() == wolkabout::FileTransferStatus::FILE_READY &&
-                status.getError() == wolkabout::FileTransferError::UNSUPPORTED_FILE_SIZE)
-                return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
-            return nullptr;
-        });
+      .WillOnce([&](const std::string&, const FileUploadStatusMessage& status) -> std::unique_ptr<wolkabout::Message> {
+          if (status.getStatus() == wolkabout::FileTransferStatus::FILE_READY &&
+              status.getError() == wolkabout::FileTransferError::UNSUPPORTED_FILE_SIZE)
+              return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
+          return nullptr;
+      });
     EXPECT_CALL(*connectivityServiceMock, publish);
 
     // And now report the session
@@ -381,8 +368,7 @@ TEST_F(FileManagementServiceTests, ReportStatusForUrlDownload)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
       .WillOnce(
-        [&](const std::string&, const FileUrlDownloadStatusMessage& status) -> std::unique_ptr<wolkabout::Message>
-        {
+        [&](const std::string&, const FileUrlDownloadStatusMessage& status) -> std::unique_ptr<wolkabout::Message> {
             if (status.getStatus() == wolkabout::FileTransferStatus::FILE_READY &&
                 status.getError() == wolkabout::FileTransferError::UNSUPPORTED_FILE_SIZE)
                 return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
@@ -550,12 +536,10 @@ TEST_F(FileManagementServiceTests, TransferInit)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
       .WillOnce(Return(ByMove(nullptr)))
-      .WillOnce(
-        [&](const std::string&, const FileUploadStatusMessage&)
-        {
-            conditionVariable.notify_one();
-            return nullptr;
-        });
+      .WillOnce([&](const std::string&, const FileUploadStatusMessage&) {
+          conditionVariable.notify_one();
+          return nullptr;
+      });
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileBinaryRequestMessage&>()))
       .WillOnce(Return(ByMove(nullptr)));
@@ -579,12 +563,9 @@ TEST_F(FileManagementServiceTests, TransferBinaryResponse)
       .WillOnce(Return(FileTransferError::FILE_HASH_MISMATCH))
       .WillOnce(Return(FileTransferError::NONE));
     EXPECT_CALL(*session, isDone).WillOnce(Return(true));
-    EXPECT_CALL(*session, getNextChunkRequest)
-      .Times(3)
-      .WillRepeatedly(
-        [&]() {
-            return FileBinaryRequestMessage{TEST_FILE, 0};
-        });
+    EXPECT_CALL(*session, getNextChunkRequest).Times(3).WillRepeatedly([&]() {
+        return FileBinaryRequestMessage{TEST_FILE, 0};
+    });
     service->m_sessions[DEVICE_KEY] = std::move(session);
     ASSERT_NE(service->m_sessions[DEVICE_KEY], nullptr);
 
@@ -610,12 +591,10 @@ TEST_F(FileManagementServiceTests, UrlDownloadInit)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
       .WillOnce(Return(ByMove(nullptr)))
-      .WillOnce(
-        [&](const std::string&, const FileUrlDownloadStatusMessage&)
-        {
-            conditionVariable.notify_one();
-            return nullptr;
-        });
+      .WillOnce([&](const std::string&, const FileUrlDownloadStatusMessage&) {
+          conditionVariable.notify_one();
+          return nullptr;
+      });
     ASSERT_NO_FATAL_FAILURE(service->onFileUrlDownloadInit(DEVICE_KEY, FileUrlDownloadInitMessage{TEST_PATH}));
     ASSERT_NE(service->m_sessions[DEVICE_KEY], nullptr);
     service->onFileUrlDownloadAbort(DEVICE_KEY, FileUrlDownloadAbortMessage{TEST_PATH});
@@ -834,12 +813,10 @@ TEST_F(FileManagementServiceTests, FileDeleteHappyFlow)
     std::atomic_bool callbackCalled{false};
     EXPECT_CALL(*fileListenerMock, onRemovedFile(DEVICE_KEY, TEST_FILE))
       .Times(1)
-      .WillOnce(
-        [&](const std::string&, const std::string&)
-        {
-            callbackCalled = true;
-            conditionVariable.notify_one();
-        });
+      .WillOnce([&](const std::string&, const std::string&) {
+          callbackCalled = true;
+          conditionVariable.notify_one();
+      });
     // Set up the message mock calls
     EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_DELETE));
     EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
@@ -879,12 +856,10 @@ TEST_F(FileManagementServiceTests, FilePurgeHappyFlow)
     std::atomic_bool callbackCalled{false};
     EXPECT_CALL(*fileListenerMock, onRemovedFile(DEVICE_KEY, TEST_FILE))
       .Times(1)
-      .WillOnce(
-        [&](const std::string&, const std::string&)
-        {
-            callbackCalled = true;
-            conditionVariable.notify_one();
-        });
+      .WillOnce([&](const std::string&, const std::string&) {
+          callbackCalled = true;
+          conditionVariable.notify_one();
+      });
     // Set up the message mock calls
     EXPECT_CALL(fileManagementProtocolMock, getMessageType).WillOnce(Return(MessageType::FILE_PURGE));
     EXPECT_CALL(fileManagementProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));

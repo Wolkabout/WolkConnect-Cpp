@@ -127,8 +127,7 @@ void FirmwareUpdateService::obtainParametersAndAnnounce(const std::string& devic
     // Subscribe to the parameters
     auto parameters =
       std::vector<ParameterName>{ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME};
-    auto callback = [this](const std::vector<Parameter>& receivedParameters)
-    {
+    auto callback = [this](const std::vector<Parameter>& receivedParameters) {
         // Analyze the parameters
         auto repository = std::string{};
         auto checkTime = std::string{};
