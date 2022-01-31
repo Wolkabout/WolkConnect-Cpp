@@ -34,6 +34,8 @@ public:
     MOCK_METHOD(void, addReading, (const std::string&, const std::string&, const std::string&, std::uint64_t));
     MOCK_METHOD(void, addReading,
                 (const std::string&, const std::string&, const std::vector<std::string>&, std::uint64_t));
+    MOCK_METHOD(void, addReading, (const std::string&, const Reading&));
+    MOCK_METHOD(void, addReadings, (const std::string&, const std::vector<Reading>&));
     MOCK_METHOD(void, addAttribute, (const std::string&, const Attribute&));
     MOCK_METHOD(void, updateParameter, (const std::string&, const Parameter&));
     MOCK_METHOD(void, registerFeed, (const std::string&, Feed));
