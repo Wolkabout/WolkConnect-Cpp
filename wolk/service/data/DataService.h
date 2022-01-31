@@ -34,6 +34,7 @@ namespace wolkabout
 {
 // Forward declare some interfaces from the SDK
 class DataProtocol;
+class ParametersUpdateMessage;
 class Persistence;
 class ConnectivityService;
 
@@ -87,6 +88,8 @@ private:
     static std::string makePersistenceKey(const std::string& deviceKey, const std::string& reference);
 
     static std::pair<std::string, std::string> parsePersistenceKey(const std::string& key);
+
+    bool checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage);
 
     void publishReadingsForPersistenceKey(const std::string& persistenceKey);
 

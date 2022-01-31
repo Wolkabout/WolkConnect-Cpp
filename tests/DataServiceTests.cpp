@@ -50,11 +50,11 @@ public:
         _internalFeedUpdateSetHandler = [&](const std::string& deviceKey,
                                             const std::map<std::uint64_t, std::vector<Reading>>& readings) {
             if (feedUpdateSetHandler)
-                feedUpdateSetHandler(deviceKey, std::move(readings));
+                feedUpdateSetHandler(deviceKey, readings);
         };
         _internalParameterSyncHandler = [&](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
             if (parameterSyncHandler)
-                parameterSyncHandler(deviceKey, std::move(parameters));
+                parameterSyncHandler(deviceKey, parameters);
         };
 
         // Create the service
@@ -139,6 +139,42 @@ TEST_F(DataServiceTests, PublishReadingsHappyFlow)
       .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
     ASSERT_NO_FATAL_FAILURE(service->publishReadingsForPersistenceKey(DEVICE_KEY + "+" + "T"));
+}
+
+TEST_F(DataServiceTests, CheckIfSubscriptionExistButItsEmpty)
+{
+    ASSERT_FALSE(
+      service->checkIfSubscriptionIsWaiting(std::make_shared<ParametersUpdateMessage>(std::vector<Parameter>{})));
+}
+
+TEST_F(DataServiceTests, CheckIfSubscriptionExistTwoSubscription)
+{
+    // Add the two subscriptions
+    service->m_parameterSubscriptions.emplace(
+      0, DataService::ParameterSubscription{
+           {ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME},
+           [](const std::vector<Parameter>&) {}});
+    service->m_parameterSubscriptions.emplace(
+      1, DataService::ParameterSubscription{{ParameterName::FILE_TRANSFER_PLATFORM_ENABLED},
+                                            [](const std::vector<Parameter>&) {}});
+    std::atomic_bool callbackCalled{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    service->m_parameterSubscriptions.emplace(
+      2, DataService::ParameterSubscription{{ParameterName::EXTERNAL_ID}, [&](const std::vector<Parameter>&) {
+                                                callbackCalled = true;
+                                                conditionVariable.notify_one();
+                                            }});
+
+    // Now parse the subscription
+    ASSERT_TRUE(service->checkIfSubscriptionIsWaiting(
+      std::make_shared<ParametersUpdateMessage>(std::vector<Parameter>{{ParameterName::EXTERNAL_ID, "TestValue"}})));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
 }
 
 TEST_F(DataServiceTests, AddReadingSingleStringReading)
@@ -326,8 +362,284 @@ TEST_F(DataServiceTests, SynchronizeParametersTestFailsToParse)
 
 TEST_F(DataServiceTests, PublishReadings)
 {
+    EXPECT_CALL(*persistenceMock, getReadingsKeys).WillOnce(Return(std::vector<std::string>{DEVICE_KEY}));
     ASSERT_NO_FATAL_FAILURE(service->publishReadings());
     ASSERT_NO_FATAL_FAILURE(service->publishReadings(DEVICE_KEY));
 }
 
-TEST_F(DataServiceTests, PublishAttributes) {}
+TEST_F(DataServiceTests, PublishAttributesNoAttributes)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes).WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>()));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes());
+}
+
+TEST_F(DataServiceTests, PublishAttributesFailsToParse)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes)
+      .WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>{
+        {DEVICE_KEY + "+" + "T", std::make_shared<Attribute>("T", DataType::STRING, "TestValue")}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<AttributeRegistrationMessage>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes());
+}
+
+TEST_F(DataServiceTests, PublishAttributesFailsToPublish)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes)
+      .WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>{
+        {DEVICE_KEY + "+" + "T", std::make_shared<Attribute>("T", DataType::STRING, "TestValue")}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<AttributeRegistrationMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes());
+}
+
+TEST_F(DataServiceTests, PublishAttributesHappyFlow)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes)
+      .WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>{
+        {DEVICE_KEY + "+" + "T", std::make_shared<Attribute>("T", DataType::STRING, "TestValue")}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<AttributeRegistrationMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes());
+}
+
+TEST_F(DataServiceTests, PublishAttributesForDeviceNoAttributes)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes).WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>()));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, PublishAttributesForDeviceFailsToParse)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes)
+      .WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>{
+        {DEVICE_KEY + "+" + "T", std::make_shared<Attribute>("T", DataType::STRING, "TestValue")}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<AttributeRegistrationMessage>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, PublishAttributesForDeviceFailsToPublish)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes)
+      .WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>{
+        {DEVICE_KEY + "+" + "T", std::make_shared<Attribute>("T", DataType::STRING, "TestValue")}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<AttributeRegistrationMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, PublishAttributesForDeviceHappyFlow)
+{
+    EXPECT_CALL(*persistenceMock, getAttributes)
+      .WillOnce(Return(std::map<std::string, std::shared_ptr<Attribute>>{
+        {DEVICE_KEY + "+" + "T", std::make_shared<Attribute>("T", DataType::STRING, "TestValue")}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<AttributeRegistrationMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+    ASSERT_NO_FATAL_FAILURE(service->publishAttributes(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, PublishParametersNoAttributes)
+{
+    EXPECT_CALL(*persistenceMock, getParameters).WillOnce(Return(std::map<std::string, Parameter>()));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters());
+}
+
+TEST_F(DataServiceTests, PublishParametersFailsToParse)
+{
+    EXPECT_CALL(*persistenceMock, getParameters)
+      .WillOnce(Return(std::map<std::string, Parameter>{
+        {DEVICE_KEY + "+" + "T", Parameter{ParameterName::EXTERNAL_ID, "TestExternalId"}}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersUpdateMessage>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters());
+}
+
+TEST_F(DataServiceTests, PublishParametersFailsToPublish)
+{
+    EXPECT_CALL(*persistenceMock, getParameters)
+      .WillOnce(Return(std::map<std::string, Parameter>{
+        {DEVICE_KEY + "+" + "T", Parameter{ParameterName::EXTERNAL_ID, "TestExternalId"}}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersUpdateMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters());
+}
+
+TEST_F(DataServiceTests, PublishParametersHappyFlow)
+{
+    EXPECT_CALL(*persistenceMock, getParameters)
+      .WillOnce(Return(std::map<std::string, Parameter>{
+        {DEVICE_KEY + "+" + "T", Parameter{ParameterName::EXTERNAL_ID, "TestExternalId"}}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersUpdateMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters());
+}
+
+TEST_F(DataServiceTests, PublishParametersForDeviceNoAttributes)
+{
+    EXPECT_CALL(*persistenceMock, getParameters).WillOnce(Return(std::map<std::string, Parameter>()));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, PublishParametersForDeviceFailsToParse)
+{
+    EXPECT_CALL(*persistenceMock, getParameters)
+      .WillOnce(Return(std::map<std::string, Parameter>{
+        {DEVICE_KEY + "+" + "T", Parameter{ParameterName::EXTERNAL_ID, "TestExternalId"}}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersUpdateMessage>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, PublishParametersForDeviceFailsToPublish)
+{
+    EXPECT_CALL(*persistenceMock, getParameters)
+      .WillOnce(Return(std::map<std::string, Parameter>{
+        {DEVICE_KEY + "+" + "T", Parameter{ParameterName::EXTERNAL_ID, "TestExternalId"}}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersUpdateMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, PublishParametersForDeviceHappyFlow)
+{
+    EXPECT_CALL(*persistenceMock, getParameters)
+      .WillOnce(Return(std::map<std::string, Parameter>{
+        {DEVICE_KEY + "+" + "T", Parameter{ParameterName::EXTERNAL_ID, "TestExternalId"}}}));
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<ParametersUpdateMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+    ASSERT_NO_FATAL_FAILURE(service->publishParameters(DEVICE_KEY));
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageIsNull)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).Times(0);
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(nullptr));
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageEmptyDeviceKey)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(""));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).Times(0);
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageInvalidMessageType)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::UNKNOWN));
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageFeedFailedToParse)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::FEED_VALUES));
+    EXPECT_CALL(*dataProtocolMock, parseFeedValues).WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageFeedHappyFlow)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::FEED_VALUES));
+    EXPECT_CALL(*dataProtocolMock, parseFeedValues)
+      .WillOnce(Return(ByMove(std::unique_ptr<FeedValuesMessage>{
+        new FeedValuesMessage{std::vector<Reading>{Reading{"T", std::uint64_t{123}, 1234567890}}}})));
+
+    // Set up the callback
+    std::atomic_bool callbackCalled{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    feedUpdateSetHandler = [&](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
+        if (!readings.empty())
+        {
+            callbackCalled = true;
+            conditionVariable.notify_one();
+        }
+    };
+
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageParameterFailedToParse)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::PARAMETER_SYNC));
+    EXPECT_CALL(*dataProtocolMock, parseParameters).WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageParameterHappyFlow)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::PARAMETER_SYNC));
+    EXPECT_CALL(*dataProtocolMock, parseParameters)
+      .WillOnce(Return(ByMove(std::unique_ptr<ParametersUpdateMessage>{
+        new ParametersUpdateMessage{std::vector<Parameter>{{ParameterName::EXTERNAL_ID, "TestExternalId"}}}})));
+
+    // Set up the callback
+    std::atomic_bool callbackCalled{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    parameterSyncHandler = [&](const std::string&, const std::vector<Parameter>& parameters) {
+        if (!parameters.empty())
+        {
+            callbackCalled = true;
+            conditionVariable.notify_one();
+        }
+    };
+
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageParameterHappyFlowAnswersSubscription)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::PARAMETER_SYNC));
+    EXPECT_CALL(*dataProtocolMock, parseParameters)
+      .WillOnce(Return(ByMove(std::unique_ptr<ParametersUpdateMessage>{
+        new ParametersUpdateMessage{std::vector<Parameter>{{ParameterName::EXTERNAL_ID, "TestExternalId"}}}})));
+
+    // Set up the callback
+    std::atomic_bool callbackCalled{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    service->m_parameterSubscriptions.emplace(
+      0,
+      DataService::ParameterSubscription{{ParameterName::EXTERNAL_ID}, [&](const std::vector<Parameter>& parameters) {
+                                             if (!parameters.empty())
+                                             {
+                                                 callbackCalled = true;
+                                                 conditionVariable.notify_one();
+                                             }
+                                         }});
+
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
+}

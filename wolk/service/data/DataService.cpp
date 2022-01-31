@@ -208,8 +208,8 @@ void DataService::publishAttributes()
         };
 
         // Form the message
-        auto message = AttributeRegistrationMessage(deviceAttributes.second);
-        auto outboundMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, message));
+        auto outboundMessage = std::shared_ptr<Message>(
+          m_protocol.makeOutboundMessage(deviceKey, AttributeRegistrationMessage(deviceAttributes.second)));
         if (!outboundMessage)
         {
             LOG(ERROR) << "Unable to create message from attributes";
@@ -348,9 +348,13 @@ const Protocol& DataService::getProtocol()
 
 void DataService::messageReceived(std::shared_ptr<Message> message)
 {
-    assert(message);
-
-    const std::string deviceKey = m_protocol.getDeviceKey(*message);
+    LOG(TRACE) << METHOD_INFO;
+    if (message == nullptr)
+    {
+        LOG(ERROR) << "Failed to handle message - The message is null!";
+        return;
+    }
+    const auto deviceKey = m_protocol.getDeviceKey(*message);
     if (deviceKey.empty())
     {
         LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
@@ -372,46 +376,10 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
     {
         auto parameterMessage = m_protocol.parseParameters(message);
         if (parameterMessage == nullptr)
-        {
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
+        else if (checkIfSubscriptionIsWaiting(parameterMessage))    // It's important to first check this
             return;
-        }
-
-        // Check if there's a subscription waiting for those parameters
-        {
-            std::lock_guard<std::mutex> lockGuard{m_subscriptionMutex};
-            for (const auto& subscription : m_parameterSubscriptions)
-            {
-                // Check if the list of parameters is the same length, and then content
-                const auto& parameters = subscription.second.parameters;
-                const auto& values = parameterMessage->getParameters();
-                if (parameterMessage->getParameters().size() != parameters.size())
-                {
-                    continue;
-                }
-                auto allNamesMatching =
-                  std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
-                      return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
-                                 return parameter.first == name;
-                             }) != values.cend();
-                  });
-                if (!allNamesMatching)
-                {
-                    continue;
-                }
-
-                // Then we found the ones for the subscription!
-                auto callback = subscription.second.callback;
-                m_commandBuffer.pushCommand(
-                  std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
-
-                // And we can clear the subscription
-                m_parameterSubscriptions.erase(subscription.first);
-                return;
-            }
-        }
-
-        if (m_parameterSyncHandler)
+        else if (m_parameterSyncHandler)
             m_parameterSyncHandler(deviceKey, parameterMessage->getParameters());
         return;
     }
@@ -438,6 +406,45 @@ std::pair<std::string, std::string> DataService::parsePersistenceKey(const std::
     auto deviceKey = key.substr(0, pos);
     auto reference = key.substr(pos + PERSISTENCE_KEY_DELIMITER.size(), std::string::npos);
     return {deviceKey, reference};
+}
+
+bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Check if there's a subscription waiting for those parameters
+    {
+        std::lock_guard<std::mutex> lockGuard{m_subscriptionMutex};
+        for (const auto& subscription : m_parameterSubscriptions)
+        {
+            // Check if the list of parameters is the same length, and then content
+            const auto& parameters = subscription.second.parameters;
+            const auto& values = parameterMessage->getParameters();
+            if (parameterMessage->getParameters().size() != parameters.size())
+            {
+                continue;
+            }
+            auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
+                return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
+                           return parameter.first == name;
+                       }) != values.cend();
+            });
+            if (!allNamesMatching)
+            {
+                continue;
+            }
+
+            // Then we found the ones for the subscription!
+            auto callback = subscription.second.callback;
+            m_commandBuffer.pushCommand(
+              std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
+
+            // And we can clear the subscription
+            m_parameterSubscriptions.erase(subscription.first);
+            return true;
+        }
+    }
+    return false;
 }
 
 void DataService::publishReadingsForPersistenceKey(const std::string& persistenceKey)
