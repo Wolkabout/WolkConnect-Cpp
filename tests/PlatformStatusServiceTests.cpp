@@ -24,8 +24,8 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "mocks/PlatformStatusListenerMock.h"
-#include "mocks/PlatformStatusProtocolMock.h"
+#include "tests/mocks/PlatformStatusListenerMock.h"
+#include "tests/mocks/PlatformStatusProtocolMock.h"
 
 #include <gtest/gtest.h>
 

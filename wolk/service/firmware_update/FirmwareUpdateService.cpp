@@ -127,7 +127,8 @@ void FirmwareUpdateService::obtainParametersAndAnnounce(const std::string& devic
     // Subscribe to the parameters
     auto parameters =
       std::vector<ParameterName>{ParameterName::FIRMWARE_UPDATE_REPOSITORY, ParameterName::FIRMWARE_UPDATE_CHECK_TIME};
-    auto callback = [this](const std::vector<Parameter>& receivedParameters) {
+    auto callback = [this](const std::vector<Parameter>& receivedParameters)
+    {
         // Analyze the parameters
         auto repository = std::string{};
         auto checkTime = std::string{};
@@ -222,10 +223,7 @@ void FirmwareUpdateService::onFirmwareInstall(const std::string& deviceKey, cons
             sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
             return;
         }
-        if (m_installation.find(deviceKey) == m_installation.cend())
-            m_installation.emplace(deviceKey, true);
-        else
-            m_installation[deviceKey] = true;
+        m_installation[deviceKey] = true;
         sendStatusMessage(deviceKey, FirmwareUpdateStatus::INSTALLING);
         return;
     case InstallResponse::INSTALLED:
@@ -240,7 +238,8 @@ void FirmwareUpdateService::onFirmwareAbort(const std::string& deviceKey,
     LOG(TRACE) << METHOD_INFO;
 
     // Check if the session file is present
-    if (m_installation.find(deviceKey) != m_installation.cend() && m_installation[deviceKey])
+    if (m_installation.find(deviceKey) != m_installation.cend() && m_installation[deviceKey] &&
+        m_firmwareInstaller != nullptr)
         m_firmwareInstaller->abortFirmwareInstall(deviceKey);
 }
 

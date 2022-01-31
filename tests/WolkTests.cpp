@@ -25,13 +25,13 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "mocks/ConnectivityServiceMock.h"
-#include "mocks/DataProtocolMock.h"
-#include "mocks/DataServiceMock.h"
-#include "mocks/FileManagementProtocolMock.h"
-#include "mocks/FileManagementServiceMock.h"
-#include "mocks/InboundMessageHandlerMock.h"
-#include "mocks/PersistenceMock.h"
+#include "tests/mocks/ConnectivityServiceMock.h"
+#include "tests/mocks/DataProtocolMock.h"
+#include "tests/mocks/DataServiceMock.h"
+#include "tests/mocks/FileManagementProtocolMock.h"
+#include "tests/mocks/FileManagementServiceMock.h"
+#include "tests/mocks/InboundMessageHandlerMock.h"
+#include "tests/mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
 

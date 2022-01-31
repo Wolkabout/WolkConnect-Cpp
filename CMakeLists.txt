@@ -15,8 +15,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(WolkAboutConnector C CXX)
 
-set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
-
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
@@ -176,15 +174,14 @@ if (${BUILD_TESTS})
             tests/mocks/PlatformStatusListenerMock.h
             )
 
+    enable_testing()
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
     target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
-    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include WolkSDK-Cpp/tests)
+    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include WolkSDK-Cpp)
     set_target_properties(${PROJECT_NAME}Tests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    set_target_properties(${PROJECT_NAME}Tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
     add_dependencies(${PROJECT_NAME}Tests ${PROJECT_NAME} libgtest)
 
-    add_custom_target(tests ${PROJECT_NAME}Tests)
-    add_test(gtest ${PROJECT_NAME}Tests)
+    add_test(NAME "WolkConnect-Cpp_Tests" COMMAND ${PROJECT_NAME}Tests)
 endif ()
 
 if (${BUILD_EXAMPLES})
@@ -231,11 +228,11 @@ install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFI
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-# Add the format target
-add_custom_target(format
-        COMMAND "clang-format" -i -sort-includes -style=file ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES}
-        ${TEST_HEADER_FILES} ${TEST_SOURCE_FILES} ${FULL_EXAMPLE_SOURCE_FILES} ${PULL_EXAMPLE_SOURCE_FILES}
-        ${REGISTER_EXAMPLE_SOURCE_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES}
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-        COMMENT "[Formatting source code]"
-        VERBATIM)
+## Add the format target
+#add_custom_target(format
+#        COMMAND "clang-format" -i -sort-includes -style=file ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES}
+#        ${TEST_HEADER_FILES} ${TEST_SOURCE_FILES} ${FULL_EXAMPLE_SOURCE_FILES} ${PULL_EXAMPLE_SOURCE_FILES}
+#        ${REGISTER_EXAMPLE_SOURCE_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES}
+#        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+#        COMMENT "[Formatting source code]"
+#        VERBATIM)

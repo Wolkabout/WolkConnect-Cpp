@@ -24,10 +24,10 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "mocks/ConnectivityServiceMock.h"
-#include "mocks/ErrorProtocolMock.h"
-#include "mocks/ErrorServiceMock.h"
-#include "mocks/RegistrationProtocolMock.h"
+#include "tests/mocks/ConnectivityServiceMock.h"
+#include "tests/mocks/ErrorProtocolMock.h"
+#include "tests/mocks/ErrorServiceMock.h"
+#include "tests/mocks/RegistrationProtocolMock.h"
 
 #include <gtest/gtest.h>
 

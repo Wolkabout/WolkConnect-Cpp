@@ -49,7 +49,7 @@ jobs:
       - name: Run Tests
         working-directory: ${{runner.workspace}}/out
         shell: bash
-        run: make tests -j$(nproc) && ctest .
+        run: ctest .
 
       - name: Check Format
         uses: jidicula/clang-format-action@v3.5.2

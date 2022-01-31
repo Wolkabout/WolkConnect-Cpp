@@ -25,10 +25,10 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "mocks/DataProtocolMock.h"
-#include "mocks/FeedUpdateHandlerMock.h"
-#include "mocks/ParameterHandlerMock.h"
-#include "mocks/PersistenceMock.h"
+#include "tests/mocks/DataProtocolMock.h"
+#include "tests/mocks/FeedUpdateHandlerMock.h"
+#include "tests/mocks/ParameterHandlerMock.h"
+#include "tests/mocks/PersistenceMock.h"
 
 #include <gmock/gmock.h>
 
