@@ -130,9 +130,9 @@ public:
      * @return If nothing has gone wrong, this will be {@code: nullptr}. Otherwise a value will be passed, with a
      * further explanation of the error.
      */
-    std::unique_ptr<ErrorMessage> registerDevices(const std::string& deviceKey,
-                                                  const std::vector<DeviceRegistrationData>& devices,
-                                                  std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    virtual std::unique_ptr<ErrorMessage> registerDevices(const std::string& deviceKey,
+                                                          const std::vector<DeviceRegistrationData>& devices,
+                                                          std::chrono::milliseconds timeout);
 
     /**
      * This method is used to send a device deletion request.
@@ -143,8 +143,9 @@ public:
      * @return If nothing has gone wrong, this will be {@code: nullptr}. Otherwise a value will be passed, with a
      * further explanation of the error.
      */
-    std::unique_ptr<ErrorMessage> removeDevices(const std::string& deviceKey, std::vector<std::string> deviceKeys,
-                                                std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    virtual std::unique_ptr<ErrorMessage> removeDevices(const std::string& deviceKey,
+                                                        std::vector<std::string> deviceKeys,
+                                                        std::chrono::milliseconds timeout);
 
     /**
      * This method is used to obtain a list of devices. This is the synchronous version of the method that will attempt
@@ -158,9 +159,11 @@ public:
      * @return The list of devices obtained. Will be a {@code: nullptr} if unable to obtain devices, empty vector if the
      * platform returned no devices, or filled with devices if everything has gone successfully.
      */
-    std::unique_ptr<std::vector<RegisteredDeviceInformation>> obtainDevices(
-      const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {}, std::string externalId = {},
-      std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    virtual std::unique_ptr<std::vector<RegisteredDeviceInformation>> obtainDevices(const std::string& deviceKey,
+                                                                                    TimePoint timestampFrom,
+                                                                                    std::string deviceType,
+                                                                                    std::string externalId,
+                                                                                    std::chrono::milliseconds timeout);
 
     /**
      * This method is used to obtain a list of devices. This is the asynchronous version of the method that will call a
@@ -174,9 +177,9 @@ public:
      * @return Whether the request was successfully sent out. If this is false, that means that the callback will never
      * be called.
      */
-    bool obtainDevicesAsync(const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {},
-                            std::string externalId = {},
-                            std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback = {});
+    virtual bool obtainDevicesAsync(const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType,
+                                    std::string externalId,
+                                    std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback);
 
     /**
      * This method is overridden from the `MessageListener` interface.

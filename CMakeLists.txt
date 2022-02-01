@@ -161,7 +161,8 @@ if (${BUILD_TESTS})
             tests/PlatformStatusServiceTests.cpp
             tests/RegistrationServiceTests.cpp
             tests/WolkBuilderTests.cpp
-            tests/WolkTests.cpp)
+            tests/WolkMultiTests.cpp
+            tests/WolkSingleTests.cpp)
     set(TEST_HEADER_FILES
             tests/mocks/DataServiceMock.h
             tests/mocks/ErrorServiceMock.h
@@ -170,8 +171,12 @@ if (${BUILD_TESTS})
             tests/mocks/FileListenerMock.h
             tests/mocks/FileManagementServiceMock.h
             tests/mocks/FileTransferSessionMock.h
+            tests/mocks/FirmwareInstallerMock.h
+            tests/mocks/FirmwareParametersListenerMock.h
+            tests/mocks/FirmwareUpdateServiceMock.h
             tests/mocks/ParameterHandlerMock.h
-            tests/mocks/PlatformStatusListenerMock.h)
+            tests/mocks/PlatformStatusListenerMock.h
+            tests/mocks/RegistrationServiceMock.h)
 
     enable_testing()
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})

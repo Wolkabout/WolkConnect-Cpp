@@ -52,6 +52,8 @@ public:
 
     void TearDown() override { service.reset(); }
 
+    const std::chrono::milliseconds hundred{100};
+
     const std::string DEVICE_KEY = "TestDevice";
 
     const std::chrono::milliseconds RETAIN_TIME = std::chrono::milliseconds{500};
@@ -80,13 +82,13 @@ TEST_F(RegistrationServiceTests, RegisterDevicesNotRunning)
     service->stop();
 
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {}), nullptr);
+    ASSERT_NE(service->registerDevices(DEVICE_KEY, {}, hundred), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, RegisterDevicesEmptyVector)
 {
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {}), nullptr);
+    ASSERT_NE(service->registerDevices(DEVICE_KEY, {}, hundred), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, RegisterDevicesFailToParse)
@@ -97,7 +99,8 @@ TEST_F(RegistrationServiceTests, RegisterDevicesFailToParse)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}),
+    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
+                                       hundred),
               nullptr);
 }
 
@@ -110,7 +113,8 @@ TEST_F(RegistrationServiceTests, RegisterDevicesCouldNotSend)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
 
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}),
+    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
+                                       hundred),
               nullptr);
 }
 
@@ -123,7 +127,8 @@ TEST_F(RegistrationServiceTests, RegisterDevicesSentSuccessfully)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
     // Call the service
-    ASSERT_EQ(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}),
+    ASSERT_EQ(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
+                                       hundred),
               nullptr);
 }
 
@@ -148,7 +153,8 @@ TEST_F(RegistrationServiceTests, RegisterDevicesReceiveError)
 
     // Call the service and measure the execution time
     const auto start = std::chrono::system_clock::now();
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}),
+    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
+                                       hundred),
               nullptr);
     const auto duration = std::chrono::system_clock::now() - start;
     const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
@@ -164,13 +170,13 @@ TEST_F(RegistrationServiceTests, RemoveDevicesNotRunning)
     service->stop();
 
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {}), nullptr);
+    ASSERT_NE(service->removeDevices(DEVICE_KEY, {}, hundred), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesEmptyVector)
 {
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {}), nullptr);
+    ASSERT_NE(service->removeDevices(DEVICE_KEY, {}, hundred), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesFailToParse)
@@ -181,7 +187,7 @@ TEST_F(RegistrationServiceTests, RemoveDevicesFailToParse)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}), nullptr);
+    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesCouldNotSend)
@@ -193,7 +199,7 @@ TEST_F(RegistrationServiceTests, RemoveDevicesCouldNotSend)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
 
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}), nullptr);
+    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesSentSuccessfully)
@@ -205,7 +211,7 @@ TEST_F(RegistrationServiceTests, RemoveDevicesSentSuccessfully)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
     // Call the service
-    ASSERT_EQ(service->removeDevices(DEVICE_KEY, {"DeviceKey"}), nullptr);
+    ASSERT_EQ(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesReceiveError)
@@ -229,7 +235,7 @@ TEST_F(RegistrationServiceTests, RemoveDevicesReceiveError)
 
     // Call the service and measure the execution time
     const auto start = std::chrono::system_clock::now();
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}), nullptr);
+    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
     const auto duration = std::chrono::system_clock::now() - start;
     const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     const auto tolerable = delay * 1.5;
@@ -244,20 +250,24 @@ TEST_F(RegistrationServiceTests, ObtainDevicesNotRunning)
     service->stop();
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)), nullptr);
+    ASSERT_EQ(
+      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), "", "", hundred),
+      nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
     // Call the service (async)
-    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)),
-              false);
+    ASSERT_EQ(
+      service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), "", "", {}),
+      false);
     EXPECT_TRUE(service->m_responses.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesAsyncNoCallback)
 {
     // Call the service (async)
-    ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)),
-              false);
+    ASSERT_EQ(
+      service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, {}),
+      false);
     EXPECT_TRUE(service->m_responses.empty());
 }
 
@@ -270,7 +280,9 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToFormMessage)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)), nullptr);
+    ASSERT_EQ(
+      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, hundred),
+      nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
     // Call the service (async)
@@ -290,7 +302,9 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToPublish)
     EXPECT_CALL(*connectivityServiceMock, publish).WillRepeatedly(Return(false));
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60)), nullptr);
+    ASSERT_EQ(
+      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, hundred),
+      nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
     // Call the service (async)

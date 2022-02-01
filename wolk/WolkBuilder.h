@@ -242,12 +242,6 @@ public:
      */
     std::unique_ptr<WolkMulti> buildWolkMulti();
 
-    /**
-     * @brief operator std::unique_ptr<Wolk> Conversion to wolkabout::wolk as result returns std::unique_ptr to built
-     * wolkabout::Wolk instance
-     */
-    explicit operator std::unique_ptr<WolkInterface>();
-
 private:
     // Here we store the list of devices that the Wolk instance will handle
     std::vector<Device> m_devices;

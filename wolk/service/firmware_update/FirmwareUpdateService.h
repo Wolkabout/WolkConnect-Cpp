@@ -45,7 +45,7 @@ public:
 
     bool isParameterListener() const;
 
-    std::string getVersionForDevice(const std::string& deviceKey);
+    virtual std::string getVersionForDevice(const std::string& deviceKey);
 
     /**
      * This is the queue containing any messages the service might want to send.
@@ -59,12 +59,12 @@ public:
      *
      * @param deviceKey The device key for which the state should be loaded.
      */
-    void loadState(const std::string& deviceKey);
+    virtual void loadState(const std::string& deviceKey);
 
     /**
      * This is a method that will
      */
-    void obtainParametersAndAnnounce(const std::string& deviceKey);
+    virtual void obtainParametersAndAnnounce(const std::string& deviceKey);
 
     const Protocol& getProtocol() override;
 

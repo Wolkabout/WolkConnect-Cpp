@@ -208,10 +208,8 @@ WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListe
 WolkBuilder& WolkBuilder::withRegistration(std::unique_ptr<RegistrationProtocol> protocol)
 {
     if (protocol == nullptr)
-        m_registrationProtocol =
-          std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol);
-    else
-        m_registrationProtocol = std::move(protocol);
+        protocol = std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol);
+    m_registrationProtocol = std::move(protocol);
     return *this;
 }
 
@@ -412,11 +410,6 @@ std::unique_ptr<WolkMulti> WolkBuilder::buildWolkMulti()
 
     // Cast the build pointer into the right type of unique_ptr.
     return std::unique_ptr<WolkMulti>(dynamic_cast<WolkMulti*>(build(WolkInterfaceType::MultiDevice).release()));
-}
-
-WolkBuilder::operator std::unique_ptr<WolkInterface>()
-{
-    return build();
 }
 }    // namespace connect
 }    // namespace wolkabout
