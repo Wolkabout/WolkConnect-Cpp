@@ -41,7 +41,7 @@ void RegistrationService::start()
 void RegistrationService::stop()
 {
     m_running = false;
-    m_conditionVariable.notify_all();
+    m_registeredDevicesCV.notify_all();
 }
 
 std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::string& deviceKey,
@@ -145,6 +145,120 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
     return nullptr;
 }
 
+std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(const std::string& deviceKey,
+                                                                              std::chrono::milliseconds timeout)
+{
+    LOG(TRACE) << METHOD_INFO;
+    const auto errorPrefix = "Failed to obtain children";
+
+    // Check if the service is toggled on
+    if (!m_running)
+    {
+        LOG(ERROR) << errorPrefix << " -> The service is not running.";
+        return nullptr;
+    }
+
+    // Parse the message
+    auto message =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, ChildrenSynchronizationRequestMessage{})};
+    if (message == nullptr)
+    {
+        LOG(ERROR) << errorPrefix << " -> Failed to generate outgoing `ChildrenSynchronizationRequestMessage`.";
+        return nullptr;
+    }
+
+    // Lock the mutex for the map, just so the response arrival can't be faster than us putting the query data into the
+    // map.
+    std::atomic_bool called{false};
+    auto list = std::make_shared<std::vector<std::string>>();
+    {
+        std::lock_guard<std::mutex> lock{m_childrenSyncDevicesMutex};
+        // Send out the message
+        if (!m_connectivityService.publish(message))
+        {
+            LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
+            return nullptr;
+        }
+        if (m_queries.find(deviceKey) == m_queries.cend())
+            m_queries.emplace(deviceKey,
+                              std::queue<std::function<void(const std::string&, std::vector<std::string>)>>{});
+        auto weakList = std::weak_ptr<std::vector<std::string>>{list};
+        m_queries[deviceKey].push(
+          [this, &called, weakList](const std::string&, const std::vector<std::string>& children)
+          {
+              if (auto childrenList = weakList.lock())
+              {
+                  for (const auto& child : children)
+                      childrenList->emplace_back(child);
+                  called = true;
+                  m_childrenSyncDevicesCV.notify_one();
+              }
+          });
+    }
+
+    // Wait for the condition variable to be invoked
+    {
+        auto uniqueLock = std::unique_lock<std::mutex>{m_registeredDevicesMutex};
+        m_registeredDevicesCV.wait_for(uniqueLock, timeout);
+    }
+    if (!m_running)
+    {
+        LOG(ERROR) << errorPrefix << " -> Aborted execution because the service is stopping...";
+        return nullptr;
+    }
+    if (!called)
+        return nullptr;
+    else
+        return list;
+}
+
+bool RegistrationService::obtainChildrenAsync(
+  const std::string& deviceKey, std::function<void(const std::string&, std::vector<std::string>)> callback)
+{
+    LOG(TRACE) << METHOD_INFO;
+    const auto errorPrefix = "Failed to obtain children";
+
+    // Check if the service is toggled on
+    if (!m_running)
+    {
+        LOG(ERROR) << errorPrefix << " -> The service is not running.";
+        return false;
+    }
+
+    // Check whether the callback is actually set.
+    if (!callback)
+    {
+        LOG(ERROR) << errorPrefix << " -> The user did not set the callback.";
+        return false;
+    }
+
+    // Parse the message
+    auto message =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, ChildrenSynchronizationRequestMessage{})};
+    if (message == nullptr)
+    {
+        LOG(ERROR) << errorPrefix << " -> Failed to generate outgoing `ChildrenSynchronizationRequestMessage`.";
+        return false;
+    }
+
+    // Lock the mutex for the map, just so the response arrival can't be faster than us putting the query data into the
+    // map.
+    {
+        std::lock_guard<std::mutex> lock{m_childrenSyncDevicesMutex};
+        // Send out the message
+        if (!m_connectivityService.publish(message))
+        {
+            LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
+            return false;
+        }
+        if (m_queries.find(deviceKey) == m_queries.cend())
+            m_queries.emplace(deviceKey,
+                              std::queue<std::function<void(const std::string&, std::vector<std::string>)>>{});
+        m_queries[deviceKey].push(callback);
+        return true;
+    }
+}
+
 std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::obtainDevices(
   const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType, std::string externalId,
   std::chrono::milliseconds timeout)
@@ -174,7 +288,7 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
     // Lock the mutex for the map, just so the response arrival can't be faster than us putting the query data into the
     // map.
     {
-        std::lock_guard<std::mutex> lock{m_mutex};
+        std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
         // Send out the message
         if (!m_connectivityService.publish(message))
         {
@@ -186,8 +300,8 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
 
     // Wait for the condition variable to be invoked
     {
-        auto uniqueLock = std::unique_lock<std::mutex>{m_mutex};
-        m_conditionVariable.wait_for(uniqueLock, timeout);
+        auto uniqueLock = std::unique_lock<std::mutex>{m_registeredDevicesMutex};
+        m_registeredDevicesCV.wait_for(uniqueLock, timeout);
     }
     if (!m_running)
     {
@@ -198,7 +312,7 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
     // Check if there's a response in the map for us
     auto response = std::unique_ptr<RegisteredDevicesResponseMessage>{};
     {
-        std::lock_guard<std::mutex> lock{m_mutex};
+        std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
         // Check if there's a value in the map
         const auto it = m_responses.find(query);
         if (it != m_responses.cend())
@@ -257,7 +371,7 @@ bool RegistrationService::obtainDevicesAsync(
     // Lock the mutex for the map, just so the response arrival can't be faster than us putting the query data into the
     // map.
     {
-        std::lock_guard<std::mutex> lock{m_mutex};
+        std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
         // Send out the message
         if (!m_connectivityService.publish(message))
         {
@@ -287,7 +401,7 @@ void RegistrationService::messageReceived(std::shared_ptr<Message> message)
                                  parsedMessage->getExternalId()};
     // And now look whether there's such a query object in the map
     {
-        std::lock_guard<std::mutex> lock{m_mutex};
+        std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
         const auto it = m_responses.find(query);
         if (it == m_responses.cend())
         {
@@ -303,7 +417,7 @@ void RegistrationService::messageReceived(std::shared_ptr<Message> message)
             // Place the value in the map
             m_responses[query] = std::move(parsedMessage);
     }
-    m_conditionVariable.notify_one();
+    m_registeredDevicesCV.notify_one();
 }
 
 const Protocol& RegistrationService::getProtocol()

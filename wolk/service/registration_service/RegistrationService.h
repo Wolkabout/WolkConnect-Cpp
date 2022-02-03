@@ -148,6 +148,30 @@ public:
                                                         std::chrono::milliseconds timeout);
 
     /**
+     * This method is used to obtain the list of children of a device. This is the synchronous version of the method
+     * that will attempt to await the response.
+     *
+     * @param deviceKey The key of the device trying to obtain the list of children.
+     * @param timeout The maximum wait the method will await the response.
+     * @return This list of children obtained. Will be a {@code: nullptr} if unable to obtain children, empty vector if
+     * the platform returned no devices, or filled with devices if everything has gone successfully.
+     */
+    virtual std::shared_ptr<std::vector<std::string>> obtainChildren(const std::string& deviceKey,
+                                                                     std::chrono::milliseconds timeout);
+
+    /**
+     * This method is used to obtain the list of children of a device. This is the asynchronous version of the method
+     * that wil call a callback once a response has been received.
+     *
+     * @param deviceKey The key of the device trying to obtain the list of children.
+     * @param callback The callback that will be invoked once a response has been received.
+     * @return Whether the request was successfully sent out. If this is false, that means that the callback will never
+     * be called.
+     */
+    virtual bool obtainChildrenAsync(const std::string& deviceKey,
+                                     std::function<void(const std::string&, std::vector<std::string>)> callback);
+
+    /**
      * This method is used to obtain a list of devices. This is the synchronous version of the method that will attempt
      * to await the response.
      *
@@ -210,9 +234,15 @@ private:
     // Make place for the running status
     std::atomic_bool m_running;
 
+    // Make place for the children requests
+    std::mutex m_childrenSyncDevicesMutex;
+    std::condition_variable m_childrenSyncDevicesCV;
+    std::unordered_map<std::string, std::queue<std::function<void(const std::string&, std::vector<std::string>)>>>
+      m_queries;
+
     // Make place for the requests for devices
-    std::mutex m_mutex;
-    std::condition_variable m_conditionVariable;
+    std::mutex m_registeredDevicesMutex;
+    std::condition_variable m_registeredDevicesCV;
     std::unordered_map<DeviceQueryData, std::unique_ptr<RegisteredDevicesResponseMessage>, DeviceQueryDataHash>
       m_responses;
 };
