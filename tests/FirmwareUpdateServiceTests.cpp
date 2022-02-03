@@ -32,6 +32,8 @@
 #include "tests/mocks/FirmwareParametersListenerMock.h"
 #include "tests/mocks/FirmwareUpdateProtocolMock.h"
 #include "tests/mocks/PersistenceMock.h"
+#include "tests/mocks/OutboundMessageHandlerMock.h"
+#include "tests/mocks/OutboundRetryMessageHandlerMock.h"
 
 #include <gtest/gtest.h>
 
@@ -102,11 +104,16 @@ public:
 
     ConnectivityServiceMock connectivityServiceMock;
 
+    OutboundMessageHandlerMock outboundMessageHandlerMock;
+
+    OutboundRetryMessageHandlerMock outboundRetryMessageHandler{outboundMessageHandlerMock};
+
     DataProtocolMock dataProtocolMock;
 
     PersistenceMock persistenceMock;
 
-    DataServiceMock dataServiceMock{dataProtocolMock, persistenceMock, connectivityServiceMock, {}, {}};
+    DataServiceMock dataServiceMock{
+      dataProtocolMock, persistenceMock, connectivityServiceMock, outboundRetryMessageHandler, {}, {}, {}};
 
     FirmwareUpdateProtocolMock firmwareUpdateProtocolMock;
 
@@ -211,9 +218,10 @@ TEST_F(FirmwareUpdateServiceTests, LoadStateHappyFlowSameVersion)
     ASSERT_TRUE(CreateSessionFile(DEVICE_KEY, FIRMWARE_VERSION_1));
     EXPECT_CALL(GetFirmwareInstallReference(), getFirmwareVersion).WillOnce(Return(FIRMWARE_VERSION_1));
     EXPECT_CALL(GetFirmwareInstallReference(), wasFirmwareInstallSuccessful)
-      .WillOnce([&](const std::string& deviceKey, const std::string& oldContent) {
-          return GetFirmwareInstallReference().FirmwareInstaller::wasFirmwareInstallSuccessful(deviceKey, oldContent);
-      });
+      .WillOnce(
+        [&](const std::string& deviceKey, const std::string& oldContent) {
+            return GetFirmwareInstallReference().FirmwareInstaller::wasFirmwareInstallSuccessful(deviceKey, oldContent);
+        });
     EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage).WillOnce(Return(ByMove(nullptr)));
     ASSERT_NO_FATAL_FAILURE(service->loadState(DEVICE_KEY));
 }
@@ -224,9 +232,10 @@ TEST_F(FirmwareUpdateServiceTests, LoadStateHappyFlowNewVersion)
     ASSERT_TRUE(CreateSessionFile(DEVICE_KEY, FIRMWARE_VERSION_1));
     EXPECT_CALL(GetFirmwareInstallReference(), getFirmwareVersion).WillOnce(Return(FIRMWARE_VERSION_2));
     EXPECT_CALL(GetFirmwareInstallReference(), wasFirmwareInstallSuccessful)
-      .WillOnce([&](const std::string& deviceKey, const std::string& oldContent) {
-          return GetFirmwareInstallReference().FirmwareInstaller::wasFirmwareInstallSuccessful(deviceKey, oldContent);
-      });
+      .WillOnce(
+        [&](const std::string& deviceKey, const std::string& oldContent) {
+            return GetFirmwareInstallReference().FirmwareInstaller::wasFirmwareInstallSuccessful(deviceKey, oldContent);
+        });
     EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage).WillOnce(Return(ByMove(nullptr)));
     ASSERT_NO_FATAL_FAILURE(service->loadState(DEVICE_KEY));
 }
@@ -242,12 +251,13 @@ TEST_F(FirmwareUpdateServiceTests, ObtainParametersHappyFlow)
     CreateServiceWithParameterListener();
     EXPECT_CALL(GetFirmwareParametersListenerReference(), receiveParameters("TestRepository", "TestTime")).Times(1);
     EXPECT_CALL(dataServiceMock, synchronizeParameters)
-      .WillOnce([&](const std::string&, const std::vector<ParameterName>&,
-                    std::function<void(std::vector<Parameter>)> callback) {
-          callback({{ParameterName::FIRMWARE_UPDATE_REPOSITORY, "TestRepository"},
-                    {ParameterName::FIRMWARE_UPDATE_CHECK_TIME, "TestTime"}});
-          return true;
-      });
+      .WillOnce(
+        [&](const std::string&, const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)> callback)
+        {
+            callback({{ParameterName::FIRMWARE_UPDATE_REPOSITORY, "TestRepository"},
+                      {ParameterName::FIRMWARE_UPDATE_CHECK_TIME, "TestTime"}});
+            return true;
+        });
     ASSERT_NO_FATAL_FAILURE(service->obtainParametersAndAnnounce(DEVICE_KEY));
 }
 

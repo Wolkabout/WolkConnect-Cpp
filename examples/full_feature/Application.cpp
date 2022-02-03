@@ -35,7 +35,7 @@
  * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
  */
 const std::string DEVICE_KEY = "AWC";
-const std::string DEVICE_PASSWORD = "VZ8R3MI87R";
+const std::string DEVICE_PASSWORD = "YROFH5J0Q1";
 const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
 const std::string CA_CERT_PATH = "./ca.crt";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
@@ -107,6 +107,21 @@ public:
 private:
     // This is where the object containing all information about the device is stored.
     DeviceData& m_deviceData;
+};
+
+/**
+ * This is an example implementation of the `ParameterHandler` interface. This class will receive information about
+ * parameter value updates.
+ */
+class ExampleParameterHandler : public wolkabout::connect::ParameterHandler
+{
+public:
+    void handleUpdate(const std::string& deviceKey, const std::vector<wolkabout::Parameter>& parameters) override
+    {
+        LOG(INFO) << "ExampleParameterHandler received parameter values for device '" << deviceKey << "':";
+        for (const auto& parameter : parameters)
+            LOG(INFO) << "\t" << toString(parameter.first) << " -> '" << parameter.second << "'";
+    }
 };
 
 /**
@@ -221,7 +236,7 @@ int main(int /* argc */, char** /* argv */)
      * Logging to file could also be added here, by adding the type `Logger::Type::FILE` and passing a file path as
      * third argument.
      */
-    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
+    wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
 
     /**
      * Now we can create the device using the user provided device credentials.
@@ -233,6 +248,7 @@ int main(int /* argc */, char** /* argv */)
     auto device = wolkabout::Device{DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH};
     auto deviceInfo = DeviceData{0, false, std::chrono::seconds(5)};
     auto deviceInfoHandler = std::make_shared<DeviceDataChangeHandler>(deviceInfo);
+    auto parameterHandler = std::make_shared<ExampleParameterHandler>();
 
     /**
      * Now we can start creating the Wolk instance that is right for us.
@@ -244,6 +260,7 @@ int main(int /* argc */, char** /* argv */)
                   .host(PLATFORM_HOST)
                   .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(deviceInfoHandler)
+                  .parameterHandler(parameterHandler)
                   .withPersistence(std::move(inMemoryPersistence))
                   .withFileTransfer(FILE_MANAGEMENT_LOCATION)
                   // Uncomment for FileURLDownload
@@ -262,12 +279,27 @@ int main(int /* argc */, char** /* argv */)
      */
     wolk->connect();
     bool running = true;
-    sigintCall = [&](int) {
+    sigintCall = [&](int)
+    {
         LOG(WARN) << "Application: Received stop signal, disconnecting...";
         conditionVariable.notify_one();
         running = false;
     };
     signal(SIGINT, sigintResponse);
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    wolk->synchronizeParameters(
+      {wolkabout::ParameterName::FIRMWARE_UPDATE_CHECK_TIME, wolkabout::ParameterName::FIRMWARE_UPDATE_REPOSITORY});
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    wolk->synchronizeParameters(
+      {wolkabout::ParameterName::FIRMWARE_UPDATE_CHECK_TIME, wolkabout::ParameterName::FIRMWARE_UPDATE_REPOSITORY},
+      [&](const std::vector<wolkabout::Parameter>& parameters)
+      {
+          LOG(INFO) << "Received parameters: ";
+          for (const auto& parameter : parameters)
+              LOG(INFO) << "\t" << toString(parameter.first) << ": '" << parameter.second << "'";
+      });
 
     /**
      * We want to randomize the temperature data too, so we need the generator for random information.

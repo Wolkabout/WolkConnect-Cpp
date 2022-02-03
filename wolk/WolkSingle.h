@@ -146,6 +146,8 @@ public:
 
     void pullFeedValues();
     void pullParameters();
+    void synchronizeParameters(const std::vector<ParameterName>& parameters,
+                               std::function<void(std::vector<Parameter>)> callback = nullptr);
 
     void registerFeed(const Feed& feed);
     void registerFeeds(const std::vector<Feed>& feeds);
