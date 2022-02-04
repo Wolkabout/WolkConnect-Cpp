@@ -171,9 +171,8 @@ bool DataService::synchronizeParameters(const std::string& deviceKey, const std:
     return true;
 }
 
-bool DataService::detailsSynchronization(
-  const std::string& deviceKey,
-  std::function<void(std::string, std::vector<std::string>, std::vector<std::string>)> callback)
+bool DataService::detailsSynchronizationAsync(
+  const std::string& deviceKey, std::function<void(std::vector<std::string>, std::vector<std::string>)> callback)
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to synchronize device details";
@@ -243,8 +242,7 @@ void DataService::publishAttributes()
     {
         // Make a lambda that will delete all these attributes from persistence
         const auto& deviceKey = deviceAttributes.first;
-        auto deleteAllAttributes = [&]()
-        {
+        auto deleteAllAttributes = [&]() {
             for (const auto& attribute : deviceAttributes.second)
                 m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
         };
@@ -282,8 +280,7 @@ void DataService::publishAttributes(const std::string& deviceKey)
         return;
 
     // Make a lambda that will delete all these attributes from persistence
-    auto deleteAllAttributes = [&]()
-    {
+    auto deleteAllAttributes = [&]() {
         for (const auto& attribute : attributes)
             m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
     };
@@ -328,8 +325,7 @@ void DataService::publishParameters()
     {
         // Make a lambda that will delete all these parameters from persistence
         const auto& deviceKey = deviceParameters.first;
-        auto deleteAllParameters = [&]()
-        {
+        auto deleteAllParameters = [&]() {
             for (const auto& parameter : deviceParameters.second)
                 m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
         };
@@ -367,8 +363,7 @@ void DataService::publishParameters(const std::string& deviceKey)
         return;
 
     // Make a lambda that will delete all these parameters from persistence
-    auto deleteAllParameters = [&]()
-    {
+    auto deleteAllParameters = [&]() {
         for (const auto& parameter : parameters)
             m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
     };
@@ -434,7 +429,7 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
         auto detailsSynchronization = m_protocol.parseDetails(message);
         if (detailsSynchronization == nullptr)
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
-        else if (checkIfCallbackIsWaiting(deviceKey, detailsSynchronization))
+        else if (checkIfCallbackIsWaiting(detailsSynchronization))
             return;
         else if (m_detailsSyncHandler)
             m_detailsSyncHandler(deviceKey, detailsSynchronization->getFeeds(),
@@ -482,14 +477,11 @@ bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersU
             {
                 continue;
             }
-            auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(),
-                                                [&](const ParameterName& name)
-                                                {
-                                                    return std::find_if(values.begin(), values.end(),
-                                                                        [&](const Parameter& parameter) {
-                                                                            return parameter.first == name;
-                                                                        }) != values.cend();
-                                                });
+            auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
+                return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
+                           return parameter.first == name;
+                       }) != values.cend();
+            });
             if (!allNamesMatching)
             {
                 continue;
@@ -510,7 +502,6 @@ bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersU
 }
 
 bool DataService::checkIfCallbackIsWaiting(
-  const std::string& deviceKey,
   const std::shared_ptr<DetailsSynchronizationResponseMessage>& synchronizationResponseMessage)
 {
     LOG(TRACE) << METHOD_INFO;
@@ -523,10 +514,9 @@ bool DataService::checkIfCallbackIsWaiting(
         if (!m_detailsCallbacks.empty())
         {
             const auto callback = m_detailsCallbacks.front();
-            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
-              [callback, deviceKey, synchronizationResponseMessage] {
-                  callback(deviceKey, synchronizationResponseMessage->getFeeds(),
-                           synchronizationResponseMessage->getAttributes());
+            m_commandBuffer.pushCommand(
+              std::make_shared<std::function<void()>>([callback, synchronizationResponseMessage] {
+                  callback(synchronizationResponseMessage->getFeeds(), synchronizationResponseMessage->getAttributes());
               }));
             m_detailsCallbacks.pop();
             return true;

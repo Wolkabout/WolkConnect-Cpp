@@ -50,7 +50,7 @@ public:
     MOCK_METHOD(void, pullParameters, (const std::string&));
     MOCK_METHOD(bool, synchronizeParameters,
                 (const std::string&, const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>));
-    MOCK_METHOD(bool, detailsSynchronization,
+    MOCK_METHOD(bool, detailsSynchronizationAsync,
                 (const std::string&, std::function<void(std::vector<std::string>, std::vector<std::string>)>));
     MOCK_METHOD(void, publishReadings, ());
     MOCK_METHOD(void, publishReadings, (const std::string&));

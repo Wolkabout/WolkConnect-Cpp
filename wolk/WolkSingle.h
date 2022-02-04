@@ -146,6 +146,9 @@ public:
 
     void pullFeedValues();
     void pullParameters();
+
+    void obtainDetails(std::function<void(std::vector<std::string>, std::vector<std::string>)> callback);
+
     void synchronizeParameters(const std::vector<ParameterName>& parameters,
                                std::function<void(std::vector<Parameter>)> callback = nullptr);
 
@@ -158,6 +161,8 @@ public:
     void addAttribute(Attribute attribute);
 
     void updateParameter(Parameter parameters);
+
+    void obtainChildren(std::function<void(std::vector<std::string>)> callback);
 
     std::unique_ptr<ErrorMessage> awaitError(std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
 

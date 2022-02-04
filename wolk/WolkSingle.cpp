@@ -73,6 +73,11 @@ void WolkSingle::synchronizeParameters(const std::vector<ParameterName>& paramet
     addToCommandBuffer([=] { m_dataService->synchronizeParameters(m_device.getKey(), parameters, callback); });
 }
 
+void WolkSingle::obtainDetails(std::function<void(std::vector<std::string>, std::vector<std::string>)> callback)
+{
+    addToCommandBuffer([=] { m_dataService->detailsSynchronizationAsync(m_device.getKey(), callback); });
+}
+
 void WolkSingle::registerFeed(const Feed& feed)
 {
     addToCommandBuffer([=] { m_dataService->registerFeed(m_device.getKey(), feed); });
@@ -103,8 +108,17 @@ void WolkSingle::updateParameter(Parameter parameter)
     addToCommandBuffer([=] { m_dataService->updateParameter(m_device.getKey(), parameter); });
 }
 
+void WolkSingle::obtainChildren(std::function<void(std::vector<std::string>)> callback)
+{
+    if (m_registrationService == nullptr)
+        return;
+    m_registrationService->obtainChildrenAsync(m_device.getKey(), callback);
+}
+
 std::unique_ptr<ErrorMessage> WolkSingle::awaitError(std::chrono::milliseconds timeout)
 {
+    if (m_errorService == nullptr)
+        return nullptr;
     return m_errorService->obtainOrAwaitMessageForDevice(m_device.getKey(), timeout);
 }
 

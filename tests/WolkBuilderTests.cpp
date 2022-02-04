@@ -109,20 +109,18 @@ TEST_F(WolkBuilderTests, GetDevices)
 TEST_F(WolkBuilderTests, BuildSingleButMultipleDevices)
 {
     ASSERT_THROW(
-      (
-        [] {
-            WolkBuilder{{{"", "", OutboundDataMode::PUSH}, {"", "", OutboundDataMode::PUSH}}}.buildWolkSingle();
-        }()),
+      ([] {
+          WolkBuilder{{{"", "", OutboundDataMode::PUSH}, {"", "", OutboundDataMode::PUSH}}}.buildWolkSingle();
+      }()),
       std::runtime_error);
 }
 
 TEST_F(WolkBuilderTests, BuildSingleEmptyFields)
 {
     ASSERT_THROW(([] { WolkBuilder{{"", "", OutboundDataMode::PUSH}}.buildWolkSingle(); }()), std::runtime_error);
-    ASSERT_THROW((
-                   [] {
-                       WolkBuilder{{"SOME_DEVICE", "", OutboundDataMode::PUSH}}.buildWolkSingle();
-                   }()),
+    ASSERT_THROW(([] {
+                     WolkBuilder{{"SOME_DEVICE", "", OutboundDataMode::PUSH}}.buildWolkSingle();
+                 }()),
                  std::runtime_error);
 }
 
@@ -144,25 +142,23 @@ TEST_F(WolkBuilderTests, BuildInvalidType)
 TEST_F(WolkBuilderTests, FullSingleExample)
 {
     auto wolk = std::unique_ptr<WolkSingle>{};
-    ASSERT_NO_FATAL_FAILURE(
-      [&]
-      {
-          wolk = WolkBuilder{device}
-                   .host(hostPath)
-                   .caCertPath(hostCaCrt)
-                   .feedUpdateHandler([](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {})
-                   .feedUpdateHandler(feedUpdateHandlerMock)
-                   .parameterHandler([](const std::string&, const std::vector<Parameter>&) {})
-                   .parameterHandler(parameterHandlerMock)
-                   .withPersistence(std::move(persistenceMock))
-                   .withDataProtocol(std::move(dataProtocolMock))
-                   .withErrorProtocol(errorRetainTime, std::move(errorProtocolMock))
-                   .withFileTransfer(fileDownloadLocation, maxPacketSize)
-                   .withFileURLDownload(fileDownloadLocation, std::move(fileDownloaderMock), true, maxPacketSize)
-                   .withFileListener(fileListenerMock)
-                   .withFirmwareUpdate(std::move(firmwareInstallerMock), fileDownloadLocation)
-                   .buildWolkSingle();
-      }());
+    ASSERT_NO_FATAL_FAILURE([&] {
+        wolk = WolkBuilder{device}
+                 .host(hostPath)
+                 .caCertPath(hostCaCrt)
+                 .feedUpdateHandler([](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {})
+                 .feedUpdateHandler(feedUpdateHandlerMock)
+                 .parameterHandler([](const std::string&, const std::vector<Parameter>&) {})
+                 .parameterHandler(parameterHandlerMock)
+                 .withPersistence(std::move(persistenceMock))
+                 .withDataProtocol(std::move(dataProtocolMock))
+                 .withErrorProtocol(errorRetainTime, std::move(errorProtocolMock))
+                 .withFileTransfer(fileDownloadLocation, maxPacketSize)
+                 .withFileURLDownload(fileDownloadLocation, std::move(fileDownloaderMock), true, maxPacketSize)
+                 .withFileListener(fileListenerMock)
+                 .withFirmwareUpdate(std::move(firmwareInstallerMock), fileDownloadLocation)
+                 .buildWolkSingle();
+    }());
     ASSERT_NE(wolk, nullptr);
 
     // Call some methods
@@ -175,27 +171,25 @@ TEST_F(WolkBuilderTests, FullSingleExample)
 TEST_F(WolkBuilderTests, FullMultiExample)
 {
     auto wolk = std::unique_ptr<WolkMulti>{};
-    ASSERT_NO_FATAL_FAILURE(
-      [&]
-      {
-          wolk = WolkBuilder{devices}
-                   .host(hostPath)
-                   .caCertPath(hostCaCrt)
-                   .feedUpdateHandler([](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {})
-                   .feedUpdateHandler(feedUpdateHandlerMock)
-                   .parameterHandler([](const std::string&, const std::vector<Parameter>&) {})
-                   .parameterHandler(parameterHandlerMock)
-                   .withPersistence(std::move(persistenceMock))
-                   .withDataProtocol(std::move(dataProtocolMock))
-                   .withErrorProtocol(errorRetainTime, std::move(errorProtocolMock))
-                   .withFileTransfer(fileDownloadLocation, maxPacketSize)
-                   .withFileURLDownload(fileDownloadLocation, std::move(fileDownloaderMock), true, maxPacketSize)
-                   .withFileListener(fileListenerMock)
-                   .withFirmwareUpdate(std::move(firmwareParameterListenerMock), fileDownloadLocation)
-                   .withPlatformStatus(std::move(platformStatusListenerMock))
-                   .withRegistration()
-                   .buildWolkMulti();
-      }());
+    ASSERT_NO_FATAL_FAILURE([&] {
+        wolk = WolkBuilder{devices}
+                 .host(hostPath)
+                 .caCertPath(hostCaCrt)
+                 .feedUpdateHandler([](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {})
+                 .feedUpdateHandler(feedUpdateHandlerMock)
+                 .parameterHandler([](const std::string&, const std::vector<Parameter>&) {})
+                 .parameterHandler(parameterHandlerMock)
+                 .withPersistence(std::move(persistenceMock))
+                 .withDataProtocol(std::move(dataProtocolMock))
+                 .withErrorProtocol(errorRetainTime, std::move(errorProtocolMock))
+                 .withFileTransfer(fileDownloadLocation, maxPacketSize)
+                 .withFileURLDownload(fileDownloadLocation, std::move(fileDownloaderMock), true, maxPacketSize)
+                 .withFileListener(fileListenerMock)
+                 .withFirmwareUpdate(std::move(firmwareParameterListenerMock), fileDownloadLocation)
+                 .withPlatformStatus(std::move(platformStatusListenerMock))
+                 .withRegistration()
+                 .buildWolkMulti();
+    }());
     ASSERT_NE(wolk, nullptr);
 
     // Call some methods

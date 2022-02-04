@@ -279,8 +279,7 @@ int main(int /* argc */, char** /* argv */)
      */
     wolk->connect();
     bool running = true;
-    sigintCall = [&](int)
-    {
+    sigintCall = [&](int) {
         LOG(WARN) << "Application: Received stop signal, disconnecting...";
         conditionVariable.notify_one();
         running = false;
@@ -288,18 +287,15 @@ int main(int /* argc */, char** /* argv */)
     signal(SIGINT, sigintResponse);
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
-    wolk->synchronizeParameters(
-      {wolkabout::ParameterName::FIRMWARE_UPDATE_CHECK_TIME, wolkabout::ParameterName::FIRMWARE_UPDATE_REPOSITORY});
-
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    wolk->synchronizeParameters(
-      {wolkabout::ParameterName::FIRMWARE_UPDATE_CHECK_TIME, wolkabout::ParameterName::FIRMWARE_UPDATE_REPOSITORY},
-      [&](const std::vector<wolkabout::Parameter>& parameters)
-      {
-          LOG(INFO) << "Received parameters: ";
-          for (const auto& parameter : parameters)
-              LOG(INFO) << "\t" << toString(parameter.first) << ": '" << parameter.second << "'";
-      });
+    wolk->obtainDetails([&](const std::vector<std::string>& feeds, const std::vector<std::string>& attributes) {
+        LOG(INFO) << "Received device details: ";
+        LOG(INFO) << "\tFeeds: ";
+        for (const auto& feed : feeds)
+            LOG(INFO) << "\t\t" << feed;
+        LOG(INFO) << "\tAttributes: ";
+        for (const auto& attribute : attributes)
+            LOG(INFO) << "\t\t" << attribute;
+    });
 
     /**
      * We want to randomize the temperature data too, so we need the generator for random information.

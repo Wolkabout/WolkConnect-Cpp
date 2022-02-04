@@ -169,7 +169,7 @@ public:
      * be called.
      */
     virtual bool obtainChildrenAsync(const std::string& deviceKey,
-                                     std::function<void(const std::string&, std::vector<std::string>)> callback);
+                                     std::function<void(std::vector<std::string>)> callback);
 
     /**
      * This method is used to obtain a list of devices. This is the synchronous version of the method that will attempt
@@ -237,8 +237,7 @@ private:
     // Make place for the children requests
     std::mutex m_childrenSyncDevicesMutex;
     std::condition_variable m_childrenSyncDevicesCV;
-    std::unordered_map<std::string, std::queue<std::function<void(const std::string&, std::vector<std::string>)>>>
-      m_queries;
+    std::unordered_map<std::string, std::queue<std::function<void(std::vector<std::string>)>>> m_queries;
 
     // Make place for the requests for devices
     std::mutex m_registeredDevicesMutex;

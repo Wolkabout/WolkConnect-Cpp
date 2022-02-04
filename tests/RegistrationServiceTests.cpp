@@ -24,6 +24,7 @@
 #undef protected
 
 #include "core/utilities/Logger.h"
+#include "core/utilities/Timer.h"
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/ErrorProtocolMock.h"
 #include "tests/mocks/ErrorServiceMock.h"
@@ -164,6 +165,38 @@ TEST_F(RegistrationServiceTests, RegisterDevicesReceiveError)
     ASSERT_LT(durationMs.count(), tolerable.count());
 }
 
+TEST_F(RegistrationServiceTests, RegisterDevicesReceiveErrorLastError)
+{
+    // Make the protocol return a nullptr for the parsing
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const DeviceRegistrationMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    // Set up the error service to return an error message
+    const auto delay = std::chrono::milliseconds{50};
+    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(2));
+    EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
+        std::this_thread::sleep_for(delay);
+        return true;
+    });
+    EXPECT_CALL(*errorServiceMock, obtainLastMessageForDevice)
+      .WillOnce(
+        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
+
+    // Call the service and measure the execution time
+    const auto start = std::chrono::system_clock::now();
+    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
+                                       hundred),
+              nullptr);
+    const auto duration = std::chrono::system_clock::now() - start;
+    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+    const auto tolerable = delay * 1.5;
+    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
+              << "ms) - Delay time: " << tolerable.count() << "ms.";
+    ASSERT_LT(durationMs.count(), tolerable.count());
+}
+
 TEST_F(RegistrationServiceTests, RemoveDevicesNotRunning)
 {
     // Stop the service
@@ -242,6 +275,164 @@ TEST_F(RegistrationServiceTests, RemoveDevicesReceiveError)
     LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
               << "ms) - Delay time: " << tolerable.count() << "ms.";
     ASSERT_LT(durationMs.count(), tolerable.count());
+}
+
+TEST_F(RegistrationServiceTests, RemoveDevicesReceiveErrorLast)
+{
+    // Make the protocol return a nullptr for the parsing
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const DeviceRemovalMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    // Set up the error service to return an error message
+    const auto delay = std::chrono::milliseconds{50};
+    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(2));
+    EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
+        std::this_thread::sleep_for(delay);
+        return true;
+    });
+    EXPECT_CALL(*errorServiceMock, obtainLastMessageForDevice)
+      .WillOnce(
+        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
+
+    // Call the service and measure the execution time
+    const auto start = std::chrono::system_clock::now();
+    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
+    const auto duration = std::chrono::system_clock::now() - start;
+    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
+    const auto tolerable = delay * 1.5;
+    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
+              << "ms) - Delay time: " << tolerable.count() << "ms.";
+    ASSERT_LT(durationMs.count(), tolerable.count());
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenNotRunning)
+{
+    // Stop the service
+    service->stop();
+
+    // Call the service (sync)
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    EXPECT_TRUE(service->m_queries.empty());
+
+    // Call the service (async)
+    ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}), false);
+    EXPECT_TRUE(service->m_queries.empty());
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenAsyncNoCallback)
+{
+    // Call the service (async)
+    ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, nullptr), false);
+    EXPECT_TRUE(service->m_queries.empty());
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenFailedToFormMessage)
+{
+    // Make the protocol return a nullptr for the parsing
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const ChildrenSynchronizationRequestMessage&>()))
+      .WillOnce(Return(ByMove(nullptr)))
+      .WillOnce(Return(ByMove(nullptr)));
+
+    // Call the service (sync)
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    EXPECT_TRUE(service->m_queries.empty());
+
+    // Call the service (async)
+    ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}), false);
+    EXPECT_TRUE(service->m_queries.empty());
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenFailedToPublish)
+{
+    // Make the protocol return a valid message, but the connectivity service not being able to send it.
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const ChildrenSynchronizationRequestMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillRepeatedly(Return(false));
+
+    // Call the service (sync)
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    EXPECT_TRUE(service->m_queries.empty());
+
+    // Call the service (async)
+    ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}), false);
+    EXPECT_TRUE(service->m_queries.empty());
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenNotCalled)
+{
+    // Make the protocol return a valid message, and connectivity service able to send it.
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const ChildrenSynchronizationRequestMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    const auto start = std::chrono::system_clock::now();
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    const auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+    EXPECT_GE(duration, hundred);
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenStoppedWhileWaiting)
+{
+    // Make the protocol return a valid message, and connectivity service able to send it.
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const ChildrenSynchronizationRequestMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    // Schedule stop of service
+    const auto delay = std::chrono::milliseconds{50};
+    timer.start(delay, [&] { service->stop(); });
+
+    // Check now
+    const auto start = std::chrono::system_clock::now();
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    const auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+    EXPECT_LT(duration, hundred);
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenCallbackCalled)
+{
+    // Make the protocol return a valid message, and connectivity service able to send it.
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const ChildrenSynchronizationRequestMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    // Schedule stop of service
+    const auto delay = std::chrono::milliseconds{50};
+    timer.start(delay, [&] { service->m_queries[DEVICE_KEY].front()({"C1", "C2"}); });
+
+    // Check now
+    const auto start = std::chrono::system_clock::now();
+    auto list = std::shared_ptr<std::vector<std::string>>{};
+    ASSERT_NO_FATAL_FAILURE(list = service->obtainChildren(DEVICE_KEY, hundred));
+    ASSERT_NE(list, nullptr);
+    const auto duration =
+      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
+    EXPECT_LT(duration, hundred);
+    ASSERT_EQ(list->size(), 2);
+}
+
+TEST_F(RegistrationServiceTests, ObtainChildrenAsyncSuccessful)
+{
+    // Make the protocol return a valid message, and connectivity service able to send it.
+    EXPECT_CALL(registrationProtocolMock,
+                makeOutboundMessage(A<const std::string&>(), A<const ChildrenSynchronizationRequestMessage&>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
+
+    // Check now
+    ASSERT_TRUE(service->m_queries.find(DEVICE_KEY) == service->m_queries.cend());
+    ASSERT_TRUE(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}));
+    ASSERT_FALSE(service->m_queries[DEVICE_KEY].empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesNotRunning)

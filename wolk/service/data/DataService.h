@@ -75,9 +75,8 @@ public:
     virtual bool synchronizeParameters(const std::string& deviceKey, const std::vector<ParameterName>& parameters,
                                        std::function<void(std::vector<Parameter>)> callback);
 
-    virtual bool detailsSynchronization(
-      const std::string& deviceKey,
-      std::function<void(std::string, std::vector<std::string>, std::vector<std::string>)> callback);
+    virtual bool detailsSynchronizationAsync(
+      const std::string& deviceKey, std::function<void(std::vector<std::string>, std::vector<std::string>)> callback);
 
     virtual void publishReadings();
     virtual void publishReadings(const std::string& deviceKey);
@@ -100,7 +99,6 @@ private:
     bool checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage);
 
     bool checkIfCallbackIsWaiting(
-      const std::string& deviceKey,
       const std::shared_ptr<DetailsSynchronizationResponseMessage>& synchronizationResponseMessage);
 
     void publishReadingsForPersistenceKey(const std::string& persistenceKey);
@@ -125,7 +123,7 @@ private:
     std::map<std::uint64_t, ParameterSubscription> m_parameterSubscriptions;
 
     std::mutex m_detailsMutex;
-    std::queue<std::function<void(std::string, std::vector<std::string>, std::vector<std::string>)>> m_detailsCallbacks;
+    std::queue<std::function<void(std::vector<std::string>, std::vector<std::string>)>> m_detailsCallbacks;
 
     static const std::string PERSISTENCE_KEY_DELIMITER;
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
