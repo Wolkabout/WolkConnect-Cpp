@@ -272,10 +272,9 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
 
     // Parse the message
     const auto query = DeviceQueryData{timestampFrom, deviceType, externalId};
-    auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(
-      deviceKey, RegisteredDevicesRequestMessage{
-                   std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch()), deviceType,
-                   externalId})};
+    auto request = RegisteredDevicesRequestMessage{
+      std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch()), deviceType, externalId};
+    auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, std::move(request))};
     if (message == nullptr)
     {
         LOG(ERROR) << errorPrefix << " -> Failed to generate outgoing `RegisteredDevicesRequest` message.";

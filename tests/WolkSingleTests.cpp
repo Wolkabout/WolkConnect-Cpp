@@ -39,6 +39,8 @@
 #include "tests/mocks/OutboundMessageHandlerMock.h"
 #include "tests/mocks/OutboundRetryMessageHandlerMock.h"
 #include "tests/mocks/PersistenceMock.h"
+#include "tests/mocks/RegistrationProtocolMock.h"
+#include "tests/mocks/RegistrationServiceMock.h"
 
 #include <gtest/gtest.h>
 
@@ -65,6 +67,8 @@ public:
           [](std::string, std::vector<std::string>, std::vector<std::string>) {}}};
         service->m_errorService =
           std::unique_ptr<ErrorServiceMock>{new ErrorServiceMock{errorProtocolMock, std::chrono::seconds{10}}};
+        service->m_registrationService = std::unique_ptr<RegistrationServiceMock>{new RegistrationServiceMock{
+          registrationProtocolMock, *service->m_connectivityService, *service->m_errorService}};
     }
 
     void TearDown() override { delete service->m_outboundMessageHandler; }
@@ -77,6 +81,11 @@ public:
     ErrorServiceMock& GetErrorServiceReference() const
     {
         return dynamic_cast<ErrorServiceMock&>(*service->m_errorService);
+    }
+
+    RegistrationServiceMock& GetRegistrationServiceReference() const
+    {
+        return dynamic_cast<RegistrationServiceMock&>(*service->m_registrationService);
     }
 
     void Notify() { conditionVariable.notify_one(); }
@@ -99,6 +108,8 @@ public:
     PersistenceMock persistenceMock;
 
     ErrorProtocolMock errorProtocolMock;
+
+    RegistrationProtocolMock registrationProtocolMock;
 
     FileManagementProtocolMock fileManagementProtocolMock;
 
@@ -302,6 +313,25 @@ TEST_F(WolkSingleTests, SynchronizeParameters)
     EXPECT_TRUE(called);
 }
 
+TEST_F(WolkSingleTests, ObtainDetails)
+{
+    // Set up the DataService to be called
+    std::atomic_bool called{false};
+    EXPECT_CALL(GetDataServiceReference(), detailsSynchronizationAsync(device.getKey(), _))
+      .WillOnce(
+        [&](const std::string&, const std::function<void(std::vector<std::string>, std::vector<std::string>)>&) {
+            called = true;
+            Notify();
+            return true;
+        });
+
+    // Call the service
+    ASSERT_NO_FATAL_FAILURE(service->obtainDetails({}));
+    if (!called)
+        Await();
+    EXPECT_TRUE(called);
+}
+
 TEST_F(WolkSingleTests, AddAttribute)
 {
     // Set up the DataService to be called
@@ -334,6 +364,24 @@ TEST_F(WolkSingleTests, UpdateParameter)
     if (!called)
         Await();
     EXPECT_TRUE(called);
+}
+
+TEST_F(WolkSingleTests, ObtainChildrenNoService)
+{
+    service->m_registrationService = nullptr;
+    ASSERT_NO_FATAL_FAILURE(service->obtainChildren({}));
+}
+
+TEST_F(WolkSingleTests, ObtainChildren)
+{
+    EXPECT_CALL(GetRegistrationServiceReference(), obtainChildrenAsync).Times(1);
+    ASSERT_NO_FATAL_FAILURE(service->obtainChildren({}));
+}
+
+TEST_F(WolkSingleTests, AwaitErrorNoService)
+{
+    service->m_errorService = nullptr;
+    ASSERT_NO_FATAL_FAILURE(service->awaitError());
 }
 
 TEST_F(WolkSingleTests, AwaitError)

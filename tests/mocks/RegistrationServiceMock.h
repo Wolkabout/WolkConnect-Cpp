@@ -36,6 +36,9 @@ public:
                 (const std::string&, const std::vector<DeviceRegistrationData>&, std::chrono::milliseconds));
     MOCK_METHOD(std::unique_ptr<ErrorMessage>, removeDevices,
                 (const std::string&, std::vector<std::string>, std::chrono::milliseconds));
+    MOCK_METHOD(std::shared_ptr<std::vector<std::string>>, obtainChildren,
+                (const std::string&, std::chrono::milliseconds));
+    MOCK_METHOD(bool, obtainChildrenAsync, (const std::string&, std::function<void(std::vector<std::string>)>));
     MOCK_METHOD(std::unique_ptr<std::vector<RegisteredDeviceInformation>>, obtainDevices,
                 (const std::string&, TimePoint, std::string, std::string, std::chrono::milliseconds));
     MOCK_METHOD(bool, obtainDevicesAsync,
