@@ -124,11 +124,6 @@ TEST_F(WolkBuilderTests, BuildSingleEmptyFields)
                  std::runtime_error);
 }
 
-TEST_F(WolkBuilderTests, BuildMultiButNoDevices)
-{
-    ASSERT_THROW(([] { WolkBuilder{{}}.buildWolkMulti(); }()), std::runtime_error);
-}
-
 TEST_F(WolkBuilderTests, BuildMultiButDeviceHasEmptyKey)
 {
     ASSERT_THROW(([] { WolkBuilder{{{"", "", OutboundDataMode::PUSH}}}.buildWolkMulti(); }()), std::runtime_error);

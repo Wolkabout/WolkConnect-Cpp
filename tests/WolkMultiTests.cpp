@@ -426,40 +426,28 @@ TEST_F(WolkMultiTests, UpdateParameter)
     EXPECT_TRUE(called);
 }
 
-TEST_F(WolkMultiTests, RegisterDeviceWrongDevice)
-{
-    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).Times(0);
-    ASSERT_FALSE(service->registerDevice("TestDevice", {}, {}));
-}
-
 TEST_F(WolkMultiTests, RegisterDeviceReturnsError)
 {
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(false));
-    ASSERT_FALSE(service->registerDevice(devices.front().getKey(), {}, {}));
+    ASSERT_FALSE(service->registerDevice({}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDeviceHappyFlow)
 {
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(true));
-    ASSERT_TRUE(service->registerDevice(devices.front().getKey(), {}, {}));
-}
-
-TEST_F(WolkMultiTests, RegisterDeviceWrongDevices)
-{
-    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).Times(0);
-    ASSERT_NO_FATAL_FAILURE(service->registerDevices("TestDevice", {{}}, {}));
+    ASSERT_TRUE(service->registerDevice({}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDevicesReturnsError)
 {
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(false));
-    ASSERT_FALSE(service->registerDevices(devices.front().getKey(), {{}}, {}));
+    ASSERT_FALSE(service->registerDevices({{}}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDevicesHappyFlow)
 {
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(true));
-    ASSERT_TRUE(service->registerDevices(devices.front().getKey(), {{}}, {}));
+    ASSERT_TRUE(service->registerDevices({{}}, {}));
 }
 
 TEST_F(WolkMultiTests, RemoveDeviceWrongDevice)
