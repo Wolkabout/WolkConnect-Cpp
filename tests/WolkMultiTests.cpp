@@ -69,8 +69,8 @@ public:
           [](std::string, std::vector<std::string>, std::vector<std::string>) {}}};
         service->m_errorService = std::unique_ptr<ErrorServiceMock>{
           new NiceMock<ErrorServiceMock>{errorProtocolMock, std::chrono::seconds{10}}};
-        service->m_registrationService = std::unique_ptr<RegistrationServiceMock>{new NiceMock<RegistrationServiceMock>{
-          registrationProtocolMock, *service->m_connectivityService, *service->m_errorService}};
+        service->m_registrationService = std::unique_ptr<RegistrationServiceMock>{
+          new NiceMock<RegistrationServiceMock>{registrationProtocolMock, *service->m_connectivityService}};
     }
 
     void TearDown() override { delete service->m_outboundMessageHandler; }
@@ -429,41 +429,37 @@ TEST_F(WolkMultiTests, UpdateParameter)
 TEST_F(WolkMultiTests, RegisterDeviceWrongDevice)
 {
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).Times(0);
-    ASSERT_NO_FATAL_FAILURE(service->registerDevice("TestDevice", {}));
+    ASSERT_FALSE(service->registerDevice("TestDevice", {}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDeviceReturnsError)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
-    ASSERT_FALSE(service->registerDevice(devices.front().getKey(), {}));
+    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(false));
+    ASSERT_FALSE(service->registerDevice(devices.front().getKey(), {}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDeviceHappyFlow)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(ByMove(nullptr)));
-    ASSERT_TRUE(service->registerDevice(devices.front().getKey(), {}));
+    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(true));
+    ASSERT_TRUE(service->registerDevice(devices.front().getKey(), {}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDeviceWrongDevices)
 {
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).Times(0);
-    ASSERT_NO_FATAL_FAILURE(service->registerDevices("TestDevice", {{}}));
+    ASSERT_NO_FATAL_FAILURE(service->registerDevices("TestDevice", {{}}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDevicesReturnsError)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
-    ASSERT_FALSE(service->registerDevices(devices.front().getKey(), {{}}));
+    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(false));
+    ASSERT_FALSE(service->registerDevices(devices.front().getKey(), {{}}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDevicesHappyFlow)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(ByMove(nullptr)));
-    ASSERT_TRUE(service->registerDevices(devices.front().getKey(), {{}}));
+    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(true));
+    ASSERT_TRUE(service->registerDevices(devices.front().getKey(), {{}}, {}));
 }
 
 TEST_F(WolkMultiTests, RemoveDeviceWrongDevice)
@@ -474,15 +470,13 @@ TEST_F(WolkMultiTests, RemoveDeviceWrongDevice)
 
 TEST_F(WolkMultiTests, RemoveDeviceReturnsError)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
+    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices).WillOnce(Return(false));
     ASSERT_FALSE(service->removeDevice(devices.front().getKey(), {}));
 }
 
 TEST_F(WolkMultiTests, RemoveDeviceHappyFlow)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices).WillOnce(Return(ByMove(nullptr)));
+    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices).WillOnce(Return(true));
     ASSERT_TRUE(service->removeDevice(devices.front().getKey(), {}));
 }
 
@@ -494,15 +488,13 @@ TEST_F(WolkMultiTests, RemoveDevicesWrongDevice)
 
 TEST_F(WolkMultiTests, RemoveDevicesReturnsError)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
+    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices).WillOnce(Return(false));
     ASSERT_FALSE(service->removeDevices(devices.front().getKey(), {}));
 }
 
 TEST_F(WolkMultiTests, RemoveDevicesHappyFlow)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices).WillOnce(Return(ByMove(nullptr)));
+    EXPECT_CALL(GetRegistrationServiceReference(), removeDevices).WillOnce(Return(true));
     ASSERT_TRUE(service->removeDevices(devices.front().getKey(), {}));
 }
 

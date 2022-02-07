@@ -27,15 +27,14 @@ using namespace wolkabout::connect;
 class RegistrationServiceMock : public RegistrationService
 {
 public:
-    RegistrationServiceMock(RegistrationProtocol& protocol, ConnectivityService& connectivityService,
-                            ErrorService& errorService)
-    : RegistrationService(protocol, connectivityService, errorService)
+    RegistrationServiceMock(RegistrationProtocol& protocol, ConnectivityService& connectivityService)
+    : RegistrationService(protocol, connectivityService)
     {
     }
-    MOCK_METHOD(std::unique_ptr<ErrorMessage>, registerDevices,
-                (const std::string&, const std::vector<DeviceRegistrationData>&, std::chrono::milliseconds));
-    MOCK_METHOD(std::unique_ptr<ErrorMessage>, removeDevices,
-                (const std::string&, std::vector<std::string>, std::chrono::milliseconds));
+    MOCK_METHOD(bool, registerDevices,
+                (const std::string&, const std::vector<DeviceRegistrationData>&,
+                 std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)>));
+    MOCK_METHOD(bool, removeDevices, (const std::string&, std::vector<std::string>));
     MOCK_METHOD(std::shared_ptr<std::vector<std::string>>, obtainChildren,
                 (const std::string&, std::chrono::milliseconds));
     MOCK_METHOD(bool, obtainChildrenAsync, (const std::string&, std::function<void(std::vector<std::string>)>));

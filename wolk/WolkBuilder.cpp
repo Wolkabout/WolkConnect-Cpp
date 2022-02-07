@@ -382,8 +382,8 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     {
         // Create the service
         wolk->m_registrationProtocol = std::move(m_registrationProtocol);
-        wolk->m_registrationService = std::make_shared<RegistrationService>(
-          *wolk->m_registrationProtocol, *wolk->m_connectivityService, *wolk->m_errorService);
+        wolk->m_registrationService =
+          std::make_shared<RegistrationService>(*wolk->m_registrationProtocol, *wolk->m_connectivityService);
         wolk->m_inboundMessageHandler->addListener(wolk->m_registrationService);
     }
 

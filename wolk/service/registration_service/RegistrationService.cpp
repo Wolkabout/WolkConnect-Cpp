@@ -18,13 +18,14 @@
 
 #include "core/utilities/Logger.h"
 
+#include <algorithm>
+
 namespace wolkabout
 {
 namespace connect
 {
-RegistrationService::RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService,
-                                         ErrorService& errorService)
-: m_protocol(protocol), m_connectivityService(connectivityService), m_errorService(errorService), m_running(false)
+RegistrationService::RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService)
+: m_protocol(protocol), m_connectivityService(connectivityService), m_running(false)
 {
 }
 
@@ -45,9 +46,9 @@ void RegistrationService::stop()
     m_childrenSyncDevicesCV.notify_all();
 }
 
-std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::string& deviceKey,
-                                                                   const std::vector<DeviceRegistrationData>& devices,
-                                                                   std::chrono::milliseconds timeout)
+bool RegistrationService::registerDevices(
+  const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
+  std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to register devices";
@@ -55,20 +56,27 @@ std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::st
     // Check if the service is toggled on
     if (!m_running)
     {
-        const auto errorMessage = "The service is not running.";
-        LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
+        LOG(ERROR) << errorPrefix << " -> The service is not running.";
+        return false;
     }
 
-    // Check that there's devices in the vector
+    // Check that there's devices in the vector and that their names are not empty
     if (devices.empty())
     {
-        const auto errorMessage = "The list of devices is empty.";
-        LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
+        LOG(ERROR) << errorPrefix << " -> The list of devices is empty.";
+        return false;
     }
+    auto deviceNames = std::vector<std::string>{};
+    for (const auto& device : devices)
+    {
+        if (device.name.empty())
+        {
+            LOG(ERROR) << errorPrefix << " -> One of the devices has an empty name.";
+            return false;
+        }
+        deviceNames.emplace_back(device.name);
+    }
+    std::sort_heap(deviceNames.begin(), deviceNames.end());
 
     // Make the message that will be sent out
     const auto message =
@@ -77,32 +85,26 @@ std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::st
     {
         const auto errorMessage = "Failed to generate the outgoing message.";
         LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
+        return false;
     }
-
-    // Peek the number of errors
-    auto errors = m_errorService.peekMessagesForDevice(deviceKey);
 
     // Send the message out
     if (!m_connectivityService.publish(message))
     {
         const auto errorMessage = "Failed to send the outgoing message.";
         LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
+        return false;
     }
 
-    // Now wait for a response message
-    if (m_errorService.awaitMessage(deviceKey, timeout))
-        return errors > 1 ? m_errorService.obtainLastMessageForDevice(deviceKey) :
-                            m_errorService.obtainFirstMessageForDevice(deviceKey);
-    return nullptr;
+    // Emplace the callback in the map
+    {
+        std::lock_guard<std::mutex> lock{m_deviceRegistrationMutex};
+        m_deviceRegistrationCallbacks.emplace(deviceNames, std::move(callback));
+    }
+    return true;
 }
 
-std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::string& deviceKey,
-                                                                 std::vector<std::string> deviceKeys,
-                                                                 std::chrono::milliseconds timeout)
+bool RegistrationService::removeDevices(const std::string& deviceKey, std::vector<std::string> deviceKeys)
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to remove a device";
@@ -112,8 +114,7 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
     {
         const auto errorMessage = "The service is not running.";
         LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
+        return false;
     }
 
     // Make the message that will be sent out
@@ -123,27 +124,17 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
     {
         const auto errorMessage = "Failed to generate the outgoing message.";
         LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
+        return false;
     }
-
-    // Peek the number of errors
-    auto errors = m_errorService.peekMessagesForDevice(deviceKey);
 
     // Send the message out
     if (!m_connectivityService.publish(message))
     {
         const auto errorMessage = "Failed to send the outgoing message.";
         LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
+        return false;
     }
-
-    // Now wait for a response message
-    if (m_errorService.awaitMessage(deviceKey, timeout))
-        return errors > 1 ? m_errorService.obtainLastMessageForDevice(deviceKey) :
-                            m_errorService.obtainFirstMessageForDevice(deviceKey);
-    return nullptr;
+    return true;
 }
 
 std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(const std::string& deviceKey,
@@ -384,41 +375,101 @@ void RegistrationService::messageReceived(std::shared_ptr<Message> message)
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to process received message";
 
-    // Try to parse the incoming message
-    auto parsedMessage = m_protocol.parseRegisteredDevicesResponse(message);
-    if (parsedMessage == nullptr)
+    const auto messageType = m_protocol.getMessageType(*message);
+    switch (messageType)
     {
-        LOG(ERROR) << errorPrefix << " -> The message could not be parsed.";
-        return;
-    }
-
-    // Make the query object from the message
-    auto query = DeviceQueryData{TimePoint(parsedMessage->getTimestampFrom()), parsedMessage->getDeviceType(),
-                                 parsedMessage->getExternalId()};
-    // And now look whether there's such a query object in the map
+    case MessageType::DEVICE_REGISTRATION_RESPONSE:
     {
-        std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
-        const auto it = m_responses.find(query);
-        if (it == m_responses.cend())
-        {
-            LOG(ERROR) << errorPrefix << " -> There is no record of request being sent out for this response.";
-            return;
-        }
-
-        // Check whether there exists a callback.
-        if (it->first.getCallback())
-            // Just invoke the callback
-            it->first.getCallback()(parsedMessage->getMatchingDevices());
+        auto parsedMessage = m_protocol.parseDeviceRegistrationResponse(message);
+        if (parsedMessage == nullptr)
+            LOG(ERROR) << errorPrefix << " -> The message could not be parsed.";
         else
-            // Place the value in the map
-            m_responses[query] = std::move(parsedMessage);
+            handleDeviceRegistrationResponse(std::move(parsedMessage));
+        break;
     }
-    m_registeredDevicesCV.notify_one();
+    case MessageType::REGISTERED_DEVICES_RESPONSE:
+    {
+        auto parsedMessage = m_protocol.parseRegisteredDevicesResponse(message);
+        if (parsedMessage == nullptr)
+            LOG(ERROR) << errorPrefix << " -> The message could not be parsed.";
+        else
+            handleRegisteredDevicesResponse(std::move(parsedMessage));
+        break;
+    }
+    default:
+    {
+        LOG(ERROR) << errorPrefix << " -> Received message of type this handler can not handle.";
+    }
+    }
 }
 
 const Protocol& RegistrationService::getProtocol()
 {
     return m_protocol;
+}
+
+void RegistrationService::handleDeviceRegistrationResponse(
+  std::unique_ptr<DeviceRegistrationResponseMessage> responseMessage)
+{
+    // Check nullptr
+    if (responseMessage == nullptr)
+        return;
+
+    // Take out the device names and find a callback
+    auto deviceNames = std::vector<std::string>{};
+    std::copy(responseMessage->getSuccess().cbegin(), responseMessage->getSuccess().cend(),
+              std::back_inserter(deviceNames));
+    std::copy(responseMessage->getFailed().cbegin(), responseMessage->getFailed().cend(),
+              std::back_inserter(deviceNames));
+    std::sort(deviceNames.begin(), deviceNames.end());
+
+    // Look for callbacks
+    {
+        std::lock_guard<std::mutex> lock{m_deviceRegistrationMutex};
+        const auto it = m_deviceRegistrationCallbacks.find(deviceNames);
+        if (it == m_deviceRegistrationCallbacks.cend())
+            return;
+        const auto callback = std::move(it->second);
+        const auto success = responseMessage->getSuccess();
+        const auto failed = responseMessage->getFailed();
+        m_commandBuffer.pushCommand(
+          std::make_shared<std::function<void()>>([callback, success, failed] { callback(success, failed); }));
+        m_deviceRegistrationCallbacks.erase(it);
+    }
+}
+
+void RegistrationService::handleRegisteredDevicesResponse(
+  std::unique_ptr<RegisteredDevicesResponseMessage> responseMessage)
+{
+    // Check nullptr
+    if (responseMessage == nullptr)
+        return;
+
+    // Make the query object from the message
+    auto query = DeviceQueryData{TimePoint(responseMessage->getTimestampFrom()), responseMessage->getDeviceType(),
+                                 responseMessage->getExternalId()};
+    // And now look whether there's such a query object in the map
+    {
+        std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
+        const auto it = m_responses.find(query);
+        if (it == m_responses.cend())
+            return;
+
+        // Check whether there exists a callback.
+        if (it->first.getCallback())
+        {    // Just invoke the callback
+            const auto callback = std::move(it->first.getCallback());
+            const auto devices = responseMessage->getMatchingDevices();
+            m_commandBuffer.pushCommand(
+              std::make_shared<std::function<void()>>([callback, devices]() { callback(devices); }));
+        }
+        else
+        {
+            // Place the value in the map
+            m_responses[query] = std::move(responseMessage);
+        }
+    }
+    m_registeredDevicesCV.notify_one();
 }
 }    // namespace connect
 }    // namespace wolkabout

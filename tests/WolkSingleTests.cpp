@@ -67,8 +67,8 @@ public:
           [](std::string, std::vector<std::string>, std::vector<std::string>) {}}};
         service->m_errorService =
           std::unique_ptr<ErrorServiceMock>{new ErrorServiceMock{errorProtocolMock, std::chrono::seconds{10}}};
-        service->m_registrationService = std::unique_ptr<RegistrationServiceMock>{new RegistrationServiceMock{
-          registrationProtocolMock, *service->m_connectivityService, *service->m_errorService}};
+        service->m_registrationService = std::unique_ptr<RegistrationServiceMock>{
+          new RegistrationServiceMock{registrationProtocolMock, *service->m_connectivityService}};
     }
 
     void TearDown() override { delete service->m_outboundMessageHandler; }

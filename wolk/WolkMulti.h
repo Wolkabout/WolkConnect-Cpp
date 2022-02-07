@@ -76,16 +76,15 @@ public:
     void updateParameter(const std::string& deviceKey, Parameter parameters);
 
     bool registerDevice(const std::string& deviceKey, const DeviceRegistrationData& device,
-                        std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+                        std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback);
 
-    bool registerDevices(const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
-                         std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    bool registerDevices(
+      const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
+      std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback);
 
-    bool removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove,
-                      std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    bool removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove);
 
-    bool removeDevices(const std::string& deviceKey, const std::vector<std::string>& deviceKeysToRemove,
-                       std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
+    bool removeDevices(const std::string& deviceKey, const std::vector<std::string>& deviceKeysToRemove);
 
     std::unique_ptr<std::vector<RegisteredDeviceInformation>> obtainDevices(
       const std::string& deviceKey, TimePoint timestampFrom, std::string deviceType = {}, std::string externalId = {},

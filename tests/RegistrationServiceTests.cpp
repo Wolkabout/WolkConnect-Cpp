@@ -45,27 +45,22 @@ public:
     void SetUp() override
     {
         connectivityServiceMock = std::make_shared<NiceMock<ConnectivityServiceMock>>();
-        errorServiceMock = std::make_shared<NiceMock<ErrorServiceMock>>(errorProtocolMock, RETAIN_TIME);
         service = std::unique_ptr<RegistrationService>{
-          new RegistrationService{registrationProtocolMock, *connectivityServiceMock, *errorServiceMock}};
+          new RegistrationService{registrationProtocolMock, *connectivityServiceMock}};
         service->start();
     }
 
     void TearDown() override { service.reset(); }
 
-    const std::chrono::milliseconds hundred{100};
-
     const std::string DEVICE_KEY = "TestDevice";
 
-    const std::chrono::milliseconds RETAIN_TIME = std::chrono::milliseconds{500};
+    const std::chrono::milliseconds HUNDRED = std::chrono::milliseconds{100};
 
-    ErrorProtocolMock errorProtocolMock;
+    const std::chrono::milliseconds RETAIN_TIME = std::chrono::milliseconds{500};
 
     RegistrationProtocolMock registrationProtocolMock;
 
     std::shared_ptr<ConnectivityServiceMock> connectivityServiceMock;
-
-    std::shared_ptr<ErrorServiceMock> errorServiceMock;
 
     std::unique_ptr<RegistrationService> service;
 
@@ -83,13 +78,19 @@ TEST_F(RegistrationServiceTests, RegisterDevicesNotRunning)
     service->stop();
 
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {}, hundred), nullptr);
+    ASSERT_FALSE(service->registerDevices(DEVICE_KEY, {}, {}));
 }
 
 TEST_F(RegistrationServiceTests, RegisterDevicesEmptyVector)
 {
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {}, hundred), nullptr);
+    ASSERT_FALSE(service->registerDevices(DEVICE_KEY, {}, {}));
+}
+
+TEST_F(RegistrationServiceTests, RegisterDevicesEmptyNameOfDevice)
+{
+    // Call the service
+    ASSERT_FALSE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{}}, {}));
 }
 
 TEST_F(RegistrationServiceTests, RegisterDevicesFailToParse)
@@ -100,9 +101,8 @@ TEST_F(RegistrationServiceTests, RegisterDevicesFailToParse)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
-                                       hundred),
-              nullptr);
+    ASSERT_FALSE(
+      service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}, {}));
 }
 
 TEST_F(RegistrationServiceTests, RegisterDevicesCouldNotSend)
@@ -114,9 +114,8 @@ TEST_F(RegistrationServiceTests, RegisterDevicesCouldNotSend)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
 
     // Call the service
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
-                                       hundred),
-              nullptr);
+    ASSERT_FALSE(
+      service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}, {}));
 }
 
 TEST_F(RegistrationServiceTests, RegisterDevicesSentSuccessfully)
@@ -128,73 +127,8 @@ TEST_F(RegistrationServiceTests, RegisterDevicesSentSuccessfully)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
     // Call the service
-    ASSERT_EQ(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
-                                       hundred),
-              nullptr);
-}
-
-TEST_F(RegistrationServiceTests, RegisterDevicesReceiveError)
-{
-    // Make the protocol return a nullptr for the parsing
-    EXPECT_CALL(registrationProtocolMock,
-                makeOutboundMessage(A<const std::string&>(), A<const DeviceRegistrationMessage&>()))
-      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
-    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
-
-    // Set up the error service to return an error message
-    const auto delay = std::chrono::milliseconds{50};
-    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(0));
-    EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
-        std::this_thread::sleep_for(delay);
-        return true;
-    });
-    EXPECT_CALL(*errorServiceMock, obtainFirstMessageForDevice)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
-
-    // Call the service and measure the execution time
-    const auto start = std::chrono::system_clock::now();
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
-                                       hundred),
-              nullptr);
-    const auto duration = std::chrono::system_clock::now() - start;
-    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    const auto tolerable = delay * 1.5;
-    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
-              << "ms) - Delay time: " << tolerable.count() << "ms.";
-    ASSERT_LT(durationMs.count(), tolerable.count());
-}
-
-TEST_F(RegistrationServiceTests, RegisterDevicesReceiveErrorLastError)
-{
-    // Make the protocol return a nullptr for the parsing
-    EXPECT_CALL(registrationProtocolMock,
-                makeOutboundMessage(A<const std::string&>(), A<const DeviceRegistrationMessage&>()))
-      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
-    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
-
-    // Set up the error service to return an error message
-    const auto delay = std::chrono::milliseconds{50};
-    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(2));
-    EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
-        std::this_thread::sleep_for(delay);
-        return true;
-    });
-    EXPECT_CALL(*errorServiceMock, obtainLastMessageForDevice)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
-
-    // Call the service and measure the execution time
-    const auto start = std::chrono::system_clock::now();
-    ASSERT_NE(service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}},
-                                       hundred),
-              nullptr);
-    const auto duration = std::chrono::system_clock::now() - start;
-    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    const auto tolerable = delay * 1.5;
-    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
-              << "ms) - Delay time: " << tolerable.count() << "ms.";
-    ASSERT_LT(durationMs.count(), tolerable.count());
+    ASSERT_TRUE(
+      service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}, {}));
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesNotRunning)
@@ -203,13 +137,13 @@ TEST_F(RegistrationServiceTests, RemoveDevicesNotRunning)
     service->stop();
 
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {}, hundred), nullptr);
+    ASSERT_FALSE(service->removeDevices(DEVICE_KEY, {}));
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesEmptyVector)
 {
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {}, hundred), nullptr);
+    ASSERT_FALSE(service->removeDevices(DEVICE_KEY, {}));
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesFailToParse)
@@ -220,7 +154,7 @@ TEST_F(RegistrationServiceTests, RemoveDevicesFailToParse)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
+    ASSERT_FALSE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}));
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesCouldNotSend)
@@ -232,7 +166,7 @@ TEST_F(RegistrationServiceTests, RemoveDevicesCouldNotSend)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(false));
 
     // Call the service
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
+    ASSERT_FALSE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}));
 }
 
 TEST_F(RegistrationServiceTests, RemoveDevicesSentSuccessfully)
@@ -244,67 +178,7 @@ TEST_F(RegistrationServiceTests, RemoveDevicesSentSuccessfully)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
     // Call the service
-    ASSERT_EQ(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
-}
-
-TEST_F(RegistrationServiceTests, RemoveDevicesReceiveError)
-{
-    // Make the protocol return a nullptr for the parsing
-    EXPECT_CALL(registrationProtocolMock,
-                makeOutboundMessage(A<const std::string&>(), A<const DeviceRemovalMessage&>()))
-      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
-    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
-
-    // Set up the error service to return an error message
-    const auto delay = std::chrono::milliseconds{50};
-    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(0));
-    EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
-        std::this_thread::sleep_for(delay);
-        return true;
-    });
-    EXPECT_CALL(*errorServiceMock, obtainFirstMessageForDevice)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
-
-    // Call the service and measure the execution time
-    const auto start = std::chrono::system_clock::now();
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
-    const auto duration = std::chrono::system_clock::now() - start;
-    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    const auto tolerable = delay * 1.5;
-    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
-              << "ms) - Delay time: " << tolerable.count() << "ms.";
-    ASSERT_LT(durationMs.count(), tolerable.count());
-}
-
-TEST_F(RegistrationServiceTests, RemoveDevicesReceiveErrorLast)
-{
-    // Make the protocol return a nullptr for the parsing
-    EXPECT_CALL(registrationProtocolMock,
-                makeOutboundMessage(A<const std::string&>(), A<const DeviceRemovalMessage&>()))
-      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
-    EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
-
-    // Set up the error service to return an error message
-    const auto delay = std::chrono::milliseconds{50};
-    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(2));
-    EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
-        std::this_thread::sleep_for(delay);
-        return true;
-    });
-    EXPECT_CALL(*errorServiceMock, obtainLastMessageForDevice)
-      .WillOnce(
-        Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
-
-    // Call the service and measure the execution time
-    const auto start = std::chrono::system_clock::now();
-    ASSERT_NE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}, hundred), nullptr);
-    const auto duration = std::chrono::system_clock::now() - start;
-    const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
-    const auto tolerable = delay * 1.5;
-    LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
-              << "ms) - Delay time: " << tolerable.count() << "ms.";
-    ASSERT_LT(durationMs.count(), tolerable.count());
+    ASSERT_TRUE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}));
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenNotRunning)
@@ -313,7 +187,7 @@ TEST_F(RegistrationServiceTests, ObtainChildrenNotRunning)
     service->stop();
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
     EXPECT_TRUE(service->m_queries.empty());
 
     // Call the service (async)
@@ -337,7 +211,7 @@ TEST_F(RegistrationServiceTests, ObtainChildrenFailedToFormMessage)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
     EXPECT_TRUE(service->m_queries.empty());
 
     // Call the service (async)
@@ -355,7 +229,7 @@ TEST_F(RegistrationServiceTests, ObtainChildrenFailedToPublish)
     EXPECT_CALL(*connectivityServiceMock, publish).WillRepeatedly(Return(false));
 
     // Call the service (sync)
-    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
     EXPECT_TRUE(service->m_queries.empty());
 
     // Call the service (async)
@@ -372,10 +246,10 @@ TEST_F(RegistrationServiceTests, ObtainChildrenNotCalled)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
     const auto start = std::chrono::system_clock::now();
-    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
     const auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
-    EXPECT_GE(duration, hundred);
+    EXPECT_GE(duration, HUNDRED);
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenStoppedWhileWaiting)
@@ -392,10 +266,10 @@ TEST_F(RegistrationServiceTests, ObtainChildrenStoppedWhileWaiting)
 
     // Check now
     const auto start = std::chrono::system_clock::now();
-    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, hundred), nullptr);
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
     const auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
-    EXPECT_LT(duration, hundred);
+    EXPECT_LT(duration, HUNDRED);
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenCallbackCalled)
@@ -413,11 +287,11 @@ TEST_F(RegistrationServiceTests, ObtainChildrenCallbackCalled)
     // Check now
     const auto start = std::chrono::system_clock::now();
     auto list = std::shared_ptr<std::vector<std::string>>{};
-    ASSERT_NO_FATAL_FAILURE(list = service->obtainChildren(DEVICE_KEY, hundred));
+    ASSERT_NO_FATAL_FAILURE(list = service->obtainChildren(DEVICE_KEY, HUNDRED));
     ASSERT_NE(list, nullptr);
     const auto duration =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
-    EXPECT_LT(duration, hundred);
+    EXPECT_LT(duration, HUNDRED);
     ASSERT_EQ(list->size(), 2);
 }
 
@@ -435,6 +309,66 @@ TEST_F(RegistrationServiceTests, ObtainChildrenAsyncSuccessful)
     ASSERT_FALSE(service->m_queries[DEVICE_KEY].empty());
 }
 
+TEST_F(RegistrationServiceTests, DeviceRegistrationResponseNull)
+{
+    ASSERT_NO_FATAL_FAILURE(service->handleDeviceRegistrationResponse(nullptr));
+}
+
+TEST_F(RegistrationServiceTests, DeviceRegistrationResponseNoCallback)
+{
+    ASSERT_NO_FATAL_FAILURE(service->handleDeviceRegistrationResponse(
+      std::unique_ptr<DeviceRegistrationResponseMessage>{new DeviceRegistrationResponseMessage{{"D1", "D2"}, {"D3"}}}));
+}
+
+TEST_F(RegistrationServiceTests, DeviceRegistrationResponseFoundCallback)
+{
+    std::atomic_bool called{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+
+    // insert the callback
+    service->m_deviceRegistrationCallbacks.emplace(
+      std::vector<std::string>{"D1", "D2", "D3"},
+      [&](const std::vector<std::string>& success, const std::vector<std::string>& failed) {
+          if (success.size() == 2 && failed.size() == 1)
+          {
+              called = true;
+              conditionVariable.notify_one();
+          }
+      });
+
+    ASSERT_NO_FATAL_FAILURE(service->handleDeviceRegistrationResponse(
+      std::unique_ptr<DeviceRegistrationResponseMessage>{new DeviceRegistrationResponseMessage{{"D1", "D2"}, {"D3"}}}));
+    if (!called)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(called);
+}
+
+TEST_F(RegistrationServiceTests, ReceiveMessageUnknownType)
+{
+    EXPECT_CALL(registrationProtocolMock, getMessageType).WillOnce(Return(MessageType::UNKNOWN));
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(RegistrationServiceTests, ReceiveMessageDeviceRegistrationResponseParsesToNull)
+{
+    EXPECT_CALL(registrationProtocolMock, getMessageType).WillOnce(Return(MessageType::DEVICE_REGISTRATION_RESPONSE));
+    EXPECT_CALL(registrationProtocolMock, parseDeviceRegistrationResponse).WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(RegistrationServiceTests, ReceiveMessageDeviceRegistrationResponseHappyFlow)
+{
+    EXPECT_CALL(registrationProtocolMock, getMessageType).WillOnce(Return(MessageType::DEVICE_REGISTRATION_RESPONSE));
+    EXPECT_CALL(registrationProtocolMock, parseDeviceRegistrationResponse)
+      .WillOnce(Return(
+        ByMove(std::unique_ptr<DeviceRegistrationResponseMessage>{new DeviceRegistrationResponseMessage{{}, {}}})));
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
 TEST_F(RegistrationServiceTests, ObtainDevicesNotRunning)
 {
     // Stop the service
@@ -442,7 +376,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesNotRunning)
 
     // Call the service (sync)
     ASSERT_EQ(
-      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), "", "", hundred),
+      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), "", "", HUNDRED),
       nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
@@ -472,7 +406,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToFormMessage)
 
     // Call the service (sync)
     ASSERT_EQ(
-      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, hundred),
+      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, HUNDRED),
       nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
@@ -494,7 +428,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToPublish)
 
     // Call the service (sync)
     ASSERT_EQ(
-      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, hundred),
+      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, HUNDRED),
       nullptr);
     EXPECT_TRUE(service->m_responses.empty());
 
@@ -556,6 +490,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedArrayNoCallback)
     // Make the message valid
     const auto timeFrom =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    EXPECT_CALL(registrationProtocolMock, getMessageType).WillOnce(Return(MessageType::REGISTERED_DEVICES_RESPONSE));
     EXPECT_CALL(registrationProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const RegisteredDevicesRequestMessage&>()))
       .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
@@ -593,6 +528,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedDevicesInArrayWithCallback)
     // Make the message valid
     const auto timeFrom =
       std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch());
+    EXPECT_CALL(registrationProtocolMock, getMessageType).WillOnce(Return(MessageType::REGISTERED_DEVICES_RESPONSE));
     EXPECT_CALL(registrationProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const RegisteredDevicesRequestMessage&>()))
       .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
@@ -642,6 +578,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesPushedDevicesInArrayWithCallback)
 TEST_F(RegistrationServiceTests, ReceivedMessageFailsToParse)
 {
     // Make the protocol fail to parse the message
+    EXPECT_CALL(registrationProtocolMock, getMessageType).WillOnce(Return(MessageType::REGISTERED_DEVICES_RESPONSE));
     EXPECT_CALL(registrationProtocolMock, parseRegisteredDevicesResponse).WillOnce(Return(ByMove(nullptr)));
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
 }
@@ -649,6 +586,7 @@ TEST_F(RegistrationServiceTests, ReceivedMessageFailsToParse)
 TEST_F(RegistrationServiceTests, ReceivedMessageNoRecord)
 {
     // Make the protocol fail to parse the message
+    EXPECT_CALL(registrationProtocolMock, getMessageType).WillOnce(Return(MessageType::REGISTERED_DEVICES_RESPONSE));
     EXPECT_CALL(registrationProtocolMock, parseRegisteredDevicesResponse)
       .WillOnce(Return(ByMove(std::unique_ptr<RegisteredDevicesResponseMessage>{new RegisteredDevicesResponseMessage{
         std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()), "",

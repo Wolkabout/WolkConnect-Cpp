@@ -186,80 +186,48 @@ void WolkMulti::updateParameter(const std::string& deviceKey, Parameter paramete
     addToCommandBuffer([=]() -> void { m_dataService->updateParameter(deviceKey, parameter); });
 }
 
-bool WolkMulti::registerDevice(const std::string& deviceKey, const DeviceRegistrationData& device,
-                               std::chrono::milliseconds timeout)
+bool WolkMulti::registerDevice(
+  const std::string& deviceKey, const DeviceRegistrationData& device,
+  std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
 {
     if (!isDeviceInList(deviceKey))
     {
         LOG(WARN) << "Ignoring call of 'registerDevice' - Device '" << deviceKey << "' has not been added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->registerDevices(deviceKey, {device}, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `registerDevice` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->registerDevices(deviceKey, {device}, callback);
 }
 
-bool WolkMulti::registerDevices(const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
-                                std::chrono::milliseconds timeout)
+bool WolkMulti::registerDevices(
+  const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
+  std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
 {
     if (!isDeviceInList(deviceKey))
     {
         LOG(WARN) << "Ignoring call of 'registerDevices' - Device '" << deviceKey << "' has not been added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->registerDevices(deviceKey, devices, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `registerDevices` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->registerDevices(deviceKey, devices, callback);
 }
 
-bool WolkMulti::removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove,
-                             std::chrono::milliseconds timeout)
+bool WolkMulti::removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove)
 {
     if (!isDeviceInList(deviceKey))
     {
         LOG(WARN) << "Ignoring call of 'removeDevice' - Device '" << deviceKey << "' has not been added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->removeDevices(deviceKey, {deviceKeyToRemove}, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `removeDevice` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->removeDevices(deviceKey, {deviceKeyToRemove});
 }
 
-bool WolkMulti::removeDevices(const std::string& deviceKey, const std::vector<std::string>& deviceKeysToRemove,
-                              std::chrono::milliseconds timeout)
+bool WolkMulti::removeDevices(const std::string& deviceKey, const std::vector<std::string>& deviceKeysToRemove)
 {
     if (!isDeviceInList(deviceKey))
     {
         LOG(WARN) << "Ignoring call of 'removeDevices' - Device '" << deviceKey << "' has not been added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->removeDevices(deviceKey, deviceKeysToRemove, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `removeDevices` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->removeDevices(deviceKey, deviceKeysToRemove);
 }
 
 std::unique_ptr<std::vector<RegisteredDeviceInformation>> WolkMulti::obtainDevices(const std::string& deviceKey,
