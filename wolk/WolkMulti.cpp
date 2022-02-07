@@ -187,27 +187,27 @@ void WolkMulti::updateParameter(const std::string& deviceKey, Parameter paramete
 }
 
 bool WolkMulti::registerDevice(
-  const std::string& deviceKey, const DeviceRegistrationData& device,
+  const DeviceRegistrationData& device,
   std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
 {
-    if (!isDeviceInList(deviceKey))
+    if (m_registrationService == nullptr)
     {
-        LOG(WARN) << "Ignoring call of 'registerDevice' - Device '" << deviceKey << "' has not been added.";
+        LOG(ERROR) << "Failed to 'registerDevice' -> No registration service was added.";
         return false;
     }
-    return m_registrationService->registerDevices(deviceKey, {device}, callback);
+    return m_registrationService->registerDevices("*", {device}, wrapRegisterCallback({device}, callback));
 }
 
 bool WolkMulti::registerDevices(
-  const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
+  const std::vector<DeviceRegistrationData>& devices,
   std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
 {
-    if (!isDeviceInList(deviceKey))
+    if (m_registrationService == nullptr)
     {
-        LOG(WARN) << "Ignoring call of 'registerDevices' - Device '" << deviceKey << "' has not been added.";
+        LOG(ERROR) << "Failed to 'registerDevice' -> No registration service was added.";
         return false;
     }
-    return m_registrationService->registerDevices(deviceKey, devices, callback);
+    return m_registrationService->registerDevices("*", devices, wrapRegisterCallback(devices, callback));
 }
 
 bool WolkMulti::removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove)
@@ -405,9 +405,29 @@ void WolkMulti::notifyConnected()
     // Report the files and firmware update status for every device
     for (const auto& device : m_devices)
     {
+        if (device.getKey() == "*")
+            continue;
         reportFilesForDevice(device);
         reportFirmwareUpdateForDevice(device);
     }
+}
+
+std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> WolkMulti::wrapRegisterCallback(
+  std::vector<DeviceRegistrationData> devices,
+  std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
+{
+    return [this, callback, devices](const std::vector<std::string>& success, const std::vector<std::string>& failed) {
+        // Check whether a device got registered or not
+        for (const auto& device : devices)
+        {
+            const auto successIt = std::find(success.cbegin(), success.cend(), device.name);
+            if (successIt != success.cend())
+                addDevice(Device{device.key, "", OutboundDataMode::PUSH});
+            else
+                LOG(WARN) << "Device '" << (device.name) << "' was not registered.";
+        }
+        callback(success, failed);
+    };
 }
 }    // namespace connect
 }    // namespace wolkabout

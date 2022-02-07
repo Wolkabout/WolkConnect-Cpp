@@ -75,11 +75,11 @@ public:
 
     void updateParameter(const std::string& deviceKey, Parameter parameters);
 
-    bool registerDevice(const std::string& deviceKey, const DeviceRegistrationData& device,
+    bool registerDevice(const DeviceRegistrationData& device,
                         std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback);
 
     bool registerDevices(
-      const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
+      const std::vector<DeviceRegistrationData>& devices,
       std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback);
 
     bool removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove);
@@ -158,6 +158,10 @@ private:
     void reportFirmwareUpdateParametersForDevice(const Device& device);
 
     void notifyConnected() override;
+
+    std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> wrapRegisterCallback(
+      std::vector<DeviceRegistrationData> devices,
+      std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback);
 
     std::vector<Device> m_devices;
 };

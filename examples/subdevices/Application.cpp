@@ -18,6 +18,8 @@
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkMulti.h"
 
+using namespace wolkabout;
+
 class ExamplePlatformStatusListener : public wolkabout::connect::PlatformStatusListener
 {
 public:
@@ -34,46 +36,67 @@ int main(int /* argc */, char** /* argv */)
     wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
 
     // Here we will create some devices
-    auto deviceOne = wolkabout::Device{"FirstDevice", "", wolkabout::OutboundDataMode::PUSH};
-    auto deviceTwo = wolkabout::Device{"SecondDevice", "", wolkabout::OutboundDataMode::PULL};
-    auto deviceThree = wolkabout::Device{"ThirdDevice", "", wolkabout::OutboundDataMode::PUSH};
+    //    auto deviceOne = wolkabout::Device{"FirstDevice", "", wolkabout::OutboundDataMode::PUSH};
+    //    auto deviceTwo = wolkabout::Device{"SecondDevice", "", wolkabout::OutboundDataMode::PULL};
+    //    auto deviceThree = wolkabout::Device{"ThirdDevice", "", wolkabout::OutboundDataMode::PUSH};
 
     // And now we can create the wolk session
-    auto wolk = wolkabout::connect::WolkMulti::newBuilder({deviceOne, deviceTwo})
+    auto wolk = wolkabout::connect::WolkMulti::newBuilder({})
                   .host("tcp://localhost:1883")
                   .withFileTransfer("./files")
                   .withPlatformStatus(std::unique_ptr<ExamplePlatformStatusListener>(new ExamplePlatformStatusListener))
                   .withErrorProtocol(std::chrono::minutes{10})
+                  .withRegistration()
                   .buildWolkMulti();
+
+    //    wolk->addReading(deviceOne.getKey(), "π", 3.14);
+    //    wolk->publish();
+    //    wolk->pullFeedValues(deviceTwo.getKey());
+    //    wolk->pullParameters(deviceTwo.getKey());
+
+    //    // Now we can sleep a little bit
+    //    std::this_thread::sleep_for(std::chrono::seconds(5));
+    //    wolk->addDevice(deviceThree);
+    //
+    //    // Put them in an array
+    //    auto devices = {deviceOne, deviceTwo, deviceThree};
+
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+
+    wolk->setConnectionStatusListener([&](bool connected) {
+        if (connected)
+            conditionVariable.notify_one();
+    });
     wolk->connect();
 
-    wolk->addReading(deviceOne.getKey(), "π", 3.14);
-    wolk->publish();
-    wolk->pullFeedValues(deviceTwo.getKey());
-    wolk->pullParameters(deviceTwo.getKey());
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait(lock);
+    }
 
-    // Now we can sleep a little bit
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    wolk->addDevice(deviceThree);
+    wolk->registerDevice(
+      wolkabout::DeviceRegistrationData{"Test Device 2",
+                                        "TD2",
+                                        {},
+                                        {{ParameterName::EXTERNAL_ID, "TestExternalID"}},
+                                        {{"TF1", Feed{"Test Feed 1", "TF1", FeedType::IN_OUT, "NUMERIC"}}},
+                                        {}},
+      [&](const std::vector<std::string>&, const std::vector<std::string>&) { conditionVariable.notify_one(); });
 
-    // Put them in an array
-    auto devices = {deviceOne, deviceTwo, deviceThree};
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait(lock);
+    }
 
     while (true)
     {
-        // Now let's add a new device
-        wolk->addReading(deviceThree.getKey(), "APM", 400);
-        wolk->publish();
+        //        // Now let's add a new device
+        //        wolk->addReading(deviceThree.getKey(), "APM", 400);
+        //        wolk->publish();
 
         // We can sleep again
         std::this_thread::sleep_for(std::chrono::seconds(5));
-
-        // Do some things for the devices
-        for (const auto& device : devices)
-        {
-            LOG(INFO) << "Count of errors for device: '" << device.getKey() << "' -> "
-                      << wolk->peekErrorCount(device.getKey()) << ".";
-        }
     }
 
     // And that's it

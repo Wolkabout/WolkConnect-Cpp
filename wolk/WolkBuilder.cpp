@@ -208,7 +208,7 @@ WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListe
 WolkBuilder& WolkBuilder::withRegistration(std::unique_ptr<RegistrationProtocol> protocol)
 {
     if (protocol == nullptr)
-        protocol = std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol);
+        protocol = std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol{false});
     m_registrationProtocol = std::move(protocol);
     return *this;
 }
@@ -413,9 +413,6 @@ std::unique_ptr<WolkMulti> WolkBuilder::buildWolkMulti()
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Check that the devices vector is at least not empty.
-    if (m_devices.empty())
-        throw std::runtime_error("Failed to build `WolkMulti` instance: The devices vector is empty.");
     // Check that the devices don't contain empty keys.
     for (const auto& device : m_devices)
         if (device.getKey().empty())
@@ -423,7 +420,12 @@ std::unique_ptr<WolkMulti> WolkBuilder::buildWolkMulti()
               "Failed to build `WolkMulti` instance: One of the devices in the vector contains an empty key.");
 
     // Cast the build pointer into the right type of unique_ptr.
-    return std::unique_ptr<WolkMulti>(dynamic_cast<WolkMulti*>(build(WolkInterfaceType::MultiDevice).release()));
+    auto wolkMulti =
+      std::unique_ptr<WolkMulti>(dynamic_cast<WolkMulti*>(build(WolkInterfaceType::MultiDevice).release()));
+
+    // Add the ghost device
+    dynamic_cast<InboundPlatformMessageHandler&>(*wolkMulti->m_inboundMessageHandler).addDevice("*");
+    return wolkMulti;
 }
 }    // namespace connect
 }    // namespace wolkabout
