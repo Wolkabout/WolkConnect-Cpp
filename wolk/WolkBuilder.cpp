@@ -196,7 +196,7 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::unique_ptr<FirmwareParametersL
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListener> platformStatusListener)
+WolkBuilder& WolkBuilder::withPlatformStatus(std::shared_ptr<PlatformStatusListener> platformStatusListener)
 {
     if (m_platformStatusProtocol == nullptr)
         m_platformStatusProtocol =
