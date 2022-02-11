@@ -426,6 +426,12 @@ TEST_F(WolkMultiTests, UpdateParameter)
     EXPECT_TRUE(called);
 }
 
+TEST_F(WolkMultiTests, RegisterDeviceServiceIsNull)
+{
+    service->m_registrationService = nullptr;
+    ASSERT_FALSE(service->registerDevice({}, {}));
+}
+
 TEST_F(WolkMultiTests, RegisterDeviceReturnsError)
 {
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(false));
@@ -434,8 +440,23 @@ TEST_F(WolkMultiTests, RegisterDeviceReturnsError)
 
 TEST_F(WolkMultiTests, RegisterDeviceHappyFlow)
 {
-    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices).WillOnce(Return(true));
-    ASSERT_TRUE(service->registerDevice({}, {}));
+    std::atomic_bool called{false};
+    EXPECT_CALL(GetRegistrationServiceReference(), registerDevices)
+      .WillOnce([&](const std::string&, const std::vector<DeviceRegistrationData>&,
+                    std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback) {
+          callback({"D1"}, {});
+          return true;
+      });
+    ASSERT_TRUE(service->registerDevice(
+      DeviceRegistrationData{"Device 1", "D1", {}, {}, {}, {}},
+      [&](const std::vector<std::string>&, const std::vector<std::string>&) { called = true; }));
+    EXPECT_TRUE(called);
+}
+
+TEST_F(WolkMultiTests, RegisterDevicesServiceIsNull)
+{
+    service->m_registrationService = nullptr;
+    ASSERT_FALSE(service->registerDevices({{}}, {}));
 }
 
 TEST_F(WolkMultiTests, RegisterDevicesReturnsError)
