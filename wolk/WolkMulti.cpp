@@ -195,7 +195,7 @@ bool WolkMulti::registerDevice(
         LOG(ERROR) << "Failed to 'registerDevice' -> No registration service was added.";
         return false;
     }
-    return m_registrationService->registerDevices("*", {device}, wrapRegisterCallback({device}, callback));
+    return m_registrationService->registerDevices("*", {device}, wrapRegisterCallback({device}, std::move(callback)));
 }
 
 bool WolkMulti::registerDevices(
@@ -207,7 +207,7 @@ bool WolkMulti::registerDevices(
         LOG(ERROR) << "Failed to 'registerDevice' -> No registration service was added.";
         return false;
     }
-    return m_registrationService->registerDevices("*", devices, wrapRegisterCallback(devices, callback));
+    return m_registrationService->registerDevices("*", devices, wrapRegisterCallback(devices, std::move(callback)));
 }
 
 bool WolkMulti::removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove)

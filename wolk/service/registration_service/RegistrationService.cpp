@@ -69,12 +69,12 @@ bool RegistrationService::registerDevices(
     auto deviceNames = std::vector<std::string>{};
     for (const auto& device : devices)
     {
-        if (device.name.empty())
+        if (device.key.empty())
         {
             LOG(ERROR) << errorPrefix << " -> One of the devices has an empty name.";
             return false;
         }
-        deviceNames.emplace_back(device.name);
+        deviceNames.emplace_back(device.key);
     }
     std::sort_heap(deviceNames.begin(), deviceNames.end());
 
