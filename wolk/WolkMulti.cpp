@@ -420,7 +420,7 @@ std::function<void(const std::vector<std::string>&, const std::vector<std::strin
         // Check whether a device got registered or not
         for (const auto& device : devices)
         {
-            const auto successIt = std::find(success.cbegin(), success.cend(), device.name);
+            const auto successIt = std::find(success.cbegin(), success.cend(), device.key);
             if (successIt != success.cend())
                 addDevice(Device{device.key, "", OutboundDataMode::PUSH});
             else
