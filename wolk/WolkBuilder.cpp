@@ -219,6 +219,7 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 
     // Make the Wolk instance
     auto wolk = std::unique_ptr<WolkInterface>{};
+    auto deviceKeys = std::vector<std::string>{};
     switch (type)
     {
     case WolkInterfaceType::SingleDevice:
@@ -228,6 +229,8 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     }
     case WolkInterfaceType::MultiDevice:
     {
+        // Add the ghost device
+        deviceKeys.emplace_back("+");
         wolk.reset(new WolkMulti{m_devices});
         break;
     }
@@ -236,7 +239,6 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     }
 
     // Create the inbound message handler that will route all the messages by topic to their right destination
-    auto deviceKeys = std::vector<std::string>{};
     for (const auto& device : m_devices)
         deviceKeys.emplace_back(device.getKey());
     wolk->m_inboundMessageHandler = std::make_shared<InboundPlatformMessageHandler>(deviceKeys);
@@ -420,12 +422,7 @@ std::unique_ptr<WolkMulti> WolkBuilder::buildWolkMulti()
               "Failed to build `WolkMulti` instance: One of the devices in the vector contains an empty key.");
 
     // Cast the build pointer into the right type of unique_ptr.
-    auto wolkMulti =
-      std::unique_ptr<WolkMulti>(dynamic_cast<WolkMulti*>(build(WolkInterfaceType::MultiDevice).release()));
-
-    // Add the ghost device
-    dynamic_cast<InboundPlatformMessageHandler&>(*wolkMulti->m_inboundMessageHandler).addDevice("*");
-    return wolkMulti;
+    return std::unique_ptr<WolkMulti>(dynamic_cast<WolkMulti*>(build(WolkInterfaceType::MultiDevice).release()));
 }
 }    // namespace connect
 }    // namespace wolkabout

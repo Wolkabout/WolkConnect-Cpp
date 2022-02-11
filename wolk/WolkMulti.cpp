@@ -27,10 +27,10 @@ namespace connect
 {
 WolkBuilder WolkMulti::newBuilder(std::vector<Device> devices)
 {
-    return WolkBuilder(devices);
+    return WolkBuilder(std::move(devices));
 }
 
-bool WolkMulti::addDevice(Device device)
+bool WolkMulti::addDevice(const Device& device)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -40,10 +40,6 @@ bool WolkMulti::addDevice(Device device)
 
     // Otherwise, add the device
     m_devices.emplace_back(device);
-    {
-        auto& handler = dynamic_cast<InboundPlatformMessageHandler&>(*m_inboundMessageHandler);
-        handler.addDevice(device.getKey());
-    }
 
     // Publish the parameters for the device
     reportFileManagementParametersForDevice(device);
@@ -405,16 +401,14 @@ void WolkMulti::notifyConnected()
     // Report the files and firmware update status for every device
     for (const auto& device : m_devices)
     {
-        if (device.getKey() == "*")
-            continue;
         reportFilesForDevice(device);
         reportFirmwareUpdateForDevice(device);
     }
 }
 
 std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> WolkMulti::wrapRegisterCallback(
-  std::vector<DeviceRegistrationData> devices,
-  std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
+  const std::vector<DeviceRegistrationData>& devices,
+  const std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)>& callback)
 {
     return [this, callback, devices](const std::vector<std::string>& success, const std::vector<std::string>& failed) {
         // Check whether a device got registered or not

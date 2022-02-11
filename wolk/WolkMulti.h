@@ -39,7 +39,7 @@ class WolkMulti : public WolkInterface
 public:
     static connect::WolkBuilder newBuilder(std::vector<Device> devices = {});
 
-    bool addDevice(Device device);
+    bool addDevice(const Device& device);
 
     template <typename T>
     void addReading(const std::string& deviceKey, const std::string& reference, T value, std::uint64_t rtc = 0);
@@ -160,8 +160,8 @@ private:
     void notifyConnected() override;
 
     std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> wrapRegisterCallback(
-      std::vector<DeviceRegistrationData> devices,
-      std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback);
+      const std::vector<DeviceRegistrationData>& devices,
+      const std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)>& callback);
 
     std::vector<Device> m_devices;
 };
