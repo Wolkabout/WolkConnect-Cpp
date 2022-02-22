@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
 #define WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
 
-#include "connectivity/ConnectivityService.h"
+#include "core/connectivity/ConnectivityService.h"
 
 #include <gmock/gmock.h>
 
-class ConnectivityServiceMock : public wolkabout::ConnectivityService
+using namespace wolkabout;
+
+class ConnectivityServiceMock : public ConnectivityService
 {
 public:
-    ConnectivityServiceMock() = default;
-
-    MOCK_METHOD0(connect, bool());
-    MOCK_METHOD0(disconnect, void());
-    MOCK_METHOD0(reconnect, bool());
-    MOCK_METHOD0(isConnected, bool());
-    MOCK_METHOD2(publish, bool(std::shared_ptr<wolkabout::Message>, bool));
-    MOCK_METHOD2(setUncontrolledDisonnectMessage, void(std::shared_ptr<wolkabout::Message>, bool));
+    MOCK_METHOD(bool, connect, ());
+    MOCK_METHOD(void, disconnect, ());
+    MOCK_METHOD(bool, reconnect, ());
+    MOCK_METHOD(bool, isConnected, ());
+    MOCK_METHOD(bool, publish, (std::shared_ptr<Message>));
 };
 
 #endif    // WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H

@@ -23,7 +23,7 @@ jobs:
           submodules: recursive
 
       - name: Install Dependencies
-        run: sudo apt update && sudo apt install g++ autotools-dev autoconf m4 zlib1g-dev cmake libpoco-dev libssl-dev
+        run: sudo apt update && sudo apt install g++ autotools-dev autoconf m4 zlib1g-dev cmake libpoco-dev libssl-dev libcurl4-openssl-dev
 
       - name: Create Build Environment
         # Some projects don't allow in-source building, so create a separate build directory
@@ -40,11 +40,6 @@ jobs:
         # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
         run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
-      - name: Code Format
-        shell: bash
-        working-directory: ${{runner.workspace}}/out
-        run: make format
-
       - name: Build
         working-directory: ${{runner.workspace}}/out
         shell: bash
@@ -55,3 +50,8 @@ jobs:
         working-directory: ${{runner.workspace}}/out
         shell: bash
         run: make tests -j$(nproc) && ctest .
+
+      - name: Check Format
+        uses: jidicula/clang-format-action@v3.5.2
+        with:
+          clang-format-version: 10

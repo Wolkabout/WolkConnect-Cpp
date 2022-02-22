@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef WOLKABOUTCONNECTOR_PROTOCOLMOCK_H
 #define WOLKABOUTCONNECTOR_PROTOCOLMOCK_H
 
-#include "protocol/Protocol.h"
+#include "core/protocol/Protocol.h"
 
 #include <gmock/gmock.h>
 
-class ProtocolMock : public wolkabout::Protocol
+using namespace wolkabout;
+
+class ProtocolMock : public Protocol
 {
 public:
-    ProtocolMock() = default;
-    virtual ~ProtocolMock() {}
-
-    MOCK_METHOD(std::vector<std::string>, getInboundChannels, (), (override, const));
-    MOCK_METHOD(std::vector<std::string>, getInboundChannelsForDevice, (const std::string&), (override, const));
-    MOCK_METHOD(std::string, extractDeviceKeyFromChannel, (const std::string&), (override, const));
+    MOCK_METHOD(std::vector<std::string>, getInboundChannels, (), (const));
+    MOCK_METHOD(std::vector<std::string>, getInboundChannelsForDevice, (const std::string&), (const));
+    MOCK_METHOD(MessageType, getMessageType, (std::shared_ptr<Message>));
+    MOCK_METHOD(std::string, extractDeviceKeyFromChannel, (const std::string&), (const));
 };
 
 #endif    // WOLKABOUTCONNECTOR_PROTOCOLMOCK_H

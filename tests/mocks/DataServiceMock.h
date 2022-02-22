@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,34 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef WOLKABOUTCONNECTOR_DATASERVICEMOCK_H
 #define WOLKABOUTCONNECTOR_DATASERVICEMOCK_H
 
-#include "service/data/DataService.h"
+#include "wolk/service/data/DataService.h"
 
 #include <gmock/gmock.h>
 
-class DataServiceMock : public wolkabout::DataService
+using namespace wolkabout;
+
+class DataServiceMock : public DataService
 {
 public:
-    DataServiceMock(const std::string& deviceKey, wolkabout::DataProtocol& protocol,
-                    wolkabout::Persistence& persistence, wolkabout::ConnectivityService& connectivityService)
-    : DataService(deviceKey, protocol, persistence, connectivityService, nullptr, nullptr, nullptr, nullptr)
+    DataServiceMock(const std::string& deviceKey, DataProtocol& protocol, Persistence& persistence,
+                    ConnectivityService& connectivityService, const FeedUpdateSetHandler& feedUpdateHandler,
+                    const ParameterSyncHandler& parameterSyncHandler)
+    : DataService(deviceKey, protocol, persistence, connectivityService, feedUpdateHandler, parameterSyncHandler)
     {
     }
-
-    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::string&, unsigned long long int), (override));
-    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::vector<std::string>&, unsigned long long int),
-                (override));
-    MOCK_METHOD(void, addActuatorStatus, (const std::string&, const std::string&, wolkabout::ActuatorStatus::State),
-                (override));
-    MOCK_METHOD(void, addAlarm, (const std::string&, bool, unsigned long long int), (override));
-    MOCK_METHOD(void, addConfiguration, (const std::vector<wolkabout::ConfigurationItem>&), (override));
-
-    MOCK_METHOD(void, publishSensorReadings, (), (override));
-    MOCK_METHOD(void, publishActuatorStatuses, (), (override));
-    MOCK_METHOD(void, publishAlarms, (), (override));
-    MOCK_METHOD(void, publishConfiguration, (), (override));
+    MOCK_METHOD(void, addReading, (const std::string&, const std::string&, std::uint64_t));
+    MOCK_METHOD(void, addReading, (const std::string&, const std::vector<std::string>&, std::uint64_t));
+    MOCK_METHOD(void, addAttribute, (const Attribute&));
+    MOCK_METHOD(void, updateParameter, (Parameter));
+    MOCK_METHOD(void, registerFeed, (Feed));
+    MOCK_METHOD(void, registerFeeds, (std::vector<Feed>));
+    MOCK_METHOD(void, removeFeed, (std::string));
+    MOCK_METHOD(void, removeFeeds, (std::vector<std::string>));
+    MOCK_METHOD(void, pullFeedValues, ());
+    MOCK_METHOD(void, pullParameters, ());
+    MOCK_METHOD(bool, synchronizeParameters,
+                (const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>));
+    MOCK_METHOD(void, publishReadings, ());
+    MOCK_METHOD(void, publishAttributes, ());
+    MOCK_METHOD(void, publishParameters, ());
 };
 
 #endif    // WOLKABOUTCONNECTOR_DATASERVICEMOCK_H

@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef WOLKABOUTCONNECTOR_MESSAGELISTENERMOKC_H
-#define WOLKABOUTCONNECTOR_MESSAGELISTENERMOKC_H
 
-#include "InboundPlatformMessageHandler.h"
-#include "mocks/ProtocolMock.h"
+#ifndef WOLKABOUTCONNECTOR_MESSAGELISTENERMOCK_H
+#define WOLKABOUTCONNECTOR_MESSAGELISTENERMOCK_H
+
+#include "core/InboundMessageHandler.h"
 
 #include <gmock/gmock.h>
 
-class MessageListenerMock : public wolkabout::MessageListener
+using namespace wolkabout;
+
+class MessageListenerMock : public MessageListener
 {
 public:
-    explicit MessageListenerMock(wolkabout::Protocol& protocol) : m_protocol(protocol) {}
+    explicit MessageListenerMock(Protocol& protocol) : m_protocol(protocol) {}
 
-    wolkabout::Protocol& getProtocol() override { return m_protocol; }
+    const Protocol& getProtocol() override { return m_protocol; }
 
-    MOCK_METHOD(void, messageReceived, (std::shared_ptr<wolkabout::Message>), (override));
+    MOCK_METHOD(void, messageReceived, (std::shared_ptr<Message>));
 
 private:
-    wolkabout::Protocol& m_protocol;
+    Protocol& m_protocol;
 };
 
-#endif    // WOLKABOUTCONNECTOR_MESSAGELISTENERMOKC_H
+#endif    // WOLKABOUTCONNECTOR_MESSAGELISTENERMOCK_H

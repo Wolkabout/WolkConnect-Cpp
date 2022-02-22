@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,48 +14,40 @@
  * limitations under the License.
  */
 
+#include <any>
+#include <sstream>
+
 #define private public
 #define protected public
-#include "Wolk.h"
+#include "wolk/Wolk.h"
 #undef private
 #undef protected
 
-#include "mocks/ConnectivityServiceMock.h"
-#include "mocks/DataProtocolMock.h"
-#include "mocks/DataServiceMock.h"
-#include "mocks/FileDownloadServiceMock.h"
-#include "mocks/FileRepositoryMock.h"
-#include "mocks/InboundMessageHandlerMock.h"
-#include "mocks/KeepAliveServiceMock.h"
-#include "mocks/PersistenceMock.h"
-#include "mocks/StatusProtocolMock.h"
-#include "model/ActuatorGetCommand.h"
-#include "model/ActuatorSetCommand.h"
-#include "model/ConfigurationSetCommand.h"
-#include "model/Device.h"
-#include "model/DeviceStatus.h"
-#include "model/Message.h"
-#include "protocol/json/JsonDownloadProtocol.h"
+#include "core/utilities/Logger.h"
+#include "tests/mocks/ConnectivityServiceMock.h"
+#include "tests/mocks/DataProtocolMock.h"
+#include "tests/mocks/DataServiceMock.h"
+#include "tests/mocks/FileManagementProtocolMock.h"
+#include "tests/mocks/FileManagementServiceMock.h"
+#include "tests/mocks/InboundMessageHandlerMock.h"
+#include "tests/mocks/PersistenceMock.h"
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-using testing::_;
-using testing::Matcher;
+using namespace wolkabout;
+using namespace ::testing;
 
-class WolkTests : public ::testing::Test
+class WolkTests : public Test
 {
 public:
-    std::shared_ptr<wolkabout::Device> noActuatorsDevice =
-      std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD", std::vector<std::string>());
+    static void SetUpTestCase() { Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE); }
+
+    const std::string TAG = "WolkTests";
+
     std::shared_ptr<wolkabout::Device> device =
-      std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD", std::vector<std::string>{"A1", "A2", "A3"});
+      std::make_shared<wolkabout::Device>("TEST_KEY", "TEST_PASSWORD", OutboundDataMode::PUSH);
 
     std::shared_ptr<wolkabout::WolkBuilder> builder;
-
-    wolkabout::JsonDownloadProtocol m_downloadProtocol;
-    std::unique_ptr<wolkabout::FileRepository> m_fileRepositoryMock =
-      std::unique_ptr<wolkabout::FileRepository>(new FileRepositoryMock());
 
     std::mutex mutex;
     std::condition_variable cv;
@@ -78,20 +70,10 @@ public:
 
 TEST_F(WolkTests, Notifies)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
     const auto& wolk = builder->build();
 
-    auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-
-    auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new ::testing::NiceMock<KeepAliveServiceMock>(
-      noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
-    wolk->m_keepAliveService = std::move(keepAliveServiceMock);
-
-    EXPECT_CALL(dynamic_cast<KeepAliveServiceMock&>(*(wolk->m_keepAliveService)), connected).Times(1);
-    EXPECT_CALL(dynamic_cast<KeepAliveServiceMock&>(*(wolk->m_keepAliveService)), disconnected).Times(1);
+    auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
     EXPECT_NO_FATAL_FAILURE(wolk->notifyConnected());
     EXPECT_NO_FATAL_FAILURE(wolk->notifyDisonnected());
@@ -99,28 +81,21 @@ TEST_F(WolkTests, Notifies)
 
 TEST_F(WolkTests, ConnectTest)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
     const auto& wolk = builder->build();
 
-    auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-    auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new ::testing::NiceMock<KeepAliveServiceMock>(
-      noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
+    auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
-    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
-    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
-    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
-      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+    auto feedHandler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) {};
+    auto parameterHandler = [&](const std::vector<Parameter>&) {};
+
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new NiceMock<DataServiceMock>(
+      device->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
 
     wolk->m_dataService = std::move(dataServiceMock);
     wolk->m_connectivityService = std::move(connectivityServiceMock);
-
-    auto fileDownloadServiceMock =
-      std::make_shared<FileDownloadServiceMock>(noActuatorsDevice->getKey(), m_downloadProtocol, "", 0,
-                                                *wolk->m_connectivityService, *m_fileRepositoryMock, nullptr);
-    wolk->m_fileDownloadService = std::move(fileDownloadServiceMock);
 
     EXPECT_CALL(dynamic_cast<ConnectivityServiceMock&>(*(wolk->m_connectivityService)), connect)
       .WillOnce(testing::DoAll(testing::InvokeWithoutArgs(this, &WolkTests::onEvent), testing::Return(true)));
@@ -132,33 +107,32 @@ TEST_F(WolkTests, ConnectTest)
 
 TEST_F(WolkTests, WhenConnected_PublishFileList)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
     const auto& wolk = builder->build();
 
-    auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-    auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new ::testing::NiceMock<KeepAliveServiceMock>(
-      noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
+    auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
-    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
-    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
-    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
-      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+    auto feedHandler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) {};
+    auto parameterHandler = [&](const std::vector<Parameter>&) {};
+
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new NiceMock<DataServiceMock>(
+      device->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
+
+    auto fileManagementProtocolMock =
+      std::unique_ptr<FileManagementProtocolMock>(new NiceMock<FileManagementProtocolMock>);
+    auto fileManagementServiceMock = std::make_shared<FileManagementServiceMock>(
+      device->getKey(), *connectivityServiceMock, *dataServiceMock, *fileManagementProtocolMock, "./");
 
     wolk->m_dataService = std::move(dataServiceMock);
     wolk->m_connectivityService = std::move(connectivityServiceMock);
-
-    auto fileDownloadServiceMock =
-      std::make_shared<FileDownloadServiceMock>(noActuatorsDevice->getKey(), m_downloadProtocol, "", 0,
-                                                *wolk->m_connectivityService, *m_fileRepositoryMock, nullptr);
-    wolk->m_fileDownloadService = std::move(fileDownloadServiceMock);
+    wolk->m_fileManagementService = std::move(fileManagementServiceMock);
 
     ON_CALL(dynamic_cast<ConnectivityServiceMock&>(*(wolk->m_connectivityService)), connect)
       .WillByDefault(testing::Return(true));
 
-    EXPECT_CALL(dynamic_cast<FileDownloadServiceMock&>(*(wolk->m_fileDownloadService)), sendFileList)
+    EXPECT_CALL(dynamic_cast<FileManagementServiceMock&>(*(wolk->m_fileManagementService)), reportAllPresentFiles)
       .WillOnce(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
     EXPECT_NO_FATAL_FAILURE(wolk->connect());
@@ -168,166 +142,77 @@ TEST_F(WolkTests, WhenConnected_PublishFileList)
 
 TEST_F(WolkTests, DisconnectTest)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
     const auto& wolk = builder->build();
 
-    auto statusProtocolMock = std::unique_ptr<StatusProtocolMock>(new ::testing::NiceMock<StatusProtocolMock>());
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-    auto keepAliveServiceMock = std::unique_ptr<KeepAliveServiceMock>(new ::testing::NiceMock<KeepAliveServiceMock>(
-      noActuatorsDevice->getKey(), *statusProtocolMock, *connectivityServiceMock, std::chrono::seconds(60)));
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
+    auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
 
-    wolk->m_keepAliveService = std::move(keepAliveServiceMock);
     wolk->m_connectivityService = std::move(connectivityServiceMock);
 
     EXPECT_NO_FATAL_FAILURE(wolk->disconnect());
 }
 
-TEST_F(WolkTests, AddingSensors)
+TEST_F(WolkTests, AddingReadings)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
     const auto& wolk = builder->build();
 
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
-    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
-    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
-      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
+    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new NiceMock<DataProtocolMock>());
+    auto persistenceMock = std::unique_ptr<PersistenceMock>(new NiceMock<PersistenceMock>());
+    auto connectivityServiceMock = std::unique_ptr<ConnectivityServiceMock>(new NiceMock<ConnectivityServiceMock>());
+
+    auto feedHandler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) {};
+    auto parameterHandler = [&](const std::vector<Parameter>&) {};
+
+    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new NiceMock<DataServiceMock>(
+      device->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock, feedHandler, parameterHandler));
 
     wolk->m_dataService = std::move(dataServiceMock);
 
-    EXPECT_CALL(
-      dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
-      addSensorReading(Matcher<const std::string&>(_), Matcher<const std::string&>(_), Matcher<unsigned long long>(_)))
+    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
+                addReading(A<const std::string&>(), A<const std::string&>(), A<std::uint64_t>()))
       .Times(1)
       .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
     EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)),
-                addSensorReading(Matcher<const std::string&>(_), Matcher<const std::vector<std::string>&>(_),
-                                 Matcher<unsigned long long>(_)))
+                addReading(A<const std::string&>(), A<const std::vector<std::string>&>(), A<std::uint64_t>()))
       .Times(1)
       .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
 
-    EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF1", 100));
-    EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF2", std::vector<int>{1, 2, 3}));
+    EXPECT_NO_FATAL_FAILURE(wolk->addReading("TEST_REF1", 100));
+    EXPECT_NO_FATAL_FAILURE(wolk->addReading("TEST_REF2", std::vector<int>{1, 2, 3}));
     // Empty test
-    EXPECT_NO_FATAL_FAILURE(wolk->addSensorReading("TEST_REF3", std::vector<int>{}));
+    EXPECT_NO_FATAL_FAILURE(wolk->addReading("TEST_REF3", std::vector<int>{}));
 
     waitEvents(2);
 }
 
-TEST_F(WolkTests, AddAlarms)
-{
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
-    const auto& wolk = builder->build();
-
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
-    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
-    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
-      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
-
-    wolk->m_dataService = std::move(dataServiceMock);
-
-    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)), addAlarm)
-      .Times(1)
-      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
-
-    EXPECT_NO_FATAL_FAILURE(wolk->addAlarm("TEST_ALARM_REF1", true));
-
-    waitEvents(1);
-}
-
-TEST_F(WolkTests, HandleActuatorCommands)
+TEST_F(WolkTests, HandlingReadings)
 {
     builder = std::make_shared<wolkabout::WolkBuilder>(*device);
 
-    auto actuationHandler = [&](const std::string& ref, const std::string& value) {
-        std::cout << "ActuatorHandler: " << ref << ", " << value << std::endl;
-    };
+    // Make a lambda that will receive feed values
+    auto handler = [&](const std::map<std::uint64_t, std::vector<Reading>>&) { onEvent(); };
 
-    auto actuatorStatusProvider = [&](const std::string& ref) {
-        std::cout << "ActuatorStatusProvider: " << ref << std::endl;
-        return wolkabout::ActuatorStatus();
-    };
-
-    builder->actuationHandler(actuationHandler);
-    builder->actuatorStatusProvider(actuatorStatusProvider);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    builder->feedUpdateHandler(handler);
 
     const auto& wolk = builder->build();
 
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
-    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
-    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
-      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
-
-    wolk->m_dataService = std::move(dataServiceMock);
-
-    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)), addActuatorStatus)
-      .Times(2)
-      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
-
-    EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorGetCommand("TEST_REF1"));
-    EXPECT_NO_FATAL_FAILURE(wolk->handleActuatorSetCommand("TEST_REF1", "VALUE1"));
-
-    waitEvents(2);
-}
-
-TEST_F(WolkTests, HandleConfigurationCommands)
-{
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-
-    auto configurationHandler = [&](const std::vector<wolkabout::ConfigurationItem>& items) {
-        std::cout << "ConfigurationHandler: " << items.size() << std::endl;
-    };
-
-    auto configurationProvider = [&]() -> std::vector<wolkabout::ConfigurationItem> {
-        std::cout << "ConfigurationProvider: Invoked!" << std::endl;
-        return std::vector<wolkabout::ConfigurationItem>();
-    };
-
-    builder->configurationHandler(configurationHandler);
-    builder->configurationProvider(configurationProvider);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
-
-    const auto& wolk = builder->build();
-
-    auto connectivityServiceMock =
-      std::unique_ptr<ConnectivityServiceMock>(new ::testing::NiceMock<ConnectivityServiceMock>());
-    auto dataProtocolMock = std::unique_ptr<DataProtocolMock>(new ::testing::NiceMock<DataProtocolMock>());
-    auto persistenceMock = std::unique_ptr<PersistenceMock>(new ::testing::NiceMock<PersistenceMock>());
-    auto dataServiceMock = std::unique_ptr<DataServiceMock>(new ::testing::NiceMock<DataServiceMock>(
-      noActuatorsDevice->getKey(), *dataProtocolMock, *persistenceMock, *connectivityServiceMock));
-
-    wolk->m_dataService = std::move(dataServiceMock);
-
-    EXPECT_CALL(dynamic_cast<DataServiceMock&>(*(wolk->m_dataService)), addConfiguration)
-      .Times(2)
-      .WillRepeatedly(testing::InvokeWithoutArgs(this, &WolkTests::onEvent));
-
-    EXPECT_NO_FATAL_FAILURE(wolk->handleConfigurationGetCommand());
-    EXPECT_NO_FATAL_FAILURE(wolk->handleConfigurationSetCommand(
-      wolkabout::ConfigurationSetCommand(std::vector<wolkabout::ConfigurationItem>())));
+    EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand({}));
+    EXPECT_NO_FATAL_FAILURE(wolk->handleFeedUpdateCommand({}));
 
     waitEvents(2);
 }
 
 TEST_F(WolkTests, ConnectivityFacade)
 {
-    builder = std::make_shared<wolkabout::WolkBuilder>(*noActuatorsDevice);
-    ASSERT_NO_THROW(builder->withoutKeepAlive());
+    builder = std::make_shared<wolkabout::WolkBuilder>(*device);
     const auto& wolk = builder->build();
 
     const auto& inboundMessageHandlerMock =
-      std::unique_ptr<InboundMessageHandlerMock>(new ::testing::NiceMock<InboundMessageHandlerMock>());
+      std::unique_ptr<InboundMessageHandlerMock>(new NiceMock<InboundMessageHandlerMock>());
 
     bool channel1Invoked = false, channel2Invoked = false, connectionLostInvoked = false, channelsRequested = false;
 

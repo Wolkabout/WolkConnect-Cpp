@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef WOLKABOUTCONNECTOR_INBOUNDMESSAGEHANDLERMOCK_H
 #define WOLKABOUTCONNECTOR_INBOUNDMESSAGEHANDLERMOCK_H
 
-#include "InboundMessageHandler.h"
+#include "core/InboundMessageHandler.h"
 
 #include <gmock/gmock.h>
 
-class InboundMessageHandlerMock : public wolkabout::InboundMessageHandler
+using namespace wolkabout;
+
+class InboundMessageHandlerMock : public InboundMessageHandler
 {
 public:
-    InboundMessageHandlerMock() = default;
-
-    MOCK_METHOD(void, messageReceived, (const std::string&, const std::string&), (override));
-    MOCK_METHOD(std::vector<std::string>, getChannels, (), (override, const));
-    MOCK_METHOD(void, addListener, (std::weak_ptr<wolkabout::MessageListener>), (override));
+    MOCK_METHOD(void, messageReceived, (const std::string&, const std::string&));
+    MOCK_METHOD(std::vector<std::string>, getChannels, (), (const));
+    MOCK_METHOD(void, addListener, (std::weak_ptr<MessageListener>));
 };
 
 #endif    // WOLKABOUTCONNECTOR_INBOUNDMESSAGEHANDLERMOCK_H

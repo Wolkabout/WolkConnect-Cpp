@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,51 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef WOLKABOUTCONNECTOR_DATAPROTOCOLMOCK_H
 #define WOLKABOUTCONNECTOR_DATAPROTOCOLMOCK_H
 
-#include "protocol/DataProtocol.h"
+#include "core/protocol/DataProtocol.h"
 
 #include <gmock/gmock.h>
 
-class DataProtocolMock : public wolkabout::DataProtocol
+using namespace wolkabout;
+
+class DataProtocolMock : public DataProtocol
 {
 public:
-    MOCK_CONST_METHOD1(extractReferenceFromChannel, std::string(const std::string&));
-
-    MOCK_CONST_METHOD1(isActuatorSetMessage, bool(const wolkabout::Message&));
-    MOCK_CONST_METHOD1(isActuatorGetMessage, bool(const wolkabout::Message&));
-
-    MOCK_CONST_METHOD1(isConfigurationSetMessage, bool(const wolkabout::Message&));
-    MOCK_CONST_METHOD1(isConfigurationGetMessage, bool(const wolkabout::Message&));
-
-    MOCK_CONST_METHOD1(makeActuatorGetCommand,
-                       std::unique_ptr<wolkabout::ActuatorGetCommand>(const wolkabout::Message&));
-    MOCK_CONST_METHOD1(makeActuatorSetCommand,
-                       std::unique_ptr<wolkabout::ActuatorSetCommand>(const wolkabout::Message&));
-
-    MOCK_CONST_METHOD1(makeConfigurationSetCommand,
-                       std::unique_ptr<wolkabout::ConfigurationSetCommand>(const wolkabout::Message&));
-
-    MOCK_CONST_METHOD2(
-      makeMessage, std::unique_ptr<wolkabout::Message>(const std::string&,
-                                                       const std::vector<std::shared_ptr<wolkabout::SensorReading>>&));
-
-    MOCK_CONST_METHOD2(makeMessage,
-                       std::unique_ptr<wolkabout::Message>(const std::string&,
-                                                           const std::vector<std::shared_ptr<wolkabout::Alarm>>&));
-
-    MOCK_CONST_METHOD2(
-      makeMessage, std::unique_ptr<wolkabout::Message>(const std::string&,
-                                                       const std::vector<std::shared_ptr<wolkabout::ActuatorStatus>>&));
-
-    MOCK_CONST_METHOD2(makeMessage,
-                       std::unique_ptr<wolkabout::Message>(const std::string&,
-                                                           const std::vector<wolkabout::ConfigurationItem>&));
-
-    MOCK_CONST_METHOD0(getInboundChannels, std::vector<std::string>());
-    MOCK_CONST_METHOD1(getInboundChannelsForDevice, std::vector<std::string>(const std::string&));
-    MOCK_CONST_METHOD1(extractDeviceKeyFromChannel, std::string(const std::string&));
+    // Protocol methods
+    MOCK_METHOD(std::vector<std::string>, getInboundChannels, (), (const));
+    MOCK_METHOD(std::vector<std::string>, getInboundChannelsForDevice, (const std::string&), (const));
+    MOCK_METHOD(MessageType, getMessageType, (std::shared_ptr<Message>));
+    MOCK_METHOD(std::string, extractDeviceKeyFromChannel, (const std::string&), (const));
+    // DataProtocol methods
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, FeedRegistrationMessage));
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, FeedRemovalMessage));
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, FeedValuesMessage));
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, PullFeedValuesMessage));
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, AttributeRegistrationMessage));
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, ParametersUpdateMessage));
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, ParametersPullMessage));
+    MOCK_METHOD(std::unique_ptr<Message>, makeOutboundMessage, (const std::string&, SynchronizeParametersMessage));
+    MOCK_METHOD(std::shared_ptr<FeedValuesMessage>, parseFeedValues, (std::shared_ptr<Message>));
+    MOCK_METHOD(std::shared_ptr<ParametersUpdateMessage>, parseParameters, (std::shared_ptr<Message>));
 };
 
 #endif    // WOLKABOUTCONNECTOR_DATAPROTOCOLMOCK_H
