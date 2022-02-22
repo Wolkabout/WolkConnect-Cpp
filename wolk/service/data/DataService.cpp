@@ -417,7 +417,7 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
         auto parameterMessage = m_protocol.parseParameters(message);
         if (parameterMessage == nullptr)
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
-        else if (checkIfSubscriptionIsWaiting(parameterMessage))    // It's important to first check this
+        else if (checkIfSubscriptionIsWaiting(*parameterMessage))    // It's important to first check this
             return;
         else if (m_parameterSyncHandler)
             m_parameterSyncHandler(deviceKey, parameterMessage->getParameters());
@@ -429,7 +429,7 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
         auto detailsSynchronization = m_protocol.parseDetails(message);
         if (detailsSynchronization == nullptr)
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
-        else if (checkIfCallbackIsWaiting(detailsSynchronization))
+        else if (checkIfCallbackIsWaiting(*detailsSynchronization))
             return;
         else if (m_detailsSyncHandler)
             m_detailsSyncHandler(deviceKey, detailsSynchronization->getFeeds(),
@@ -461,7 +461,7 @@ std::pair<std::string, std::string> DataService::parsePersistenceKey(const std::
     return {deviceKey, reference};
 }
 
-bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage)
+bool DataService::checkIfSubscriptionIsWaiting(const ParametersUpdateMessage& parameterMessage)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -472,8 +472,8 @@ bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersU
         {
             // Check if the list of parameters is the same length, and then content
             const auto& parameters = subscription.second.parameters;
-            const auto& values = parameterMessage->getParameters();
-            if (parameterMessage->getParameters().size() != parameters.size())
+            const auto& values = parameterMessage.getParameters();
+            if (parameterMessage.getParameters().size() != parameters.size())
             {
                 continue;
             }
@@ -501,13 +501,9 @@ bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersU
     return false;
 }
 
-bool DataService::checkIfCallbackIsWaiting(
-  const std::shared_ptr<DetailsSynchronizationResponseMessage>& synchronizationResponseMessage)
+bool DataService::checkIfCallbackIsWaiting(const DetailsSynchronizationResponseMessage& synchronizationResponseMessage)
 {
     LOG(TRACE) << METHOD_INFO;
-
-    if (synchronizationResponseMessage == nullptr)
-        return false;
 
     {
         std::lock_guard<std::mutex> lock{m_detailsMutex};
@@ -516,7 +512,7 @@ bool DataService::checkIfCallbackIsWaiting(
             const auto callback = m_detailsCallbacks.front();
             m_commandBuffer.pushCommand(
               std::make_shared<std::function<void()>>([callback, synchronizationResponseMessage] {
-                  callback(synchronizationResponseMessage->getFeeds(), synchronizationResponseMessage->getAttributes());
+                  callback(synchronizationResponseMessage.getFeeds(), synchronizationResponseMessage.getAttributes());
               }));
             m_detailsCallbacks.pop();
             return true;

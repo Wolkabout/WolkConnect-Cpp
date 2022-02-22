@@ -96,10 +96,9 @@ private:
 
     static std::pair<std::string, std::string> parsePersistenceKey(const std::string& key);
 
-    bool checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage);
+    bool checkIfSubscriptionIsWaiting(const ParametersUpdateMessage& parameterMessage);
 
-    bool checkIfCallbackIsWaiting(
-      const std::shared_ptr<DetailsSynchronizationResponseMessage>& synchronizationResponseMessage);
+    bool checkIfCallbackIsWaiting(const DetailsSynchronizationResponseMessage& synchronizationResponseMessage);
 
     void publishReadingsForPersistenceKey(const std::string& persistenceKey);
 

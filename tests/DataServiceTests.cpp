@@ -161,8 +161,7 @@ TEST_F(DataServiceTests, PublishReadingsHappyFlow)
 
 TEST_F(DataServiceTests, CheckIfSubscriptionExistButItsEmpty)
 {
-    ASSERT_FALSE(
-      service->checkIfSubscriptionIsWaiting(std::make_shared<ParametersUpdateMessage>(std::vector<Parameter>{})));
+    ASSERT_FALSE(service->checkIfSubscriptionIsWaiting(ParametersUpdateMessage{{}}));
 }
 
 TEST_F(DataServiceTests, CheckIfSubscriptionExistTwoSubscription)
@@ -185,8 +184,8 @@ TEST_F(DataServiceTests, CheckIfSubscriptionExistTwoSubscription)
                                             }});
 
     // Now parse the subscription
-    ASSERT_TRUE(service->checkIfSubscriptionIsWaiting(
-      std::make_shared<ParametersUpdateMessage>(std::vector<Parameter>{{ParameterName::EXTERNAL_ID, "TestValue"}})));
+    ASSERT_TRUE(
+      service->checkIfSubscriptionIsWaiting(ParametersUpdateMessage{{{ParameterName::EXTERNAL_ID, "TestValue"}}}));
     if (!callbackCalled)
     {
         std::unique_lock<std::mutex> lock{mutex};
@@ -195,16 +194,10 @@ TEST_F(DataServiceTests, CheckIfSubscriptionExistTwoSubscription)
     EXPECT_TRUE(callbackCalled);
 }
 
-TEST_F(DataServiceTests, CheckIfCallbackForDetailsIsWaitingNullMessage)
-{
-    ASSERT_FALSE(service->checkIfCallbackIsWaiting(nullptr));
-}
-
 TEST_F(DataServiceTests, CheckIfCallbackNoCallbacks)
 {
     ASSERT_TRUE(service->m_detailsCallbacks.empty());
-    ASSERT_FALSE(service->checkIfCallbackIsWaiting(
-      std::make_shared<DetailsSynchronizationResponseMessage>(std::vector<std::string>{}, std::vector<std::string>{})));
+    ASSERT_FALSE(service->checkIfCallbackIsWaiting({{}, {}}));
 }
 
 TEST_F(DataServiceTests, CheckIfCallbackFinallyACallback)
@@ -217,8 +210,7 @@ TEST_F(DataServiceTests, CheckIfCallbackFinallyACallback)
           called = true;
           conditionVariable.notify_one();
       }));
-    ASSERT_TRUE(service->checkIfCallbackIsWaiting(
-      std::make_shared<DetailsSynchronizationResponseMessage>(std::vector<std::string>{}, std::vector<std::string>{})));
+    ASSERT_TRUE(service->checkIfCallbackIsWaiting({{}, {}}));
     if (!called)
     {
         std::unique_lock<std::mutex> lock{mutex};
