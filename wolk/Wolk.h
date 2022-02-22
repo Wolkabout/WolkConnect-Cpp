@@ -111,30 +111,6 @@ public:
      *            If omitted current POSIX time is adopted
      */
     template <typename T>
-    void addReading(const std::string& reference, std::initializer_list<T> values, std::uint64_t rtc = 0);
-
-    /**
-     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
-     *        This method is thread safe, and can be called from multiple thread simultaneously
-     * @param reference Sensor reference
-     * @param values Multi-value sensor values<br>
-     *              Supported types:<br>
-     *               - bool<br>
-     *               - float<br>
-     *               - double<br>
-     *               - signed int<br>
-     *               - signed long int<br>
-     *               - signed long long int<br>
-     *               - unsigned int<br>
-     *               - unsigned long int<br>
-     *               - std::uint64_t<br>
-     *               - string<br>
-     *               - char*<br>
-     *               - const char*<br>
-     * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
-     *            If omitted current POSIX time is adopted
-     */
-    template <typename T>
     void addReading(const std::string& reference, const std::vector<T> values, std::uint64_t rtc = 0);
 
     /**
@@ -243,15 +219,6 @@ private:
 template <typename T> void Wolk::addReading(const std::string& reference, T value, std::uint64_t rtc)
 {
     addReading(reference, StringUtils::toString(value), rtc);
-}
-
-template <typename T>
-void Wolk::addReading(const std::string& reference, std::initializer_list<T> values, std::uint64_t rtc)
-{
-    if (values.empty())
-        return;
-
-    addReading(reference, std::vector<T>(values), rtc);
 }
 
 template <typename T>

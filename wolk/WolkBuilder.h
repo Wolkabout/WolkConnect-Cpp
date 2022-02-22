@@ -134,7 +134,7 @@ public:
      */
     WolkBuilder& withFileURLDownload(const std::string& fileDownloadLocation,
                                      std::shared_ptr<FileDownloader> fileDownloader = nullptr,
-                                     bool transferEnabled = false, std::uint64_t maxPacketSize = 268435);
+                                     bool transferEnabled = true, std::uint64_t maxPacketSize = 268435);
 
     /**
      * @brief Sets the Wolk module file listener.

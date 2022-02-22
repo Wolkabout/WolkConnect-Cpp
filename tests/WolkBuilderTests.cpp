@@ -118,4 +118,5 @@ TEST_F(WolkBuilderTests, OtherProperties)
     EXPECT_NO_THROW(builder->caCertPath("some_ca_cert_path"));
     EXPECT_NO_THROW(builder->withDataProtocol(std::unique_ptr<DataProtocolMock>(new DataProtocolMock)));
     EXPECT_NO_THROW(builder->withPersistence(std::make_shared<PersistenceMock>()));
+    ASSERT_NO_THROW(builder->build());
 }
