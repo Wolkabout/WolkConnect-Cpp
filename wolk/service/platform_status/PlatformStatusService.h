@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 #define WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 
-#include "core/connectivity/InboundMessageHandler.h"
+#include "core/MessageListener.h"
 #include "core/protocol/PlatformStatusProtocol.h"
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/api/PlatformStatusListener.h"
@@ -47,14 +47,6 @@ public:
     PlatformStatusService(PlatformStatusProtocol& protocol, std::unique_ptr<PlatformStatusListener> listener);
 
     /**
-     * Default constructor for the service that receives a lambda callback.
-     *
-     * @param protocol The protocol by which the service will oblige.
-     * @param callback The lambda callback which will receive information.
-     */
-    PlatformStatusService(PlatformStatusProtocol& protocol, PlatformStatusCallback callback);
-
-    /**
      * This is an overridden method from the `MessageListener` interface.
      * This method is invoked everytime a message for this service arrives.
      *
@@ -76,7 +68,6 @@ private:
 
     // Here we store the means of transporting the data further.
     std::unique_ptr<PlatformStatusListener> m_listener;
-    PlatformStatusCallback m_lambda;
 
     // Here we have the command buffer that will execute external calls.
     CommandBuffer m_commandBuffer;

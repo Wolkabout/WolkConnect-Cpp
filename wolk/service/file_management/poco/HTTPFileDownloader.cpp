@@ -42,18 +42,6 @@ const std::string HTTPS_PATH_PREFIX = "https://";
 const std::regex URL_REGEX = std::regex(
   R"(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
 
-/**
- * This method's only purpose is to force the linker to link `PocoCrypto`, `PocoUtil` and `PocoJSON` libraries to this
- * library. So it's temporary until I find a solution for linking the libraries.
- */
-void randomMethod()
-{
-    // Take a cipher key
-    auto key = Poco::Crypto::CipherKey("aes-256");
-    Poco::Util::ServerApplication app{};
-    auto json = Poco::JSON::Object{};
-}
-
 HTTPFileDownloader::HTTPFileDownloader() : m_status(FileTransferStatus::AWAITING_DEVICE) {}
 
 HTTPFileDownloader::~HTTPFileDownloader()

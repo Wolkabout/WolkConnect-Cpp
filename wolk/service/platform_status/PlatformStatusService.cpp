@@ -30,11 +30,6 @@ PlatformStatusService::PlatformStatusService(PlatformStatusProtocol& protocol,
 {
 }
 
-PlatformStatusService::PlatformStatusService(PlatformStatusProtocol& protocol, PlatformStatusCallback callback)
-: m_protocol(protocol), m_lambda(std::move(callback))
-{
-}
-
 void PlatformStatusService::messageReceived(std::shared_ptr<Message> message)
 {
     LOG(TRACE) << METHOD_INFO;
@@ -52,11 +47,6 @@ void PlatformStatusService::messageReceived(std::shared_ptr<Message> message)
     {
         m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
           [this, parsed]() { m_listener->platformStatus(parsed->getStatus()); }));
-    }
-    else if (m_lambda)
-    {
-        m_commandBuffer.pushCommand(
-          std::make_shared<std::function<void()>>([this, parsed]() { m_lambda(parsed->getStatus()); }));
     }
 }
 

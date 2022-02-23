@@ -37,7 +37,7 @@ class WolkMulti : public WolkInterface
     friend class WolkBuilder;
 
 public:
-    static connect::WolkBuilder newBuilder(std::vector<Device> devices = {});
+    static WolkBuilder newBuilder(std::vector<Device> devices = {});
 
     bool addDevice(Device device);
 
@@ -123,25 +123,12 @@ public:
     std::unique_ptr<ErrorMessage> popMessage(const std::string& deviceKey);
 
     /**
-     * This method allows the user to attempt to obtain a message from the error message backlog, or await in the time
-     * interval. This will return the first message from the backlog, if it was already there, or arrived in the time
-     * interval.
-     *
-     * @param deviceKey The key of the device.
-     * @param timeout The maximum length of time the user would like to wait for the message.
-     * @return The first message in the backlog, or the one that had arrived during the wait period. Can be `nullptr`.
-     */
-    std::unique_ptr<ErrorMessage> obtainOrAwaitError(const std::string& deviceKey,
-                                                     std::chrono::milliseconds timeout = std::chrono::milliseconds{
-                                                       100});
-
-    /**
      * This is the overridden method from the `wolkabout::WolkInterface` interface.
      * This is used to give information about what type of a `WolkInterface` this object is.
      *
      * @return Will always be `WolkInterfaceType::MultiDevice` for objects of this class.
      */
-    WolkInterfaceType getType() override;
+    WolkInterfaceType getType() const override;
 
 private:
     explicit WolkMulti(std::vector<Device> devices);

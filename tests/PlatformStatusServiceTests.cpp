@@ -92,38 +92,3 @@ TEST_F(PlatformStatusServiceTests, ParsedIncomingMessageCalledListener)
         conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
     }
 }
-
-TEST_F(PlatformStatusServiceTests, ParsedIncomingMessageCalledCallback)
-{
-    // Create the callback that will be invoked
-    std::atomic_bool called{false};
-    std::mutex mutex;
-    std::condition_variable conditionVariable;
-    auto status = ConnectivityStatus::CONNECTED;
-    auto callback = [&](ConnectivityStatus received) {
-        if (received == wolkabout::ConnectivityStatus::CONNECTED)
-        {
-            called = true;
-            conditionVariable.notify_one();
-        }
-    };
-
-    // Make the service with the callback
-    service.reset(new PlatformStatusService{platformStatusProtocolMock, callback});
-
-    // Set up the protocol
-    EXPECT_CALL(platformStatusProtocolMock, parsePlatformStatusMessage)
-      .WillOnce(Return(ByMove(std::unique_ptr<PlatformStatusMessage>{new PlatformStatusMessage{status}})));
-
-    // Pass the message
-    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
-
-    // Now expect the callback to get called
-    if (!called)
-    {
-        const auto timeout = std::chrono::milliseconds{100};
-        auto lock = std::unique_lock<std::mutex>{mutex};
-        conditionVariable.wait_for(lock, timeout);
-    }
-    EXPECT_TRUE(called);
-}

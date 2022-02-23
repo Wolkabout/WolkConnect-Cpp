@@ -17,9 +17,9 @@
 #ifndef WOLKABOUTCONNECTOR_REGISTRATIONSERVICE_H
 #define WOLKABOUTCONNECTOR_REGISTRATIONSERVICE_H
 
+#include "core/MessageListener.h"
 #include "core/Types.h"
 #include "core/connectivity/ConnectivityService.h"
-#include "core/connectivity/InboundMessageHandler.h"
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/protocol/RegistrationProtocol.h"
@@ -38,31 +38,17 @@ struct DeviceQueryData
 {
 public:
     explicit DeviceQueryData(TimePoint timestampFrom, std::string deviceType = "", std::string externalId = "",
-                             std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback = {})
-    : m_timestampFrom(
-        std::move(std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch())))
-    , m_deviceType(std::move(deviceType))
-    , m_externalId(std::move(externalId))
-    , m_callback(std::move(callback))
-    {
-    }
+                             std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback = {});
 
-    const TimePoint& getTimestampFrom() const { return m_timestampFrom; }
+    const TimePoint& getTimestampFrom() const;
 
-    const std::string& getDeviceType() const { return m_deviceType; }
+    const std::string& getDeviceType() const;
 
-    const std::string& getExternalId() const { return m_externalId; }
+    const std::string& getExternalId() const;
 
-    const std::function<void(const std::vector<RegisteredDeviceInformation>&)>& getCallback() const
-    {
-        return m_callback;
-    }
+    const std::function<void(const std::vector<RegisteredDeviceInformation>&)>& getCallback() const;
 
-    bool operator==(const DeviceQueryData& rvalue) const
-    {
-        return m_timestampFrom == rvalue.m_timestampFrom && m_deviceType == rvalue.m_deviceType &&
-               m_externalId == rvalue.m_externalId;
-    }
+    bool operator==(const DeviceQueryData& rvalue) const;
 
 private:
     TimePoint m_timestampFrom;
@@ -77,14 +63,7 @@ private:
 struct DeviceQueryDataHash
 {
 public:
-    std::size_t operator()(const DeviceQueryData& data) const
-    {
-        auto timestamp =
-          std::hash<std::uint64_t>{}(static_cast<std::uint64_t>(data.getTimestampFrom().time_since_epoch().count()));
-        auto deviceType = std::hash<std::string>{}(data.getDeviceType());
-        auto externalId = std::hash<std::string>{}(data.getExternalId());
-        return timestamp ^ (deviceType << 1) ^ (externalId << 2);
-    }
+    std::size_t operator()(const DeviceQueryData& data) const;
 };
 
 /**
@@ -206,9 +185,6 @@ private:
 
     // And here we have the reference of the error service.
     ErrorService& m_errorService;
-
-    // Make place for the running status
-    std::atomic_bool m_running;
 
     // Make place for the requests for devices
     std::mutex m_mutex;

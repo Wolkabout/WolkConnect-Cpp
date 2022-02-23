@@ -142,12 +142,11 @@ TEST_F(RegistrationServiceTests, RegisterDevicesReceiveError)
 
     // Set up the error service to return an error message
     const auto delay = std::chrono::milliseconds{50};
-    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(0));
     EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
         std::this_thread::sleep_for(delay);
         return true;
     });
-    EXPECT_CALL(*errorServiceMock, obtainFirstMessageForDevice)
+    EXPECT_CALL(*errorServiceMock, obtainLastMessageForDevice)
       .WillOnce(
         Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
 
@@ -224,12 +223,11 @@ TEST_F(RegistrationServiceTests, RemoveDevicesReceiveError)
 
     // Set up the error service to return an error message
     const auto delay = std::chrono::milliseconds{50};
-    EXPECT_CALL(*errorServiceMock, peekMessagesForDevice).WillOnce(Return(0));
     EXPECT_CALL(*errorServiceMock, awaitMessage).WillOnce([&](const std::string&, std::chrono::milliseconds) {
         std::this_thread::sleep_for(delay);
         return true;
     });
-    EXPECT_CALL(*errorServiceMock, obtainFirstMessageForDevice)
+    EXPECT_CALL(*errorServiceMock, obtainLastMessageForDevice)
       .WillOnce(
         Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
 

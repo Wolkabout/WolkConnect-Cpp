@@ -321,19 +321,7 @@ std::unique_ptr<ErrorMessage> WolkMulti::popMessage(const std::string& deviceKey
     return m_errorService->obtainLastMessageForDevice(deviceKey);
 }
 
-std::unique_ptr<ErrorMessage> WolkMulti::obtainOrAwaitError(const std::string& deviceKey,
-                                                            std::chrono::milliseconds timeout)
-{
-    if (!isDeviceInList(deviceKey))
-    {
-        LOG(WARN) << "Ignoring call of 'obtainOrAwaitError' - Device '" << deviceKey << "' has not been added.";
-        return nullptr;
-    }
-
-    return m_errorService->obtainOrAwaitMessageForDevice(deviceKey, timeout);
-}
-
-WolkInterfaceType WolkMulti::getType()
+WolkInterfaceType WolkMulti::getType() const
 {
     return WolkInterfaceType::MultiDevice;
 }

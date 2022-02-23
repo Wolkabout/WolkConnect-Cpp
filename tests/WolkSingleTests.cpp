@@ -310,12 +310,6 @@ TEST_F(WolkSingleTests, UpdateParameter)
     EXPECT_TRUE(called);
 }
 
-TEST_F(WolkSingleTests, AwaitError)
-{
-    EXPECT_CALL(GetErrorServiceReference(), obtainOrAwaitMessageForDevice).Times(1);
-    ASSERT_NO_FATAL_FAILURE(service->awaitError());
-}
-
 TEST_F(WolkSingleTests, NotifyConnectedFileManagement)
 {
     auto fileManagementService = std::unique_ptr<FileManagementServiceMock>{new NiceMock<FileManagementServiceMock>{

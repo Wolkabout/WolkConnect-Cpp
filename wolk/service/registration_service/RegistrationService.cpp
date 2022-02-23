@@ -22,9 +22,53 @@ namespace wolkabout
 {
 namespace connect
 {
+DeviceQueryData::DeviceQueryData(TimePoint timestampFrom, std::string deviceType, std::string externalId,
+                                 std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback)
+: m_timestampFrom(std::move(std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch())))
+, m_deviceType(std::move(deviceType))
+, m_externalId(std::move(externalId))
+, m_callback(std::move(callback))
+{
+}
+
+const TimePoint& DeviceQueryData::getTimestampFrom() const
+{
+    return m_timestampFrom;
+}
+
+const std::string& DeviceQueryData::getDeviceType() const
+{
+    return m_deviceType;
+}
+
+const std::string& DeviceQueryData::getExternalId() const
+{
+    return m_externalId;
+}
+
+const std::function<void(const std::vector<RegisteredDeviceInformation>&)>& DeviceQueryData::getCallback() const
+{
+    return m_callback;
+}
+
+bool DeviceQueryData::operator==(const DeviceQueryData& rvalue) const
+{
+    return m_timestampFrom == rvalue.m_timestampFrom && m_deviceType == rvalue.m_deviceType &&
+           m_externalId == rvalue.m_externalId;
+}
+
+std::size_t DeviceQueryDataHash::operator()(const DeviceQueryData& data) const
+{
+    auto timestamp =
+      std::hash<std::uint64_t>{}(static_cast<std::uint64_t>(data.getTimestampFrom().time_since_epoch().count()));
+    auto deviceType = std::hash<std::string>{}(data.getDeviceType());
+    auto externalId = std::hash<std::string>{}(data.getExternalId());
+    return timestamp ^ (deviceType << 1) ^ (externalId << 2);
+}
+
 RegistrationService::RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService,
                                          ErrorService& errorService)
-: m_protocol(protocol), m_connectivityService(connectivityService), m_errorService(errorService), m_running(false)
+: m_protocol(protocol), m_connectivityService(connectivityService), m_errorService(errorService)
 {
 }
 
@@ -33,14 +77,10 @@ RegistrationService::~RegistrationService()
     stop();
 }
 
-void RegistrationService::start()
-{
-    m_running = true;
-}
+void RegistrationService::start() {}
 
 void RegistrationService::stop()
 {
-    m_running = false;
     m_conditionVariable.notify_all();
 }
 
@@ -50,15 +90,6 @@ std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::st
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to register devices";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        const auto errorMessage = "The service is not running.";
-        LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
-    }
 
     // Check that there's devices in the vector
     if (devices.empty())
@@ -80,9 +111,6 @@ std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::st
           new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
     }
 
-    // Peek the number of errors
-    auto errors = m_errorService.peekMessagesForDevice(deviceKey);
-
     // Send the message out
     if (!m_connectivityService.publish(message))
     {
@@ -94,8 +122,7 @@ std::unique_ptr<ErrorMessage> RegistrationService::registerDevices(const std::st
 
     // Now wait for a response message
     if (m_errorService.awaitMessage(deviceKey, timeout))
-        return errors > 1 ? m_errorService.obtainLastMessageForDevice(deviceKey) :
-                            m_errorService.obtainFirstMessageForDevice(deviceKey);
+        return m_errorService.obtainLastMessageForDevice(deviceKey);
     return nullptr;
 }
 
@@ -105,15 +132,6 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to remove a device";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        const auto errorMessage = "The service is not running.";
-        LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return std::unique_ptr<ErrorMessage>{
-          new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
-    }
 
     // Make the message that will be sent out
     const auto message =
@@ -126,9 +144,6 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
           new ErrorMessage{deviceKey, errorMessage, std::chrono::system_clock::now()}};
     }
 
-    // Peek the number of errors
-    auto errors = m_errorService.peekMessagesForDevice(deviceKey);
-
     // Send the message out
     if (!m_connectivityService.publish(message))
     {
@@ -140,8 +155,7 @@ std::unique_ptr<ErrorMessage> RegistrationService::removeDevices(const std::stri
 
     // Now wait for a response message
     if (m_errorService.awaitMessage(deviceKey, timeout))
-        return errors > 1 ? m_errorService.obtainLastMessageForDevice(deviceKey) :
-                            m_errorService.obtainFirstMessageForDevice(deviceKey);
+        return m_errorService.obtainLastMessageForDevice(deviceKey);
     return nullptr;
 }
 
@@ -151,13 +165,6 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain devices";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> The service is not running.";
-        return nullptr;
-    }
 
     // Parse the message
     const auto query = DeviceQueryData{timestampFrom, deviceType, externalId};
@@ -188,11 +195,6 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
     {
         auto uniqueLock = std::unique_lock<std::mutex>{m_mutex};
         m_conditionVariable.wait_for(uniqueLock, timeout);
-    }
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> Aborted execution because the service is stopping...";
-        return nullptr;
     }
 
     // Check if there's a response in the map for us
@@ -226,13 +228,6 @@ bool RegistrationService::obtainDevicesAsync(
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain devices";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> The service is not running.";
-        return false;
-    }
 
     // Check whether the callback is actually set.
     if (!callback)

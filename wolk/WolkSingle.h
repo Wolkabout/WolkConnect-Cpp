@@ -47,7 +47,7 @@ public:
      * @param device wolkabout::Device
      * @return wolkabout::WolkBuilder instance
      */
-    static connect::WolkBuilder newBuilder(Device device);
+    static WolkBuilder newBuilder(Device device);
 
     /**
      * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
@@ -157,9 +157,7 @@ public:
 
     void updateParameter(Parameter parameters);
 
-    std::unique_ptr<ErrorMessage> awaitError(std::chrono::milliseconds timeout = std::chrono::milliseconds{100});
-
-    WolkInterfaceType getType() override;
+    WolkInterfaceType getType() const override;
 
 protected:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;

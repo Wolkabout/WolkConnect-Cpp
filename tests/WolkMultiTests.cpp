@@ -561,18 +561,6 @@ TEST_F(WolkMultiTests, PopMessageHappyFlow)
     ASSERT_EQ(service->popMessage(devices.front().getKey()), nullptr);
 }
 
-TEST_F(WolkMultiTests, ObtainOrAwaitErrorWrongDevice)
-{
-    EXPECT_CALL(GetErrorServiceReference(), obtainOrAwaitMessageForDevice).Times(0);
-    ASSERT_EQ(service->obtainOrAwaitError("TestDevice"), nullptr);
-}
-
-TEST_F(WolkMultiTests, ObtainOrAwaitErrorHappyFlow)
-{
-    EXPECT_CALL(GetErrorServiceReference(), obtainOrAwaitMessageForDevice).Times(1);
-    ASSERT_EQ(service->obtainOrAwaitError(devices.front().getKey()), nullptr);
-}
-
 TEST_F(WolkMultiTests, ReportFilesForDeviceNoService)
 {
     ASSERT_NO_FATAL_FAILURE(service->reportFilesForDevice(devices.front()));
