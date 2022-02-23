@@ -18,7 +18,6 @@
 #define WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 
 #include "core/MessageListener.h"
-#include "core/protocol/PlatformStatusProtocol.h"
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/api/PlatformStatusListener.h"
 
@@ -26,11 +25,10 @@
 
 namespace wolkabout
 {
+class PlatformStatusProtocol;
+
 namespace connect
 {
-// This is the type alias for a callback capable of receiving a ConnectivityStatus value.
-using PlatformStatusCallback = std::function<void(ConnectivityStatus)>;
-
 /**
  * This is a service that is meant to receive information about platform connection status from the gateway.
  * This data is meant to be propagated further.
