@@ -48,10 +48,6 @@ public:
                     std::uint64_t rtc = 0);
 
     template <typename T>
-    void addReading(const std::string& deviceKey, const std::string& reference, std::initializer_list<T> values,
-                    std::uint64_t rtc = 0);
-
-    template <typename T>
     void addReading(const std::string& deviceKey, const std::string& reference, const std::vector<T>& values,
                     std::uint64_t rtc = 0);
 
@@ -154,16 +150,6 @@ template <typename T>
 void WolkMulti::addReading(const std::string& deviceKey, const std::string& reference, T value, std::uint64_t rtc)
 {
     addReading(deviceKey, reference, StringUtils::toString(value), rtc);
-}
-
-template <typename T>
-void WolkMulti::addReading(const std::string& deviceKey, const std::string& reference, std::initializer_list<T> values,
-                           std::uint64_t rtc)
-{
-    if (values.empty())
-        return;
-
-    addReading(deviceKey, reference, std::vector<T>(values), rtc);
 }
 
 template <typename T>
