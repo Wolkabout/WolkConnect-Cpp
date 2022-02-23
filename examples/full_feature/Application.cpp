@@ -296,12 +296,6 @@ int main(int /* argc */, char** /* argv */)
             wolk->addReading("HB", deviceInfo.heartbeat.count());
             wolk->publish();
 
-            // Check if there's any errors
-            if (auto error = wolk->awaitError())
-                LOG(INFO) << "Received error - '" << error->getMessage() << "'.";
-            else
-                LOG(INFO) << "Received no errors for device.";
-
             // Obtain the old value
             sleepInterval = deviceInfo.heartbeat;
         }
