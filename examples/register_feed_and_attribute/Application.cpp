@@ -39,7 +39,7 @@ std::uint64_t generateRandomValue()
 {
     // Here we will create the random engine and distribution
     static auto engine =
-      std::mt19937(static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count()));
+      std::mt19937(static_cast<std::uint32_t>(std::chrono::system_clock::now().time_since_epoch().count()));
     static auto distribution = std::uniform_real_distribution<>(0, 100);
 
     // And generate a random value

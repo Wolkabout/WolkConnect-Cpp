@@ -300,7 +300,7 @@ int main(int /* argc */, char** /* argv */)
     /**
      * We want to randomize the temperature data too, so we need the generator for random information.
      */
-    auto engine = std::mt19937{static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    auto engine = std::mt19937{static_cast<std::uint32_t>(std::chrono::system_clock::now().time_since_epoch().count())};
     auto distribution = std::uniform_real_distribution<std::double_t>{-20.0, 80.0};
 
     while (running)
