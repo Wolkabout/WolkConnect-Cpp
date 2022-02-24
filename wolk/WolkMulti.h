@@ -37,7 +37,7 @@ class WolkMulti : public WolkInterface
     friend class WolkBuilder;
 
 public:
-    static connect::WolkBuilder newBuilder(std::vector<Device> devices = {});
+    static WolkBuilder newBuilder(std::vector<Device> devices = {});
 
     bool addDevice(const Device& device);
 
@@ -45,10 +45,6 @@ public:
     void addReading(const std::string& deviceKey, const std::string& reference, T value, std::uint64_t rtc = 0);
 
     void addReading(const std::string& deviceKey, const std::string& reference, std::string value,
-                    std::uint64_t rtc = 0);
-
-    template <typename T>
-    void addReading(const std::string& deviceKey, const std::string& reference, std::initializer_list<T> values,
                     std::uint64_t rtc = 0);
 
     template <typename T>
@@ -110,7 +106,7 @@ public:
      * @param deviceKey The key of the device.
      * @return The first message in the backlog held for the device. Can be `nullptr`.
      */
-    std::unique_ptr<ErrorMessage> dequeueMessage(const std::string& deviceKey);
+    std::unique_ptr<ErrorMessage> popFrontMessage(const std::string& deviceKey);
 
     /**
      * This method allows the user to obtain the latest received message that the backlog of error messages
@@ -119,20 +115,7 @@ public:
      * @param deviceKey The key of the device.
      * @return The last message in the backlog held for the device. Can be `nullptr`.
      */
-    std::unique_ptr<ErrorMessage> popMessage(const std::string& deviceKey);
-
-    /**
-     * This method allows the user to attempt to obtain a message from the error message backlog, or await in the time
-     * interval. This will return the first message from the backlog, if it was already there, or arrived in the time
-     * interval.
-     *
-     * @param deviceKey The key of the device.
-     * @param timeout The maximum length of time the user would like to wait for the message.
-     * @return The first message in the backlog, or the one that had arrived during the wait period. Can be `nullptr`.
-     */
-    std::unique_ptr<ErrorMessage> obtainOrAwaitError(const std::string& deviceKey,
-                                                     std::chrono::milliseconds timeout = std::chrono::milliseconds{
-                                                       100});
+    std::unique_ptr<ErrorMessage> popBackMessage(const std::string& deviceKey);
 
     /**
      * This is the overridden method from the `wolkabout::WolkInterface` interface.
@@ -140,7 +123,7 @@ public:
      *
      * @return Will always be `WolkInterfaceType::MultiDevice` for objects of this class.
      */
-    WolkInterfaceType getType() override;
+    WolkInterfaceType getType() const override;
 
 private:
     explicit WolkMulti(std::vector<Device> devices);
@@ -170,16 +153,6 @@ template <typename T>
 void WolkMulti::addReading(const std::string& deviceKey, const std::string& reference, T value, std::uint64_t rtc)
 {
     addReading(deviceKey, reference, StringUtils::toString(value), rtc);
-}
-
-template <typename T>
-void WolkMulti::addReading(const std::string& deviceKey, const std::string& reference, std::initializer_list<T> values,
-                           std::uint64_t rtc)
-{
-    if (values.empty())
-        return;
-
-    addReading(deviceKey, reference, std::vector<T>(values), rtc);
 }
 
 template <typename T>

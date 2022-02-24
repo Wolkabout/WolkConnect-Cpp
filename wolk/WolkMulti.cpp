@@ -263,41 +263,29 @@ std::uint64_t WolkMulti::peekErrorCount(const std::string& deviceKey)
     return m_errorService->peekMessagesForDevice(deviceKey);
 }
 
-std::unique_ptr<ErrorMessage> WolkMulti::dequeueMessage(const std::string& deviceKey)
+std::unique_ptr<ErrorMessage> WolkMulti::popFrontMessage(const std::string& deviceKey)
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'dequeueMessage' - Device '" << deviceKey << "' has not been added.";
+        LOG(WARN) << "Ignoring call of 'popFrontMessage' - Device '" << deviceKey << "' has not been added.";
         return nullptr;
     }
 
     return m_errorService->obtainFirstMessageForDevice(deviceKey);
 }
 
-std::unique_ptr<ErrorMessage> WolkMulti::popMessage(const std::string& deviceKey)
+std::unique_ptr<ErrorMessage> WolkMulti::popBackMessage(const std::string& deviceKey)
 {
     if (!isDeviceInList(deviceKey))
     {
-        LOG(WARN) << "Ignoring call of 'popMessage' - Device '" << deviceKey << "' has not been added.";
+        LOG(WARN) << "Ignoring call of 'popBackMessage' - Device '" << deviceKey << "' has not been added.";
         return nullptr;
     }
 
     return m_errorService->obtainLastMessageForDevice(deviceKey);
 }
 
-std::unique_ptr<ErrorMessage> WolkMulti::obtainOrAwaitError(const std::string& deviceKey,
-                                                            std::chrono::milliseconds timeout)
-{
-    if (!isDeviceInList(deviceKey))
-    {
-        LOG(WARN) << "Ignoring call of 'obtainOrAwaitError' - Device '" << deviceKey << "' has not been added.";
-        return nullptr;
-    }
-
-    return m_errorService->obtainOrAwaitMessageForDevice(deviceKey, timeout);
-}
-
-WolkInterfaceType WolkMulti::getType()
+WolkInterfaceType WolkMulti::getType() const
 {
     return WolkInterfaceType::MultiDevice;
 }

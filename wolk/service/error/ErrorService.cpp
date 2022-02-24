@@ -195,20 +195,17 @@ void ErrorService::timerRuntime()
     for (auto& deviceErrors : m_cached)
     {
         // Collect all the iterators that need to be removed
-        const auto& messages = deviceErrors.second;
-        auto removingIterators = std::vector<DeviceErrorMessages::const_iterator>{};
-        for (auto it = messages.cbegin(); it != messages.cend(); ++it)
+        auto& messages = deviceErrors.second;
+        for (auto i = messages.size(); i > 0; --i)
         {
+            auto it = messages.begin();
+            std::advance(it, i);
             if (now - it->first >= m_retainTime)
             {
                 LOG(TRACE) << "Removing a cached message for device '" << deviceErrors.first << "'.";
-                removingIterators.emplace_back(it);
+                messages.erase(messages.begin(), it);
             }
         }
-
-        // Remove the iterators
-        for (const auto& removingIterator : removingIterators)
-            deviceErrors.second.erase(removingIterator);
     }
 }
 }    // namespace connect

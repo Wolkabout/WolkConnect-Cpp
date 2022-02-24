@@ -378,18 +378,6 @@ TEST_F(WolkSingleTests, ObtainChildren)
     ASSERT_NO_FATAL_FAILURE(service->obtainChildren({}));
 }
 
-TEST_F(WolkSingleTests, AwaitErrorNoService)
-{
-    service->m_errorService = nullptr;
-    ASSERT_NO_FATAL_FAILURE(service->awaitError());
-}
-
-TEST_F(WolkSingleTests, AwaitError)
-{
-    EXPECT_CALL(GetErrorServiceReference(), obtainOrAwaitMessageForDevice).Times(1);
-    ASSERT_NO_FATAL_FAILURE(service->awaitError());
-}
-
 TEST_F(WolkSingleTests, NotifyConnectedFileManagement)
 {
     auto fileManagementService = std::unique_ptr<FileManagementServiceMock>{new NiceMock<FileManagementServiceMock>{

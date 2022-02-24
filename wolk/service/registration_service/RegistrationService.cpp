@@ -24,8 +24,52 @@ namespace wolkabout
 {
 namespace connect
 {
+DeviceQueryData::DeviceQueryData(TimePoint timestampFrom, std::string deviceType, std::string externalId,
+                                 std::function<void(const std::vector<RegisteredDeviceInformation>&)> callback)
+: m_timestampFrom(std::move(std::chrono::duration_cast<std::chrono::milliseconds>(timestampFrom.time_since_epoch())))
+, m_deviceType(std::move(deviceType))
+, m_externalId(std::move(externalId))
+, m_callback(std::move(callback))
+{
+}
+
+const TimePoint& DeviceQueryData::getTimestampFrom() const
+{
+    return m_timestampFrom;
+}
+
+const std::string& DeviceQueryData::getDeviceType() const
+{
+    return m_deviceType;
+}
+
+const std::string& DeviceQueryData::getExternalId() const
+{
+    return m_externalId;
+}
+
+const std::function<void(const std::vector<RegisteredDeviceInformation>&)>& DeviceQueryData::getCallback() const
+{
+    return m_callback;
+}
+
+bool DeviceQueryData::operator==(const DeviceQueryData& rvalue) const
+{
+    return m_timestampFrom == rvalue.m_timestampFrom && m_deviceType == rvalue.m_deviceType &&
+           m_externalId == rvalue.m_externalId;
+}
+
+std::size_t DeviceQueryDataHash::operator()(const DeviceQueryData& data) const
+{
+    auto timestamp =
+      std::hash<std::uint64_t>{}(static_cast<std::uint64_t>(data.getTimestampFrom().time_since_epoch().count()));
+    auto deviceType = std::hash<std::string>{}(data.getDeviceType());
+    auto externalId = std::hash<std::string>{}(data.getExternalId());
+    return timestamp ^ (deviceType << 1) ^ (externalId << 2);
+}
+
 RegistrationService::RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService)
-: m_protocol(protocol), m_connectivityService(connectivityService), m_running(false)
+: m_protocol(protocol), m_connectivityService(connectivityService)
 {
 }
 
@@ -34,14 +78,10 @@ RegistrationService::~RegistrationService()
     stop();
 }
 
-void RegistrationService::start()
-{
-    m_running = true;
-}
+void RegistrationService::start() {}
 
 void RegistrationService::stop()
 {
-    m_running = false;
     m_registeredDevicesCV.notify_all();
     m_childrenSyncDevicesCV.notify_all();
 }
@@ -52,13 +92,6 @@ bool RegistrationService::registerDevices(
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to register devices";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> The service is not running.";
-        return false;
-    }
 
     // Check that there's devices in the vector and that their names are not empty
     if (devices.empty())
@@ -109,14 +142,6 @@ bool RegistrationService::removeDevices(const std::string& deviceKey, std::vecto
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to remove a device";
 
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        const auto errorMessage = "The service is not running.";
-        LOG(ERROR) << errorPrefix << " -> " << errorMessage;
-        return false;
-    }
-
     // Make the message that will be sent out
     const auto message =
       std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, DeviceRemovalMessage{deviceKeys})};
@@ -142,13 +167,6 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain children";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> The service is not running.";
-        return nullptr;
-    }
 
     // Parse the message
     auto message =
@@ -190,11 +208,6 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
         auto uniqueLock = std::unique_lock<std::mutex>{m_registeredDevicesMutex};
         m_childrenSyncDevicesCV.wait_for(uniqueLock, timeout);
     }
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> Aborted execution because the service is stopping...";
-        return nullptr;
-    }
     if (!called)
         return nullptr;
     else
@@ -206,13 +219,6 @@ bool RegistrationService::obtainChildrenAsync(const std::string& deviceKey,
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain children";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> The service is not running.";
-        return false;
-    }
 
     // Check whether the callback is actually set.
     if (!callback)
@@ -254,13 +260,6 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain devices";
 
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> The service is not running.";
-        return nullptr;
-    }
-
     // Parse the message
     const auto query = DeviceQueryData{timestampFrom, deviceType, externalId};
     auto request = RegisteredDevicesRequestMessage{
@@ -289,11 +288,6 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
     {
         auto uniqueLock = std::unique_lock<std::mutex>{m_registeredDevicesMutex};
         m_registeredDevicesCV.wait_for(uniqueLock, timeout);
-    }
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> Aborted execution because the service is stopping...";
-        return nullptr;
     }
 
     // Check if there's a response in the map for us
@@ -327,13 +321,6 @@ bool RegistrationService::obtainDevicesAsync(
 {
     LOG(TRACE) << METHOD_INFO;
     const auto errorPrefix = "Failed to obtain devices";
-
-    // Check if the service is toggled on
-    if (!m_running)
-    {
-        LOG(ERROR) << errorPrefix << " -> The service is not running.";
-        return false;
-    }
 
     // Check whether the callback is actually set.
     if (!callback)

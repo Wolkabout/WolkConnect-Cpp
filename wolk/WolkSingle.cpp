@@ -115,14 +115,7 @@ void WolkSingle::obtainChildren(std::function<void(std::vector<std::string>)> ca
     m_registrationService->obtainChildrenAsync(m_device.getKey(), callback);
 }
 
-std::unique_ptr<ErrorMessage> WolkSingle::awaitError(std::chrono::milliseconds timeout)
-{
-    if (m_errorService == nullptr)
-        return nullptr;
-    return m_errorService->obtainOrAwaitMessageForDevice(m_device.getKey(), timeout);
-}
-
-WolkInterfaceType WolkSingle::getType()
+WolkInterfaceType WolkSingle::getType() const
 {
     return WolkInterfaceType::SingleDevice;
 }

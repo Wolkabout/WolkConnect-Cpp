@@ -17,8 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 #define WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 
-#include "core/connectivity/InboundMessageHandler.h"
-#include "core/protocol/PlatformStatusProtocol.h"
+#include "core/MessageListener.h"
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/api/PlatformStatusListener.h"
 
@@ -26,11 +25,10 @@
 
 namespace wolkabout
 {
+class PlatformStatusProtocol;
+
 namespace connect
 {
-// This is the type alias for a callback capable of receiving a ConnectivityStatus value.
-using PlatformStatusCallback = std::function<void(ConnectivityStatus)>;
-
 /**
  * This is a service that is meant to receive information about platform connection status from the gateway.
  * This data is meant to be propagated further.
@@ -45,14 +43,6 @@ public:
      * @param listener The listener object which will receive information.
      */
     PlatformStatusService(PlatformStatusProtocol& protocol, std::shared_ptr<PlatformStatusListener> listener);
-
-    /**
-     * Default constructor for the service that receives a lambda callback.
-     *
-     * @param protocol The protocol by which the service will oblige.
-     * @param callback The lambda callback which will receive information.
-     */
-    PlatformStatusService(PlatformStatusProtocol& protocol, PlatformStatusCallback callback);
 
     /**
      * This is an overridden method from the `MessageListener` interface.
@@ -76,7 +66,6 @@ private:
 
     // Here we store the means of transporting the data further.
     std::shared_ptr<PlatformStatusListener> m_listener;
-    PlatformStatusCallback m_lambda;
 
     // Here we have the command buffer that will execute external calls.
     CommandBuffer m_commandBuffer;

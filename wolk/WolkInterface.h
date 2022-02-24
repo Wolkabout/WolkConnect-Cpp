@@ -107,7 +107,7 @@ public:
      *
      * @return The enumeration value indicating Wolk type.
      */
-    virtual WolkInterfaceType getType() = 0;
+    virtual WolkInterfaceType getType() const = 0;
 
 protected:
     // Internal forward declaration for the class that will listen to the ConnectivityService.

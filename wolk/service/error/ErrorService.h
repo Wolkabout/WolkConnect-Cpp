@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_ERRORSERVICE_H
 #define WOLKABOUTCONNECTOR_ERRORSERVICE_H
 
-#include "core/connectivity/InboundMessageHandler.h"
+#include "core/MessageListener.h"
 #include "core/protocol/ErrorProtocol.h"
 #include "core/utilities/Service.h"
 #include "core/utilities/Timer.h"
@@ -25,6 +25,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <map>
 #include <mutex>
 #include <queue>
 

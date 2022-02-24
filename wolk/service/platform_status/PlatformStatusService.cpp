@@ -16,6 +16,7 @@
 
 #include "wolk/service/platform_status/PlatformStatusService.h"
 
+#include "core/protocol/PlatformStatusProtocol.h"
 #include "core/utilities/Logger.h"
 
 #include <utility>
@@ -27,11 +28,6 @@ namespace connect
 PlatformStatusService::PlatformStatusService(PlatformStatusProtocol& protocol,
                                              std::shared_ptr<PlatformStatusListener> listener)
 : m_protocol(protocol), m_listener(std::move(listener))
-{
-}
-
-PlatformStatusService::PlatformStatusService(PlatformStatusProtocol& protocol, PlatformStatusCallback callback)
-: m_protocol(protocol), m_lambda(std::move(callback))
 {
 }
 
@@ -52,11 +48,6 @@ void PlatformStatusService::messageReceived(std::shared_ptr<Message> message)
     {
         m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>(
           [this, parsed]() { m_listener->platformStatus(parsed->getStatus()); }));
-    }
-    else if (m_lambda)
-    {
-        m_commandBuffer.pushCommand(
-          std::make_shared<std::function<void()>>([this, parsed]() { m_lambda(parsed->getStatus()); }));
     }
 }
 

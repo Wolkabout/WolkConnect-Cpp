@@ -140,7 +140,7 @@ WolkBuilder& WolkBuilder::withErrorProtocol(std::chrono::milliseconds errorRetai
 
 WolkBuilder& WolkBuilder::withFileTransfer(const std::string& fileDownloadLocation, std::uint64_t maxPacketSize)
 {
-    if (m_firmwareUpdateProtocol == nullptr)
+    if (m_fileManagementProtocol == nullptr)
         m_fileManagementProtocol =
           std::unique_ptr<WolkaboutFileManagementProtocol>(new wolkabout::WolkaboutFileManagementProtocol);
     m_fileDownloadDirectory = fileDownloadLocation;
@@ -155,11 +155,12 @@ WolkBuilder& WolkBuilder::withFileURLDownload(const std::string& fileDownloadLoc
                                               std::shared_ptr<FileDownloader> fileDownloader, bool transferEnabled,
                                               std::uint64_t maxPacketSize)
 {
-    if (m_firmwareUpdateProtocol == nullptr)
+    if (m_fileManagementProtocol == nullptr)
         m_fileManagementProtocol =
           std::unique_ptr<WolkaboutFileManagementProtocol>(new wolkabout::WolkaboutFileManagementProtocol);
     m_fileDownloadDirectory = fileDownloadLocation;
-    m_fileTransferEnabled = transferEnabled;
+    if (!m_fileTransferEnabled)
+        m_fileTransferEnabled = transferEnabled;
     m_fileTransferUrlEnabled = true;
     m_fileDownloader = std::move(fileDownloader);
     m_maxPacketSize = maxPacketSize;
