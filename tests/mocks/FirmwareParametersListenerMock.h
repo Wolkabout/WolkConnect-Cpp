@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 WolkAbout Technology s.r.o.
+ * Copyright 2022 Wolkabout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-#include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
+#ifndef WOLKGATEWAY_FIRMWAREPARAMETERLISTENERMOCK_H
+#define WOLKGATEWAY_FIRMWAREPARAMETERLISTENERMOCK_H
 
-namespace wolkabout
+#include "wolk/api/FirmwareParametersListener.h"
+
+#include <gmock/gmock.h>
+
+using namespace wolkabout::connect;
+
+class FirmwareParametersListenerMock : public FirmwareParametersListener
 {
-void WolkPahoMqttClient::disconnect()
-{
-    const auto lastWillTopic = getLastWillTopic();
-    const auto lastWillMessage = getLastWillMessage();
-    const auto lastWillRetain = getLastWillRetain();
+public:
+    MOCK_METHOD(void, receiveParameters, (std::string, std::string));
+    MOCK_METHOD(std::string, getFirmwareVersion, ());
+};
 
-    if (!lastWillTopic.empty())
-    {
-        publish(lastWillTopic, lastWillMessage, lastWillRetain);
-    }
-
-    PahoMqttClient::disconnect();
-}
-}    // namespace wolkabout
+#endif    // WOLKGATEWAY_FIRMWAREPARAMETERLISTENERMOCK_H

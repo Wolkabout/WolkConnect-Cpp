@@ -19,20 +19,28 @@
 
 #define private public
 #define protected public
-#include "wolk/Wolk.h"
 #include "wolk/WolkBuilder.h"
+#include "wolk/WolkMulti.h"
+#include "wolk/WolkSingle.h"
 #undef private
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "mocks/DataProtocolMock.h"
-#include "mocks/FeedUpdateHandlerMock.h"
-#include "mocks/ParameterHandlerMock.h"
-#include "mocks/PersistenceMock.h"
+#include "tests/mocks/DataProtocolMock.h"
+#include "tests/mocks/ErrorProtocolMock.h"
+#include "tests/mocks/FeedUpdateHandlerMock.h"
+#include "tests/mocks/FileDownloaderMock.h"
+#include "tests/mocks/FileListenerMock.h"
+#include "tests/mocks/FirmwareInstallerMock.h"
+#include "tests/mocks/FirmwareParametersListenerMock.h"
+#include "tests/mocks/ParameterHandlerMock.h"
+#include "tests/mocks/PersistenceMock.h"
+#include "tests/mocks/PlatformStatusListenerMock.h"
+#include "tests/mocks/RegistrationProtocolMock.h"
 
 #include <gmock/gmock.h>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 using namespace ::testing;
 
 class WolkBuilderTests : public ::testing::Test
@@ -40,83 +48,151 @@ class WolkBuilderTests : public ::testing::Test
 public:
     static void SetUpTestCase() { Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE); }
 
-    const std::string TAG = "WolkBuilderTests";
+    void SetUp() override
+    {
+        feedUpdateHandlerMock = std::make_shared<NiceMock<FeedUpdateHandlerMock>>();
+        parameterHandlerMock = std::make_shared<NiceMock<ParameterHandlerMock>>();
+        persistenceMock = std::unique_ptr<PersistenceMock>{new NiceMock<PersistenceMock>};
+        dataProtocolMock = std::unique_ptr<DataProtocolMock>{new DataProtocolMock};
+        errorProtocolMock = std::unique_ptr<ErrorProtocolMock>{new ErrorProtocolMock};
+        fileDownloaderMock = std::unique_ptr<FileDownloaderMock>{new FileDownloaderMock};
+        fileListenerMock = std::make_shared<NiceMock<FileListenerMock>>();
+        firmwareInstallerMock = std::unique_ptr<FirmwareInstallerMock>{new NiceMock<FirmwareInstallerMock>};
+        firmwareParameterListenerMock =
+          std::unique_ptr<FirmwareParametersListenerMock>{new NiceMock<FirmwareParametersListenerMock>};
+        platformStatusListenerMock =
+          std::unique_ptr<PlatformStatusListenerMock>{new NiceMock<PlatformStatusListenerMock>};
+    }
+
+    const Device device{"TestDevice", "TestPassword", OutboundDataMode::PUSH};
+
+    const std::vector<Device> devices{Device{"TestDevice1", "", OutboundDataMode::PUSH},
+                                      {"TestDevice2", "", OutboundDataMode::PUSH}};
+
+    const std::string hostPath = "Host!";
+
+    const std::string hostCaCrt = "CaCrt!";
+
+    std::shared_ptr<FeedUpdateHandlerMock> feedUpdateHandlerMock;
+
+    std::shared_ptr<ParameterHandlerMock> parameterHandlerMock;
+
+    std::unique_ptr<PersistenceMock> persistenceMock;
+
+    std::unique_ptr<DataProtocolMock> dataProtocolMock;
+
+    const std::chrono::seconds errorRetainTime{10};
+
+    std::unique_ptr<ErrorProtocolMock> errorProtocolMock;
+
+    const std::string fileDownloadLocation = "./files";
+
+    const std::uint64_t maxPacketSize = 1024;
+
+    std::unique_ptr<FileDownloaderMock> fileDownloaderMock;
+
+    std::shared_ptr<FileListenerMock> fileListenerMock;
+
+    std::unique_ptr<FirmwareInstallerMock> firmwareInstallerMock;
+
+    std::unique_ptr<FirmwareParametersListenerMock> firmwareParameterListenerMock;
+
+    std::unique_ptr<PlatformStatusListenerMock> platformStatusListenerMock;
 };
 
-TEST_F(WolkBuilderTests, CtorTests)
+TEST_F(WolkBuilderTests, GetDevices)
 {
-    EXPECT_NO_THROW(WolkBuilder(Device("TEST_KEY", "TEST_PASSWORD", OutboundDataMode::PUSH)));
+    auto builder = WolkBuilder{};
+    EXPECT_TRUE(builder.getDevices().empty());
 }
 
-TEST_F(WolkBuilderTests, LambdaHandlers)
+TEST_F(WolkBuilderTests, BuildSingleButMultipleDevices)
 {
-    const auto testDevice = std::make_shared<Device>("TEST_KEY", "TEST_PASSWORD", OutboundDataMode::PUSH);
-
-    // Bool flags
-    bool feedUpdated = false;
-    bool parameterUpdated = false;
-
-    std::shared_ptr<WolkBuilder> builder;
-    ASSERT_NO_THROW(builder = std::make_shared<WolkBuilder>(*testDevice));
-
-    ASSERT_NO_THROW(
-      builder->feedUpdateHandler([&](const std::map<std::uint64_t, std::vector<Reading>>&) { feedUpdated = true; }));
-    ASSERT_NO_THROW(builder->parameterHandler([&](const std::vector<Parameter>&) { parameterUpdated = true; }));
-
-    std::shared_ptr<Wolk> wolk = nullptr;
-    EXPECT_NO_THROW(wolk = builder->build());
-
-    wolk->handleFeedUpdateCommand({});
-    wolk->handleParameterCommand({});
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    EXPECT_TRUE(feedUpdated);
-    EXPECT_TRUE(parameterUpdated);
+    ASSERT_THROW(
+      ([] {
+          WolkBuilder{{{"", "", OutboundDataMode::PUSH}, {"", "", OutboundDataMode::PUSH}}}.buildWolkSingle();
+      }()),
+      std::runtime_error);
 }
 
-TEST_F(WolkBuilderTests, MockHandlers)
+TEST_F(WolkBuilderTests, BuildSingleEmptyFields)
 {
-    const auto testDevice = std::make_shared<Device>("TEST_KEY", "TEST_PASSWORD", OutboundDataMode::PUSH);
-
-    // Bool flags
-    bool feedUpdated = false;
-    bool parameterUpdated = false;
-
-    std::shared_ptr<wolkabout::WolkBuilder> builder;
-    ASSERT_NO_THROW(builder = std::make_shared<wolkabout::WolkBuilder>(*testDevice));
-
-    auto feedUpdateHandler = std::make_shared<NiceMock<FeedUpdateHandlerMock>>();
-    ASSERT_NO_THROW(builder->feedUpdateHandler(feedUpdateHandler));
-    EXPECT_CALL(*feedUpdateHandler, handleUpdate).WillOnce([&](const std::map<std::uint64_t, std::vector<Reading>>&) {
-        feedUpdated = true;
-    });
-
-    auto parameterHandler = std::make_shared<NiceMock<ParameterHandlerMock>>();
-    ASSERT_NO_THROW(builder->parameterHandler(parameterHandler));
-    EXPECT_CALL(*parameterHandler, handleUpdate).WillOnce([&](const std::vector<Parameter>&) {
-        parameterUpdated = true;
-    });
-
-    std::shared_ptr<Wolk> wolk = nullptr;
-    EXPECT_NO_THROW(wolk = builder->build());
-
-    wolk->handleFeedUpdateCommand({});
-    wolk->handleParameterCommand({});
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    EXPECT_TRUE(feedUpdated);
-    EXPECT_TRUE(parameterUpdated);
+    ASSERT_THROW(([] { WolkBuilder{{"", "", OutboundDataMode::PUSH}}.buildWolkSingle(); }()), std::runtime_error);
+    ASSERT_THROW(([] {
+                     WolkBuilder{{"SOME_DEVICE", "", OutboundDataMode::PUSH}}.buildWolkSingle();
+                 }()),
+                 std::runtime_error);
 }
 
-TEST_F(WolkBuilderTests, OtherProperties)
+TEST_F(WolkBuilderTests, BuildMultiButNoDevices)
 {
-    const auto testDevice = std::make_shared<Device>("TEST_KEY", "TEST_PASSWORD", OutboundDataMode::PUSH);
-    std::shared_ptr<wolkabout::WolkBuilder> builder;
-    ASSERT_NO_THROW(builder = std::make_shared<wolkabout::WolkBuilder>(*testDevice));
+    ASSERT_THROW(([] { WolkBuilder{{}}.buildWolkMulti(); }()), std::runtime_error);
+}
 
-    EXPECT_NO_THROW(builder->host("some_other_host"));
-    EXPECT_NO_THROW(builder->caCertPath("some_ca_cert_path"));
-    EXPECT_NO_THROW(builder->withDataProtocol(std::unique_ptr<DataProtocolMock>(new DataProtocolMock)));
-    EXPECT_NO_THROW(builder->withPersistence(std::make_shared<PersistenceMock>()));
-    ASSERT_NO_THROW(builder->build());
+TEST_F(WolkBuilderTests, BuildMultiButDeviceHasEmptyKey)
+{
+    ASSERT_THROW(([] { WolkBuilder{{{"", "", OutboundDataMode::PUSH}}}.buildWolkMulti(); }()), std::runtime_error);
+}
+
+TEST_F(WolkBuilderTests, BuildInvalidType)
+{
+    ASSERT_THROW(([] { WolkBuilder{{}}.build(WolkInterfaceType::Gateway); }()), std::runtime_error);
+}
+
+TEST_F(WolkBuilderTests, FullSingleExample)
+{
+    auto wolk = std::unique_ptr<WolkSingle>{};
+    ASSERT_NO_FATAL_FAILURE([&] {
+        wolk = WolkBuilder{device}
+                 .host(hostPath)
+                 .caCertPath(hostCaCrt)
+                 .feedUpdateHandler([](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {})
+                 .feedUpdateHandler(feedUpdateHandlerMock)
+                 .parameterHandler([](const std::string&, const std::vector<Parameter>&) {})
+                 .parameterHandler(parameterHandlerMock)
+                 .withPersistence(std::move(persistenceMock))
+                 .withDataProtocol(std::move(dataProtocolMock))
+                 .withErrorProtocol(errorRetainTime, std::move(errorProtocolMock))
+                 .withFileTransfer(fileDownloadLocation, maxPacketSize)
+                 .withFileURLDownload(fileDownloadLocation, std::move(fileDownloaderMock), true, maxPacketSize)
+                 .withFileListener(fileListenerMock)
+                 .withFirmwareUpdate(std::move(firmwareInstallerMock), fileDownloadLocation)
+                 .buildWolkSingle();
+    }());
+    ASSERT_NE(wolk, nullptr);
+
+    // Call some methods
+    ASSERT_NO_FATAL_FAILURE(wolk->m_connectivityService->m_onConnectionLost());
+    ASSERT_NO_FATAL_FAILURE(wolk->m_dataService->m_feedUpdateHandler("", {}));
+    ASSERT_NO_FATAL_FAILURE(wolk->m_dataService->m_parameterSyncHandler("", {}));
+}
+
+TEST_F(WolkBuilderTests, FullMultiExample)
+{
+    auto wolk = std::unique_ptr<WolkMulti>{};
+    ASSERT_NO_FATAL_FAILURE([&] {
+        wolk = WolkBuilder{devices}
+                 .host(hostPath)
+                 .caCertPath(hostCaCrt)
+                 .feedUpdateHandler([](const std::string&, const std::map<std::uint64_t, std::vector<Reading>>&) {})
+                 .feedUpdateHandler(feedUpdateHandlerMock)
+                 .parameterHandler([](const std::string&, const std::vector<Parameter>&) {})
+                 .parameterHandler(parameterHandlerMock)
+                 .withPersistence(std::move(persistenceMock))
+                 .withDataProtocol(std::move(dataProtocolMock))
+                 .withErrorProtocol(errorRetainTime, std::move(errorProtocolMock))
+                 .withFileTransfer(fileDownloadLocation, maxPacketSize)
+                 .withFileURLDownload(fileDownloadLocation, std::move(fileDownloaderMock), true, maxPacketSize)
+                 .withFileListener(fileListenerMock)
+                 .withFirmwareUpdate(std::move(firmwareParameterListenerMock), fileDownloadLocation)
+                 .withPlatformStatus(std::move(platformStatusListenerMock))
+                 .withRegistration()
+                 .buildWolkMulti();
+    }());
+    ASSERT_NE(wolk, nullptr);
+
+    // Call some methods
+    ASSERT_NO_FATAL_FAILURE(wolk->m_connectivityService->m_onConnectionLost());
+    ASSERT_NO_FATAL_FAILURE(wolk->m_dataService->m_feedUpdateHandler("", {}));
+    ASSERT_NO_FATAL_FAILURE(wolk->m_dataService->m_parameterSyncHandler("", {}));
 }

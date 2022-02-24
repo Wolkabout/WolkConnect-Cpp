@@ -14,21 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef WOLKABOUTCONNECTOR_INBOUNDMESSAGEHANDLERMOCK_H
-#define WOLKABOUTCONNECTOR_INBOUNDMESSAGEHANDLERMOCK_H
+#ifndef WOLKABOUTCONNECTOR_PLATFORMSTATUSLISTENERMOCK_H
+#define WOLKABOUTCONNECTOR_PLATFORMSTATUSLISTENERMOCK_H
 
-#include "core/InboundMessageHandler.h"
+#include "wolk/api/PlatformStatusListener.h"
 
 #include <gmock/gmock.h>
 
 using namespace wolkabout;
+using namespace wolkabout::connect;
 
-class InboundMessageHandlerMock : public InboundMessageHandler
+class PlatformStatusListenerMock : public PlatformStatusListener
 {
 public:
-    MOCK_METHOD(void, messageReceived, (const std::string&, const std::string&));
-    MOCK_METHOD(std::vector<std::string>, getChannels, (), (const));
-    MOCK_METHOD(void, addListener, (std::weak_ptr<MessageListener>));
+    MOCK_METHOD(void, platformStatus, (ConnectivityStatus));
 };
 
-#endif    // WOLKABOUTCONNECTOR_INBOUNDMESSAGEHANDLERMOCK_H
+#endif    // WOLKABOUTCONNECTOR_PLATFORMSTATUSLISTENERMOCK_H

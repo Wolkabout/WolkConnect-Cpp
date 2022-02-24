@@ -16,38 +16,63 @@
 
 #include "wolk/WolkBuilder.h"
 
-#include "core/InboundMessageHandler.h"
 #include "core/connectivity/ConnectivityService.h"
+#include "core/connectivity/InboundMessageHandler.h"
+#include "core/connectivity/InboundPlatformMessageHandler.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
+#include "core/connectivity/mqtt/PahoMqttClient.h"
 #include "core/persistence/inmemory/InMemoryPersistence.h"
 #include "core/protocol/wolkabout/WolkaboutDataProtocol.h"
+#include "core/protocol/wolkabout/WolkaboutErrorProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFileManagementProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutFirmwareUpdateProtocol.h"
-#include "wolk/InboundPlatformMessageHandler.h"
-#include "wolk/Wolk.h"
-#include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
+#include "core/protocol/wolkabout/WolkaboutPlatformStatusProtocol.h"
+#include "core/protocol/wolkabout/WolkaboutRegistrationProtocol.h"
+#include "core/utilities/Logger.h"
+#include "wolk/WolkMulti.h"
+#include "wolk/WolkSingle.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"
 
-#include <Poco/Crypto/CipherKey.h>
-#include <Poco/JSON/Object.h>
-#include <Poco/Util/ServerApplication.h>
 #include <stdexcept>
 #include <utility>
 
 namespace wolkabout
 {
-/**
- * This method's only purpose is to force the linker to link `PocoCrypto`, `PocoUtil` and `PocoJSON` libraries to this
- * library. So it's temporary until I find a solution for linking the libraries.
- */
-void randomMethod()
+namespace connect
 {
-    // Take a cipher key
-    auto key = Poco::Crypto::CipherKey("aes-256");
-    Poco::Util::ServerApplication app{};
-    auto json = Poco::JSON::Object{};
+WolkBuilder::WolkBuilder(std::vector<Device> devices)
+: m_devices(std::move(devices))
+, m_host(WOLK_DEMO_HOST)
+, m_caCertPath(TRUST_STORE)
+, m_persistence{new InMemoryPersistence}
+, m_dataProtocol{new WolkaboutDataProtocol}
+, m_errorProtocol{new WolkaboutErrorProtocol}
+, m_errorRetainTime{1000}
+, m_fileTransferEnabled(false)
+, m_fileTransferUrlEnabled(false)
+, m_maxPacketSize{0}
+{
+}
+
+WolkBuilder::WolkBuilder(Device device)
+: m_devices{{std::move(device)}}
+, m_host{WOLK_DEMO_HOST}
+, m_caCertPath{TRUST_STORE}
+, m_persistence{new InMemoryPersistence}
+, m_dataProtocol{new WolkaboutDataProtocol}
+, m_errorProtocol{new WolkaboutErrorProtocol}
+, m_errorRetainTime{1000}
+, m_fileTransferEnabled(false)
+, m_fileTransferUrlEnabled(false)
+, m_maxPacketSize{0}
+{
+}
+
+std::vector<Device>& WolkBuilder::getDevices()
+{
+    return m_devices;
 }
 
 WolkBuilder& WolkBuilder::host(const std::string& host)
@@ -63,7 +88,7 @@ WolkBuilder& WolkBuilder::caCertPath(const std::string& caCertPath)
 }
 
 WolkBuilder& WolkBuilder::feedUpdateHandler(
-  const std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler)
+  const std::function<void(std::string, const std::map<std::uint64_t, std::vector<Reading>>)>& feedUpdateHandler)
 {
     m_feedUpdateHandlerLambda = feedUpdateHandler;
     m_feedUpdateHandler.reset();
@@ -77,12 +102,14 @@ WolkBuilder& WolkBuilder::feedUpdateHandler(std::weak_ptr<FeedUpdateHandler> fee
     return *this;
 }
 
-WolkBuilder& WolkBuilder::parameterHandler(const std::function<void(std::vector<Parameter>)>& parameterHandlerLambda)
+WolkBuilder& WolkBuilder::parameterHandler(
+  const std::function<void(std::string, std::vector<Parameter>)>& parameterHandlerLambda)
 {
     m_parameterHandlerLambda = parameterHandlerLambda;
     m_parameterHandler.reset();
     return *this;
 }
+
 WolkBuilder& WolkBuilder::parameterHandler(std::weak_ptr<ParameterHandler> parameterHandler)
 {
     m_parameterHandler = std::move(parameterHandler);
@@ -90,7 +117,7 @@ WolkBuilder& WolkBuilder::parameterHandler(std::weak_ptr<ParameterHandler> param
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persistence)
+WolkBuilder& WolkBuilder::withPersistence(std::unique_ptr<Persistence> persistence)
 {
     m_persistence = std::move(persistence);
     return *this;
@@ -99,6 +126,15 @@ WolkBuilder& WolkBuilder::withPersistence(std::shared_ptr<Persistence> persisten
 WolkBuilder& WolkBuilder::withDataProtocol(std::unique_ptr<DataProtocol> protocol)
 {
     m_dataProtocol = std::move(protocol);
+    return *this;
+}
+
+WolkBuilder& WolkBuilder::withErrorProtocol(std::chrono::milliseconds errorRetainTime,
+                                            std::unique_ptr<ErrorProtocol> protocol)
+{
+    m_errorRetainTime = errorRetainTime;
+    if (protocol != nullptr)
+        m_errorProtocol = std::move(protocol);
     return *this;
 }
 
@@ -137,7 +173,7 @@ WolkBuilder& WolkBuilder::withFileListener(const std::shared_ptr<FileListener>& 
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> firmwareInstaller,
+WolkBuilder& WolkBuilder::withFirmwareUpdate(std::unique_ptr<FirmwareInstaller> firmwareInstaller,
                                              const std::string& workingDirectory)
 {
     if (m_firmwareUpdateProtocol == nullptr)
@@ -149,7 +185,7 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareInstaller> 
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareParametersListener> firmwareParametersListener,
+WolkBuilder& WolkBuilder::withFirmwareUpdate(std::unique_ptr<FirmwareParametersListener> firmwareParametersListener,
                                              const std::string& workingDirectory)
 {
     if (m_firmwareUpdateProtocol == nullptr)
@@ -161,63 +197,109 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::shared_ptr<FirmwareParametersL
     return *this;
 }
 
-std::unique_ptr<Wolk> WolkBuilder::build()
+WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListener> platformStatusListener)
 {
-    if (m_device.getKey().empty())
+    if (m_platformStatusProtocol == nullptr)
+        m_platformStatusProtocol =
+          std::unique_ptr<WolkaboutPlatformStatusProtocol>(new wolkabout::WolkaboutPlatformStatusProtocol);
+    m_platformStatusListener = std::move(platformStatusListener);
+    return *this;
+}
+
+WolkBuilder& WolkBuilder::withRegistration(std::unique_ptr<RegistrationProtocol> protocol)
+{
+    if (protocol == nullptr)
+        protocol = std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol);
+    m_registrationProtocol = std::move(protocol);
+    return *this;
+}
+
+std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Make the Wolk instance
+    auto wolk = std::unique_ptr<WolkInterface>{};
+    switch (type)
     {
-        throw std::logic_error("No device key present.");
+    case WolkInterfaceType::SingleDevice:
+    {
+        wolk.reset(new WolkSingle{m_devices.front()});
+        break;
+    }
+    case WolkInterfaceType::MultiDevice:
+    {
+        wolk.reset(new WolkMulti{m_devices});
+        break;
+    }
+    default:
+        throw std::runtime_error("Unsupported type of `WolkInterface` for this builder.");
     }
 
-    auto wolk = std::unique_ptr<Wolk>(new Wolk(m_device));
+    // Create the inbound message handler that will route all the messages by topic to their right destination
+    auto deviceKeys = std::vector<std::string>{};
+    for (const auto& device : m_devices)
+        deviceKeys.emplace_back(device.getKey());
+    wolk->m_inboundMessageHandler = std::make_shared<InboundPlatformMessageHandler>(deviceKeys);
 
-    wolk->m_dataProtocol = std::move(m_dataProtocol);
+    // Now create the ConnectivityService.
+    auto mqttClient = std::make_shared<PahoMqttClient>();
+    switch (type)
+    {
+    case WolkInterfaceType::MultiDevice:
+    {
+        wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(new MqttConnectivityService(
+          mqttClient, "", "", m_host, m_caCertPath,
+          ByteUtils::toUUIDString(ByteUtils::generateRandomBytes(ByteUtils::UUID_VECTOR_SIZE))));
+        break;
+    }
+    default:
+    {
+        const auto& device = m_devices.front();
+        wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(new MqttConnectivityService(
+          mqttClient, device.getKey(), device.getPassword(), m_host, m_caCertPath,
+          ByteUtils::toUUIDString(ByteUtils::generateRandomBytes(ByteUtils::UUID_VECTOR_SIZE))));
+        break;
+    }
+    }
 
-    wolk->m_persistence = m_persistence;
-
-    auto mqttClient = std::make_shared<WolkPahoMqttClient>();
-    wolk->m_connectivityService = std::unique_ptr<MqttConnectivityService>(
-      new MqttConnectivityService(mqttClient, m_device.getKey(), m_device.getPassword(), m_host, m_caCertPath));
-
-    wolk->m_inboundMessageHandler =
-      std::unique_ptr<InboundMessageHandler>(new InboundPlatformMessageHandler(m_device.getKey()));
-
+    // Connect the ConnectivityService with the ConnectivityManager.
     auto wolkRaw = wolk.get();
-    wolk->m_connectivityManager = std::make_shared<Wolk::ConnectivityFacade>(*wolk->m_inboundMessageHandler, [wolkRaw] {
-        wolkRaw->notifyDisonnected();
-        wolkRaw->connect();
+    wolk->m_connectivityService->onConnectionLost([wolkRaw] {
+        wolkRaw->notifyDisconnected();
+        wolkRaw->tryConnect(true);
     });
+    wolk->m_connectivityService->setListner(wolk->m_inboundMessageHandler);
 
+    // Set the data service, the only required service
+    wolk->m_dataProtocol = std::move(m_dataProtocol);
+    wolk->m_errorProtocol = std::move(m_errorProtocol);
+    wolk->m_persistence = std::move(m_persistence);
     wolk->m_feedUpdateHandlerLambda = m_feedUpdateHandlerLambda;
     wolk->m_feedUpdateHandler = m_feedUpdateHandler;
-
     wolk->m_parameterLambda = m_parameterHandlerLambda;
     wolk->m_parameterHandler = m_parameterHandler;
-
-    // Data service
     wolk->m_dataService = std::make_shared<DataService>(
-      wolk->m_device.getKey(), *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
-      [wolkRaw](const std::map<std::uint64_t, std::vector<Reading>>& readings) {
-          wolkRaw->handleFeedUpdateCommand(readings);
+      *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
+      [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
+          wolkRaw->handleFeedUpdateCommand(deviceKey, readings);
       },
-      [wolkRaw](const std::vector<Parameter>& parameters) { wolkRaw->handleParameterCommand(parameters); });
+      [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
+          wolkRaw->handleParameterCommand(deviceKey, parameters);
+      });
+    wolk->m_errorService = std::make_shared<ErrorService>(*wolk->m_errorProtocol, m_errorRetainTime);
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
+    wolk->m_inboundMessageHandler->addListener(wolk->m_errorService);
+    wolk->m_errorService->start();
 
     // Check if the file management should be engaged
     if (m_fileManagementProtocol != nullptr)
     {
         // Create the File Management service
         wolk->m_fileManagementProtocol = std::move(m_fileManagementProtocol);
-        if (m_fileTransferUrlEnabled && m_fileDownloader == nullptr)
-        {
-            m_fileDownloader = std::make_shared<HTTPFileDownloader>();
-        }
-        wolk->m_fileDownloader = std::move(m_fileDownloader);
-        wolk->m_fileListener = std::move(m_fileListener);
-
         wolk->m_fileManagementService = std::make_shared<FileManagementService>(
-          wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, *wolk->m_fileManagementProtocol,
-          m_fileDownloadDirectory, m_fileTransferEnabled, m_fileTransferUrlEnabled, m_maxPacketSize,
-          wolk->m_fileDownloader, wolk->m_fileListener);
+          *wolk->m_connectivityService, *wolk->m_dataService, *wolk->m_fileManagementProtocol, m_fileDownloadDirectory,
+          m_fileTransferEnabled, m_fileTransferUrlEnabled, std::move(m_fileDownloader), std::move(m_fileListener));
 
         // Trigger the on build and add the listener for MQTT messages
         wolk->m_fileManagementService->createFolder();
@@ -225,10 +307,26 @@ std::unique_ptr<Wolk> WolkBuilder::build()
     }
 
     // Set the parameters about the FileTransfer
-    wolk->m_dataService->updateParameter(
-      {ParameterName::FILE_TRANSFER_PLATFORM_ENABLED, m_fileTransferEnabled ? "true" : "false"});
-    wolk->m_dataService->updateParameter(
-      {ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"});
+    for (const auto& device : m_devices)
+    {
+        wolk->m_dataService->updateParameter(
+          device.getKey(), {ParameterName::FILE_TRANSFER_PLATFORM_ENABLED, m_fileTransferEnabled ? "true" : "false"});
+        wolk->m_dataService->updateParameter(
+          device.getKey(), {ParameterName::FILE_TRANSFER_URL_ENABLED, m_fileTransferUrlEnabled ? "true" : "false"});
+    }
+
+    // Set the parameters about the FirmwareUpdate
+    for (const auto& device : m_devices)
+    {
+        wolk->m_dataService->updateParameter(device.getKey(), {ParameterName::FIRMWARE_UPDATE_ENABLED,
+                                                               m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
+        auto firmwareVersion = std::string{};
+        if (m_firmwareInstaller != nullptr)
+            firmwareVersion = m_firmwareInstaller->getFirmwareVersion(device.getKey());
+        else if (m_firmwareParametersListener != nullptr)
+            firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
+        wolk->m_dataService->updateParameter(device.getKey(), {ParameterName::FIRMWARE_VERSION, firmwareVersion});
+    }
 
     // Check if the firmware update should be engaged
     if (m_firmwareUpdateProtocol != nullptr)
@@ -240,52 +338,79 @@ std::unique_ptr<Wolk> WolkBuilder::build()
         if (m_firmwareInstaller != nullptr)
         {
             wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-              wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, m_firmwareInstaller,
+              *wolk->m_connectivityService, *wolk->m_dataService, std::move(m_firmwareInstaller),
               *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
         }
         else if (m_firmwareParametersListener != nullptr)
         {
             wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-              wolk->m_device.getKey(), *wolk->m_connectivityService, *wolk->m_dataService, m_firmwareParametersListener,
+              *wolk->m_connectivityService, *wolk->m_dataService, std::move(m_firmwareParametersListener),
               *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
         }
 
         // And set it all up
-        wolk->m_firmwareUpdateService->loadState();
+        for (const auto& device : m_devices)
+            wolk->m_firmwareUpdateService->loadState(device.getKey());
         wolk->m_inboundMessageHandler->addListener(wolk->m_firmwareUpdateService);
     }
 
-    // Set the parameters about the FirmwareUpdate
-    wolk->m_dataService->updateParameter(
-      {ParameterName::FIRMWARE_UPDATE_ENABLED, m_firmwareUpdateProtocol != nullptr ? "true" : "false"});
+    // Check if the platform status service needs to be introduced
+    if (m_platformStatusProtocol != nullptr)
     {
-        auto firmwareVersion = std::string{};
-        if (m_firmwareInstaller != nullptr)
-            firmwareVersion = m_firmwareInstaller->getFirmwareVersion();
-        else if (m_firmwareParametersListener != nullptr)
-            firmwareVersion = m_firmwareParametersListener->getFirmwareVersion();
-        wolk->m_dataService->updateParameter({ParameterName::FIRMWARE_VERSION, firmwareVersion});
+        // Create the service
+        wolk->m_platformStatusProtocol = std::move(m_platformStatusProtocol);
+        wolk->m_platformStatusService =
+          std::make_shared<PlatformStatusService>(*wolk->m_platformStatusProtocol, std::move(m_platformStatusListener));
+        wolk->m_inboundMessageHandler->addListener(wolk->m_platformStatusService);
     }
 
-    wolk->m_connectivityService->setListener(wolk->m_connectivityManager);
+    // Check if the registration service needs to be introduces
+    if (m_registrationProtocol != nullptr)
+    {
+        // Create the service
+        wolk->m_registrationProtocol = std::move(m_registrationProtocol);
+        wolk->m_registrationService = std::make_shared<RegistrationService>(
+          *wolk->m_registrationProtocol, *wolk->m_connectivityService, *wolk->m_errorService);
+        wolk->m_inboundMessageHandler->addListener(wolk->m_registrationService);
+    }
 
     return wolk;
 }
 
-wolkabout::WolkBuilder::operator std::unique_ptr<Wolk>()
+std::unique_ptr<WolkSingle> WolkBuilder::buildWolkSingle()
 {
-    return build();
+    LOG(TRACE) << METHOD_INFO;
+
+    // Check that the devices vector contains a single device.
+    if (m_devices.size() != 1)
+        throw std::runtime_error(
+          "Failed to build `WolkSingle` instance: The devices vector does not contain exactly one device.");
+    // Check that the device in the vector is valid
+    const auto& device = m_devices.front();
+    if (device.getKey().empty())
+        throw std::runtime_error("Failed to build `WolkSingle` instance: The device contains an empty key.");
+    if (device.getPassword().empty())
+        throw std::runtime_error("Failed to build `WolkSingle` instance: The device contains an empty password.");
+
+    // Cast the build pointer into the right type of unique_ptr.
+    return std::unique_ptr<WolkSingle>(dynamic_cast<WolkSingle*>(build(WolkInterfaceType::SingleDevice).release()));
 }
 
-WolkBuilder::WolkBuilder(Device device)
-: m_host{WOLK_DEMO_HOST}
-, m_caCertPath{TRUST_STORE}
-, m_device{std::move(device)}
-, m_persistence{new InMemoryPersistence()}
-, m_dataProtocol(new WolkaboutDataProtocol())
-, m_fileTransferEnabled(false)
-, m_fileTransferUrlEnabled(false)
-, m_maxPacketSize{0}
+std::unique_ptr<WolkMulti> WolkBuilder::buildWolkMulti()
 {
+    LOG(TRACE) << METHOD_INFO;
+
+    // Check that the devices vector is at least not empty.
+    if (m_devices.empty())
+        throw std::runtime_error("Failed to build `WolkMulti` instance: The devices vector is empty.");
+    // Check that the devices don't contain empty keys.
+    for (const auto& device : m_devices)
+        if (device.getKey().empty())
+            throw std::runtime_error(
+              "Failed to build `WolkMulti` instance: One of the devices in the vector contains an empty key.");
+
+    // Cast the build pointer into the right type of unique_ptr.
+    return std::unique_ptr<WolkMulti>(dynamic_cast<WolkMulti*>(build(WolkInterfaceType::MultiDevice).release()));
 }
+}    // namespace connect
 }    // namespace wolkabout

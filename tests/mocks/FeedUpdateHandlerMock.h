@@ -22,11 +22,12 @@
 #include <gmock/gmock.h>
 
 using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class FeedUpdateHandlerMock : public FeedUpdateHandler
 {
 public:
-    MOCK_METHOD(void, handleUpdate, ((std::map<std::uint64_t, std::vector<Reading>>)));
+    MOCK_METHOD(void, handleUpdate, (const std::string&, (const std::map<std::uint64_t, std::vector<Reading>>&)));
 };
 
 #endif    // WOLKABOUTCONNECTOR_FEEDUPDATEHANDLERMOCK_H

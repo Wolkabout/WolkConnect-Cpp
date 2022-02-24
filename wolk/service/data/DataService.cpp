@@ -31,11 +31,13 @@
 
 namespace wolkabout
 {
-DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persistence& persistence,
-                         ConnectivityService& connectivityService, FeedUpdateSetHandler feedUpdateHandler,
-                         ParameterSyncHandler parameterSyncHandler)
-: m_deviceKey{std::move(deviceKey)}
-, m_protocol{protocol}
+namespace connect
+{
+const std::string DataService::PERSISTENCE_KEY_DELIMITER = "+";
+
+DataService::DataService(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
+                         FeedUpdateSetHandler feedUpdateHandler, ParameterSyncHandler parameterSyncHandler)
+: m_protocol{protocol}
 , m_persistence{persistence}
 , m_connectivityService{connectivityService}
 , m_feedUpdateHandler{std::move(feedUpdateHandler)}
@@ -44,276 +46,93 @@ DataService::DataService(std::string deviceKey, DataProtocol& protocol, Persiste
 {
 }
 
-void DataService::messageReceived(std::shared_ptr<Message> message)
+void DataService::addReading(const std::string& deviceKey, const std::string& reference, const std::string& value,
+                             std::uint64_t rtc)
 {
-    assert(message);
-
-    const std::string deviceKey = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
-    if (deviceKey.empty())
-    {
-        LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
-        return;
-    }
-
-    if (deviceKey != m_deviceKey)
-    {
-        LOG(WARN) << "Device key mismatch: " << message->getChannel();
-        return;
-    }
-
-    switch (m_protocol.getMessageType(message))
-    {
-    case MessageType::FEED_VALUES:
-    {
-        auto feedValuesMessage = m_protocol.parseFeedValues(message);
-        if (feedValuesMessage == nullptr)
-            LOG(WARN) << "Unable to parse message: " << message->getChannel();
-        else if (m_feedUpdateHandler)
-            m_feedUpdateHandler(feedValuesMessage->getReadings());
-        return;
-    }
-    case MessageType::PARAMETER_SYNC:
-    {
-        auto parameterMessage = m_protocol.parseParameters(message);
-        if (parameterMessage == nullptr)
-        {
-            LOG(WARN) << "Unable to parse message: " << message->getChannel();
-            return;
-        }
-
-        // Check if there's a subscription waiting for those parameters
-        {
-            std::lock_guard<std::mutex> lockGuard{m_subscriptionMutex};
-            for (const auto& subscription : m_parameterSubscriptions)
-            {
-                // Check if the list of parameters is the same length, and then content
-                const auto& parameters = subscription.second.parameters;
-                const auto& values = parameterMessage->getParameters();
-                if (parameterMessage->getParameters().size() != parameters.size())
-                {
-                    continue;
-                }
-                auto allNamesMatching =
-                  std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
-                      return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
-                                 return parameter.first == name;
-                             }) != values.cend();
-                  });
-                if (!allNamesMatching)
-                {
-                    continue;
-                }
-
-                // Then we found the ones for the subscription!
-                auto callback = subscription.second.callback;
-                m_commandBuffer.pushCommand(
-                  std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
-
-                // And we can clear the subscription
-                m_parameterSubscriptions.erase(subscription.first);
-                return;
-            }
-        }
-
-        if (m_parameterSyncHandler)
-            m_parameterSyncHandler(parameterMessage->getParameters());
-        return;
-    }
-    default:
-    {
-        LOG(WARN) << "Unable to parse message channel: " << message->getChannel();
-    }
-    }
+    m_persistence.putReading(makePersistenceKey(deviceKey, reference), Reading{reference, value, rtc});
 }
 
-const Protocol& DataService::getProtocol()
+void DataService::addReading(const std::string& deviceKey, const std::string& reference,
+                             const std::vector<std::string>& value, std::uint64_t rtc)
 {
-    return m_protocol;
+    m_persistence.putReading(makePersistenceKey(deviceKey, reference), Reading{reference, value, rtc});
 }
 
-void DataService::addReading(const std::string& reference, const std::string& value, std::uint64_t rtc)
+void DataService::addReading(const std::string& deviceKey, const Reading& reading)
 {
-    auto reading = std::make_shared<Reading>(reference, value, rtc);
-    m_persistence.putReading(reference, reading);
+    m_persistence.putReading(makePersistenceKey(deviceKey, reading.getReference()), reading);
 }
 
-void DataService::addReading(const std::string& reference, const std::vector<std::string>& value, std::uint64_t rtc)
+void DataService::addReadings(const std::string& deviceKey, const std::vector<Reading>& readings)
 {
-    auto reading = std::make_shared<Reading>(reference, value, rtc);
-    m_persistence.putReading(reference, reading);
+    for (const auto& reading : readings)
+        m_persistence.putReading(makePersistenceKey(deviceKey, reading.getReference()), reading);
 }
 
-void DataService::publishReadings()
+void DataService::addAttribute(const std::string& deviceKey, const Attribute& attribute)
 {
-    for (const auto& key : m_persistence.getReadingsKeys())
-    {
-        publishReadingsForPersistenceKey(key);
-    }
+    m_persistence.putAttribute(makePersistenceKey(deviceKey, attribute.getName()),
+                               std::make_shared<Attribute>(attribute));
 }
 
-void DataService::publishAttributes()
+void DataService::updateParameter(const std::string& deviceKey, const Parameter& parameter)
 {
-    auto attributes = std::vector<Attribute>{};
-    for (const auto& attributeFromPersistence : m_persistence.getAttributes())
-        attributes.emplace_back(*attributeFromPersistence);
-    if (attributes.empty())
-        return;
-
-    AttributeRegistrationMessage attributeRegistrationMessage(attributes);
-
-    const std::shared_ptr<Message> outboundMessage =
-      m_protocol.makeOutboundMessage(m_deviceKey, attributeRegistrationMessage);
-
-    if (!outboundMessage)
-    {
-        LOG(ERROR) << "Unable to create message from attributes";
-        m_persistence.removeAttributes();
-        return;
-    }
-
-    if (m_connectivityService.publish(outboundMessage))
-        m_persistence.removeAttributes();
+    m_persistence.putParameter(makePersistenceKey(deviceKey, toString(parameter.first)), parameter);
 }
 
-void DataService::publishParameters()
+void DataService::registerFeed(const std::string& deviceKey, Feed feed)
 {
-    std::vector<Parameter> parameters;
-    for (const auto& element : m_persistence.getParameters())
-    {
-        parameters.emplace_back(element.first, element.second);
-    }
-
-    if (parameters.empty())
-    {
-        return;
-    }
-
-    ParametersUpdateMessage parametersUpdateMessage(parameters);
-
-    const std::shared_ptr<Message> outboundMessage =
-      m_protocol.makeOutboundMessage(m_deviceKey, parametersUpdateMessage);
-
-    if (!outboundMessage)
-    {
-        LOG(ERROR) << "Unable to create message from parameters";
-        return;
-    }
-
-    if (m_connectivityService.publish(outboundMessage))
-        for (const auto& parameter : parameters)
-            m_persistence.removeParameters(parameter.first);
+    registerFeeds(deviceKey, {std::move(feed)});
 }
 
-void DataService::publishReadingsForPersistenceKey(const std::string& persistenceKey)
-{
-    auto readings = std::vector<Reading>{};
-    for (const auto& readingFromPersistence : m_persistence.getReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT))
-        readings.emplace_back(*readingFromPersistence);
-    if (readings.empty())
-        return;
-
-    FeedValuesMessage feedValuesMessage(readings);
-
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, feedValuesMessage);
-
-    if (!outboundMessage)
-    {
-        LOG(ERROR) << "Unable to create message from readings: " << persistenceKey;
-        m_persistence.removeReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
-        return;
-    }
-
-    if (m_connectivityService.publish(outboundMessage))
-    {
-        m_persistence.removeReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
-
-        // proceed to publish next batch only if publish is successful
-        publishReadingsForPersistenceKey(persistenceKey);
-    }
-}
-void DataService::registerFeed(Feed feed)
-{
-    registerFeeds({std::move(feed)});
-}
-
-void DataService::registerFeeds(std::vector<Feed> feeds)
-{
-    FeedRegistrationMessage feedRegistrationMessage(std::move(feeds));
-
-    const std::shared_ptr<Message> outboundMessage =
-      m_protocol.makeOutboundMessage(m_deviceKey, feedRegistrationMessage);
-
-    if (!outboundMessage)
-    {
-        LOG(ERROR) << "Unable to create feed registration message from feed";
-        return;
-    }
-
-    if (!m_connectivityService.publish(outboundMessage))
-    {
-        LOG(ERROR) << "Unable to publish feed registration message";
-    }
-}
-
-void DataService::removeFeed(std::string reference)
-{
-    removeFeeds({std::move(reference)});
-}
-
-void DataService::removeFeeds(std::vector<std::string> feeds)
+void DataService::registerFeeds(const std::string& deviceKey, std::vector<Feed> feeds)
 {
     LOG(TRACE) << METHOD_INFO;
-
-    auto removal = FeedRemovalMessage(std::move(feeds));
-    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, removal));
+    auto message =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, FeedRegistrationMessage(std::move(feeds)))};
     if (message == nullptr)
-    {
+        LOG(ERROR) << "Failed to register feeds -> Failed to parse the outgoing 'FeedRegistrationMessage'.";
+    else if (!m_connectivityService.publish(message))
+        LOG(ERROR) << "Failed to register feeds -> Failed to publish the outgoing 'FeedRegistrationMessage'.";
+}
+
+void DataService::removeFeed(const std::string& deviceKey, std::string reference)
+{
+    removeFeeds(deviceKey, {std::move(reference)});
+}
+
+void DataService::removeFeeds(const std::string& deviceKey, std::vector<std::string> feeds)
+{
+    LOG(TRACE) << METHOD_INFO;
+    auto message =
+      std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, FeedRemovalMessage(std::move(feeds))));
+    if (message == nullptr)
         LOG(ERROR) << "Failed to remove feeds -> Failed to parse the outgoing 'FeedRemovalMessage'.";
-        return;
-    }
-    if (!m_connectivityService.publish(message))
-    {
+    else if (!m_connectivityService.publish(message))
         LOG(ERROR) << "Failed to remove feeds -> Failed to publish the outgoing 'FeedRemovalMessage'.";
-        return;
-    }
 }
 
-void DataService::pullFeedValues()
+void DataService::pullFeedValues(const std::string& deviceKey)
 {
-    PullFeedValuesMessage pullFeedValuesMessage;
-
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, pullFeedValuesMessage);
-
-    if (!outboundMessage)
-    {
-        LOG(ERROR) << "Unable to create Pull Feeds Value message from feed";
-        return;
-    }
-
-    if (!m_connectivityService.publish(outboundMessage))
-    {
-        LOG(ERROR) << "Unable to publish Pull Feeds Value message";
-    }
+    LOG(TRACE) << METHOD_INFO;
+    auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, PullFeedValuesMessage{})};
+    if (message == nullptr)
+        LOG(ERROR) << "Failed to pull feed values -> Failed to parse the outgoing 'PullFeedValuesMessage.";
+    else if (!m_connectivityService.publish(message))
+        LOG(ERROR) << "Failed to pull feed values -> Failed to publish the outgoing 'PullFeedValuesMessage.";
 }
-void DataService::pullParameters()
+
+void DataService::pullParameters(const std::string& deviceKey)
 {
-    ParametersPullMessage parametersPullMessage;
-
-    const std::shared_ptr<Message> outboundMessage = m_protocol.makeOutboundMessage(m_deviceKey, parametersPullMessage);
-
-    if (!outboundMessage)
-    {
-        LOG(ERROR) << "Unable to create Pull Parameters message from feed";
-        return;
-    }
-
-    if (!m_connectivityService.publish(outboundMessage))
-    {
-        LOG(ERROR) << "Unable to publish Pull Parameters message";
-    }
+    LOG(TRACE) << METHOD_INFO;
+    auto message = std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, ParametersPullMessage{})};
+    if (message == nullptr)
+        LOG(ERROR) << "Failed to pull parameter values -> Failed to parse the outgoing 'ParametersPullMessage.";
+    else if (!m_connectivityService.publish(message))
+        LOG(ERROR) << "Failed to pull parameter values -> Failed to publish the outgoing 'ParametersPullMessage.";
 }
 
-bool DataService::synchronizeParameters(const std::vector<ParameterName>& parameters,
+bool DataService::synchronizeParameters(const std::string& deviceKey, const std::vector<ParameterName>& parameters,
                                         std::function<void(std::vector<Parameter>)> callback)
 {
     LOG(TRACE) << METHOD_INFO;
@@ -323,7 +142,7 @@ bool DataService::synchronizeParameters(const std::vector<ParameterName>& parame
 
     // Make the message for synchronization
     auto synchronization = SynchronizeParametersMessage{parameters};
-    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, synchronization));
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, synchronization));
     if (message == nullptr)
     {
         LOG(ERROR) << "Failed to synchronize parameters - Failed to parse outgoing SynchronizeParametersMessage.";
@@ -343,15 +162,325 @@ bool DataService::synchronizeParameters(const std::vector<ParameterName>& parame
     }
 }
 
-void DataService::addAttribute(const Attribute& attribute)
+void DataService::publishReadings()
 {
-    auto attr = std::make_shared<Attribute>(attribute);
-
-    m_persistence.putAttribute(attr);
+    for (const auto& key : m_persistence.getReadingsKeys())
+    {
+        publishReadingsForPersistenceKey(key);
+    }
 }
 
-void DataService::updateParameter(Parameter parameter)
+void DataService::publishReadings(const std::string& deviceKey)
 {
-    m_persistence.putParameter(std::move(parameter));
+    publishReadingsForPersistenceKey(deviceKey);
 }
+
+void DataService::publishAttributes()
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Extract all attributes for all devices and group them up by device
+    auto attributes = std::map<std::string, std::vector<Attribute>>{};
+    for (const auto& attributeFromPersistence : m_persistence.getAttributes())
+    {
+        // Extract everything about the attribute
+        auto deviceKey = std::string{};
+        auto reference = std::string{};
+        std::tie(deviceKey, reference) = parsePersistenceKey(attributeFromPersistence.first);
+
+        // Check if there is already an array for the device
+        auto it = attributes.find(deviceKey);
+        if (it == attributes.cend())
+            it = attributes.emplace(deviceKey, std::vector<Attribute>{}).first;
+        it->second.emplace_back(*attributeFromPersistence.second);
+    }
+    if (attributes.empty())
+        return;
+
+    // Send a message out for all devices
+    for (const auto& deviceAttributes : attributes)
+    {
+        // Make a lambda that will delete all these attributes from persistence
+        const auto& deviceKey = deviceAttributes.first;
+        auto deleteAllAttributes = [&]() {
+            for (const auto& attribute : deviceAttributes.second)
+                m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
+        };
+
+        // Form the message
+        auto outboundMessage = std::shared_ptr<Message>(
+          m_protocol.makeOutboundMessage(deviceKey, AttributeRegistrationMessage(deviceAttributes.second)));
+        if (!outboundMessage)
+        {
+            LOG(ERROR) << "Unable to create message from attributes";
+            deleteAllAttributes();
+            return;
+        }
+        if (m_connectivityService.publish(outboundMessage))
+            deleteAllAttributes();
+    }
+}
+
+void DataService::publishAttributes(const std::string& deviceKey)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Extract all the attributes for this device key
+    auto attributes = std::vector<Attribute>{};
+    for (const auto& attribute : m_persistence.getAttributes())
+    {
+        // Check the device key
+        auto attributeDeviceKey = std::string{};
+        auto reference = std::string{};
+        std::tie(attributeDeviceKey, reference) = parsePersistenceKey(attribute.first);
+        if (attributeDeviceKey == deviceKey)
+            attributes.emplace_back(*attribute.second);
+    }
+    if (attributes.empty())
+        return;
+
+    // Make a lambda that will delete all these attributes from persistence
+    auto deleteAllAttributes = [&]() {
+        for (const auto& attribute : attributes)
+            m_persistence.removeAttributes(makePersistenceKey(deviceKey, attribute.getName()));
+    };
+
+    // Form the message
+    auto message = AttributeRegistrationMessage(attributes);
+    auto outboundMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, message));
+    if (!outboundMessage)
+    {
+        LOG(ERROR) << "Unable to create message from attributes";
+        deleteAllAttributes();
+        return;
+    }
+    if (m_connectivityService.publish(outboundMessage))
+        deleteAllAttributes();
+}
+
+void DataService::publishParameters()
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Extract all attributes for all devices and group them up by device
+    auto parameters = std::map<std::string, std::vector<Parameter>>{};
+    for (const auto& parameterFromPersistence : m_persistence.getParameters())
+    {
+        // Extract everything about the parameter
+        auto deviceKey = std::string{};
+        auto reference = std::string{};
+        std::tie(deviceKey, reference) = parsePersistenceKey(parameterFromPersistence.first);
+
+        // Check if there is already an array for the device
+        auto it = parameters.find(deviceKey);
+        if (it == parameters.cend())
+            it = parameters.emplace(deviceKey, std::vector<Parameter>{}).first;
+        it->second.emplace_back(parameterFromPersistence.second);
+    }
+    if (parameters.empty())
+        return;
+
+    // Send a message out for all devices
+    for (const auto& deviceParameters : parameters)
+    {
+        // Make a lambda that will delete all these parameters from persistence
+        const auto& deviceKey = deviceParameters.first;
+        auto deleteAllParameters = [&]() {
+            for (const auto& parameter : deviceParameters.second)
+                m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
+        };
+
+        // Form the message
+        auto message = ParametersUpdateMessage(deviceParameters.second);
+        auto outboundMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, message));
+        if (!outboundMessage)
+        {
+            LOG(ERROR) << "Unable to create message from parameters";
+            deleteAllParameters();
+            return;
+        }
+        if (m_connectivityService.publish(outboundMessage))
+            deleteAllParameters();
+    }
+}
+
+void DataService::publishParameters(const std::string& deviceKey)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Extract all the attributes for this device key
+    auto parameters = std::vector<Parameter>{};
+    for (const auto& parameter : m_persistence.getParameters())
+    {
+        // Check the device key
+        auto parameterDeviceKey = std::string{};
+        auto reference = std::string{};
+        std::tie(parameterDeviceKey, reference) = parsePersistenceKey(parameter.first);
+        if (parameterDeviceKey == deviceKey)
+            parameters.emplace_back(parameter.second);
+    }
+    if (parameters.empty())
+        return;
+
+    // Make a lambda that will delete all these parameters from persistence
+    auto deleteAllParameters = [&]() {
+        for (const auto& parameter : parameters)
+            m_persistence.removeParameters(makePersistenceKey(deviceKey, toString(parameter.first)));
+    };
+
+    // Form the message
+    auto message = ParametersUpdateMessage(parameters);
+    auto outboundMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, message));
+    if (!outboundMessage)
+    {
+        LOG(ERROR) << "Unable to create message from parameters";
+        deleteAllParameters();
+        return;
+    }
+    if (m_connectivityService.publish(outboundMessage))
+        deleteAllParameters();
+}
+
+const Protocol& DataService::getProtocol()
+{
+    return m_protocol;
+}
+
+void DataService::messageReceived(std::shared_ptr<Message> message)
+{
+    LOG(TRACE) << METHOD_INFO;
+    if (message == nullptr)
+    {
+        LOG(ERROR) << "Failed to handle message - The message is null!";
+        return;
+    }
+    const auto deviceKey = m_protocol.getDeviceKey(*message);
+    if (deviceKey.empty())
+    {
+        LOG(WARN) << "Unable to extract device key from channel: " << message->getChannel();
+        return;
+    }
+
+    switch (m_protocol.getMessageType(*message))
+    {
+    case MessageType::FEED_VALUES:
+    {
+        auto feedValuesMessage = m_protocol.parseFeedValues(message);
+        if (feedValuesMessage == nullptr)
+            LOG(WARN) << "Unable to parse message: " << message->getChannel();
+        else if (m_feedUpdateHandler)
+            m_feedUpdateHandler(deviceKey, feedValuesMessage->getReadings());
+        return;
+    }
+    case MessageType::PARAMETER_SYNC:
+    {
+        auto parameterMessage = m_protocol.parseParameters(message);
+        if (parameterMessage == nullptr)
+            LOG(WARN) << "Unable to parse message: " << message->getChannel();
+        else if (checkIfSubscriptionIsWaiting(parameterMessage))    // It's important to first check this
+            return;
+        else if (m_parameterSyncHandler)
+            m_parameterSyncHandler(deviceKey, parameterMessage->getParameters());
+        return;
+    }
+    default:
+    {
+        LOG(WARN) << "Unable to parse message channel: " << message->getChannel();
+    }
+    }
+}
+
+std::string DataService::makePersistenceKey(const std::string& deviceKey, const std::string& reference)
+{
+    return deviceKey + PERSISTENCE_KEY_DELIMITER + reference;
+}
+
+std::pair<std::string, std::string> DataService::parsePersistenceKey(const std::string& key)
+{
+    auto pos = key.find(PERSISTENCE_KEY_DELIMITER);
+    if (pos == std::string::npos)
+    {
+        return {"", ""};
+    }
+
+    auto deviceKey = key.substr(0, pos);
+    auto reference = key.substr(pos + PERSISTENCE_KEY_DELIMITER.size(), std::string::npos);
+    return {deviceKey, reference};
+}
+
+bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Check if there's a subscription waiting for those parameters
+    {
+        std::lock_guard<std::mutex> lockGuard{m_subscriptionMutex};
+        for (const auto& subscription : m_parameterSubscriptions)
+        {
+            // Check if the list of parameters is the same length, and then content
+            const auto& parameters = subscription.second.parameters;
+            const auto& values = parameterMessage->getParameters();
+            if (parameterMessage->getParameters().size() != parameters.size())
+            {
+                continue;
+            }
+            auto allNamesMatching = std::all_of(parameters.cbegin(), parameters.cend(), [&](const ParameterName& name) {
+                return std::find_if(values.begin(), values.end(), [&](const Parameter& parameter) {
+                           return parameter.first == name;
+                       }) != values.cend();
+            });
+            if (!allNamesMatching)
+            {
+                continue;
+            }
+
+            // Then we found the ones for the subscription!
+            auto callback = subscription.second.callback;
+            m_commandBuffer.pushCommand(
+              std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
+
+            // And we can clear the subscription
+            m_parameterSubscriptions.erase(subscription.first);
+            return true;
+        }
+    }
+    return false;
+}
+
+void DataService::publishReadingsForPersistenceKey(const std::string& persistenceKey)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Read all information from persistence
+    auto readings = std::vector<Reading>{};
+    for (const auto& readingFromPersistence : m_persistence.getReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT))
+        readings.emplace_back(*readingFromPersistence);
+    if (readings.empty())
+        return;
+    auto deviceKey = std::string{};
+    auto reference = std::string{};
+    std::tie(deviceKey, reference) = parsePersistenceKey(persistenceKey);
+
+    // Check the device key and the reference
+    if (deviceKey.empty())
+    {
+        LOG(ERROR) << "Unable to create message from readings: The device key is empty.";
+        return;
+    }
+    // Create the message
+    const auto outboundMessage =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, FeedValuesMessage{readings})};
+    if (!outboundMessage)
+    {
+        LOG(ERROR) << "Unable to create message from readings: " << persistenceKey;
+        m_persistence.removeReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
+        return;
+    }
+    if (m_connectivityService.publish(outboundMessage))
+    {
+        m_persistence.removeReadings(persistenceKey, PUBLISH_BATCH_ITEMS_COUNT);
+        publishReadingsForPersistenceKey(persistenceKey);
+    }
+}
+}    // namespace connect
 }    // namespace wolkabout

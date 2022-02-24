@@ -21,6 +21,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This is an interface that is meant for configurations where the device is supposed to only pull parameter information
  * about Firmware Update. This means the time when the device is supposed to check the repository for new updates.
@@ -48,6 +50,7 @@ public:
      */
     virtual std::string getFirmwareVersion() = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FIRMWAREPARAMETERSLISTENER_H

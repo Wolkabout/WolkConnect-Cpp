@@ -14,41 +14,33 @@
  * limitations under the License.
  */
 
-#ifndef WOLK_H
-#define WOLK_H
+#ifndef WOLK_SINGLE_H
+#define WOLK_SINGLE_H
 
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Device.h"
-#include "core/utilities/CommandBuffer.h"
 #include "core/utilities/StringUtils.h"
-#include "wolk/WolkBuilder.h"
+#include "wolk/WolkInterface.h"
 
 #include <algorithm>
 #include <functional>
-#include <initializer_list>
-#include <memory>
 #include <string>
 #include <vector>
 
 namespace wolkabout
 {
-class FeedUpdateHandler;
-class ParameterHandler;
-class ConnectivityService;
-class DataProtocol;
-class DataService;
-class FileManagementService;
-class FirmwareUpdateService;
-class InboundMessageHandler;
-class WolkaboutDataProtocol;
-
-class Wolk
+namespace connect
+{
+class WolkBuilder;
+/**
+ * This is one of the Wolk objects. This is the Wolk object that is meant for a single device.
+ * This is more of the default behaviour for the `WolkConnect-Cpp`.
+ */
+class WolkSingle : public WolkInterface
 {
     friend class WolkBuilder;
 
 public:
-    virtual ~Wolk();
-
     /**
      * @brief Initiates wolkabout::WolkBuilder that configures device to connect to WolkAbout IoT Cloud
      * @param device wolkabout::Device
@@ -111,7 +103,7 @@ public:
      *            If omitted current POSIX time is adopted
      */
     template <typename T>
-    void addReading(const std::string& reference, const std::vector<T> values, std::uint64_t rtc = 0);
+    void addReading(const std::string& reference, const std::vector<T>& values, std::uint64_t rtc = 0);
 
     /**
      * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
@@ -121,7 +113,11 @@ public:
      * @param rtc Reading POSIX time - Number of seconds since 01/01/1970<br>
      *            If omitted current POSIX time is adopted
      */
-    void addReading(const std::string& reference, const std::vector<std::string> values, std::uint64_t rtc = 0);
+    void addReading(const std::string& reference, const std::vector<std::string>& values, std::uint64_t rtc = 0);
+
+    void addReading(const Reading& reading);
+
+    void addReadings(const std::vector<Reading>& readings);
 
     void pullFeedValues();
     void pullParameters();
@@ -136,93 +132,25 @@ public:
 
     void updateParameter(Parameter parameters);
 
-    /**
-     * @brief Establishes connection with WolkAbout IoT platform
-     */
-    void connect();
+    WolkInterfaceType getType() const override;
 
-    /**
-     * @brief Disconnects from WolkAbout IoT platform
-     */
-    void disconnect();
-
-    /**
-     * @brief Publishes data
-     */
-    void publish();
-
-private:
-    class ConnectivityFacade;
-
+protected:
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;
 
-    Wolk(Device device);
+    explicit WolkSingle(Device device);
 
-    void addToCommandBuffer(std::function<void()> command);
-
-    static std::uint64_t currentRtc();
-
-    void flushReadings();
-    void flushAttributes();
-    void flushParameters();
-
-    void handleFeedUpdateCommand(const std::map<std::uint64_t, std::vector<Reading>>& readings);
-    void handleParameterCommand(const std::vector<Parameter> parameters);
-
-    void tryConnect(bool firstTime = false);
-    void notifyConnected();
-    void notifyDisonnected();
+    void notifyConnected() override;
 
     Device m_device;
-
-    std::unique_ptr<DataProtocol> m_dataProtocol;
-    std::unique_ptr<FileManagementProtocol> m_fileManagementProtocol;
-    std::unique_ptr<FirmwareUpdateProtocol> m_firmwareUpdateProtocol;
-
-    std::unique_ptr<ConnectivityService> m_connectivityService;
-    std::shared_ptr<Persistence> m_persistence;
-
-    std::unique_ptr<InboundMessageHandler> m_inboundMessageHandler;
-
-    std::shared_ptr<ConnectivityFacade> m_connectivityManager;
-
-    std::shared_ptr<DataService> m_dataService;
-    std::shared_ptr<FileManagementService> m_fileManagementService;
-    std::shared_ptr<FirmwareUpdateService> m_firmwareUpdateService;
-
-    std::function<void(const std::map<std::uint64_t, std::vector<Reading>>)> m_feedUpdateHandlerLambda;
-    std::weak_ptr<FeedUpdateHandler> m_feedUpdateHandler;
-
-    std::function<void(const std::vector<Parameter>)> m_parameterLambda;
-    std::weak_ptr<ParameterHandler> m_parameterHandler;
-
-    std::shared_ptr<FileDownloader> m_fileDownloader;
-    std::shared_ptr<FileListener> m_fileListener;
-
-    std::unique_ptr<CommandBuffer> m_commandBuffer;
-
-    class ConnectivityFacade : public ConnectivityServiceListener
-    {
-    public:
-        ConnectivityFacade(InboundMessageHandler& handler, std::function<void()> connectionLostHandler);
-
-        void messageReceived(const std::string& channel, const std::string& message) override;
-        void connectionLost() override;
-        std::vector<std::string> getChannels() const override;
-
-    private:
-        InboundMessageHandler& m_messageHandler;
-        std::function<void()> m_connectionLostHandler;
-    };
 };
 
-template <typename T> void Wolk::addReading(const std::string& reference, T value, std::uint64_t rtc)
+template <typename T> void WolkSingle::addReading(const std::string& reference, T value, std::uint64_t rtc)
 {
     addReading(reference, StringUtils::toString(value), rtc);
 }
 
 template <typename T>
-void Wolk::addReading(const std::string& reference, const std::vector<T> values, std::uint64_t rtc)
+void WolkSingle::addReading(const std::string& reference, const std::vector<T>& values, std::uint64_t rtc)
 {
     if (values.empty())
         return;
@@ -233,6 +161,7 @@ void Wolk::addReading(const std::string& reference, const std::vector<T> values,
 
     addReading(reference, stringifiedValues, rtc);
 }
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif

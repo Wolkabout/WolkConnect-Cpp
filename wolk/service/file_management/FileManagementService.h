@@ -17,8 +17,8 @@
 #ifndef WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 #define WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H
 
-#include "core/InboundMessageHandler.h"
 #include "core/connectivity/ConnectivityService.h"
+#include "core/connectivity/InboundMessageHandler.h"
 #include "core/protocol/FileManagementProtocol.h"
 #include "core/utilities/CommandBuffer.h"
 #include "wolk/api/FileListener.h"
@@ -28,19 +28,24 @@
 
 namespace wolkabout
 {
-// Here we have a publicly available MQTT message size limit (in kBs)
-const std::uint32_t MQTT_MAX_MESSAGE_SIZE = 268435;
+namespace connect
+{
+// Here we have an alias for a map of files stored for a single device
+using DeviceFiles = std::map<std::string, FileInformation>;
 
 class FileManagementService : public MessageListener
 {
 public:
-    FileManagementService(std::string deviceKey, ConnectivityService& connectivityService, DataService& dataService,
+    FileManagementService(ConnectivityService& connectivityService, DataService& dataService,
                           FileManagementProtocol& protocol, std::string fileLocation, bool fileTransferEnabled = true,
-                          bool fileTransferUrlEnabled = true, std::uint64_t maxPacketSize = MQTT_MAX_MESSAGE_SIZE,
-                          std::shared_ptr<FileDownloader> fileDownloader = nullptr,
-                          const std::shared_ptr<FileListener>& fileListener = nullptr);
+                          bool fileTransferUrlEnabled = true, std::shared_ptr<FileDownloader> fileDownloader = nullptr,
+                          std::shared_ptr<FileListener> fileListener = nullptr);
 
     const Protocol& getProtocol() override;
+
+    bool isFileTransferEnabled() const;
+
+    bool isFileTransferUrlEnabled() const;
 
     /**
      * This is a createFolder method that should be invoked to loadState the folder for the FileManagement service.
@@ -48,11 +53,11 @@ public:
     virtual void createFolder();
 
     /**
-     * This is aa method that will cycle through all the files in the file system, collect the
-     * FileInformation data about all of them (locally, or look into files to obtain and store locally), and send out a
-     * `FileList` message with all of that data.
+     * This is a method that will report present files for a device.
+     *
+     * @param deviceKey The device for which the service will report files.
      */
-    virtual void reportAllPresentFiles();
+    virtual void reportPresentFiles(const std::string& deviceKey);
 
     void messageReceived(std::shared_ptr<Message> message) override;
 
@@ -76,80 +81,90 @@ private:
     /**
      * This is an internal method that should be invoked to report the status of a transfer session.
      *
-     * @param status The new FileUploadStatus value.
-     * @param error The new FileUploadError value.
+     * @param deviceKey The device key for which the status is reported.
+     * @param status The new FileTransferStatus value.
+     * @param error The new FileTransferError value.
      */
-    void reportStatus(FileUploadStatus status, FileUploadError error = FileUploadError::NONE);
+    void reportStatus(const std::string& deviceKey, FileTransferStatus status,
+                      FileTransferError error = FileTransferError::NONE);
 
     /**
      * This is an internal method that should be invoked to send out a binary request message.
      *
+     * @param deviceKey The device key for which the request is being sent out.
      * @param message The FileBinaryRequest message requesting the next chunk.
      */
-    void sendChunkRequest(const FileBinaryRequestMessage& message);
+    void sendChunkRequest(const std::string& deviceKey, const FileBinaryRequestMessage& message);
 
     /**
      * This is an internal method that should be invoked in the FileTransferSession callback.
      *
-     * @param status The new FileUploadStatus value.
-     * @param error The new FileUploadError value.
+     * @param status The new FileTransferStatus value.
+     * @param error The new FileTransferError value.
      */
-    void onFileSessionStatus(FileUploadStatus status, FileUploadError error = FileUploadError::NONE);
+    void onFileSessionStatus(const std::string& deviceKey, FileTransferStatus status,
+                             FileTransferError error = FileTransferError::NONE);
 
     /**
      * This is an internal method that will load a file from the filesystem, to collect the `FileInformation` object.
      * This will determine the size and the hash of the file.
      *
+     * @param deviceKey The device key to which the file belongs.
      * @param fileName The name of the file in the folder for which the information is needed.
      * @return The information that has been obtained about the file. If an error has occurred, an object with an empty
      * name will be returned.
      */
-    FileInformation obtainFileInformation(const std::string& fileName);
+    FileInformation obtainFileInformation(const std::string& deviceKey, const std::string& fileName);
 
     /**
      * This is an internal method that can be quickly used to report that the regular transfer protocol is disabled.
      *
+     * @param deviceKey The device for which this is being reported.
      * @param fileName The name of the file that the platform attempted to transfer.
      */
-    void reportTransferProtocolDisabled(const std::string& fileName);
+    void reportTransferProtocolDisabled(const std::string& deviceKey, const std::string& fileName);
 
     /**
      * This is an internal method that can be quickly used to report that the url transfer protocol is disabled.
      *
+     * @param deviceKey The device for which this is being reported.
      * @param url The url that the platform has sent out to the device to download a file from.
      */
-    void reportUrlTransferProtocolDisabled(const std::string& url);
+    void reportUrlTransferProtocolDisabled(const std::string& deviceKey, const std::string& url);
 
     /**
      * This is an internal method meant to make a shortcut to obtaining the absolute path for a file by pre-including
      * the `m_fileLocation` variable.
      *
+     * @param deviceKey The device key to which the file belongs.
      * @param file The name of the file in the folder.
      * @return The absolute path of a file.
      */
-    std::string absolutePathOfFile(const std::string& file);
+    std::string absolutePathOfFile(const std::string& deviceKey, const std::string& file);
 
     /**
      * This is an internal method that will check if there exists a file listener, and if it does, it will queue up a
      * task to notify it of a newly added file.
      *
+     * @param deviceKey The device key for which the file got added.
      * @param fileName The name of the newly added file.
      * @param absolutePath The absolute path of the newly added file.
      */
-    void notifyListenerAddedFile(const std::string& fileName, const std::string& absolutePath);
+    void notifyListenerAddedFile(const std::string& deviceKey, const std::string& fileName,
+                                 const std::string& absolutePath);
 
     /**
      * This is an internal method that will check if there exists a file listener, and if it does, it will queue up a
      * task to notify it of a removed file.
      *
+     * @param deviceKey The device key for which the file got removed.
      * @param fileName The name of the removed file.
      */
-    void notifyListenerRemovedFile(const std::string& fileName);
+    void notifyListenerRemovedFile(const std::string& deviceKey, const std::string& fileName);
 
     // This is where we store the message sender and the device key information
     ConnectivityService& m_connectivityService;
     DataService& m_dataService;
-    const std::string m_deviceKey;
 
     // These are the indicators of which modules of the FileManagement functionality are enabled.
     bool m_fileTransferEnabled;
@@ -160,13 +175,12 @@ private:
 
     // This is where the user parameters will be passed.
     std::string m_fileLocation;
-    std::uint64_t m_maxPacketSize;
 
     // This is where we locally store information about files in memory
-    std::map<std::string, FileInformation> m_files;
+    std::map<std::string, DeviceFiles> m_files;
 
-    // And here we place the ongoing session
-    std::unique_ptr<FileTransferSession> m_session;
+    // And here we place the ongoing sessions
+    std::map<std::string, std::unique_ptr<FileTransferSession>> m_sessions;
 
     // This is a pointer to a file downloader that we will use. In case that is supported.
     std::shared_ptr<FileDownloader> m_downloader;
@@ -175,6 +189,7 @@ private:
     std::weak_ptr<FileListener> m_fileListener;
     CommandBuffer m_commandBuffer;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FILEMANAGEMENTSERVICE_H

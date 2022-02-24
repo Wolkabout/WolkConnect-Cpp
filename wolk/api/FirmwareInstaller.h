@@ -21,8 +21,11 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
- * This is an enumeration containing all responses the user can return when the `installFirmware` command was invoked.
+ * This is an enumeration containing all responses the user can return when the `installFirmware` command was
+ * invoked.
  */
 enum class InstallResponse
 {
@@ -44,18 +47,18 @@ public:
     virtual ~FirmwareInstaller() = default;
 
     /**
-     * This is the method with which the service notifies the user implemented FirmwareInstaller that an installation
-     * command has been received.
+     * This is the method with which the service notifies the user implemented FirmwareInstaller that an
+     * installation command has been received.
      *
      * @param fileName The name of the file
      */
-    virtual InstallResponse installFirmware(const std::string& fileName) = 0;
+    virtual InstallResponse installFirmware(const std::string& deviceKey, const std::string& fileName) = 0;
 
     /**
      * This is the method that is invoked when the platform wants to abort a currently ongoing firmware installation
      * session.
      */
-    virtual void abortFirmwareInstall() = 0;
+    virtual void abortFirmwareInstall(const std::string& deviceKey) = 0;
 
     /**
      * This is the method with which the service will ask the firmware installer, if the firmware install was
@@ -63,15 +66,16 @@ public:
      *
      * @return Whether the firmware install was successful.
      */
-    virtual bool wasFirmwareInstallSuccessful(const std::string& oldVersion);
+    virtual bool wasFirmwareInstallSuccessful(const std::string& deviceKey, const std::string& oldVersion);
 
     /**
      * This is the method with which the service can ask for the current firmware version.
      *
      * @return The current firmware version.
      */
-    virtual std::string getFirmwareVersion() = 0;
+    virtual std::string getFirmwareVersion(const std::string& deviceKey) = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FIRMWAREINSTALLER_H

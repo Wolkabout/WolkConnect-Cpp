@@ -22,31 +22,37 @@
 #include <gmock/gmock.h>
 
 using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class DataServiceMock : public DataService
 {
 public:
-    DataServiceMock(const std::string& deviceKey, DataProtocol& protocol, Persistence& persistence,
-                    ConnectivityService& connectivityService, const FeedUpdateSetHandler& feedUpdateHandler,
-                    const ParameterSyncHandler& parameterSyncHandler)
-    : DataService(deviceKey, protocol, persistence, connectivityService, feedUpdateHandler, parameterSyncHandler)
+    DataServiceMock(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
+                    const FeedUpdateSetHandler& feedUpdateHandler, const ParameterSyncHandler& parameterSyncHandler)
+    : DataService(protocol, persistence, connectivityService, feedUpdateHandler, parameterSyncHandler)
     {
     }
-    MOCK_METHOD(void, addReading, (const std::string&, const std::string&, std::uint64_t));
-    MOCK_METHOD(void, addReading, (const std::string&, const std::vector<std::string>&, std::uint64_t));
-    MOCK_METHOD(void, addAttribute, (const Attribute&));
-    MOCK_METHOD(void, updateParameter, (Parameter));
-    MOCK_METHOD(void, registerFeed, (Feed));
-    MOCK_METHOD(void, registerFeeds, (std::vector<Feed>));
-    MOCK_METHOD(void, removeFeed, (std::string));
-    MOCK_METHOD(void, removeFeeds, (std::vector<std::string>));
-    MOCK_METHOD(void, pullFeedValues, ());
-    MOCK_METHOD(void, pullParameters, ());
+    MOCK_METHOD(void, addReading, (const std::string&, const std::string&, const std::string&, std::uint64_t));
+    MOCK_METHOD(void, addReading,
+                (const std::string&, const std::string&, const std::vector<std::string>&, std::uint64_t));
+    MOCK_METHOD(void, addReading, (const std::string&, const Reading&));
+    MOCK_METHOD(void, addReadings, (const std::string&, const std::vector<Reading>&));
+    MOCK_METHOD(void, addAttribute, (const std::string&, const Attribute&));
+    MOCK_METHOD(void, updateParameter, (const std::string&, const Parameter&));
+    MOCK_METHOD(void, registerFeed, (const std::string&, Feed));
+    MOCK_METHOD(void, registerFeeds, (const std::string&, std::vector<Feed>));
+    MOCK_METHOD(void, removeFeed, (const std::string&, std::string));
+    MOCK_METHOD(void, removeFeeds, (const std::string&, std::vector<std::string>));
+    MOCK_METHOD(void, pullFeedValues, (const std::string&));
+    MOCK_METHOD(void, pullParameters, (const std::string&));
     MOCK_METHOD(bool, synchronizeParameters,
-                (const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>));
+                (const std::string&, const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>));
     MOCK_METHOD(void, publishReadings, ());
+    MOCK_METHOD(void, publishReadings, (const std::string&));
     MOCK_METHOD(void, publishAttributes, ());
+    MOCK_METHOD(void, publishAttributes, (const std::string&));
     MOCK_METHOD(void, publishParameters, ());
+    MOCK_METHOD(void, publishParameters, (const std::string&));
 };
 
 #endif    // WOLKABOUTCONNECTOR_DATASERVICEMOCK_H

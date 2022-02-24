@@ -28,31 +28,35 @@
 
 namespace wolkabout
 {
-FileTransferSession::FileTransferSession(const FileUploadInitiateMessage& message,
-                                         std::function<void(FileUploadStatus, FileUploadError)> callback,
+namespace connect
+{
+FileTransferSession::FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
+                                         std::function<void(FileTransferStatus, FileTransferError)> callback,
                                          CommandBuffer& commandBuffer)
-: m_name(message.getName())
+: m_deviceKey(std::move(deviceKey))
+, m_name(message.getName())
 , m_retryCount(0)
 , m_done(false)
 , m_size(message.getSize())
 , m_hash(message.getHash())
-, m_status(FileUploadStatus::FILE_TRANSFER)
-, m_error(FileUploadError::NONE)
+, m_status(FileTransferStatus::FILE_TRANSFER)
+, m_error(FileTransferError::NONE)
 , m_callback(std::move(callback))
 , m_commandBuffer(commandBuffer)
 {
 }
 
-FileTransferSession::FileTransferSession(const FileUrlDownloadInitMessage& message,
-                                         std::function<void(FileUploadStatus, FileUploadError)> callback,
+FileTransferSession::FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
+                                         std::function<void(FileTransferStatus, FileTransferError)> callback,
                                          CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader)
-: m_url(message.getPath())
+: m_deviceKey(std::move(deviceKey))
+, m_url(message.getPath())
 , m_retryCount(0)
 , m_done(false)
 , m_size(0)
 , m_downloader(std::move(fileDownloader))
-, m_status(FileUploadStatus::FILE_TRANSFER)
-, m_error(FileUploadError::NONE)
+, m_status(FileTransferStatus::FILE_TRANSFER)
+, m_error(FileTransferError::NONE)
 , m_callback(std::move(callback))
 , m_commandBuffer(commandBuffer)
 {
@@ -71,6 +75,11 @@ bool FileTransferSession::isUrlDownload() const
 bool FileTransferSession::isDone() const
 {
     return m_done;
+}
+
+const std::string& FileTransferSession::getDeviceKey() const
+{
+    return m_deviceKey;
 }
 
 const std::string& FileTransferSession::getName() const
@@ -97,10 +106,10 @@ void FileTransferSession::abort()
 
     // Report the statuses properly
     m_done = true;
-    changeStatusAndError(FileUploadStatus::ABORTED, FileUploadError::NONE);
+    changeStatusAndError(FileTransferStatus::ABORTED, FileTransferError::NONE);
 }
 
-FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& message)
+FileTransferError FileTransferSession::pushChunk(const FileBinaryResponseMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -108,12 +117,12 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
     if (isUrlDownload())
     {
         LOG(DEBUG) << "Failed to receive FileBinaryResponseMessage -> The transfer session is not a platform transfer.";
-        return FileUploadError::TRANSFER_PROTOCOL_DISABLED;
+        return FileTransferError::TRANSFER_PROTOCOL_DISABLED;
     }
     if (isDone())
     {
         LOG(DEBUG) << "Failed to receive FileBinaryResponseMessage -> The session is already over.";
-        return FileUploadError::NONE;
+        return FileTransferError::NONE;
     }
 
     // Check if there is a need for this chunk even
@@ -124,7 +133,7 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
     {
         LOG(DEBUG) << "Failed to receive FileBinaryResponseMessage -> The session has already collected enough bytes "
                       "for this session.";
-        return FileUploadError::UNSUPPORTED_FILE_SIZE;
+        return FileTransferError::UNSUPPORTED_FILE_SIZE;
     }
 
     // Check the hash with the previous chunk (if it exists)
@@ -139,10 +148,10 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
             if (m_retryCount++ >= 3)
             {
                 m_done = true;
-                changeStatusAndError(FileUploadStatus::ERROR, FileUploadError::RETRY_COUNT_EXCEEDED);
-                return FileUploadError::RETRY_COUNT_EXCEEDED;
+                changeStatusAndError(FileTransferStatus::ERROR, FileTransferError::RETRY_COUNT_EXCEEDED);
+                return FileTransferError::RETRY_COUNT_EXCEEDED;
             }
-            return FileUploadError::FILE_HASH_MISMATCH;
+            return FileTransferError::FILE_HASH_MISMATCH;
         }
     }
 
@@ -158,10 +167,10 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
             if (m_retryCount++ >= 3)
             {
                 m_done = true;
-                changeStatusAndError(FileUploadStatus::ERROR, FileUploadError::RETRY_COUNT_EXCEEDED);
-                return FileUploadError::RETRY_COUNT_EXCEEDED;
+                changeStatusAndError(FileTransferStatus::ERROR, FileTransferError::RETRY_COUNT_EXCEEDED);
+                return FileTransferError::RETRY_COUNT_EXCEEDED;
             }
-            return FileUploadError::FILE_HASH_MISMATCH;
+            return FileTransferError::FILE_HASH_MISMATCH;
         }
     }
 
@@ -183,11 +192,11 @@ FileUploadError FileTransferSession::pushChunk(const FileBinaryResponseMessage& 
 
         // Now check the hash
         if (hash == m_hash)
-            changeStatusAndError(FileUploadStatus::FILE_READY, FileUploadError::NONE);
+            changeStatusAndError(FileTransferStatus::FILE_READY, FileTransferError::NONE);
         else
-            changeStatusAndError(FileUploadStatus::ERROR, FileUploadError::FILE_HASH_MISMATCH);
+            changeStatusAndError(FileTransferStatus::ERROR, FileTransferError::FILE_HASH_MISMATCH);
     }
-    return FileUploadError::NONE;
+    return FileTransferError::NONE;
 }
 
 FileBinaryRequestMessage FileTransferSession::getNextChunkRequest()
@@ -244,23 +253,27 @@ bool FileTransferSession::triggerDownload()
 
     // Now that we have adequate information, setup everything
     m_downloader->downloadFile(m_url,
-                               [this](FileUploadStatus status, FileUploadError error, const std::string& fileName) {
+                               [this](FileTransferStatus status, FileTransferError error, const std::string& fileName) {
                                    // Set the name if a name value is sent out
                                    if (!fileName.empty())
                                        this->m_name = fileName;
 
                                    // Announce the status
                                    changeStatusAndError(status, error);
+                                   if (status == FileTransferStatus::FILE_READY || status == FileTransferStatus::ERROR)
+                                   {
+                                       m_done = true;
+                                   }
                                });
     return true;
 }
 
-FileUploadStatus FileTransferSession::getStatus() const
+FileTransferStatus FileTransferSession::getStatus() const
 {
     return m_status;
 }
 
-FileUploadError FileTransferSession::getError() const
+FileTransferError FileTransferSession::getError() const
 {
     return m_error;
 }
@@ -270,7 +283,7 @@ const std::vector<FileChunk>& FileTransferSession::getChunks() const
     return m_chunks;
 }
 
-void FileTransferSession::changeStatusAndError(FileUploadStatus status, FileUploadError error)
+void FileTransferSession::changeStatusAndError(FileTransferStatus status, FileTransferError error)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -296,4 +309,5 @@ void FileTransferSession::changeStatusAndError(FileUploadStatus status, FileUplo
             }));
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

@@ -23,6 +23,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This interface describes an object that can receive parameter value updates.
  */
@@ -37,10 +39,12 @@ public:
     /**
      * This is the method that is invoked when new parameter values are obtained.
      *
+     * @param deviceKey The key of the device which has received new parameter values.
      * @param parameters The vector containing new parameter values.
      */
-    virtual void handleUpdate(const std::vector<Parameter>& parameters) = 0;
+    virtual void handleUpdate(const std::string& deviceKey, const std::vector<Parameter>& parameters) = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif

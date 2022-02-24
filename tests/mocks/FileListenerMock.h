@@ -14,23 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
-#define WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
+#ifndef WOLKABOUTCONNECTOR_FILELISTENERMOCK_H
+#define WOLKABOUTCONNECTOR_FILELISTENERMOCK_H
 
-#include "core/connectivity/ConnectivityService.h"
+#include "wolk/api/FileListener.h"
 
 #include <gmock/gmock.h>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 
-class ConnectivityServiceMock : public ConnectivityService
+class FileListenerMock : public FileListener
 {
 public:
-    MOCK_METHOD(bool, connect, ());
-    MOCK_METHOD(void, disconnect, ());
-    MOCK_METHOD(bool, reconnect, ());
-    MOCK_METHOD(bool, isConnected, ());
-    MOCK_METHOD(bool, publish, (std::shared_ptr<Message>));
+    MOCK_METHOD(void, onAddedFile, (const std::string&, const std::string&, const std::string&));
+    MOCK_METHOD(void, onRemovedFile, (const std::string&, const std::string&));
 };
 
-#endif    // WOLKABOUTCONNECTOR_CONNECTIVITYSERVICEMOCK_H
+#endif    // WOLKABOUTCONNECTOR_FILELISTENERMOCK_H

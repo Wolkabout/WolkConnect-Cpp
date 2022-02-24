@@ -18,6 +18,8 @@
 
 #include "core/utilities/Logger.h"
 
+#include <Poco/Crypto/CipherKey.h>
+#include <Poco/JSON/Object.h>
 #include <Poco/Net/Context.h>
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
@@ -25,11 +27,14 @@
 #include <Poco/Net/HTTPSClientSession.h>
 #include <Poco/Net/SecureStreamSocket.h>
 #include <Poco/StreamCopier.h>
+#include <Poco/Util/ServerApplication.h>
 #include <Poco/Util/Util.h>
 #include <iomanip>
 #include <regex>
 
 namespace wolkabout
+{
+namespace connect
 {
 // Here we store prefixes used by the static methods.
 const std::string HTTP_PATH_PREFIX = "http://";
@@ -37,7 +42,7 @@ const std::string HTTPS_PATH_PREFIX = "https://";
 const std::regex URL_REGEX = std::regex(
   R"(https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))");
 
-HTTPFileDownloader::HTTPFileDownloader() : m_status(FileUploadStatus::AWAITING_DEVICE) {}
+HTTPFileDownloader::HTTPFileDownloader() : m_status(FileTransferStatus::AWAITING_DEVICE) {}
 
 HTTPFileDownloader::~HTTPFileDownloader()
 {
@@ -45,7 +50,7 @@ HTTPFileDownloader::~HTTPFileDownloader()
     stop();
 }
 
-FileUploadStatus HTTPFileDownloader::getStatus() const
+FileTransferStatus HTTPFileDownloader::getStatus() const
 {
     return m_status;
 }
@@ -61,7 +66,7 @@ const ByteArray& HTTPFileDownloader::getBytes() const
 }
 
 void HTTPFileDownloader::downloadFile(
-  const std::string& url, std::function<void(FileUploadStatus, FileUploadError, std::string)> statusCallback)
+  const std::string& url, std::function<void(FileTransferStatus, FileTransferError, std::string)> statusCallback)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -72,7 +77,7 @@ void HTTPFileDownloader::downloadFile(
     if (!std::regex_search(url, URL_REGEX))
     {
         LOG(ERROR) << "Rejected File Transfer - The URL is malformed, and does not pass the regex check.";
-        changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, "");
+        changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, "");
         return;
     }
 
@@ -92,13 +97,13 @@ void HTTPFileDownloader::abortDownload()
         if (m_session == nullptr)
             return;
     }
-    if (m_status == FileUploadStatus::AWAITING_DEVICE || m_status == FileUploadStatus::FILE_TRANSFER)
+    if (m_status == FileTransferStatus::AWAITING_DEVICE || m_status == FileTransferStatus::FILE_TRANSFER)
     {
         {
             // Change the status to ABORTED
             std::lock_guard<std::mutex> lock{m_mutex};
-            m_status = FileUploadStatus::ABORTED;
-            changeStatus(FileUploadStatus::ABORTED, FileUploadError::NONE, {});
+            m_status = FileTransferStatus::ABORTED;
+            changeStatus(FileTransferStatus::ABORTED, FileTransferError::NONE, {});
         }
 
         // And stop everything that is running
@@ -113,7 +118,7 @@ void HTTPFileDownloader::download(const std::string& url)
     try
     {
         // Start by creating the session
-        changeStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE, {});
+        changeStatus(FileTransferStatus::FILE_TRANSFER, FileTransferError::NONE, {});
         auto host = extractHost(url);
         auto port = extractPort(url);
 
@@ -151,7 +156,7 @@ void HTTPFileDownloader::download(const std::string& url)
             // Check the code of the response
             if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
             {
-                changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, "");
+                changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, "");
                 return;
             }
 
@@ -178,17 +183,17 @@ void HTTPFileDownloader::download(const std::string& url)
         }
 
         // Now with everything set, we can announce everything
-        changeStatus(FileUploadStatus::FILE_READY, FileUploadError::NONE, name);
+        changeStatus(FileTransferStatus::FILE_READY, FileTransferError::NONE, name);
     }
     catch (const Poco::Exception& exception)
     {
         LOG(ERROR) << "An error has occurred while downloading the file -> '" << exception.message() << "'.";
-        changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, {});
+        changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, {});
     }
     catch (const std::exception& exception)
     {
         LOG(ERROR) << "An error has occurred while downloading the file -> '" << exception.what() << "'.";
-        changeStatus(FileUploadStatus::ERROR, FileUploadError::MALFORMED_URL, {});
+        changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, {});
     }
 }
 
@@ -215,7 +220,7 @@ void HTTPFileDownloader::stop()
     }
 }
 
-void HTTPFileDownloader::changeStatus(FileUploadStatus status, FileUploadError error, const std::string& fileName)
+void HTTPFileDownloader::changeStatus(FileTransferStatus status, FileTransferError error, const std::string& fileName)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -279,4 +284,5 @@ std::string HTTPFileDownloader::extractUri(std::string targetPath)
         return targetPath.substr(targetPath.find('/'));
     return "/";
 }
+}    // namespace connect
 }    // namespace wolkabout

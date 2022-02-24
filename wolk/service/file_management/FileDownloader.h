@@ -25,6 +25,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This interface represents an object that is capable of downloading a file, using the given url.
  */
@@ -41,7 +43,7 @@ public:
      *
      * @return The file download status.
      */
-    virtual FileUploadStatus getStatus() const = 0;
+    virtual FileTransferStatus getStatus() const = 0;
 
     /**
      * This is the getter by which the user can get the file name of the downloaded file.
@@ -64,8 +66,9 @@ public:
      * @param url The url from which a file should be downloaded.
      * @param statusCallback The callback by which the downloader should report status updates and or name changes.
      */
-    virtual void downloadFile(const std::string& url,
-                              std::function<void(FileUploadStatus, FileUploadError, std::string)> statusCallback) = 0;
+    virtual void downloadFile(
+      const std::string& url,
+      std::function<void(FileTransferStatus, FileTransferError, std::string)> statusCallback) = 0;
 
     /**
      * This is the method by which the FileManagementService will notify the downloader to try and attempt to abort the
@@ -73,6 +76,7 @@ public:
      */
     virtual void abortDownload() = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FILEDOWNLOADER_H

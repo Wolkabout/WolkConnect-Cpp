@@ -26,11 +26,14 @@
 
 namespace wolkabout
 {
+// Forward declaring some messages from the SDK
 class FileBinaryRequestMessage;
 class FileBinaryResponseMessage;
 class FileUploadInitiateMessage;
 class FileUrlDownloadInitMessage;
 
+namespace connect
+{
 /**
  * This structure represents a single chunk that is always received in exactly one `FileBinaryResponse` message.
  */
@@ -51,45 +54,60 @@ public:
     /**
      * Default constructor for the FileTransferSession in case of a regular file transfer.
      *
+     * @param deviceKey The device key for which this session is going on.
      * @param message The message that initiated an upload.
      * @param callback The callback that the session should use to announce status and error changes.
      * @param commandBuffer The command buffer which the session will use to announce status.
      */
-    FileTransferSession(const FileUploadInitiateMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer);
+    FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
+                        std::function<void(FileTransferStatus, FileTransferError)> callback,
+                        CommandBuffer& commandBuffer);
 
     /**
      * Default constructor for the FileTransferSession in case of a url download transfer.
      *
+     * @param deviceKey The device key for which this session is going on.
      * @param message The message that initiated an upload.
      * @param callback The callback that the session should use to announce status and error changes.
      * @param commandBuffer The command buffer which the session will use to announce status.
      * @param fileDownloader The file downloader that will actually execute the file download.
      */
-    FileTransferSession(const FileUrlDownloadInitMessage& message,
-                        std::function<void(FileUploadStatus, FileUploadError)> callback, CommandBuffer& commandBuffer,
-                        std::shared_ptr<FileDownloader> fileDownloader);
+    FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
+                        std::function<void(FileTransferStatus, FileTransferError)> callback,
+                        CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader);
+
+    /**
+     * Default virtual destructor.
+     */
+    virtual ~FileTransferSession() = default;
 
     /**
      * Default getter for the information if the session is a platform transfer session.
      *
      * @return Is this session a platform transfer session.
      */
-    bool isPlatformTransfer() const;
+    virtual bool isPlatformTransfer() const;
 
     /**
      * Default getter for the information if the session is a url download session.
      *
      * @return Is this session a url download session.
      */
-    bool isUrlDownload() const;
+    virtual bool isUrlDownload() const;
 
     /**
      * Default getter for the information if the session is done.
      *
      * @return Is this session done?
      */
-    bool isDone() const;
+    virtual bool isDone() const;
+
+    /**
+     * Default getter for the device key.
+     *
+     * @return The device key for which this session is going on.
+     */
+    virtual const std::string& getDeviceKey() const;
 
     /**
      * Default getter for the name of the file.
@@ -97,7 +115,7 @@ public:
      *
      * @return The name of the file being obtained through this session.
      */
-    const std::string& getName() const;
+    virtual const std::string& getName() const;
 
     /**
      * Default getter for the URL of the file.
@@ -105,12 +123,12 @@ public:
      *
      * @return The URL from which a file will be obtained.
      */
-    const std::string& getUrl() const;
+    virtual const std::string& getUrl() const;
 
     /**
      * This is a method that allows the user to abort the session.
      */
-    void abort();
+    virtual void abort();
 
     /**
      * This is a method that will attempt to create a chunk out of a FileBinaryResponse message.
@@ -118,7 +136,7 @@ public:
      * @param message Binary response containing bytes and hashes.
      * @return The current status of the session.
      */
-    FileUploadError pushChunk(const FileBinaryResponseMessage& message);
+    virtual FileTransferError pushChunk(const FileBinaryResponseMessage& message);
 
     /**
      * This is a method that will hand out the next FileBinaryRequest if the session is in a transfer mode, and in
@@ -126,35 +144,35 @@ public:
      *
      * @return The next request message that should be sent out. If the name is empty, that's an invalid request.
      */
-    FileBinaryRequestMessage getNextChunkRequest();
+    virtual FileBinaryRequestMessage getNextChunkRequest();
 
     /**
      * This is a method that will start the download of a file.
      *
      * @return If the trigger was successful.
      */
-    bool triggerDownload();
+    virtual bool triggerDownload();
 
     /**
      * Default getter for the current status of the transfer session.
      *
      * @return The current status of the transfer.
      */
-    FileUploadStatus getStatus() const;
+    virtual FileTransferStatus getStatus() const;
 
     /**
      * Default getter for the error of the transfer session.
      *
      * @return The current error of the transfer. Could be `NONE`.
      */
-    FileUploadError getError() const;
+    virtual FileTransferError getError() const;
 
     /**
      * Default getter for the chunks that the session has collected.
      *
      * @return The vector containing all the chunks the session has collected.
      */
-    const std::vector<FileChunk>& getChunks() const;
+    virtual const std::vector<FileChunk>& getChunks() const;
 
 private:
     /**
@@ -164,9 +182,12 @@ private:
      * @param status The new status value.
      * @param error The new error value.
      */
-    void changeStatusAndError(FileUploadStatus status, FileUploadError error);
+    void changeStatusAndError(FileTransferStatus status, FileTransferError error);
 
     // Here are the parameters for engaging the session.
+    // The device for which the session is ongoing
+    std::string m_deviceKey;
+
     // If the URL is set, it is always a URL download session.
     std::string m_name;
     std::string m_url;
@@ -186,11 +207,12 @@ private:
 
     // Here is the place for the status and the error, and the callback
     std::mutex m_mutex;
-    FileUploadStatus m_status;
-    FileUploadError m_error;
-    std::function<void(FileUploadStatus, FileUploadError)> m_callback;
+    FileTransferStatus m_status;
+    FileTransferError m_error;
+    std::function<void(FileTransferStatus, FileTransferError)> m_callback;
     CommandBuffer& m_commandBuffer;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FILETRANSFERSESSION_H

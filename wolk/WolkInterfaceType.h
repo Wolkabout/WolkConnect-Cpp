@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 WolkAbout Technology s.r.o.
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-#include "core/connectivity/mqtt/PahoMqttClient.h"
+#ifndef WOLKABOUTCONNECTOR_WOLKINTERFACETYPE_H
+#define WOLKABOUTCONNECTOR_WOLKINTERFACETYPE_H
 
 namespace wolkabout
 {
-class WolkPahoMqttClient : public PahoMqttClient
+namespace connect
 {
-public:
-    void disconnect() override;
+/**
+ * This is an enumeration for every type of Wolk interface that can be built.
+ */
+enum class WolkInterfaceType
+{
+    SingleDevice,
+    MultiDevice,
+    Gateway
 };
+}    // namespace connect
 }    // namespace wolkabout
+
+#endif    // WOLKABOUTCONNECTOR_WOLKINTERFACETYPE_H

@@ -26,22 +26,21 @@
 
 namespace wolkabout
 {
-FileManagementService::FileManagementService(std::string deviceKey, ConnectivityService& connectivityService,
-                                             DataService& dataService, FileManagementProtocol& protocol,
-                                             std::string fileLocation, bool fileTransferEnabled,
-                                             bool fileTransferUrlEnabled, std::uint64_t maxPacketSize,
+namespace connect
+{
+FileManagementService::FileManagementService(ConnectivityService& connectivityService, DataService& dataService,
+                                             FileManagementProtocol& protocol, std::string fileLocation,
+                                             bool fileTransferEnabled, bool fileTransferUrlEnabled,
                                              std::shared_ptr<FileDownloader> fileDownloader,
-                                             const std::shared_ptr<FileListener>& fileListener)
+                                             std::shared_ptr<FileListener> fileListener)
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
-, m_deviceKey(std::move(deviceKey))
 , m_fileTransferEnabled(fileTransferEnabled)
 , m_fileTransferUrlEnabled(fileTransferUrlEnabled)
 , m_protocol(protocol)
 , m_fileLocation(std::move(fileLocation))
-, m_maxPacketSize(maxPacketSize)
 , m_downloader(std::move(fileDownloader))
-, m_fileListener(fileListener)
+, m_fileListener(std::move(fileListener))
 {
     if (!(fileTransferEnabled || fileTransferUrlEnabled))
         throw std::runtime_error("Failed to create 'FileManagementService' with both flags disabled.");
@@ -59,57 +58,68 @@ void FileManagementService::createFolder()
     }
 }
 
-void FileManagementService::reportAllPresentFiles()
+void FileManagementService::reportPresentFiles(const std::string& deviceKey)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // When the platform connection is established, we want to send out the current contents of the folder.
-    auto folderContent = FileSystemUtils::listFiles(m_fileLocation);
-
-    // Check if any files in the map are not in the folder anymore
-    auto filesToErase = std::vector<std::string>{};
-    for (const auto& pair : m_files)
-    {
-        const auto folderIt = std::find(folderContent.cbegin(), folderContent.cend(), pair.first);
-        if (folderIt == folderContent.cend())
-            filesToErase.emplace_back(pair.first);
-    }
-    for (const auto& fileToErase : filesToErase)
-    {
-        m_files.erase(fileToErase);
-        LOG(DEBUG) << "Erased local FileInformation for file '" << fileToErase << "'.";
-        notifyListenerRemovedFile(fileToErase);
-    }
-
+    // Make place for all the file information
     auto fileInformationVector = std::vector<FileInformation>{};
-    for (const auto& file : folderContent)
+
+    // Find the folder for the device
+    auto deviceFolder = FileSystemUtils::composePath(deviceKey, m_fileLocation);
+    if (FileSystemUtils::isDirectoryPresent(deviceFolder))
     {
-        // Obtain information about the file
-        auto informationIt = m_files.find(file);
-        if (informationIt == m_files.cend())
+        // We can read the files
+        auto folderContent = FileSystemUtils::listFiles(deviceFolder);
+
+        // Check if the map contains an entry for this device, if not, make one
+        if (m_files.find(deviceKey) == m_files.cend())
+            m_files.emplace(deviceKey, DeviceFiles{});
+        // Take the reference, because we need to check if we need to delete any local file info
+        auto& fileRegistry = m_files[deviceKey];
+        auto filesToDelete = std::vector<std::string>{};
+
+        // First we need to check if we should delete anything from the local registry
+        for (const auto& fileInRegistry : fileRegistry)
         {
-            // Look for it now
-            auto freshInformation = obtainFileInformation(file);
-            if (freshInformation.name.empty())
+            // Check if the file can be found in the folder
+            const auto it = std::find(folderContent.cbegin(), folderContent.cend(), fileInRegistry.first);
+            if (it == folderContent.cend())
+                filesToDelete.emplace_back(fileInRegistry.first);
+        }
+        for (const auto& fileToDelete : filesToDelete)
+            fileRegistry.erase(fileToDelete);
+
+        // Form the information about all files the device holds
+        for (const auto& file : folderContent)
+        {
+            // Obtain information about the file
+            auto informationIt = fileRegistry.find(file);
+            if (informationIt == fileRegistry.cend())
             {
-                LOG(WARN) << "Failed to obtain FileInformation for file '" << file << "'.";
-                continue;
+                // Look for it now
+                auto freshInformation = obtainFileInformation(deviceKey, file);
+                if (freshInformation.name.empty())
+                {
+                    LOG(WARN) << "Failed to obtain FileInformation for file '" << file << "'.";
+                    continue;
+                }
+
+                // Emplace it in the map
+                informationIt = fileRegistry.emplace(file, freshInformation).first;
+                LOG(DEBUG) << "Obtained local FileInformation for file '" << file << "'.";
+                notifyListenerAddedFile(deviceKey, file, absolutePathOfFile(deviceKey, file));
             }
 
-            // Emplace it in the map
-            informationIt = m_files.emplace(file, freshInformation).first;
-            LOG(DEBUG) << "Obtained local FileInformation for file '" << file << "'.";
-            notifyListenerAddedFile(file, absolutePathOfFile(file));
+            // Emplace the complete information in the vector
+            fileInformationVector.emplace_back(
+              FileInformation{file, informationIt->second.size, informationIt->second.hash});
         }
-
-        // Emplace the complete information in the vector
-        fileInformationVector.emplace_back(
-          FileInformation{file, informationIt->second.size, informationIt->second.hash});
     }
 
     // Make the message
     auto fileList = FileListResponseMessage{fileInformationVector};
-    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, fileList));
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, fileList));
     if (message == nullptr)
     {
         LOG(ERROR) << "Failed to obtain serialized 'FileList' message.";
@@ -121,6 +131,16 @@ void FileManagementService::reportAllPresentFiles()
 const Protocol& FileManagementService::getProtocol()
 {
     return m_protocol;
+}
+
+bool FileManagementService::isFileTransferEnabled() const
+{
+    return m_fileTransferEnabled;
+}
+
+bool FileManagementService::isFileTransferUrlEnabled() const
+{
+    return m_fileTransferUrlEnabled;
 }
 
 void FileManagementService::messageReceived(std::shared_ptr<Message> message)
@@ -135,8 +155,8 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
     }
 
     // Look for the device this message is targeting
-    auto type = m_protocol.getMessageType(message);
-    auto target = m_protocol.extractDeviceKeyFromChannel(message->getChannel());
+    auto type = m_protocol.getMessageType(*message);
+    auto target = m_protocol.getDeviceKey(*message);
     LOG(TRACE) << "Received message '" << toString(type) << "' for target '" << target << "'.";
 
     // Parse the received message based on the type
@@ -152,7 +172,7 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
             }
             else
             {
-                reportTransferProtocolDisabled(parsedMessage->getName());
+                reportTransferProtocolDisabled(target, parsedMessage->getName());
             }
         }
         else
@@ -171,7 +191,7 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
             }
             else
             {
-                reportTransferProtocolDisabled(parsedMessage->getName());
+                reportTransferProtocolDisabled(target, parsedMessage->getName());
             }
         }
         else
@@ -205,7 +225,7 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
             }
             else
             {
-                reportUrlTransferProtocolDisabled(parsedMessage->getPath());
+                reportUrlTransferProtocolDisabled(target, parsedMessage->getPath());
             }
         }
         else
@@ -224,7 +244,7 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
             }
             else
             {
-                reportUrlTransferProtocolDisabled(parsedMessage->getPath());
+                reportUrlTransferProtocolDisabled(target, parsedMessage->getPath());
             }
         }
         else
@@ -275,217 +295,258 @@ void FileManagementService::messageReceived(std::shared_ptr<Message> message)
     }
 }
 
-void FileManagementService::onFileUploadInit(const std::string& /** deviceKey **/,
-                                             const FileUploadInitiateMessage& message)
+void FileManagementService::onFileUploadInit(const std::string& deviceKey, const FileUploadInitiateMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
+    // Check the message
+    if (message.getName().empty() || message.getSize() == 0 || message.getHash().empty())
+    {
+        LOG(DEBUG) << "Received a FileUploadInitiate message that is not valid. Ignoring...";
+        return;
+    }
+
     // Check whether there is a session already ongoing
-    if (m_session != nullptr)
+    if (m_sessions.find(deviceKey) != m_sessions.cend() && m_sessions[deviceKey] != nullptr)
     {
         LOG(DEBUG) << "Received a FileUploadInitiate message while a session is already ongoing. Ignoring...";
         return;
     }
 
     // Create a session for this file
-    m_session = std::unique_ptr<FileTransferSession>(new FileTransferSession(
-      message, [this](FileUploadStatus status, FileUploadError error) { this->onFileSessionStatus(status, error); },
-      m_commandBuffer));
+    m_sessions.emplace(deviceKey, std::unique_ptr<FileTransferSession>(new FileTransferSession(
+                                    deviceKey, message,
+                                    [this, deviceKey](FileTransferStatus status, FileTransferError error) {
+                                        this->onFileSessionStatus(deviceKey, status, error);
+                                    },
+                                    m_commandBuffer)));
 
     // Obtain the first message for the session
-    auto firstMessage = m_session->getNextChunkRequest();
+    auto firstMessage = m_sessions[deviceKey]->getNextChunkRequest();
     if (!firstMessage.getName().empty())
     {
         // Send out the status and the request
-        reportStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE);
-        sendChunkRequest(firstMessage);
+        reportStatus(deviceKey, FileTransferStatus::FILE_TRANSFER, FileTransferError::NONE);
+        sendChunkRequest(deviceKey, firstMessage);
     }
 }
 
-void FileManagementService::onFileUploadAbort(const std::string& /** deviceKey **/,
-                                              const FileUploadAbortMessage& message)
+void FileManagementService::onFileUploadAbort(const std::string& deviceKey, const FileUploadAbortMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    if (m_session && m_session->getName() == message.getName())
-        m_session->abort();
+    if (m_sessions.find(deviceKey) != m_sessions.cend() && m_sessions[deviceKey] != nullptr &&
+        m_sessions[deviceKey]->getName() == message.getName())
+        m_sessions[deviceKey]->abort();
 }
 
-void FileManagementService::onFileBinaryResponse(const std::string& /** deviceKey **/,
-                                                 const FileBinaryResponseMessage& message)
+void FileManagementService::onFileBinaryResponse(const std::string& deviceKey, const FileBinaryResponseMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Pass the message onto the session
-    if (m_session && m_session->isPlatformTransfer())
+    if (m_sessions.find(deviceKey) != m_sessions.cend() && m_sessions[deviceKey] != nullptr &&
+        m_sessions[deviceKey]->isPlatformTransfer())
     {
         // Pass the bytes onto it
-        auto error = m_session->pushChunk(message);
-        if (error == FileUploadError::FILE_HASH_MISMATCH || !m_session->isDone())
-            sendChunkRequest(m_session->getNextChunkRequest());
+        auto error = m_sessions[deviceKey]->pushChunk(message);
+        if (error == FileTransferError::FILE_HASH_MISMATCH || !m_sessions[deviceKey]->isDone())
+            sendChunkRequest(deviceKey, m_sessions[deviceKey]->getNextChunkRequest());
     }
 }
 
-void FileManagementService::onFileUrlDownloadInit(const std::string& /** deviceKey **/,
+void FileManagementService::onFileUrlDownloadInit(const std::string& deviceKey,
                                                   const FileUrlDownloadInitMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // We need to attempt to create a session.
-    if (m_session != nullptr)
+    if (m_sessions.find(deviceKey) != m_sessions.cend() && m_sessions[deviceKey] != nullptr)
     {
         LOG(DEBUG) << "Received a FileUrlDownloadInit message while a session is already ongoing. Ignoring...";
         return;
     }
 
     // Create a session for this message
-    m_session = std::unique_ptr<FileTransferSession>(new FileTransferSession(
-      message, [this](FileUploadStatus status, FileUploadError error) { this->onFileSessionStatus(status, error); },
+    m_sessions[deviceKey] = std::unique_ptr<FileTransferSession>(new FileTransferSession(
+      deviceKey, message,
+      [this, deviceKey](FileTransferStatus status, FileTransferError error) {
+          this->onFileSessionStatus(deviceKey, status, error);
+      },
       m_commandBuffer, m_downloader));
 
     // Trigger the download
-    m_session->triggerDownload();
-    reportStatus(FileUploadStatus::FILE_TRANSFER, FileUploadError::NONE);
+    m_sessions[deviceKey]->triggerDownload();
+    reportStatus(deviceKey, FileTransferStatus::FILE_TRANSFER, FileTransferError::NONE);
 }
 
-void FileManagementService::onFileUrlDownloadAbort(const std::string& /** deviceKey **/,
+void FileManagementService::onFileUrlDownloadAbort(const std::string& deviceKey,
                                                    const FileUrlDownloadAbortMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    if (m_session && m_session->getUrl() == message.getPath())
-        m_session->abort();
+    if (m_sessions.find(deviceKey) != m_sessions.cend() && m_sessions[deviceKey]->getUrl() == message.getPath())
+        m_sessions[deviceKey]->abort();
 }
 
-void FileManagementService::onFileListRequest(const std::string& /** deviceKey **/,
+void FileManagementService::onFileListRequest(const std::string& deviceKey,
                                               const FileListRequestMessage& /** message **/)
 {
     LOG(TRACE) << METHOD_INFO;
-    reportAllPresentFiles();
+    reportPresentFiles(deviceKey);
 }
 
-void FileManagementService::onFileDelete(const std::string& /** deviceKey **/, const FileDeleteMessage& message)
+void FileManagementService::onFileDelete(const std::string& deviceKey, const FileDeleteMessage& message)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Go through the list of files
+    const auto devicePath = FileSystemUtils::composePath(deviceKey, m_fileLocation);
     for (const auto& file : message.getFiles())
     {
-        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, m_fileLocation)))
+        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, devicePath)))
         {
             m_files.erase(file);
-            notifyListenerRemovedFile(file);
+            notifyListenerRemovedFile(deviceKey, file);
         }
     }
 
     // And report the files back
-    reportAllPresentFiles();
+    reportPresentFiles(deviceKey);
 }
 
-void FileManagementService::onFilePurge(const std::string& /** deviceKey **/, const FilePurgeMessage& /** message **/)
+void FileManagementService::onFilePurge(const std::string& deviceKey, const FilePurgeMessage& /** message **/)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Just delete all the contents of the file
-    for (const auto& file : FileSystemUtils::listFiles(m_fileLocation))
+    const auto devicePath = FileSystemUtils::composePath(deviceKey, m_fileLocation);
+    for (const auto& file : FileSystemUtils::listFiles(devicePath))
     {
-        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, m_fileLocation)))
+        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, devicePath)))
         {
             m_files.erase(file);
-            notifyListenerRemovedFile(file);
+            notifyListenerRemovedFile(deviceKey, file);
         }
     }
 
     // And report the files back
-    reportAllPresentFiles();
+    reportPresentFiles(deviceKey);
 }
 
-void FileManagementService::sendChunkRequest(const FileBinaryRequestMessage& message)
+void FileManagementService::reportStatus(const std::string& deviceKey, FileTransferStatus status,
+                                         FileTransferError error)
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Transform it into a protocol message and send out
-    auto parsedMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, message));
-    m_connectivityService.publish(parsedMessage);
-}
-
-void FileManagementService::reportStatus(FileUploadStatus status, FileUploadError error)
-{
-    LOG(TRACE) << METHOD_INFO;
+    // Turn back around if there is no session for the device key
+    if (m_sessions.find(deviceKey) == m_sessions.cend())
+        return;
 
     // Make the message
-    auto parsedMessage = std::shared_ptr<Message>{};
-    if (m_session->isPlatformTransfer())
-    {
-        auto fileName = m_session->getName();
-        auto message = FileUploadStatusMessage(fileName, status, error);
-        parsedMessage = m_protocol.makeOutboundMessage(m_deviceKey, message);
-    }
-    else
-    {
-        auto filePath = m_session->getUrl();
-        auto fileName = m_session->getName();
-        auto message = FileUrlDownloadStatusMessage(filePath, fileName, status, error);
-        parsedMessage = m_protocol.makeOutboundMessage(m_deviceKey, message);
-    }
+    const auto& session = m_sessions[deviceKey];
+    auto parsedMessage = [&]() -> std::shared_ptr<Message> {
+        if (m_sessions[deviceKey]->isPlatformTransfer())
+        {
+            auto fileName = session->getName();
+            auto message = FileUploadStatusMessage(fileName, status, error);
+            return m_protocol.makeOutboundMessage(deviceKey, message);
+        }
+        else
+        {
+            auto filePath = session->getUrl();
+            auto fileName = session->getName();
+            auto message = FileUrlDownloadStatusMessage(filePath, fileName, status, error);
+            return m_protocol.makeOutboundMessage(deviceKey, message);
+        }
+    }();
 
     // And publish it out
     if (parsedMessage != nullptr)
         m_connectivityService.publish(parsedMessage);
 }
 
-void FileManagementService::onFileSessionStatus(FileUploadStatus status, FileUploadError error)
+void FileManagementService::sendChunkRequest(const std::string& deviceKey, const FileBinaryRequestMessage& message)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Transform it into a protocol message and send out
+    auto parsedMessage = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, message));
+    if (parsedMessage == nullptr)
+    {
+        LOG(ERROR) << "Failed to generate outgoing chunk request message for device '" << deviceKey << "'.";
+        return;
+    }
+    m_connectivityService.publish(parsedMessage);
+}
+
+void FileManagementService::onFileSessionStatus(const std::string& deviceKey, FileTransferStatus status,
+                                                FileTransferError error)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Report the status
-    reportStatus(status, error);
+    reportStatus(deviceKey, status, error);
 
     // If the status is that the file is ready, or it is an error, stop the session
-    if (status == FileUploadStatus::FILE_READY || status == FileUploadStatus::ERROR ||
-        status == FileUploadStatus::ABORTED)
+    switch (status)
     {
-        // If the file is ready, create the file
-        if (status == FileUploadStatus::FILE_READY)
+    case FileTransferStatus::FILE_READY:
+    {
+        // Collect the chunks and place the file in
+        const auto& fileName = m_sessions[deviceKey]->getName();
+
+        // Get the absolute path for the file
+        auto deviceFolder = FileSystemUtils::composePath(m_sessions[deviceKey]->getDeviceKey(), m_fileLocation);
+        if (!FileSystemUtils::isDirectoryPresent(deviceFolder))
+            FileSystemUtils::createDirectory(deviceFolder);
+        auto relativePath = FileSystemUtils::composePath(fileName, deviceFolder);
+
+        // Collect all the bytes for the file
+        auto content = ByteArray{};
+        if (m_sessions[deviceKey]->isPlatformTransfer())
         {
-            // Collect the chunks and place the file in
-            const auto& fileName = m_session->getName();
-
-            // Get the absolute path for the file
-            auto relativePath = FileSystemUtils::composePath(fileName, m_fileLocation);
-
-            // Collect all the bytes for the file
-            auto content = ByteArray{};
-            if (m_session->isPlatformTransfer())
-            {
-                const auto& chunks = m_session->getChunks();
-                for (const auto& chunk : chunks)
-                    content.insert(content.end(), chunk.bytes.cbegin(), chunk.bytes.cend());
-            }
-            else
-            {
-                content = m_downloader->getBytes();
-            }
-
-            // Place the file in the folder
-            if (!FileSystemUtils::createBinaryFileWithContent(relativePath, content))
-                LOG(ERROR) << "Failed to store the '" << fileName << "' locally.";
-            else
-                notifyListenerAddedFile(fileName, absolutePathOfFile(fileName));
+            const auto& chunks = m_sessions[deviceKey]->getChunks();
+            for (const auto& chunk : chunks)
+                content.insert(content.end(), chunk.bytes.cbegin(), chunk.bytes.cend());
+        }
+        else
+        {
+            content = m_downloader->getBytes();
         }
 
+        // Place the file in the folder
+        if (!FileSystemUtils::createBinaryFileWithContent(relativePath, content))
+        {
+            LOG(ERROR) << "Failed to store the '" << fileName << "' locally.";
+            reportStatus(deviceKey, FileTransferStatus::ERROR, FileTransferError::FILE_SYSTEM_ERROR);
+        }
+        else
+        {
+            notifyListenerAddedFile(deviceKey, fileName, absolutePathOfFile(deviceKey, fileName));
+        }
+    }
+    case FileTransferStatus::ERROR:
+    case FileTransferStatus::ABORTED:
+    {
         // Queue the session deletion
-        m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([this] { m_session.reset(); }));
+        m_commandBuffer.pushCommand(
+          std::make_shared<std::function<void()>>([this, deviceKey] { m_sessions[deviceKey].reset(); }));
+    }
+    default:
+        break;
     }
 }
 
-FileInformation FileManagementService::obtainFileInformation(const std::string& fileName)
+FileInformation FileManagementService::obtainFileInformation(const std::string& deviceKey, const std::string& fileName)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Load up all the content of the file quickly
     auto binaryContent = ByteArray{};
-    if (!FileSystemUtils::readBinaryFileContent(FileSystemUtils::composePath(fileName, m_fileLocation), binaryContent))
+    if (!FileSystemUtils::readBinaryFileContent(
+          FileSystemUtils::composePath(fileName, FileSystemUtils::composePath(deviceKey, m_fileLocation)),
+          binaryContent))
     {
         LOG(ERROR) << "Failed to obtain FileInformation for file '" << fileName
                    << "' -> Failed to read binary content of file.";
@@ -503,14 +564,14 @@ FileInformation FileManagementService::obtainFileInformation(const std::string& 
     return {fileName, size, hash};
 }
 
-void FileManagementService::reportTransferProtocolDisabled(const std::string& fileName)
+void FileManagementService::reportTransferProtocolDisabled(const std::string& deviceKey, const std::string& fileName)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Form the message
     auto status =
-      FileUploadStatusMessage{fileName, FileUploadStatus::ERROR, FileUploadError::TRANSFER_PROTOCOL_DISABLED};
-    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, status));
+      FileUploadStatusMessage{fileName, FileTransferStatus::ERROR, FileTransferError::TRANSFER_PROTOCOL_DISABLED};
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, status));
     if (message == nullptr)
     {
         LOG(ERROR) << "Failed to report that transfer protocol is disabled -> Failed to make outbound status message.";
@@ -519,14 +580,14 @@ void FileManagementService::reportTransferProtocolDisabled(const std::string& fi
     m_connectivityService.publish(message);
 }
 
-void FileManagementService::reportUrlTransferProtocolDisabled(const std::string& url)
+void FileManagementService::reportUrlTransferProtocolDisabled(const std::string& deviceKey, const std::string& url)
 {
     LOG(TRACE) << METHOD_INFO;
 
     // Form the message
     auto status =
-      FileUrlDownloadStatusMessage{url, "", FileUploadStatus::ERROR, FileUploadError::TRANSFER_PROTOCOL_DISABLED};
-    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(m_deviceKey, status));
+      FileUrlDownloadStatusMessage{url, "", FileTransferStatus::ERROR, FileTransferError::TRANSFER_PROTOCOL_DISABLED};
+    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, status));
     if (message == nullptr)
     {
         LOG(ERROR)
@@ -536,30 +597,15 @@ void FileManagementService::reportUrlTransferProtocolDisabled(const std::string&
     m_connectivityService.publish(message);
 }
 
-std::string FileManagementService::absolutePathOfFile(const std::string& file)
+std::string FileManagementService::absolutePathOfFile(const std::string& deviceKey, const std::string& file)
 {
     LOG(TRACE) << METHOD_INFO;
-    return FileSystemUtils::absolutePath(FileSystemUtils::composePath(file, m_fileLocation));
+    return FileSystemUtils::absolutePath(
+      FileSystemUtils::composePath(file, FileSystemUtils::composePath(deviceKey, m_fileLocation)));
 }
 
-void FileManagementService::notifyListenerAddedFile(const std::string& fileName, const std::string& absolutePath)
-{
-    LOG(TRACE) << METHOD_INFO;
-
-    // Check if a listener exists
-    if (auto listener = m_fileListener.lock())
-    {
-        if (listener != nullptr)
-        {
-            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName, absolutePath]() {
-                if (listener != nullptr)
-                    listener->onAddedFile(fileName, absolutePath);
-            }));
-        }
-    }
-}
-
-void FileManagementService::notifyListenerRemovedFile(const std::string& fileName)
+void FileManagementService::notifyListenerAddedFile(const std::string& deviceKey, const std::string& fileName,
+                                                    const std::string& absolutePath)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -568,11 +614,30 @@ void FileManagementService::notifyListenerRemovedFile(const std::string& fileNam
     {
         if (listener != nullptr)
         {
-            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, fileName]() {
+            m_commandBuffer.pushCommand(
+              std::make_shared<std::function<void()>>([listener, deviceKey, fileName, absolutePath]() {
+                  if (listener != nullptr)
+                      listener->onAddedFile(deviceKey, fileName, absolutePath);
+              }));
+        }
+    }
+}
+
+void FileManagementService::notifyListenerRemovedFile(const std::string& deviceKey, const std::string& fileName)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Check if a listener exists
+    if (auto listener = m_fileListener.lock())
+    {
+        if (listener != nullptr)
+        {
+            m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([listener, deviceKey, fileName]() {
                 if (listener != nullptr)
-                    listener->onRemovedFile(fileName);
+                    listener->onRemovedFile(deviceKey, fileName);
             }));
         }
     }
 }
+}    // namespace connect
 }    // namespace wolkabout

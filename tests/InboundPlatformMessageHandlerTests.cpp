@@ -19,13 +19,13 @@
 
 #define private public
 #define protected public
-#include "wolk/InboundPlatformMessageHandler.h"
+#include "core/connectivity/InboundPlatformMessageHandler.h"
 #undef private
 #undef protected
 
 #include "core/utilities/Logger.h"
-#include "mocks/MessageListenerMock.h"
-#include "mocks/ProtocolMock.h"
+#include "tests/mocks/MessageListenerMock.h"
+#include "tests/mocks/ProtocolMock.h"
 
 #include <gtest/gtest.h>
 
@@ -56,7 +56,8 @@ TEST_F(InboundPlatformMessageHandlerTests, CoveringTest)
     const auto& invalidChannel = "NOT_EXISTENT_CHANNEL";
     const auto& testContent = R"({"message":"Hello!"})";
 
-    const auto& messageHandler = std::make_shared<wolkabout::InboundPlatformMessageHandler>(key);
+    const auto& messageHandler =
+      std::make_shared<wolkabout::InboundPlatformMessageHandler>(std::vector<std::string>{key});
     auto pointer = std::shared_ptr<MessageListenerMock>(messageListenerMock.release());
 
     EXPECT_CALL(*protocolMock, getInboundChannelsForDevice(key)).WillOnce(testing::Return(channels));

@@ -23,25 +23,23 @@
 
 #include <utility>
 
-using namespace wolkabout;
+using namespace wolkabout::connect;
 
 class FileManagementServiceMock : public FileManagementService
 {
 public:
-    FileManagementServiceMock(std::string deviceKey, ConnectivityService& connectivityService, DataService& dataService,
+    FileManagementServiceMock(ConnectivityService& connectivityService, DataService& dataService,
                               FileManagementProtocol& protocol, std::string fileLocation,
                               bool fileTransferEnabled = true, bool fileTransferUrlEnabled = true,
-                              std::uint64_t maxPacketSize = MQTT_MAX_MESSAGE_SIZE,
                               std::shared_ptr<FileDownloader> fileDownloader = nullptr,
                               const std::shared_ptr<FileListener>& fileListener = nullptr)
-    : FileManagementService(std::move(deviceKey), connectivityService, dataService, protocol, std::move(fileLocation),
-                            fileTransferEnabled, fileTransferUrlEnabled, maxPacketSize, std::move(fileDownloader),
-                            fileListener)
+    : FileManagementService(connectivityService, dataService, protocol, std::move(fileLocation), fileTransferEnabled,
+                            fileTransferUrlEnabled, std::move(fileDownloader), fileListener)
     {
     }
     MOCK_METHOD(const Protocol&, getProtocol, ());
     MOCK_METHOD(void, createFolder, ());
-    MOCK_METHOD(void, reportAllPresentFiles, ());
+    MOCK_METHOD(void, reportPresentFiles, (const std::string&));
     MOCK_METHOD(void, messageReceived, (std::shared_ptr<Message>));
 };
 

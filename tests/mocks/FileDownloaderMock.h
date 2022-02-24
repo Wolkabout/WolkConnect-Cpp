@@ -14,23 +14,25 @@
  * limitations under the License.
  */
 
-#ifndef WOLKABOUTCONNECTOR_WOLKPAHOMQTTCLIENTMOCK_H
-#define WOLKABOUTCONNECTOR_WOLKPAHOMQTTCLIENTMOCK_H
+#ifndef WOLKABOUTCONNECTOR_FILEDOWNLOADERMOCK_H
+#define WOLKABOUTCONNECTOR_FILEDOWNLOADERMOCK_H
 
-#include "wolk/connectivity/mqtt/WolkPahoMqttClient.h"
+#include "wolk/service/file_management/FileDownloader.h"
 
 #include <gmock/gmock.h>
 
 using namespace wolkabout;
+using namespace wolkabout::connect;
 
-class WolkPahoMqttClientMock : public WolkPahoMqttClient
+class FileDownloaderMock : public FileDownloader
 {
 public:
-    MOCK_METHOD(bool, connect, (const std::string&, const std::string&, const std::string&, const std::string&));
-    MOCK_METHOD(void, disconnect, ());
-    MOCK_METHOD(bool, isConnected, ());
-    MOCK_METHOD(bool, subscribe, (const std::string&));
-    MOCK_METHOD(bool, publish, (const std::string&, const std::string&, bool));
+    MOCK_METHOD(FileTransferStatus, getStatus, (), (const));
+    MOCK_METHOD(const std::string&, getName, (), (const));
+    MOCK_METHOD(const ByteArray&, getBytes, (), (const));
+    MOCK_METHOD(void, downloadFile,
+                (const std::string&, std::function<void(FileTransferStatus, FileTransferError, std::string)>));
+    MOCK_METHOD(void, abortDownload, ());
 };
 
-#endif    // WOLKABOUTCONNECTOR_WOLKPAHOMQTTCLIENTMOCK_H
+#endif    // WOLKABOUTCONNECTOR_FILEDOWNLOADERMOCK_H

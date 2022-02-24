@@ -15,7 +15,8 @@
  */
 
 #include "core/utilities/Logger.h"
-#include "wolk/Wolk.h"
+#include "wolk/WolkBuilder.h"
+#include "wolk/WolkSingle.h"
 #include "wolk/api/ParameterHandler.h"
 
 /**
@@ -41,7 +42,7 @@ struct DeviceData
  * This is an implementation of a class that is able to receive new feed values from the platform.
  * When the device is going to pull feed values, this object is going to receive the values.
  */
-class FeedChangeHandler : public wolkabout::FeedUpdateHandler
+class FeedChangeHandler : public wolkabout::connect::FeedUpdateHandler
 {
 public:
     /**
@@ -59,7 +60,8 @@ public:
      * so the key in this map is going to be time at which values have been sent, and in the value is the vector of
      * values that have been set at that particular time.
      */
-    void handleUpdate(std::map<std::uint64_t, std::vector<wolkabout::Reading>> readings) override
+    void handleUpdate(const std::string& deviceKey,
+                      const std::map<std::uint64_t, std::vector<wolkabout::Reading>>& readings) override
     {
         // Go through all the timestamps - since the `std::map` sorts by key, this will always go from the oldest to
         // newest.
@@ -96,7 +98,7 @@ private:
  * This is an implementation of a class that can receive parameter value updates, in the same way FeedChangeHandler can
  * receive feed updates. When the device decides to pull the values, this object will receive the values.
  */
-class ParameterChangeHandler : public wolkabout::ParameterHandler
+class ParameterChangeHandler : public wolkabout::connect::ParameterHandler
 {
 public:
     /**
@@ -106,7 +108,7 @@ public:
      * @param parameters This is a vector containing all parameter that have been changed. Since the device pulls
      * parameters, the device will receive all updates to values since the last time it has pulled values.
      */
-    void handleUpdate(const std::vector<wolkabout::Parameter>& parameters) override
+    void handleUpdate(const std::string& deviceKey, const std::vector<wolkabout::Parameter>& parameters) override
     {
         for (const auto& parameter : parameters)
             LOG(INFO) << "Received update for parameter '" << wolkabout::toString(parameter.first) << "' - Value: '"
@@ -129,12 +131,12 @@ int main(int /* argc */, char** /* argv */)
 
     // And here we create the wolk session
     // Here we will set the feed value and parameter handler
-    auto wolk = wolkabout::Wolk::newBuilder(device)
+    auto wolk = wolkabout::connect::WolkSingle::newBuilder(device)
                   .host(PLATFORM_HOST)
                   .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(feedHandler)
                   .parameterHandler(parameterHandler)
-                  .build();
+                  .buildWolkSingle();
 
     // And now we will periodically connect, pull values, maybe even send some of our own, and then disconnect
     while (true)

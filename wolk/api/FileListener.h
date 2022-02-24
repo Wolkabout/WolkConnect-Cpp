@@ -21,6 +21,8 @@
 
 namespace wolkabout
 {
+namespace connect
+{
 /**
  * This is an interface meant to define an object that can receive information about added and removed files by the
  * FileManagementService.
@@ -36,18 +38,22 @@ public:
     /**
      * This is a method that will be invoked once a file has been obtained.
      *
+     * @param deviceKey The device for which the file was added.
      * @param fileName The name of the new file.
      * @param absolutePath The absolute path of the new file.
      */
-    virtual void onAddedFile(const std::string& fileName, const std::string& absolutePath) = 0;
+    virtual void onAddedFile(const std::string& deviceKey, const std::string& fileName,
+                             const std::string& absolutePath) = 0;
 
     /**
      * This is a method that will be invoked once a file has been removed.
      *
+     * @param deviceKey The device from which the file was removed.
      * @param fileName The name of the deleted file.
      */
-    virtual void onRemovedFile(const std::string& fileName) = 0;
+    virtual void onRemovedFile(const std::string& deviceKey, const std::string& fileName) = 0;
 };
+}    // namespace connect
 }    // namespace wolkabout
 
 #endif    // WOLKABOUTCONNECTOR_FILELISTENER_H

@@ -15,11 +15,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(WolkAboutConnector C CXX)
 
-set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
-
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}     -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
                                             -Wdisabled-optimization                                                    \
@@ -51,6 +49,8 @@ if (${BUILD_TESTS})
     endif ()
 endif ()
 
+# Setup the option for optional Poco file downloader
+OPTION(BUILD_POCO_HTTP_DOWNLOADER "Build the optional `FileDownloader` implementation that uses Poco" ON)
 
 # Setup the options for the examples
 OPTION(BUILD_EXAMPLES "Build the examples/runtimes for testing" ON)
@@ -79,81 +79,113 @@ include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 find_package(Threads REQUIRED)
 
 # WolkAbout c++ SDK
-option(POCO_BUILD_NET "" ON)
+option(BUILD_POCO "" ${BUILD_POCO_HTTP_DOWNLOADER})
+option(POCO_BUILD_NET "" ${BUILD_POCO_HTTP_DOWNLOADER})
 option(BUILD_AWS_LOG_UPLOADER "" OFF)
 add_subdirectory(WolkSDK-Cpp)
 
+# Define the version of the library
+set(WOLKCONNECT_VERSION_MAJOR 4)
+set(WOLKCONNECT_VERSION_MINOR 0)
+set(WOLKCONNECT_VERSION_PATCH 0)
+set(WOLKCONNECT_VERSION_SUFFIX prerelease)
+
+set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH}")
+if (NOT "${WOLKCONNECT_VERSION_SUFFIX}" STREQUAL "")
+    set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_STRING}-${WOLKCONNECT_VERSION_SUFFIX}")
+endif ()
+
 # WolkAbout c++ Connector
 set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
-        wolk/connectivity/mqtt/WolkPahoMqttClient.cpp
         wolk/service/data/DataService.cpp
-        wolk/service/file_management/poco/HTTPFileDownloader.cpp
+        wolk/service/error/ErrorService.cpp
         wolk/service/file_management/FileManagementService.cpp
         wolk/service/file_management/FileTransferSession.cpp
         wolk/service/firmware_update/FirmwareUpdateService.cpp
-        wolk/InboundPlatformMessageHandler.cpp
-        wolk/Wolk.cpp
-        wolk/WolkBuilder.cpp)
+        wolk/service/platform_status/PlatformStatusService.cpp
+        wolk/service/registration_service/RegistrationService.cpp
+        wolk/WolkBuilder.cpp
+        wolk/WolkInterface.cpp
+        wolk/WolkMulti.cpp
+        wolk/WolkSingle.cpp)
 set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
         wolk/api/FileListener.h
         wolk/api/FirmwareInstaller.h
         wolk/api/FirmwareParametersListener.h
         wolk/api/ParameterHandler.h
-        wolk/connectivity/mqtt/WolkPahoMqttClient.h
+        wolk/api/PlatformStatusListener.h
         wolk/service/data/DataService.h
-        wolk/service/file_management/poco/HTTPFileDownloader.h
+        wolk/service/error/ErrorService.h
         wolk/service/file_management/FileDownloader.h
         wolk/service/file_management/FileManagementService.h
         wolk/service/file_management/FileTransferSession.h
         wolk/service/firmware_update/FirmwareUpdateService.h
-        wolk/InboundPlatformMessageHandler.h
+        wolk/service/platform_status/PlatformStatusService.h
+        wolk/service/registration_service/RegistrationService.h
         wolk/Version.h
-        wolk/Wolk.h
-        wolk/WolkBuilder.h)
+        wolk/WolkBuilder.h
+        wolk/WolkInterface.h
+        wolk/WolkInterfaceType.h
+        wolk/WolkMulti.h
+        wolk/WolkSingle.h)
 
-file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE)
+file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE PATTERN "poco/HTTPFileDownloader.h" EXCLUDE)
+
+if (${BUILD_POCO_HTTP_DOWNLOADER})
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/file_management/poco/HTTPFileDownloader.cpp)
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/file_management/poco/HTTPFileDownloader.h)
+    file(COPY wolk/service/file_management/poco/HTTPFileDownloader.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/file_management/poco)
+endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil Threads::Threads)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore Threads::Threads)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-add_dependencies(${PROJECT_NAME} libpoco)
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_STRING} SOVERSION ${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH})
+
+if (${BUILD_POCO_HTTP_DOWNLOADER})
+    target_link_libraries(${PROJECT_NAME} PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
+    add_dependencies(${PROJECT_NAME} libpoco)
+endif ()
 
 # Tests
 if (${BUILD_TESTS})
     set(TEST_SOURCE_FILES
             tests/DataServiceTests.cpp
+            tests/ErrorServiceTests.cpp
             tests/FileManagementServiceTests.cpp
             tests/FileTransferSessionTests.cpp
             tests/FirmwareUpdateServiceTests.cpp
             tests/InboundPlatformMessageHandlerTests.cpp
+            tests/PlatformStatusServiceTests.cpp
+            tests/RegistrationServiceTests.cpp
             tests/WolkBuilderTests.cpp
-            tests/WolkTests.cpp)
+            tests/WolkMultiTests.cpp
+            tests/WolkSingleTests.cpp)
     set(TEST_HEADER_FILES
-            tests/mocks/ConnectivityServiceMock.h
-            tests/mocks/DataProtocolMock.h
             tests/mocks/DataServiceMock.h
+            tests/mocks/ErrorServiceMock.h
             tests/mocks/FeedUpdateHandlerMock.h
-            tests/mocks/FileManagementProtocolMock.h
+            tests/mocks/FileDownloaderMock.h
+            tests/mocks/FileListenerMock.h
             tests/mocks/FileManagementServiceMock.h
-            tests/mocks/FirmwareUpdateProtocolMock.h
-            tests/mocks/InboundMessageHandlerMock.h
-            tests/mocks/MessageListenerMock.h
+            tests/mocks/FileTransferSessionMock.h
+            tests/mocks/FirmwareInstallerMock.h
+            tests/mocks/FirmwareParametersListenerMock.h
+            tests/mocks/FirmwareUpdateServiceMock.h
             tests/mocks/ParameterHandlerMock.h
-            tests/mocks/PersistenceMock.h
-            tests/mocks/ProtocolMock.h
-            tests/mocks/WolkPahoMqttClientMock.h)
+            tests/mocks/PlatformStatusListenerMock.h
+            tests/mocks/RegistrationServiceMock.h)
 
+    enable_testing()
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
     target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
-    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
+    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include WolkSDK-Cpp)
     set_target_properties(${PROJECT_NAME}Tests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    set_target_properties(${PROJECT_NAME}Tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
     add_dependencies(${PROJECT_NAME}Tests ${PROJECT_NAME} libgtest)
 
-    add_custom_target(tests ${PROJECT_NAME}Tests)
-    add_test(gtest ${PROJECT_NAME}Tests)
+    add_test(NAME "WolkConnect-Cpp_Tests" COMMAND ${PROJECT_NAME}Tests)
 endif ()
 
 if (${BUILD_EXAMPLES})
@@ -184,19 +216,18 @@ if (${BUILD_EXAMPLES})
     add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
     target_link_libraries(simple_example ${PROJECT_NAME})
     set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+
+    # Subdevices example
+    set(SUBDEVICES_EXAMPLE_SOURCE_FILES examples/subdevices/Application.cpp)
+
+    add_executable(subdevices_example ${SUBDEVICES_EXAMPLE_SOURCE_FILES})
+    target_link_libraries(subdevices_example ${PROJECT_NAME})
+    set_target_properties(subdevices_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 endif ()
 
 # Create the install rule
+include(GNUInstallDirs)
 install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
-# Add the format target
-add_custom_target(format
-        COMMAND "clang-format" -i -sort-includes -style=file ${LIB_HEADER_FILES} ${LIB_SOURCE_FILES}
-        ${TEST_HEADER_FILES} ${TEST_SOURCE_FILES} ${FULL_EXAMPLE_SOURCE_FILES} ${PULL_EXAMPLE_SOURCE_FILES}
-        ${REGISTER_EXAMPLE_SOURCE_FILES} ${SIMPLE_EXAMPLE_SOURCE_FILES}
-        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-        COMMENT "[Formatting source code]"
-        VERBATIM)
