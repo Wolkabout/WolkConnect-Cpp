@@ -12,18 +12,14 @@ else
   fi
 fi
 
-echo "$branch"
-
 # Get the git repository cloned
 rm -rf tmp
 mkdir -p tmp
 cd tmp || exit
-git clone --recurse-submodules https://github.com/Wolkabout/WolkConnect-Cpp
+git clone --recurse-submodules https://github.com/Wolkabout/WolkConnect-Cpp -b "$branch"
 
 # Enter the repo, checkout to branch, update submodules
 cd WolkConnect-Cpp || exit
-git checkout "$branch"
-git submodule update --recursive
 
 # Run the build
 debuild -us -uc -b -j"$(nproc)"
