@@ -107,7 +107,7 @@ public:
      * @param deviceKey The key of the device.
      * @return The first message in the backlog held for the device. Can be `nullptr`.
      */
-    std::unique_ptr<ErrorMessage> dequeueMessage(const std::string& deviceKey);
+    std::unique_ptr<ErrorMessage> popFrontMessage(const std::string& deviceKey);
 
     /**
      * This method allows the user to obtain the latest received message that the backlog of error messages
@@ -116,7 +116,7 @@ public:
      * @param deviceKey The key of the device.
      * @return The last message in the backlog held for the device. Can be `nullptr`.
      */
-    std::unique_ptr<ErrorMessage> popMessage(const std::string& deviceKey);
+    std::unique_ptr<ErrorMessage> popBackMessage(const std::string& deviceKey);
 
     /**
      * This is the overridden method from the `wolkabout::WolkInterface` interface.

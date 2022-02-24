@@ -538,7 +538,7 @@ TEST_F(WolkMultiTests, PeekErrorCountHappyFlow)
 TEST_F(WolkMultiTests, DequeueMessageWrongDevice)
 {
     EXPECT_CALL(GetErrorServiceReference(), obtainFirstMessageForDevice).Times(0);
-    ASSERT_EQ(service->dequeueMessage("TestDevice"), nullptr);
+    ASSERT_EQ(service->popFrontMessage("TestDevice"), nullptr);
 }
 
 TEST_F(WolkMultiTests, DequeueMessageHappyFlow)
@@ -546,19 +546,19 @@ TEST_F(WolkMultiTests, DequeueMessageHappyFlow)
     EXPECT_CALL(GetErrorServiceReference(), obtainFirstMessageForDevice)
       .WillOnce(
         Return(ByMove(std::unique_ptr<ErrorMessage>{new ErrorMessage{"", "", std::chrono::system_clock::now()}})));
-    ASSERT_NE(service->dequeueMessage(devices.front().getKey()), nullptr);
+    ASSERT_NE(service->popFrontMessage(devices.front().getKey()), nullptr);
 }
 
 TEST_F(WolkMultiTests, PopMessageWrongDevice)
 {
     EXPECT_CALL(GetErrorServiceReference(), obtainLastMessageForDevice).Times(0);
-    ASSERT_EQ(service->popMessage("TestDevice"), nullptr);
+    ASSERT_EQ(service->popBackMessage("TestDevice"), nullptr);
 }
 
 TEST_F(WolkMultiTests, PopMessageHappyFlow)
 {
     EXPECT_CALL(GetErrorServiceReference(), obtainLastMessageForDevice).Times(1);
-    ASSERT_EQ(service->popMessage(devices.front().getKey()), nullptr);
+    ASSERT_EQ(service->popBackMessage(devices.front().getKey()), nullptr);
 }
 
 TEST_F(WolkMultiTests, ReportFilesForDeviceNoService)
