@@ -72,15 +72,6 @@ TEST_F(RegistrationServiceTests, Protocol)
     EXPECT_EQ(&(service->getProtocol()), &registrationProtocolMock);
 }
 
-TEST_F(RegistrationServiceTests, RegisterDevicesNotRunning)
-{
-    // Stop the service
-    service->stop();
-
-    // Call the service
-    ASSERT_FALSE(service->registerDevices(DEVICE_KEY, {}, {}));
-}
-
 TEST_F(RegistrationServiceTests, RegisterDevicesEmptyVector)
 {
     // Call the service
@@ -131,15 +122,6 @@ TEST_F(RegistrationServiceTests, RegisterDevicesSentSuccessfully)
       service->registerDevices(DEVICE_KEY, {DeviceRegistrationData{"DeviceName", "DeviceKey", "", {}, {}, {}}}, {}));
 }
 
-TEST_F(RegistrationServiceTests, RemoveDevicesNotRunning)
-{
-    // Stop the service
-    service->stop();
-
-    // Call the service
-    ASSERT_FALSE(service->removeDevices(DEVICE_KEY, {}));
-}
-
 TEST_F(RegistrationServiceTests, RemoveDevicesEmptyVector)
 {
     // Call the service
@@ -179,20 +161,6 @@ TEST_F(RegistrationServiceTests, RemoveDevicesSentSuccessfully)
 
     // Call the service
     ASSERT_TRUE(service->removeDevices(DEVICE_KEY, {"DeviceKey"}));
-}
-
-TEST_F(RegistrationServiceTests, ObtainChildrenNotRunning)
-{
-    // Stop the service
-    service->stop();
-
-    // Call the service (sync)
-    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
-    EXPECT_TRUE(service->m_queries.empty());
-
-    // Call the service (async)
-    ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}), false);
-    EXPECT_TRUE(service->m_queries.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenAsyncNoCallback)
@@ -367,24 +335,6 @@ TEST_F(RegistrationServiceTests, ReceiveMessageDeviceRegistrationResponseHappyFl
       .WillOnce(Return(
         ByMove(std::unique_ptr<DeviceRegistrationResponseMessage>{new DeviceRegistrationResponseMessage{{}, {}}})));
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
-}
-
-TEST_F(RegistrationServiceTests, ObtainDevicesNotRunning)
-{
-    // Stop the service
-    service->stop();
-
-    // Call the service (sync)
-    ASSERT_EQ(
-      service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), "", "", HUNDRED),
-      nullptr);
-    EXPECT_TRUE(service->m_responses.empty());
-
-    // Call the service (async)
-    ASSERT_EQ(
-      service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), "", "", {}),
-      false);
-    EXPECT_TRUE(service->m_responses.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesAsyncNoCallback)
