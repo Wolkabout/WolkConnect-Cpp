@@ -219,7 +219,7 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
         auto uniqueLock = std::unique_lock<std::mutex>{m_registeredDevicesMutex};
         m_childrenSyncDevicesCV.wait_for(uniqueLock, timeout, [&] { return called || m_exitCondition; });
     }
-    if (!called)
+    if (!*called)
     {
         // Remove the callback as it wasn't called
         std::lock_guard<std::mutex> lockGuard{m_registeredDevicesMutex};
@@ -264,7 +264,7 @@ bool RegistrationService::obtainChildrenAsync(const std::string& deviceKey,
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
             return false;
         }
-        m_childrenSynchronizationCallbacks[deviceKey].push(callback);
+        m_childrenSynchronizationCallbacks[deviceKey].emplace_back(callback);
         return true;
     }
 }
@@ -434,7 +434,7 @@ void RegistrationService::handleChildrenSynchronizationResponse(
     {
         // Take the first callback from the queue
         const auto callback = m_childrenSynchronizationCallbacks[deviceKey].front();
-        m_childrenSynchronizationCallbacks[deviceKey].pop();
+        m_childrenSynchronizationCallbacks[deviceKey].erase(m_childrenSynchronizationCallbacks[deviceKey].begin());
 
         // Make copy of the children devices
         const auto children = responseMessage->getChildren();
