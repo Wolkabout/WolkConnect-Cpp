@@ -217,7 +217,7 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
     // Wait for the condition variable to be invoked
     {
         auto uniqueLock = std::unique_lock<std::mutex>{m_registeredDevicesMutex};
-        m_childrenSyncDevicesCV.wait_for(uniqueLock, timeout, [&] { return called || m_exitCondition; });
+        m_childrenSyncDevicesCV.wait_for(uniqueLock, timeout, [&] { return *called || m_exitCondition; });
     }
     if (!*called)
     {
