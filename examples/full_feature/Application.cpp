@@ -34,9 +34,9 @@
  * In here, you can enter the device credentials to successfully identify the device on the platform.
  * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
  */
-const std::string DEVICE_KEY = "AWC";
-const std::string DEVICE_PASSWORD = "YROFH5J0Q1";
-const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
+const std::string DEVICE_KEY = "<DEVICE_KEY>";
+const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
+const std::string PLATFORM_HOST = "ssl://demo.wolkabout.com:8883";
 const std::string CA_CERT_PATH = "./ca.crt";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
 const std::string FIRMWARE_VERSION = "4.0.0";
