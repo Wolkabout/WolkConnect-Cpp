@@ -180,7 +180,8 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
 
     // Lock the mutex for the map, just so the response arrival can't be faster than us putting the query data into the
     // map.
-    std::atomic_bool called{false};
+    auto callbackIt = std::vector<std::function<void(std::vector<std::string>)>>::iterator{};
+    auto called = std::make_shared<std::atomic_bool>(false);
     auto list = std::make_shared<std::vector<std::string>>();
     {
         std::lock_guard<std::mutex> lock{m_childrenSyncDevicesMutex};
@@ -190,17 +191,27 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
             return nullptr;
         }
+        auto weakCalled = std::weak_ptr<std::atomic_bool>{called};
         auto weakList = std::weak_ptr<std::vector<std::string>>{list};
-        m_childrenSynchronizationCallbacks[deviceKey].push(
-          [this, &called, weakList](const std::vector<std::string>& children) {
-              if (auto childrenList = weakList.lock())
-              {
-                  for (const auto& child : children)
-                      childrenList->emplace_back(child);
-                  called = true;
-                  m_childrenSyncDevicesCV.notify_one();
-              }
+        m_childrenSynchronizationCallbacks[deviceKey].emplace_back(
+          [this, weakCalled, weakList](const std::vector<std::string>& children) {
+              // Check the flag
+              auto calledFlag = weakCalled.lock();
+              if (calledFlag == nullptr)
+                  return;
+
+              // Check the list
+              auto childrenList = weakList.lock();
+              if (childrenList == nullptr)
+                  return;
+
+              // Emplace the values in the list and change the flag
+              for (const auto& child : children)
+                  childrenList->emplace_back(child);
+              *calledFlag = true;
+              m_childrenSyncDevicesCV.notify_one();
           });
+        callbackIt = std::prev(m_childrenSynchronizationCallbacks[deviceKey].end());
     }
 
     // Wait for the condition variable to be invoked
@@ -209,9 +220,16 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
         m_childrenSyncDevicesCV.wait_for(uniqueLock, timeout, [&] { return called || m_exitCondition; });
     }
     if (!called)
+    {
+        // Remove the callback as it wasn't called
+        std::lock_guard<std::mutex> lockGuard{m_registeredDevicesMutex};
+        m_childrenSynchronizationCallbacks[deviceKey].erase(callbackIt);
         return nullptr;
+    }
     else
+    {
         return list;
+    }
 }
 
 bool RegistrationService::obtainChildrenAsync(const std::string& deviceKey,

@@ -243,7 +243,7 @@ private:
     // Make place for the children requests
     std::mutex m_childrenSyncDevicesMutex;
     std::condition_variable m_childrenSyncDevicesCV;
-    std::unordered_map<std::string, std::queue<std::function<void(std::vector<std::string>)>>>
+    std::unordered_map<std::string, std::vector<std::function<void(std::vector<std::string>)>>>
       m_childrenSynchronizationCallbacks;
 
     // Make place for the device registration responses
