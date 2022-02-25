@@ -34,9 +34,9 @@
  * In here, you can enter the device credentials to successfully identify the device on the platform.
  * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
  */
-const std::string DEVICE_KEY = "AWC";
-const std::string DEVICE_PASSWORD = "VZ8R3MI87R";
-const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
+const std::string DEVICE_KEY = "<DEVICE_KEY>";
+const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
+const std::string PLATFORM_HOST = "ssl://demo.wolkabout.com:8883";
 const std::string CA_CERT_PATH = "./ca.crt";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
 const std::string FIRMWARE_VERSION = "4.0.0";
@@ -107,6 +107,21 @@ public:
 private:
     // This is where the object containing all information about the device is stored.
     DeviceData& m_deviceData;
+};
+
+/**
+ * This is an example implementation of the `ParameterHandler` interface. This class will receive information about
+ * parameter value updates.
+ */
+class ExampleParameterHandler : public wolkabout::connect::ParameterHandler
+{
+public:
+    void handleUpdate(const std::string& deviceKey, const std::vector<wolkabout::Parameter>& parameters) override
+    {
+        LOG(INFO) << "ExampleParameterHandler received parameter values for device '" << deviceKey << "':";
+        for (const auto& parameter : parameters)
+            LOG(INFO) << "\t" << toString(parameter.first) << " -> '" << parameter.second << "'";
+    }
 };
 
 /**
@@ -233,6 +248,7 @@ int main(int /* argc */, char** /* argv */)
     auto device = wolkabout::Device{DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH};
     auto deviceInfo = DeviceData{0, false, std::chrono::seconds(5)};
     auto deviceInfoHandler = std::make_shared<DeviceDataChangeHandler>(deviceInfo);
+    auto parameterHandler = std::make_shared<ExampleParameterHandler>();
 
     /**
      * Now we can start creating the Wolk instance that is right for us.
@@ -244,6 +260,7 @@ int main(int /* argc */, char** /* argv */)
                   .host(PLATFORM_HOST)
                   .caCertPath(CA_CERT_PATH)
                   .feedUpdateHandler(deviceInfoHandler)
+                  .parameterHandler(parameterHandler)
                   .withPersistence(std::move(inMemoryPersistence))
                   .withFileTransfer(FILE_MANAGEMENT_LOCATION)
                   // Uncomment for FileURLDownload
@@ -269,10 +286,21 @@ int main(int /* argc */, char** /* argv */)
     };
     signal(SIGINT, sigintResponse);
 
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    wolk->obtainDetails([&](const std::vector<std::string>& feeds, const std::vector<std::string>& attributes) {
+        LOG(INFO) << "Received device details: ";
+        LOG(INFO) << "\tFeeds: ";
+        for (const auto& feed : feeds)
+            LOG(INFO) << "\t\t" << feed;
+        LOG(INFO) << "\tAttributes: ";
+        for (const auto& attribute : attributes)
+            LOG(INFO) << "\t\t" << attribute;
+    });
+
     /**
      * We want to randomize the temperature data too, so we need the generator for random information.
      */
-    auto engine = std::mt19937{static_cast<std::uint64_t>(std::chrono::system_clock::now().time_since_epoch().count())};
+    auto engine = std::mt19937{static_cast<std::uint32_t>(std::chrono::system_clock::now().time_since_epoch().count())};
     auto distribution = std::uniform_real_distribution<std::double_t>{-20.0, 80.0};
 
     while (running)

@@ -32,6 +32,8 @@
 #include "tests/mocks/FileListenerMock.h"
 #include "tests/mocks/FileManagementProtocolMock.h"
 #include "tests/mocks/FileTransferSessionMock.h"
+#include "tests/mocks/OutboundMessageHandlerMock.h"
+#include "tests/mocks/OutboundRetryMessageHandlerMock.h"
 #include "tests/mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
@@ -53,11 +55,16 @@ public:
             if (parameterSyncHandler)
                 parameterSyncHandler(std::move(deviceKey), std::move(parameters));
         };
+        _internalDetailsSyncHandler = [&](std::string deviceKey, std::vector<std::string> feeds,
+                                          std::vector<std::string> attributes) {
+            if (detailsSyncHandler)
+                detailsSyncHandler(deviceKey, feeds, attributes);
+        };
 
         connectivityServiceMock = std::make_shared<NiceMock<ConnectivityServiceMock>>();
-        dataServiceMock =
-          std::make_shared<NiceMock<DataServiceMock>>(dataProtocolMock, *persistenceMock, *connectivityServiceMock,
-                                                      _internalFeedUpdateSetHandler, _internalParameterSyncHandler);
+        dataServiceMock = std::make_shared<NiceMock<DataServiceMock>>(
+          dataProtocolMock, *persistenceMock, *connectivityServiceMock, outboundRetryMessageHandlerMock,
+          _internalFeedUpdateSetHandler, _internalParameterSyncHandler, _internalDetailsSyncHandler);
         fileDownloaderMock = std::make_shared<NiceMock<FileDownloaderMock>>();
         fileListenerMock = std::make_shared<NiceMock<FileListenerMock>>();
         service = std::unique_ptr<FileManagementService>{
@@ -93,6 +100,10 @@ public:
 
     std::shared_ptr<ConnectivityServiceMock> connectivityServiceMock;
 
+    OutboundMessageHandlerMock outboundMessageHandlerMock;
+
+    OutboundRetryMessageHandlerMock outboundRetryMessageHandlerMock{outboundMessageHandlerMock};
+
     DataProtocolMock dataProtocolMock;
 
     std::shared_ptr<PersistenceMock> persistenceMock;
@@ -111,6 +122,8 @@ public:
 
     ParameterSyncHandler parameterSyncHandler;
 
+    DetailsSyncHandler detailsSyncHandler;
+
     std::mutex mutex;
     std::condition_variable conditionVariable;
 
@@ -125,6 +138,7 @@ public:
 private:
     FeedUpdateSetHandler _internalFeedUpdateSetHandler;
     ParameterSyncHandler _internalParameterSyncHandler;
+    DetailsSyncHandler _internalDetailsSyncHandler;
 };
 
 std::string FileManagementServiceTests::fileLocation = "./test-fm-folder";

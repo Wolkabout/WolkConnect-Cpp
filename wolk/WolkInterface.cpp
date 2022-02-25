@@ -94,6 +94,10 @@ void WolkInterface::notifyConnected()
     LOG(INFO) << "Connection established";
 
     m_connected = true;
+
+    if (m_registrationService != nullptr)
+        m_registrationService->start();
+
     notifyConnectionStatusListener();
     publish();
 }

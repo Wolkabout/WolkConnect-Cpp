@@ -111,6 +111,11 @@ TEST_F(ErrorServiceTests, OneMessageObtainFromCache)
     EXPECT_NE(message->getArrivalTime().time_since_epoch().count(), 0);
 }
 
+TEST_F(ErrorServiceTests, ObtainAndAwaitButNothingComes)
+{
+    ASSERT_EQ(service->obtainOrAwaitMessageForDevice(DEVICE_KEY, std::chrono::milliseconds{100}), nullptr);
+}
+
 TEST_F(ErrorServiceTests, OneMessageObtainFromCacheMapExistsButNoMessage)
 {
     // Add the message and start the timer

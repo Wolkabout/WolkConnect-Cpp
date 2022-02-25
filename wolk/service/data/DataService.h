@@ -34,20 +34,24 @@ namespace wolkabout
 {
 // Forward declare some interfaces from the SDK
 class DataProtocol;
+class DetailsSynchronizationResponseMessage;
 class ParametersUpdateMessage;
 class Persistence;
 class ConnectivityService;
+class OutboundRetryMessageHandler;
 
 namespace connect
 {
 using FeedUpdateSetHandler = std::function<void(std::string, std::map<std::uint64_t, std::vector<Reading>>)>;
 using ParameterSyncHandler = std::function<void(std::string, std::vector<Parameter>)>;
+using DetailsSyncHandler = std::function<void(std::string, std::vector<std::string>, std::vector<std::string>)>;
 
 class DataService : public MessageListener
 {
 public:
     DataService(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
-                FeedUpdateSetHandler feedUpdateHandler, ParameterSyncHandler parameterSyncHandler);
+                OutboundRetryMessageHandler& outboundRetryMessageHandler, FeedUpdateSetHandler feedUpdateHandler,
+                ParameterSyncHandler parameterSyncHandler, DetailsSyncHandler detailsSyncHandler);
 
     virtual void addReading(const std::string& deviceKey, const std::string& reference, const std::string& value,
                             std::uint64_t rtc);
@@ -71,6 +75,9 @@ public:
     virtual bool synchronizeParameters(const std::string& deviceKey, const std::vector<ParameterName>& parameters,
                                        std::function<void(std::vector<Parameter>)> callback);
 
+    virtual bool detailsSynchronizationAsync(
+      const std::string& deviceKey, std::function<void(std::vector<std::string>, std::vector<std::string>)> callback);
+
     virtual void publishReadings();
     virtual void publishReadings(const std::string& deviceKey);
 
@@ -89,16 +96,20 @@ private:
 
     static std::pair<std::string, std::string> parsePersistenceKey(const std::string& key);
 
-    bool checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage);
+    bool checkIfSubscriptionIsWaiting(const ParametersUpdateMessage& parameterMessage);
+
+    bool checkIfCallbackIsWaiting(const DetailsSynchronizationResponseMessage& synchronizationResponseMessage);
 
     void publishReadingsForPersistenceKey(const std::string& persistenceKey);
 
     DataProtocol& m_protocol;
     Persistence& m_persistence;
     ConnectivityService& m_connectivityService;
+    OutboundRetryMessageHandler& m_outboundRetryMessageHandler;
 
     FeedUpdateSetHandler m_feedUpdateHandler;
     ParameterSyncHandler m_parameterSyncHandler;
+    DetailsSyncHandler m_detailsSyncHandler;
 
     CommandBuffer m_commandBuffer;
     struct ParameterSubscription
@@ -109,6 +120,9 @@ private:
     std::uint64_t m_iterator;
     std::mutex m_subscriptionMutex;
     std::map<std::uint64_t, ParameterSubscription> m_parameterSubscriptions;
+
+    std::mutex m_detailsMutex;
+    std::queue<std::function<void(std::vector<std::string>, std::vector<std::string>)>> m_detailsCallbacks;
 
     static const std::string PERSISTENCE_KEY_DELIMITER;
     static const constexpr unsigned int PUBLISH_BATCH_ITEMS_COUNT = 50;

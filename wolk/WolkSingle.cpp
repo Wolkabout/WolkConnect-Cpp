@@ -34,7 +34,7 @@ void WolkSingle::addReading(const std::string& reference, std::string value, std
         rtc = WolkSingle::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addReading(m_device.getKey(), reference, value, rtc); });
+    addToCommandBuffer([=] { m_dataService->addReading(m_device.getKey(), reference, value, rtc); });
 }
 
 void WolkSingle::addReading(const std::string& reference, const std::vector<std::string>& values, std::uint64_t rtc)
@@ -44,7 +44,7 @@ void WolkSingle::addReading(const std::string& reference, const std::vector<std:
         rtc = WolkSingle::currentRtc();
     }
 
-    addToCommandBuffer([=]() -> void { m_dataService->addReading(m_device.getKey(), reference, values, rtc); });
+    addToCommandBuffer([=] { m_dataService->addReading(m_device.getKey(), reference, values, rtc); });
 }
 
 void WolkSingle::addReading(const Reading& reading)
@@ -57,44 +57,62 @@ void WolkSingle::addReadings(const std::vector<Reading>& readings)
     addToCommandBuffer([this, readings] { m_dataService->addReadings(m_device.getKey(), readings); });
 }
 
-void WolkSingle::registerFeed(const Feed& feed)
-{
-    addToCommandBuffer([=]() -> void { m_dataService->registerFeed(m_device.getKey(), feed); });
-}
-
-void WolkSingle::registerFeeds(const std::vector<Feed>& feeds)
-{
-    addToCommandBuffer([=]() -> void { m_dataService->registerFeeds(m_device.getKey(), feeds); });
-}
-
-void WolkSingle::removeFeed(const std::string& reference)
-{
-    addToCommandBuffer([=]() -> void { m_dataService->removeFeed(m_device.getKey(), reference); });
-}
-
-void WolkSingle::removeFeeds(const std::vector<std::string>& references)
-{
-    addToCommandBuffer([=]() -> void { m_dataService->removeFeeds(m_device.getKey(), references); });
-}
-
 void WolkSingle::pullFeedValues()
 {
-    addToCommandBuffer([=]() -> void { m_dataService->pullFeedValues(m_device.getKey()); });
+    addToCommandBuffer([=] { m_dataService->pullFeedValues(m_device.getKey()); });
 }
 
 void WolkSingle::pullParameters()
 {
-    addToCommandBuffer([=]() -> void { m_dataService->pullParameters(m_device.getKey()); });
+    addToCommandBuffer([=] { m_dataService->pullParameters(m_device.getKey()); });
+}
+
+void WolkSingle::synchronizeParameters(const std::vector<ParameterName>& parameters,
+                                       std::function<void(std::vector<Parameter>)> callback)
+{
+    addToCommandBuffer([=] { m_dataService->synchronizeParameters(m_device.getKey(), parameters, callback); });
+}
+
+void WolkSingle::obtainDetails(std::function<void(std::vector<std::string>, std::vector<std::string>)> callback)
+{
+    addToCommandBuffer([=] { m_dataService->detailsSynchronizationAsync(m_device.getKey(), callback); });
+}
+
+void WolkSingle::registerFeed(const Feed& feed)
+{
+    addToCommandBuffer([=] { m_dataService->registerFeed(m_device.getKey(), feed); });
+}
+
+void WolkSingle::registerFeeds(const std::vector<Feed>& feeds)
+{
+    addToCommandBuffer([=] { m_dataService->registerFeeds(m_device.getKey(), feeds); });
+}
+
+void WolkSingle::removeFeed(const std::string& reference)
+{
+    addToCommandBuffer([=] { m_dataService->removeFeed(m_device.getKey(), reference); });
+}
+
+void WolkSingle::removeFeeds(const std::vector<std::string>& references)
+{
+    addToCommandBuffer([=] { m_dataService->removeFeeds(m_device.getKey(), references); });
 }
 
 void WolkSingle::addAttribute(Attribute attribute)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->addAttribute(m_device.getKey(), attribute); });
+    addToCommandBuffer([=] { m_dataService->addAttribute(m_device.getKey(), attribute); });
 }
 
 void WolkSingle::updateParameter(Parameter parameter)
 {
-    addToCommandBuffer([=]() -> void { m_dataService->updateParameter(m_device.getKey(), parameter); });
+    addToCommandBuffer([=] { m_dataService->updateParameter(m_device.getKey(), parameter); });
+}
+
+void WolkSingle::obtainChildren(std::function<void(std::vector<std::string>)> callback)
+{
+    if (m_registrationService == nullptr)
+        return;
+    m_registrationService->obtainChildrenAsync(m_device.getKey(), callback);
 }
 
 WolkInterfaceType WolkSingle::getType() const

@@ -42,7 +42,7 @@ public:
      * @param protocol The protocol by which the service will oblige.
      * @param listener The listener object which will receive information.
      */
-    PlatformStatusService(PlatformStatusProtocol& protocol, std::unique_ptr<PlatformStatusListener> listener);
+    PlatformStatusService(PlatformStatusProtocol& protocol, std::shared_ptr<PlatformStatusListener> listener);
 
     /**
      * This is an overridden method from the `MessageListener` interface.
@@ -65,7 +65,7 @@ private:
     PlatformStatusProtocol& m_protocol;
 
     // Here we store the means of transporting the data further.
-    std::unique_ptr<PlatformStatusListener> m_listener;
+    std::shared_ptr<PlatformStatusListener> m_listener;
 
     // Here we have the command buffer that will execute external calls.
     CommandBuffer m_commandBuffer;

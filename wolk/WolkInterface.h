@@ -38,6 +38,8 @@ namespace wolkabout
 {
 // Forward declaring handlers, and some other helping objects
 class InboundMessageHandler;
+class OutboundMessageHandler;
+class OutboundRetryMessageHandler;
 class Persistence;
 
 // Forward declaring protocols
@@ -150,6 +152,8 @@ protected:
     // Here are entities related to an MQTT connection.
     std::unique_ptr<ConnectivityService> m_connectivityService;
     std::shared_ptr<InboundMessageHandler> m_inboundMessageHandler;
+    OutboundMessageHandler* m_outboundMessageHandler;
+    std::shared_ptr<OutboundRetryMessageHandler> m_outboundRetryMessageHandler;
     std::unique_ptr<Persistence> m_persistence;
 
     // List of all protocols the Wolk object must hold

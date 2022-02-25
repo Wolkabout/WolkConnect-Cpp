@@ -36,7 +36,11 @@
 #include "tests/mocks/FirmwareParametersListenerMock.h"
 #include "tests/mocks/FirmwareUpdateProtocolMock.h"
 #include "tests/mocks/FirmwareUpdateServiceMock.h"
+#include "tests/mocks/OutboundMessageHandlerMock.h"
+#include "tests/mocks/OutboundRetryMessageHandlerMock.h"
 #include "tests/mocks/PersistenceMock.h"
+#include "tests/mocks/RegistrationProtocolMock.h"
+#include "tests/mocks/RegistrationServiceMock.h"
 
 #include <gtest/gtest.h>
 
@@ -54,13 +58,20 @@ public:
         service = std::unique_ptr<WolkSingle>{new WolkSingle{device}};
         service->m_connectivityService =
           std::unique_ptr<ConnectivityServiceMock>{new NiceMock<ConnectivityServiceMock>};
-        service->m_dataService = std::unique_ptr<DataServiceMock>{
-          new NiceMock<DataServiceMock>{dataProtocolMock, persistenceMock, *service->m_connectivityService,
-                                        [](std::string, std::map<std::uint64_t, std::vector<Reading>>) {},
-                                        [](std::string, std::vector<Parameter>) {}}};
+        service->m_outboundMessageHandler = new OutboundMessageHandlerMock();
+        service->m_outboundRetryMessageHandler =
+          std::make_shared<OutboundRetryMessageHandlerMock>(*service->m_outboundMessageHandler);
+        service->m_dataService = std::unique_ptr<DataServiceMock>{new NiceMock<DataServiceMock>{
+          dataProtocolMock, persistenceMock, *service->m_connectivityService, *service->m_outboundRetryMessageHandler,
+          [](std::string, std::map<std::uint64_t, std::vector<Reading>>) {}, [](std::string, std::vector<Parameter>) {},
+          [](std::string, std::vector<std::string>, std::vector<std::string>) {}}};
         service->m_errorService =
           std::unique_ptr<ErrorServiceMock>{new ErrorServiceMock{errorProtocolMock, std::chrono::seconds{10}}};
+        service->m_registrationService = std::unique_ptr<RegistrationServiceMock>{
+          new RegistrationServiceMock{registrationProtocolMock, *service->m_connectivityService}};
     }
+
+    void TearDown() override { delete service->m_outboundMessageHandler; }
 
     ConnectivityServiceMock& GetConnectivityServiceReference() const
     {
@@ -70,6 +81,11 @@ public:
     ErrorServiceMock& GetErrorServiceReference() const
     {
         return dynamic_cast<ErrorServiceMock&>(*service->m_errorService);
+    }
+
+    RegistrationServiceMock& GetRegistrationServiceReference() const
+    {
+        return dynamic_cast<RegistrationServiceMock&>(*service->m_registrationService);
     }
 
     void Notify() { conditionVariable.notify_one(); }
@@ -92,6 +108,8 @@ public:
     PersistenceMock persistenceMock;
 
     ErrorProtocolMock errorProtocolMock;
+
+    RegistrationProtocolMock registrationProtocolMock;
 
     FileManagementProtocolMock fileManagementProtocolMock;
 
@@ -276,6 +294,44 @@ TEST_F(WolkSingleTests, PullParameters)
     EXPECT_TRUE(called);
 }
 
+TEST_F(WolkSingleTests, SynchronizeParameters)
+{
+    // Set up the DataService to be called
+    std::atomic_bool called{false};
+    EXPECT_CALL(GetDataServiceReference(), synchronizeParameters(device.getKey(), _, _))
+      .WillOnce(
+        [&](const std::string&, const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>) {
+            called = true;
+            Notify();
+            return true;
+        });
+
+    // Call the service
+    ASSERT_NO_FATAL_FAILURE(service->synchronizeParameters({}, {}));
+    if (!called)
+        Await();
+    EXPECT_TRUE(called);
+}
+
+TEST_F(WolkSingleTests, ObtainDetails)
+{
+    // Set up the DataService to be called
+    std::atomic_bool called{false};
+    EXPECT_CALL(GetDataServiceReference(), detailsSynchronizationAsync(device.getKey(), _))
+      .WillOnce(
+        [&](const std::string&, const std::function<void(std::vector<std::string>, std::vector<std::string>)>&) {
+            called = true;
+            Notify();
+            return true;
+        });
+
+    // Call the service
+    ASSERT_NO_FATAL_FAILURE(service->obtainDetails({}));
+    if (!called)
+        Await();
+    EXPECT_TRUE(called);
+}
+
 TEST_F(WolkSingleTests, AddAttribute)
 {
     // Set up the DataService to be called
@@ -308,6 +364,18 @@ TEST_F(WolkSingleTests, UpdateParameter)
     if (!called)
         Await();
     EXPECT_TRUE(called);
+}
+
+TEST_F(WolkSingleTests, ObtainChildrenNoService)
+{
+    service->m_registrationService = nullptr;
+    ASSERT_NO_FATAL_FAILURE(service->obtainChildren({}));
+}
+
+TEST_F(WolkSingleTests, ObtainChildren)
+{
+    EXPECT_CALL(GetRegistrationServiceReference(), obtainChildrenAsync).Times(1);
+    ASSERT_NO_FATAL_FAILURE(service->obtainChildren({}));
 }
 
 TEST_F(WolkSingleTests, NotifyConnectedFileManagement)

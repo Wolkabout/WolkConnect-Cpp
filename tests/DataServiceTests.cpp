@@ -29,6 +29,8 @@
 #include "core/utilities/Logger.h"
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/DataProtocolMock.h"
+#include "tests/mocks/OutboundMessageHandlerMock.h"
+#include "tests/mocks/OutboundRetryMessageHandlerMock.h"
 #include "tests/mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
@@ -43,6 +45,9 @@ public:
     {
         // Set up the mocks
         connectivityServiceMock = std::make_shared<ConnectivityServiceMock>();
+        outboundMessageHandlerMock = std::make_shared<OutboundMessageHandlerMock>();
+        outboundRetryMessageHandlerMock =
+          std::make_shared<OutboundRetryMessageHandlerMock>(*outboundMessageHandlerMock);
         dataProtocolMock = std::make_shared<DataProtocolMock>();
         persistenceMock = std::make_shared<PersistenceMock>();
 
@@ -56,10 +61,16 @@ public:
             if (parameterSyncHandler)
                 parameterSyncHandler(deviceKey, parameters);
         };
+        _internalDetailsSyncHandler = [&](const std::string& deviceKey, const std::vector<std::string>& feeds,
+                                          const std::vector<std::string>& parameters) {
+            if (detailsSyncHandler)
+                detailsSyncHandler(deviceKey, feeds, parameters);
+        };
 
         // Create the service
         service = std::make_shared<DataService>(*dataProtocolMock, *persistenceMock, *connectivityServiceMock,
-                                                _internalFeedUpdateSetHandler, _internalParameterSyncHandler);
+                                                *outboundRetryMessageHandlerMock, _internalFeedUpdateSetHandler,
+                                                _internalParameterSyncHandler, _internalDetailsSyncHandler);
     }
 
     static void SetUpTestCase() { Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE); }
@@ -72,7 +83,13 @@ public:
 
     ParameterSyncHandler parameterSyncHandler;
 
+    DetailsSyncHandler detailsSyncHandler;
+
     std::shared_ptr<ConnectivityServiceMock> connectivityServiceMock;
+
+    std::shared_ptr<OutboundMessageHandlerMock> outboundMessageHandlerMock;
+
+    std::shared_ptr<OutboundRetryMessageHandlerMock> outboundRetryMessageHandlerMock;
 
     std::shared_ptr<DataProtocolMock> dataProtocolMock;
 
@@ -82,6 +99,7 @@ public:
 
     FeedUpdateSetHandler _internalFeedUpdateSetHandler;
     ParameterSyncHandler _internalParameterSyncHandler;
+    DetailsSyncHandler _internalDetailsSyncHandler;
 };
 
 TEST_F(DataServiceTests, MakePersistenceKey)
@@ -143,8 +161,7 @@ TEST_F(DataServiceTests, PublishReadingsHappyFlow)
 
 TEST_F(DataServiceTests, CheckIfSubscriptionExistButItsEmpty)
 {
-    ASSERT_FALSE(
-      service->checkIfSubscriptionIsWaiting(std::make_shared<ParametersUpdateMessage>(std::vector<Parameter>{})));
+    ASSERT_FALSE(service->checkIfSubscriptionIsWaiting(ParametersUpdateMessage{{}}));
 }
 
 TEST_F(DataServiceTests, CheckIfSubscriptionExistTwoSubscription)
@@ -167,14 +184,39 @@ TEST_F(DataServiceTests, CheckIfSubscriptionExistTwoSubscription)
                                             }});
 
     // Now parse the subscription
-    ASSERT_TRUE(service->checkIfSubscriptionIsWaiting(
-      std::make_shared<ParametersUpdateMessage>(std::vector<Parameter>{{ParameterName::EXTERNAL_ID, "TestValue"}})));
+    ASSERT_TRUE(
+      service->checkIfSubscriptionIsWaiting(ParametersUpdateMessage{{{ParameterName::EXTERNAL_ID, "TestValue"}}}));
     if (!callbackCalled)
     {
         std::unique_lock<std::mutex> lock{mutex};
         conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
     }
     EXPECT_TRUE(callbackCalled);
+}
+
+TEST_F(DataServiceTests, CheckIfCallbackNoCallbacks)
+{
+    ASSERT_TRUE(service->m_detailsCallbacks.empty());
+    ASSERT_FALSE(service->checkIfCallbackIsWaiting({{}, {}}));
+}
+
+TEST_F(DataServiceTests, CheckIfCallbackFinallyACallback)
+{
+    std::atomic_bool called;
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    ASSERT_NO_FATAL_FAILURE(
+      service->m_detailsCallbacks.push([&](const std::vector<std::string>&, const std::vector<std::string>&) {
+          called = true;
+          conditionVariable.notify_one();
+      }));
+    ASSERT_TRUE(service->checkIfCallbackIsWaiting({{}, {}}));
+    if (!called)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(called);
 }
 
 TEST_F(DataServiceTests, AddReadingSingleStringReading)
@@ -355,9 +397,30 @@ TEST_F(DataServiceTests, SynchronizeParametersTestFailsToPublish)
 TEST_F(DataServiceTests, SynchronizeParametersTestFailsToParse)
 {
     EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<SynchronizeParametersMessage>()))
-      .WillOnce([&](const std::string&, const SynchronizeParametersMessage&) { return nullptr; });
+      .WillOnce(Return(ByMove(nullptr)));
     EXPECT_CALL(*connectivityServiceMock, publish).Times(0);
     ASSERT_NO_FATAL_FAILURE(service->synchronizeParameters(DEVICE_KEY, {}, [](const std::vector<Parameter>&) {}));
+}
+
+TEST_F(DataServiceTests, DetailsSynchronzationFailsToParse)
+{
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<DetailsSynchronizationRequestMessage>()))
+      .WillOnce(Return(ByMove(nullptr)));
+    EXPECT_CALL(*outboundRetryMessageHandlerMock, addMessage).Times(0);
+    ASSERT_NO_FATAL_FAILURE(service->detailsSynchronizationAsync(
+      DEVICE_KEY, [](const std::vector<std::string>&, const std::vector<std::string>&) {}));
+}
+
+TEST_F(DataServiceTests, DetailsSynchronizationCall)
+{
+    EXPECT_CALL(*dataProtocolMock, makeOutboundMessage(_, A<DetailsSynchronizationRequestMessage>()))
+      .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
+    EXPECT_CALL(*dataProtocolMock, getResponseChannelForMessage(MessageType::DETAILS_SYNCHRONIZATION_REQUEST, _))
+      .Times(1);
+    EXPECT_CALL(*outboundRetryMessageHandlerMock, addMessage)
+      .WillOnce([&](const RetryMessageStruct& retryMessageStruct) { retryMessageStruct.onFail({}); });
+    ASSERT_NO_FATAL_FAILURE(service->detailsSynchronizationAsync(
+      DEVICE_KEY, [](const std::vector<std::string>&, const std::vector<std::string>&) {}));
 }
 
 TEST_F(DataServiceTests, PublishReadings)
@@ -634,6 +697,64 @@ TEST_F(DataServiceTests, MessageReceivedMessageParameterHappyFlowAnswersSubscrip
                                                  conditionVariable.notify_one();
                                              }
                                          }});
+
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageDetailSynchronizationResponseFailsToParse)
+{
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::DETAILS_SYNCHRONIZATION_RESPONSE));
+    EXPECT_CALL(*dataProtocolMock, parseDetails).WillOnce(Return(ByMove(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageCallbackIsAwaiting)
+{
+    std::atomic_bool callbackCalled{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::DETAILS_SYNCHRONIZATION_RESPONSE));
+    EXPECT_CALL(*dataProtocolMock, parseDetails)
+      .WillOnce(Return(ByMove(
+        std::unique_ptr<DetailsSynchronizationResponseMessage>{new DetailsSynchronizationResponseMessage{{}, {}}})));
+
+    service->m_detailsCallbacks.push([&](const std::vector<std::string>&, const std::vector<std::string>&) {
+        callbackCalled = true;
+        conditionVariable.notify_one();
+    });
+
+    ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
+    if (!callbackCalled)
+    {
+        std::unique_lock<std::mutex> lock{mutex};
+        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+    }
+    EXPECT_TRUE(callbackCalled);
+}
+
+TEST_F(DataServiceTests, MessageReceivedMessageFallbackToHandler)
+{
+    std::atomic_bool callbackCalled{false};
+    std::mutex mutex;
+    std::condition_variable conditionVariable;
+    EXPECT_CALL(*dataProtocolMock, getDeviceKey).WillOnce(Return(DEVICE_KEY));
+    EXPECT_CALL(*dataProtocolMock, getMessageType).WillOnce(Return(MessageType::DETAILS_SYNCHRONIZATION_RESPONSE));
+    EXPECT_CALL(*dataProtocolMock, parseDetails)
+      .WillOnce(Return(ByMove(
+        std::unique_ptr<DetailsSynchronizationResponseMessage>{new DetailsSynchronizationResponseMessage{{}, {}}})));
+
+    detailsSyncHandler = [&](const std::string&, const std::vector<std::string>&, const std::vector<std::string>&) {
+        callbackCalled = true;
+        conditionVariable.notify_one();
+    };
 
     ASSERT_NO_FATAL_FAILURE(service->messageReceived(std::make_shared<wolkabout::Message>("", "")));
     if (!callbackCalled)

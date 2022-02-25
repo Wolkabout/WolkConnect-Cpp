@@ -27,10 +27,10 @@ namespace connect
 {
 WolkBuilder WolkMulti::newBuilder(std::vector<Device> devices)
 {
-    return WolkBuilder(devices);
+    return WolkBuilder(std::move(devices));
 }
 
-bool WolkMulti::addDevice(Device device)
+bool WolkMulti::addDevice(const Device& device)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -40,10 +40,6 @@ bool WolkMulti::addDevice(Device device)
 
     // Otherwise, add the device
     m_devices.emplace_back(device);
-    {
-        auto& handler = dynamic_cast<InboundPlatformMessageHandler&>(*m_inboundMessageHandler);
-        handler.addDevice(device.getKey());
-    }
 
     // Publish the parameters for the device
     reportFileManagementParametersForDevice(device);
@@ -186,80 +182,48 @@ void WolkMulti::updateParameter(const std::string& deviceKey, Parameter paramete
     addToCommandBuffer([=]() -> void { m_dataService->updateParameter(deviceKey, parameter); });
 }
 
-bool WolkMulti::registerDevice(const std::string& deviceKey, const DeviceRegistrationData& device,
-                               std::chrono::milliseconds timeout)
+bool WolkMulti::registerDevice(
+  const DeviceRegistrationData& device,
+  std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
 {
-    if (!isDeviceInList(deviceKey))
+    if (m_registrationService == nullptr)
     {
-        LOG(WARN) << "Ignoring call of 'registerDevice' - Device '" << deviceKey << "' has not been added.";
+        LOG(ERROR) << "Failed to 'registerDevice' -> No registration service was added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->registerDevices(deviceKey, {device}, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `registerDevice` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->registerDevices("*", {device}, wrapRegisterCallback({device}, std::move(callback)));
 }
 
-bool WolkMulti::registerDevices(const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
-                                std::chrono::milliseconds timeout)
+bool WolkMulti::registerDevices(
+  const std::vector<DeviceRegistrationData>& devices,
+  std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
 {
-    if (!isDeviceInList(deviceKey))
+    if (m_registrationService == nullptr)
     {
-        LOG(WARN) << "Ignoring call of 'registerDevices' - Device '" << deviceKey << "' has not been added.";
+        LOG(ERROR) << "Failed to 'registerDevice' -> No registration service was added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->registerDevices(deviceKey, devices, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `registerDevices` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->registerDevices("*", devices, wrapRegisterCallback(devices, std::move(callback)));
 }
 
-bool WolkMulti::removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove,
-                             std::chrono::milliseconds timeout)
+bool WolkMulti::removeDevice(const std::string& deviceKey, const std::string& deviceKeyToRemove)
 {
     if (!isDeviceInList(deviceKey))
     {
         LOG(WARN) << "Ignoring call of 'removeDevice' - Device '" << deviceKey << "' has not been added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->removeDevices(deviceKey, {deviceKeyToRemove}, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `removeDevice` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->removeDevices(deviceKey, {deviceKeyToRemove});
 }
 
-bool WolkMulti::removeDevices(const std::string& deviceKey, const std::vector<std::string>& deviceKeysToRemove,
-                              std::chrono::milliseconds timeout)
+bool WolkMulti::removeDevices(const std::string& deviceKey, const std::vector<std::string>& deviceKeysToRemove)
 {
     if (!isDeviceInList(deviceKey))
     {
         LOG(WARN) << "Ignoring call of 'removeDevices' - Device '" << deviceKey << "' has not been added.";
         return false;
     }
-
-    // Check whether there has been an error returned
-    auto error = m_registrationService->removeDevices(deviceKey, deviceKeysToRemove, timeout);
-    if (error)
-    {
-        LOG(ERROR) << "An error occurred during the `removeDevices` call -> '" << error->getMessage() << "'.";
-        return false;
-    }
-    return true;
+    return m_registrationService->removeDevices(deviceKey, deviceKeysToRemove);
 }
 
 std::unique_ptr<std::vector<RegisteredDeviceInformation>> WolkMulti::obtainDevices(const std::string& deviceKey,
@@ -428,6 +392,24 @@ void WolkMulti::notifyConnected()
         reportFilesForDevice(device);
         reportFirmwareUpdateForDevice(device);
     }
+}
+
+std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> WolkMulti::wrapRegisterCallback(
+  const std::vector<DeviceRegistrationData>& devices,
+  const std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)>& callback)
+{
+    return [this, callback, devices](const std::vector<std::string>& success, const std::vector<std::string>& failed) {
+        // Check whether a device got registered or not
+        for (const auto& device : devices)
+        {
+            const auto successIt = std::find(success.cbegin(), success.cend(), device.key);
+            if (successIt != success.cend())
+                addDevice(Device{device.key, "", OutboundDataMode::PUSH});
+            else
+                LOG(WARN) << "Device '" << (device.name) << "' was not registered.";
+        }
+        callback(success, failed);
+    };
 }
 }    // namespace connect
 }    // namespace wolkabout

@@ -124,11 +124,6 @@ TEST_F(WolkBuilderTests, BuildSingleEmptyFields)
                  std::runtime_error);
 }
 
-TEST_F(WolkBuilderTests, BuildMultiButNoDevices)
-{
-    ASSERT_THROW(([] { WolkBuilder{{}}.buildWolkMulti(); }()), std::runtime_error);
-}
-
 TEST_F(WolkBuilderTests, BuildMultiButDeviceHasEmptyKey)
 {
     ASSERT_THROW(([] { WolkBuilder{{{"", "", OutboundDataMode::PUSH}}}.buildWolkMulti(); }()), std::runtime_error);
@@ -165,6 +160,7 @@ TEST_F(WolkBuilderTests, FullSingleExample)
     ASSERT_NO_FATAL_FAILURE(wolk->m_connectivityService->m_onConnectionLost());
     ASSERT_NO_FATAL_FAILURE(wolk->m_dataService->m_feedUpdateHandler("", {}));
     ASSERT_NO_FATAL_FAILURE(wolk->m_dataService->m_parameterSyncHandler("", {}));
+    ASSERT_NO_FATAL_FAILURE(wolk->m_dataService->m_detailsSyncHandler("", {"F1"}, {"A1"}));
 }
 
 TEST_F(WolkBuilderTests, FullMultiExample)

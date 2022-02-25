@@ -81,36 +81,32 @@ void FirmwareUpdateService::loadState(const std::string& deviceKey)
 
     // Check if there is a session going on, and that we have a firmware installer
     const auto deviceSessionFile = m_sessionFile + "_" + deviceKey;
-    if (FileSystemUtils::isFilePresent(deviceSessionFile))
+    auto content = std::string{};
+    if (!FileSystemUtils::readFileContent(deviceSessionFile, content))
     {
-        // If a file installer is not present, this means the user had removed a firmware installer, even if we have a
-        // session going on.
-        if (m_firmwareInstaller == nullptr)
-        {
-            LOG(WARN) << "Detected a Firmware Update session but a firmware installer is missing now.";
-            deleteSessionFile(deviceKey);
-            queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN);
-            return;
-        }
-
-        // Read the old version of the firmware
-        auto content = std::string{};
-        if (!FileSystemUtils::readFileContent(deviceSessionFile, content))
-        {
-            LOG(WARN) << "Failed to read the content of the session file.";
-            deleteSessionFile(deviceKey);
-            queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN);
-            return;
-        }
-
-        // Ask the installer if the update went well
-        auto success = m_firmwareInstaller->wasFirmwareInstallSuccessful(deviceKey, content);
-        if (success)
-            queueStatusMessage(deviceKey, FirmwareUpdateStatus::SUCCESS);
-        else
-            queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
+        LOG(WARN) << "Failed to read the content of the session file.";
         deleteSessionFile(deviceKey);
+        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN);
+        return;
     }
+
+    // If a file installer is not present, this means the user had removed a firmware installer, even if we have a
+    // session going on.
+    if (m_firmwareInstaller == nullptr)
+    {
+        LOG(WARN) << "Detected a Firmware Update session but a firmware installer is missing now.";
+        deleteSessionFile(deviceKey);
+        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN);
+        return;
+    }
+
+    // Ask the installer if the update went well
+    auto success = m_firmwareInstaller->wasFirmwareInstallSuccessful(deviceKey, content);
+    if (success)
+        queueStatusMessage(deviceKey, FirmwareUpdateStatus::SUCCESS);
+    else
+        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
+    deleteSessionFile(deviceKey);
 }
 
 void FirmwareUpdateService::obtainParametersAndAnnounce(const std::string& deviceKey)

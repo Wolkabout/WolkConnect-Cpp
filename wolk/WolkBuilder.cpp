@@ -17,8 +17,8 @@
 #include "wolk/WolkBuilder.h"
 
 #include "core/connectivity/ConnectivityService.h"
-#include "core/connectivity/InboundMessageHandler.h"
 #include "core/connectivity/InboundPlatformMessageHandler.h"
+#include "core/connectivity/OutboundRetryMessageHandler.h"
 #include "core/connectivity/mqtt/MqttConnectivityService.h"
 #include "core/connectivity/mqtt/PahoMqttClient.h"
 #include "core/persistence/inmemory/InMemoryPersistence.h"
@@ -197,7 +197,7 @@ WolkBuilder& WolkBuilder::withFirmwareUpdate(std::unique_ptr<FirmwareParametersL
     return *this;
 }
 
-WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListener> platformStatusListener)
+WolkBuilder& WolkBuilder::withPlatformStatus(std::shared_ptr<PlatformStatusListener> platformStatusListener)
 {
     if (m_platformStatusProtocol == nullptr)
         m_platformStatusProtocol =
@@ -209,7 +209,7 @@ WolkBuilder& WolkBuilder::withPlatformStatus(std::unique_ptr<PlatformStatusListe
 WolkBuilder& WolkBuilder::withRegistration(std::unique_ptr<RegistrationProtocol> protocol)
 {
     if (protocol == nullptr)
-        protocol = std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol);
+        protocol = std::unique_ptr<WolkaboutRegistrationProtocol>(new wolkabout::WolkaboutRegistrationProtocol{false});
     m_registrationProtocol = std::move(protocol);
     return *this;
 }
@@ -220,6 +220,7 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
 
     // Make the Wolk instance
     auto wolk = std::unique_ptr<WolkInterface>{};
+    auto deviceKeys = std::vector<std::string>{};
     switch (type)
     {
     case WolkInterfaceType::SingleDevice:
@@ -229,6 +230,8 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     }
     case WolkInterfaceType::MultiDevice:
     {
+        // Add the ghost device
+        deviceKeys.emplace_back("+");
         wolk.reset(new WolkMulti{m_devices});
         break;
     }
@@ -237,7 +240,6 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     }
 
     // Create the inbound message handler that will route all the messages by topic to their right destination
-    auto deviceKeys = std::vector<std::string>{};
     for (const auto& device : m_devices)
         deviceKeys.emplace_back(device.getKey());
     wolk->m_inboundMessageHandler = std::make_shared<InboundPlatformMessageHandler>(deviceKeys);
@@ -263,6 +265,10 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     }
     }
 
+    wolk->m_outboundMessageHandler = dynamic_cast<MqttConnectivityService*>(wolk->m_connectivityService.get());
+    wolk->m_outboundRetryMessageHandler =
+      std::make_shared<OutboundRetryMessageHandler>(*wolk->m_outboundMessageHandler);
+
     // Connect the ConnectivityService with the ConnectivityManager.
     auto wolkRaw = wolk.get();
     wolk->m_connectivityService->onConnectionLost([wolkRaw] {
@@ -280,12 +286,22 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     wolk->m_parameterLambda = m_parameterHandlerLambda;
     wolk->m_parameterHandler = m_parameterHandler;
     wolk->m_dataService = std::make_shared<DataService>(
-      *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService,
+      *wolk->m_dataProtocol, *wolk->m_persistence, *wolk->m_connectivityService, *wolk->m_outboundRetryMessageHandler,
       [wolkRaw](const std::string& deviceKey, const std::map<std::uint64_t, std::vector<Reading>>& readings) {
           wolkRaw->handleFeedUpdateCommand(deviceKey, readings);
       },
       [wolkRaw](const std::string& deviceKey, const std::vector<Parameter>& parameters) {
           wolkRaw->handleParameterCommand(deviceKey, parameters);
+      },
+      [](const std::string& deviceKey, const std::vector<std::string>& feeds,
+         const std::vector<std::string>& parameters) {
+          LOG(INFO) << "Received '" << deviceKey << "' details: ";
+          LOG(INFO) << "\tFeeds:";
+          for (const auto& feed : feeds)
+              LOG(INFO) << "\t\t" << feed;
+          LOG(INFO) << "\tParameters:";
+          for (const auto& parameter : parameters)
+              LOG(INFO) << "\t\t" << parameter;
       });
     wolk->m_errorService = std::make_shared<ErrorService>(*wolk->m_errorProtocol, m_errorRetainTime);
     wolk->m_inboundMessageHandler->addListener(wolk->m_dataService);
@@ -369,8 +385,8 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
     {
         // Create the service
         wolk->m_registrationProtocol = std::move(m_registrationProtocol);
-        wolk->m_registrationService = std::make_shared<RegistrationService>(
-          *wolk->m_registrationProtocol, *wolk->m_connectivityService, *wolk->m_errorService);
+        wolk->m_registrationService =
+          std::make_shared<RegistrationService>(*wolk->m_registrationProtocol, *wolk->m_connectivityService);
         wolk->m_inboundMessageHandler->addListener(wolk->m_registrationService);
     }
 
@@ -400,9 +416,6 @@ std::unique_ptr<WolkMulti> WolkBuilder::buildWolkMulti()
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Check that the devices vector is at least not empty.
-    if (m_devices.empty())
-        throw std::runtime_error("Failed to build `WolkMulti` instance: The devices vector is empty.");
     // Check that the devices don't contain empty keys.
     for (const auto& device : m_devices)
         if (device.getKey().empty())

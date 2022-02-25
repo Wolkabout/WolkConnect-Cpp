@@ -210,7 +210,7 @@ public:
      * @param platformStatusListener The listener of the messages.
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
-    WolkBuilder& withPlatformStatus(std::unique_ptr<PlatformStatusListener> platformStatusListener);
+    WolkBuilder& withPlatformStatus(std::shared_ptr<PlatformStatusListener> platformStatusListener);
 
     /**
      * @brief Sets the Wolk module to allow device registration.
@@ -284,7 +284,7 @@ private:
     std::unique_ptr<FirmwareParametersListener> m_firmwareParametersListener;
 
     // Here is the place for the platform status listener
-    std::unique_ptr<PlatformStatusListener> m_platformStatusListener;
+    std::shared_ptr<PlatformStatusListener> m_platformStatusListener;
 
     // These are the default values that are going to be used for the connection parameters
     static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";

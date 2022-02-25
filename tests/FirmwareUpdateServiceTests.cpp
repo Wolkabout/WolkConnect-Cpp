@@ -31,6 +31,8 @@
 #include "tests/mocks/FirmwareInstallerMock.h"
 #include "tests/mocks/FirmwareParametersListenerMock.h"
 #include "tests/mocks/FirmwareUpdateProtocolMock.h"
+#include "tests/mocks/OutboundMessageHandlerMock.h"
+#include "tests/mocks/OutboundRetryMessageHandlerMock.h"
 #include "tests/mocks/PersistenceMock.h"
 
 #include <gtest/gtest.h>
@@ -102,11 +104,16 @@ public:
 
     ConnectivityServiceMock connectivityServiceMock;
 
+    OutboundMessageHandlerMock outboundMessageHandlerMock;
+
+    OutboundRetryMessageHandlerMock outboundRetryMessageHandler{outboundMessageHandlerMock};
+
     DataProtocolMock dataProtocolMock;
 
     PersistenceMock persistenceMock;
 
-    DataServiceMock dataServiceMock{dataProtocolMock, persistenceMock, connectivityServiceMock, {}, {}};
+    DataServiceMock dataServiceMock{
+      dataProtocolMock, persistenceMock, connectivityServiceMock, outboundRetryMessageHandler, {}, {}, {}};
 
     FirmwareUpdateProtocolMock firmwareUpdateProtocolMock;
 

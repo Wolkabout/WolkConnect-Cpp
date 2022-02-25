@@ -28,8 +28,11 @@ class DataServiceMock : public DataService
 {
 public:
     DataServiceMock(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
-                    const FeedUpdateSetHandler& feedUpdateHandler, const ParameterSyncHandler& parameterSyncHandler)
-    : DataService(protocol, persistence, connectivityService, feedUpdateHandler, parameterSyncHandler)
+                    OutboundRetryMessageHandler& outboundRetryMessageHandler,
+                    const FeedUpdateSetHandler& feedUpdateHandler, const ParameterSyncHandler& parameterSyncHandler,
+                    const DetailsSyncHandler& detailsSyncHandler)
+    : DataService(protocol, persistence, connectivityService, outboundRetryMessageHandler, feedUpdateHandler,
+                  parameterSyncHandler, detailsSyncHandler)
     {
     }
     MOCK_METHOD(void, addReading, (const std::string&, const std::string&, const std::string&, std::uint64_t));
@@ -47,6 +50,8 @@ public:
     MOCK_METHOD(void, pullParameters, (const std::string&));
     MOCK_METHOD(bool, synchronizeParameters,
                 (const std::string&, const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>));
+    MOCK_METHOD(bool, detailsSynchronizationAsync,
+                (const std::string&, std::function<void(std::vector<std::string>, std::vector<std::string>)>));
     MOCK_METHOD(void, publishReadings, ());
     MOCK_METHOD(void, publishReadings, (const std::string&));
     MOCK_METHOD(void, publishAttributes, ());

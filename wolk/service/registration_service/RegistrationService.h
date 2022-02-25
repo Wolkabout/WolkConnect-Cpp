@@ -23,6 +23,7 @@
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/protocol/RegistrationProtocol.h"
+#include "core/utilities/CommandBuffer.h"
 #include "core/utilities/Service.h"
 #include "wolk/service/error/ErrorService.h"
 
@@ -66,6 +67,19 @@ public:
     std::size_t operator()(const DeviceQueryData& data) const;
 };
 
+// Define a hash function for a vector of strings.
+struct StringVectorHash
+{
+public:
+    std::size_t operator()(const std::vector<std::string>& data) const
+    {
+        auto hash = std::size_t{0};
+        for (const auto& entry : data)
+            hash ^= std::hash<std::string>()(entry);
+        return hash;
+    }
+};
+
 /**
  * This is the service that is responsible for registering/removing devices, and also obtaining information about
  * devices.
@@ -78,10 +92,8 @@ public:
      *
      * @param protocol The protocol this service will follow.
      * @param connectivityService The connectivity service used to send outgoing messages.
-     * @param errorService The error service used to listen to error messages.
      */
-    explicit RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService,
-                                 ErrorService& errorService);
+    explicit RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService);
 
     /**
      * Overridden constructor. Will stop all running condition variables.
@@ -105,26 +117,45 @@ public:
      *
      * @param deviceKey The key of the device trying to register the devices.
      * @param devices The list of devices that the user would like to register.
-     * @param timeout The time the method will maximally wait for an error to appear.
-     * @return If nothing has gone wrong, this will be {@code: nullptr}. Otherwise a value will be passed, with a
-     * further explanation of the error.
+     * @param callback The callback which will be invoked with devices that are registered, and ones that are not.
+     * @return Whether the `DeviceRegistrationMessage` has been sent out.
      */
-    virtual std::unique_ptr<ErrorMessage> registerDevices(const std::string& deviceKey,
-                                                          const std::vector<DeviceRegistrationData>& devices,
-                                                          std::chrono::milliseconds timeout);
+    virtual bool registerDevices(
+      const std::string& deviceKey, const std::vector<DeviceRegistrationData>& devices,
+      std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback);
 
     /**
      * This method is used to send a device deletion request.
      *
      * @param deviceKey The key of the device trying to delete the devices.
      * @param deviceKeys The list of device keys that should be deleted.
-     * @param timeout The time the method will maximally wait for an error to appear.
-     * @return If nothing has gone wrong, this will be {@code: nullptr}. Otherwise a value will be passed, with a
-     * further explanation of the error.
+     * @return Whether the `DeviceRemovalMessage` has been sent out.
      */
-    virtual std::unique_ptr<ErrorMessage> removeDevices(const std::string& deviceKey,
-                                                        std::vector<std::string> deviceKeys,
-                                                        std::chrono::milliseconds timeout);
+    virtual bool removeDevices(const std::string& deviceKey, std::vector<std::string> deviceKeys);
+
+    /**
+     * This method is used to obtain the list of children of a device. This is the synchronous version of the method
+     * that will attempt to await the response.
+     *
+     * @param deviceKey The key of the device trying to obtain the list of children.
+     * @param timeout The maximum wait the method will await the response.
+     * @return This list of children obtained. Will be a {@code: nullptr} if unable to obtain children, empty vector if
+     * the platform returned no devices, or filled with devices if everything has gone successfully.
+     */
+    virtual std::shared_ptr<std::vector<std::string>> obtainChildren(const std::string& deviceKey,
+                                                                     std::chrono::milliseconds timeout);
+
+    /**
+     * This method is used to obtain the list of children of a device. This is the asynchronous version of the method
+     * that wil call a callback once a response has been received.
+     *
+     * @param deviceKey The key of the device trying to obtain the list of children.
+     * @param callback The callback that will be invoked once a response has been received.
+     * @return Whether the request was successfully sent out. If this is false, that means that the callback will never
+     * be called.
+     */
+    virtual bool obtainChildrenAsync(const std::string& deviceKey,
+                                     std::function<void(std::vector<std::string>)> callback);
 
     /**
      * This method is used to obtain a list of devices. This is the synchronous version of the method that will attempt
@@ -177,20 +208,58 @@ public:
     const Protocol& getProtocol() override;
 
 private:
+    /**
+     * This is the internal method that is invoked to handle the received `ChildrenSynchronizationResponseMessage`.
+     *
+     * @param deviceKey The device key for which the message is meant.
+     * @param responseMessage The received `ChildrenSynchronizationResponseMessage`.
+     */
+    void handleChildrenSynchronizationResponse(const std::string& deviceKey,
+                                               std::unique_ptr<ChildrenSynchronizationResponseMessage> responseMessage);
+
+    /**
+     * This is the internal method that is invoked to handle the received `DeviceRegistrationResponseMessage`.
+     *
+     * @param responseMessage The received `DeviceRegistrationResponseMessage`.
+     */
+    void handleDeviceRegistrationResponse(std::unique_ptr<DeviceRegistrationResponseMessage> responseMessage);
+
+    /**
+     * This is the internal method that is invoked to handle the received `RegisteredDevicesResponseMessage`.
+     *
+     * @param responseMessage The received `RegisteredDevicesResponseMessage`.
+     */
+    void handleRegisteredDevicesResponse(std::unique_ptr<RegisteredDevicesResponseMessage> responseMessage);
+
+    // This is the flag that is turned to true when the service is being destroyed.
+    std::atomic_bool m_exitCondition;
+
     // Here we store the actual protocol.
     RegistrationProtocol& m_protocol;
 
     // We need to use the connectivity service to send out the messages.
     ConnectivityService& m_connectivityService;
 
-    // And here we have the reference of the error service.
-    ErrorService& m_errorService;
+    // Make place for the children requests
+    std::mutex m_childrenSyncDevicesMutex;
+    std::condition_variable m_childrenSyncDevicesCV;
+    std::unordered_map<std::string, std::vector<std::function<void(std::vector<std::string>)>>>
+      m_childrenSynchronizationCallbacks;
+
+    // Make place for the device registration responses
+    std::mutex m_deviceRegistrationMutex;
+    std::unordered_map<std::vector<std::string>,
+                       std::function<void(std::vector<std::string>, std::vector<std::string>)>, StringVectorHash>
+      m_deviceRegistrationCallbacks;
 
     // Make place for the requests for devices
-    std::mutex m_mutex;
-    std::condition_variable m_conditionVariable;
+    std::mutex m_registeredDevicesMutex;
+    std::condition_variable m_registeredDevicesCV;
     std::unordered_map<DeviceQueryData, std::unique_ptr<RegisteredDevicesResponseMessage>, DeviceQueryDataHash>
-      m_responses;
+      m_deviceRegistrationResponses;
+
+    // Have a command buffer for calling some callbacks
+    CommandBuffer m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

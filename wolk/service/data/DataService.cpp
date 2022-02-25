@@ -18,6 +18,7 @@
 
 #include "core/Types.h"
 #include "core/connectivity/ConnectivityService.h"
+#include "core/connectivity/OutboundRetryMessageHandler.h"
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/model/Message.h"
@@ -29,6 +30,12 @@
 #include <cassert>
 #include <utility>
 
+namespace
+{
+const std::uint16_t RETRY_COUNT = 3;
+const std::chrono::milliseconds RETRY_TIMEOUT{5000};
+}    // namespace
+
 namespace wolkabout
 {
 namespace connect
@@ -36,12 +43,16 @@ namespace connect
 const std::string DataService::PERSISTENCE_KEY_DELIMITER = "+";
 
 DataService::DataService(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
-                         FeedUpdateSetHandler feedUpdateHandler, ParameterSyncHandler parameterSyncHandler)
+                         OutboundRetryMessageHandler& outboundRetryMessageHandler,
+                         FeedUpdateSetHandler feedUpdateHandler, ParameterSyncHandler parameterSyncHandler,
+                         DetailsSyncHandler detailsSyncHandler)
 : m_protocol{protocol}
 , m_persistence{persistence}
 , m_connectivityService{connectivityService}
+, m_outboundRetryMessageHandler{outboundRetryMessageHandler}
 , m_feedUpdateHandler{std::move(feedUpdateHandler)}
 , m_parameterSyncHandler{std::move(parameterSyncHandler)}
+, m_detailsSyncHandler{std::move(detailsSyncHandler)}
 , m_iterator(0)
 {
 }
@@ -137,29 +148,58 @@ bool DataService::synchronizeParameters(const std::string& deviceKey, const std:
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Make the subscription object in the map
-    auto subscription = ParameterSubscription{parameters, std::move(callback)};
-
     // Make the message for synchronization
-    auto synchronization = SynchronizeParametersMessage{parameters};
-    auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, synchronization));
+    auto message =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, SynchronizeParametersMessage{parameters})};
     if (message == nullptr)
     {
         LOG(ERROR) << "Failed to synchronize parameters - Failed to parse outgoing SynchronizeParametersMessage.";
         return false;
     }
 
-    // Lock the subscription mutex, send the message out, and add the subscription to the map.
+    // Send the message out, and add the subscription to the map.
+    if (!m_connectivityService.publish(message))
+    {
+        LOG(ERROR) << "Failed to synchronize parameters - Failed to send the outgoing SynchronizeParameterMessage.";
+        return false;
+    }
+    if (callback)
     {
         std::lock_guard<std::mutex> lockGuard{m_subscriptionMutex};
-        if (!m_connectivityService.publish(message))
-        {
-            LOG(ERROR) << "Failed to synchronize parameters - Failed to send the outgoing SynchronizeParameterMessage.";
-            return false;
-        }
-        m_parameterSubscriptions.emplace(m_iterator++, std::move(subscription));
-        return true;
+        m_parameterSubscriptions.emplace(m_iterator++, ParameterSubscription{parameters, std::move(callback)});
     }
+    return true;
+}
+
+bool DataService::detailsSynchronizationAsync(
+  const std::string& deviceKey, std::function<void(std::vector<std::string>, std::vector<std::string>)> callback)
+{
+    LOG(TRACE) << METHOD_INFO;
+    const auto errorPrefix = "Failed to synchronize device details";
+
+    // Make the request message for synchronization
+    auto message =
+      std::shared_ptr<Message>{m_protocol.makeOutboundMessage(deviceKey, DetailsSynchronizationRequestMessage{})};
+    if (message == nullptr)
+    {
+        LOG(ERROR) << errorPrefix << " -> Failed to parse outgoing 'DetailsSynchronizationRequestMessage'.";
+        return false;
+    }
+
+    // Send the message out and add the callback in the map
+    m_outboundRetryMessageHandler.addMessage(
+      {message, m_protocol.getResponseChannelForMessage(MessageType::DETAILS_SYNCHRONIZATION_REQUEST, deviceKey),
+       [](const std::shared_ptr<Message>&) {
+           LOG(ERROR)
+             << "Failed to receive response for 'DetailsSynchronizationRequestMessage' - no response from platform.";
+       },
+       RETRY_COUNT, RETRY_TIMEOUT});
+    if (callback)
+    {
+        std::lock_guard<std::mutex> lock{m_detailsMutex};
+        m_detailsCallbacks.push(std::move(callback));
+    }
+    return true;
 }
 
 void DataService::publishReadings()
@@ -377,10 +417,23 @@ void DataService::messageReceived(std::shared_ptr<Message> message)
         auto parameterMessage = m_protocol.parseParameters(message);
         if (parameterMessage == nullptr)
             LOG(WARN) << "Unable to parse message: " << message->getChannel();
-        else if (checkIfSubscriptionIsWaiting(parameterMessage))    // It's important to first check this
+        else if (checkIfSubscriptionIsWaiting(*parameterMessage))    // It's important to first check this
             return;
         else if (m_parameterSyncHandler)
             m_parameterSyncHandler(deviceKey, parameterMessage->getParameters());
+        return;
+    }
+    case MessageType::DETAILS_SYNCHRONIZATION_RESPONSE:
+    {
+        m_outboundRetryMessageHandler.messageReceived(message);
+        auto detailsSynchronization = m_protocol.parseDetails(message);
+        if (detailsSynchronization == nullptr)
+            LOG(WARN) << "Unable to parse message: " << message->getChannel();
+        else if (checkIfCallbackIsWaiting(*detailsSynchronization))
+            return;
+        else if (m_detailsSyncHandler)
+            m_detailsSyncHandler(deviceKey, detailsSynchronization->getFeeds(),
+                                 detailsSynchronization->getAttributes());
         return;
     }
     default:
@@ -408,7 +461,7 @@ std::pair<std::string, std::string> DataService::parsePersistenceKey(const std::
     return {deviceKey, reference};
 }
 
-bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersUpdateMessage>& parameterMessage)
+bool DataService::checkIfSubscriptionIsWaiting(const ParametersUpdateMessage& parameterMessage)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -419,8 +472,8 @@ bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersU
         {
             // Check if the list of parameters is the same length, and then content
             const auto& parameters = subscription.second.parameters;
-            const auto& values = parameterMessage->getParameters();
-            if (parameterMessage->getParameters().size() != parameters.size())
+            const auto& values = parameterMessage.getParameters();
+            if (parameterMessage.getParameters().size() != parameters.size())
             {
                 continue;
             }
@@ -435,12 +488,33 @@ bool DataService::checkIfSubscriptionIsWaiting(const std::shared_ptr<ParametersU
             }
 
             // Then we found the ones for the subscription!
-            auto callback = subscription.second.callback;
-            m_commandBuffer.pushCommand(
-              std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
+            const auto& callback = subscription.second.callback;
+            if (callback)
+                m_commandBuffer.pushCommand(
+                  std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
 
             // And we can clear the subscription
             m_parameterSubscriptions.erase(subscription.first);
+            return callback != nullptr;
+        }
+    }
+    return false;
+}
+
+bool DataService::checkIfCallbackIsWaiting(const DetailsSynchronizationResponseMessage& synchronizationResponseMessage)
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    {
+        std::lock_guard<std::mutex> lock{m_detailsMutex};
+        if (!m_detailsCallbacks.empty())
+        {
+            const auto callback = m_detailsCallbacks.front();
+            m_commandBuffer.pushCommand(
+              std::make_shared<std::function<void()>>([callback, synchronizationResponseMessage] {
+                  callback(synchronizationResponseMessage.getFeeds(), synchronizationResponseMessage.getAttributes());
+              }));
+            m_detailsCallbacks.pop();
             return true;
         }
     }

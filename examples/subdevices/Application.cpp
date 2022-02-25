@@ -18,6 +18,8 @@
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkMulti.h"
 
+using namespace wolkabout;
+
 class ExamplePlatformStatusListener : public wolkabout::connect::PlatformStatusListener
 {
 public:
@@ -39,14 +41,14 @@ int main(int /* argc */, char** /* argv */)
     auto deviceThree = wolkabout::Device{"ThirdDevice", "", wolkabout::OutboundDataMode::PUSH};
 
     // And now we can create the wolk session
-    auto wolk = wolkabout::connect::WolkMulti::newBuilder({deviceOne, deviceTwo})
+    auto wolk = wolkabout::connect::WolkMulti::newBuilder({})
                   .host("tcp://localhost:1883")
                   .withFileTransfer("./files")
                   .withPlatformStatus(std::unique_ptr<ExamplePlatformStatusListener>(new ExamplePlatformStatusListener))
                   .withErrorProtocol(std::chrono::minutes{10})
+                  .withRegistration()
                   .buildWolkMulti();
     wolk->connect();
-
     wolk->addReading(deviceOne.getKey(), "π", 3.14);
     wolk->publish();
     wolk->pullFeedValues(deviceTwo.getKey());
@@ -67,13 +69,6 @@ int main(int /* argc */, char** /* argv */)
 
         // We can sleep again
         std::this_thread::sleep_for(std::chrono::seconds(5));
-
-        // Do some things for the devices
-        for (const auto& device : devices)
-        {
-            LOG(INFO) << "Count of errors for device: '" << device.getKey() << "' -> "
-                      << wolk->peekErrorCount(device.getKey()) << ".";
-        }
     }
 
     // And that's it
