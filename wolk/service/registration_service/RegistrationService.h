@@ -209,6 +209,15 @@ public:
 
 private:
     /**
+     * This is the internal method that is invoked to handle the received `ChildrenSynchronizationResponseMessage`.
+     *
+     * @param deviceKey The device key for which the message is meant.
+     * @param responseMessage The received `ChildrenSynchronizationResponseMessage`.
+     */
+    void handleChildrenSynchronizationResponse(const std::string& deviceKey,
+                                               std::unique_ptr<ChildrenSynchronizationResponseMessage> responseMessage);
+
+    /**
      * This is the internal method that is invoked to handle the received `DeviceRegistrationResponseMessage`.
      *
      * @param responseMessage The received `DeviceRegistrationResponseMessage`.
@@ -222,6 +231,9 @@ private:
      */
     void handleRegisteredDevicesResponse(std::unique_ptr<RegisteredDevicesResponseMessage> responseMessage);
 
+    // This is the flag that is turned to true when the service is being destroyed.
+    std::atomic_bool m_exitCondition;
+
     // Here we store the actual protocol.
     RegistrationProtocol& m_protocol;
 
@@ -231,6 +243,8 @@ private:
     // Make place for the children requests
     std::mutex m_childrenSyncDevicesMutex;
     std::condition_variable m_childrenSyncDevicesCV;
+    std::unordered_map<std::string, std::queue<std::function<void(std::vector<std::string>)>>>
+      m_childrenSynchronizationCallbacks;
 
     // Make place for the device registration responses
     std::mutex m_deviceRegistrationMutex;
@@ -242,7 +256,7 @@ private:
     std::mutex m_registeredDevicesMutex;
     std::condition_variable m_registeredDevicesCV;
     std::unordered_map<DeviceQueryData, std::unique_ptr<RegisteredDevicesResponseMessage>, DeviceQueryDataHash>
-      m_responses;
+      m_deviceRegistrationResponses;
 
     // Have a command buffer for calling some callbacks
     CommandBuffer m_commandBuffer;

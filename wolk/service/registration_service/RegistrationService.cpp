@@ -69,7 +69,7 @@ std::size_t DeviceQueryDataHash::operator()(const DeviceQueryData& data) const
 }
 
 RegistrationService::RegistrationService(RegistrationProtocol& protocol, ConnectivityService& connectivityService)
-: m_protocol(protocol), m_connectivityService(connectivityService)
+: m_exitCondition{false}, m_protocol(protocol), m_connectivityService(connectivityService)
 {
 }
 
@@ -82,8 +82,9 @@ void RegistrationService::start() {}
 
 void RegistrationService::stop()
 {
-    m_registeredDevicesCV.notify_all();
+    m_exitCondition = true;
     m_childrenSyncDevicesCV.notify_all();
+    m_registeredDevicesCV.notify_all();
 }
 
 bool RegistrationService::registerDevices(
@@ -189,12 +190,23 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
             return nullptr;
         }
+        auto weakList = std::weak_ptr<std::vector<std::string>>{list};
+        m_childrenSynchronizationCallbacks[deviceKey].push(
+          [this, &called, weakList](const std::vector<std::string>& children) {
+              if (auto childrenList = weakList.lock())
+              {
+                  for (const auto& child : children)
+                      childrenList->emplace_back(child);
+                  called = true;
+                  m_childrenSyncDevicesCV.notify_one();
+              }
+          });
     }
 
     // Wait for the condition variable to be invoked
     {
         auto uniqueLock = std::unique_lock<std::mutex>{m_registeredDevicesMutex};
-        m_childrenSyncDevicesCV.wait_for(uniqueLock, timeout);
+        m_childrenSyncDevicesCV.wait_for(uniqueLock, timeout, [&] { return called || m_exitCondition; });
     }
     if (!called)
         return nullptr;
@@ -234,6 +246,7 @@ bool RegistrationService::obtainChildrenAsync(const std::string& deviceKey,
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
             return false;
         }
+        m_childrenSynchronizationCallbacks[deviceKey].push(callback);
         return true;
     }
 }
@@ -266,7 +279,7 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `RegisteredDevicesRequest` message.";
             return nullptr;
         }
-        m_responses.emplace(query, nullptr);
+        m_deviceRegistrationResponses.emplace(query, nullptr);
     }
 
     // Wait for the condition variable to be invoked
@@ -280,11 +293,11 @@ std::unique_ptr<std::vector<RegisteredDeviceInformation>> RegistrationService::o
     {
         std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
         // Check if there's a value in the map
-        const auto it = m_responses.find(query);
-        if (it != m_responses.cend())
+        const auto it = m_deviceRegistrationResponses.find(query);
+        if (it != m_deviceRegistrationResponses.cend())
         {
             response = std::move(it->second);
-            m_responses.erase(it);
+            m_deviceRegistrationResponses.erase(it);
         }
     }
     if (response == nullptr)
@@ -337,7 +350,7 @@ bool RegistrationService::obtainDevicesAsync(
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `RegisteredDevicesRequest` message.";
             return false;
         }
-        m_responses.emplace(query, nullptr);
+        m_deviceRegistrationResponses.emplace(query, nullptr);
         return true;
     }
 }
@@ -348,8 +361,18 @@ void RegistrationService::messageReceived(std::shared_ptr<Message> message)
     const auto errorPrefix = "Failed to process received message";
 
     const auto messageType = m_protocol.getMessageType(*message);
+    const auto deviceKey = m_protocol.getDeviceKey(*message);
     switch (messageType)
     {
+    case MessageType::CHILDREN_SYNCHRONIZATION_RESPONSE:
+    {
+        auto parsedMessage = m_protocol.parseChildrenSynchronizationResponse(message);
+        if (parsedMessage == nullptr)
+            LOG(ERROR) << errorPrefix << " -> The message could not be parsed.";
+        else
+            handleChildrenSynchronizationResponse(deviceKey, std::move(parsedMessage));
+        break;
+    }
     case MessageType::DEVICE_REGISTRATION_RESPONSE:
     {
         auto parsedMessage = m_protocol.parseDeviceRegistrationResponse(message);
@@ -380,6 +403,30 @@ const Protocol& RegistrationService::getProtocol()
     return m_protocol;
 }
 
+void RegistrationService::handleChildrenSynchronizationResponse(
+  const std::string& deviceKey, std::unique_ptr<ChildrenSynchronizationResponseMessage> responseMessage)
+{
+    // Check nullptr
+    if (responseMessage == nullptr)
+        return;
+
+    // Look for any callbacks
+    std::lock_guard<std::mutex> lockGuard{m_childrenSyncDevicesMutex};
+    if (!m_childrenSynchronizationCallbacks[deviceKey].empty())
+    {
+        // Take the first callback from the queue
+        const auto callback = m_childrenSynchronizationCallbacks[deviceKey].front();
+        m_childrenSynchronizationCallbacks[deviceKey].pop();
+
+        // Make copy of the children devices
+        const auto children = responseMessage->getChildren();
+
+        // And invoke the callback
+        m_commandBuffer.pushCommand(
+          std::make_shared<std::function<void()>>([callback, children] { callback(children); }));
+    }
+}
+
 void RegistrationService::handleDeviceRegistrationResponse(
   std::unique_ptr<DeviceRegistrationResponseMessage> responseMessage)
 {
@@ -396,18 +443,16 @@ void RegistrationService::handleDeviceRegistrationResponse(
     std::sort(deviceNames.begin(), deviceNames.end());
 
     // Look for callbacks
-    {
-        std::lock_guard<std::mutex> lock{m_deviceRegistrationMutex};
-        const auto it = m_deviceRegistrationCallbacks.find(deviceNames);
-        if (it == m_deviceRegistrationCallbacks.cend())
-            return;
-        const auto callback = std::move(it->second);
-        const auto success = responseMessage->getSuccess();
-        const auto failed = responseMessage->getFailed();
-        m_commandBuffer.pushCommand(
-          std::make_shared<std::function<void()>>([callback, success, failed] { callback(success, failed); }));
-        m_deviceRegistrationCallbacks.erase(it);
-    }
+    std::lock_guard<std::mutex> lock{m_deviceRegistrationMutex};
+    const auto it = m_deviceRegistrationCallbacks.find(deviceNames);
+    if (it == m_deviceRegistrationCallbacks.cend())
+        return;
+    const auto callback = std::move(it->second);
+    const auto success = responseMessage->getSuccess();
+    const auto failed = responseMessage->getFailed();
+    m_commandBuffer.pushCommand(
+      std::make_shared<std::function<void()>>([callback, success, failed] { callback(success, failed); }));
+    m_deviceRegistrationCallbacks.erase(it);
 }
 
 void RegistrationService::handleRegisteredDevicesResponse(
@@ -423,8 +468,8 @@ void RegistrationService::handleRegisteredDevicesResponse(
     // And now look whether there's such a query object in the map
     {
         std::lock_guard<std::mutex> lock{m_registeredDevicesMutex};
-        const auto it = m_responses.find(query);
-        if (it == m_responses.cend())
+        const auto it = m_deviceRegistrationResponses.find(query);
+        if (it == m_deviceRegistrationResponses.cend())
             return;
 
         // Check whether there exists a callback.
@@ -438,7 +483,7 @@ void RegistrationService::handleRegisteredDevicesResponse(
         else
         {
             // Place the value in the map
-            m_responses[query] = std::move(responseMessage);
+            m_deviceRegistrationResponses[query] = std::move(responseMessage);
         }
     }
     m_registeredDevicesCV.notify_one();

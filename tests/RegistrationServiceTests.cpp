@@ -325,7 +325,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesAsyncNoCallback)
     ASSERT_EQ(
       service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, {}),
       false);
-    EXPECT_TRUE(service->m_responses.empty());
+    EXPECT_TRUE(service->m_deviceRegistrationResponses.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesFailedToFormMessage)
@@ -340,13 +340,13 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToFormMessage)
     ASSERT_EQ(
       service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, HUNDRED),
       nullptr);
-    EXPECT_TRUE(service->m_responses.empty());
+    EXPECT_TRUE(service->m_deviceRegistrationResponses.empty());
 
     // Call the service (async)
     ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {},
                                           {}, [&](const std::vector<RegisteredDeviceInformation>&) {}),
               false);
-    EXPECT_TRUE(service->m_responses.empty());
+    EXPECT_TRUE(service->m_deviceRegistrationResponses.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesFailedToPublish)
@@ -362,13 +362,13 @@ TEST_F(RegistrationServiceTests, ObtainDevicesFailedToPublish)
     ASSERT_EQ(
       service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, HUNDRED),
       nullptr);
-    EXPECT_TRUE(service->m_responses.empty());
+    EXPECT_TRUE(service->m_deviceRegistrationResponses.empty());
 
     // Call the service (async)
     ASSERT_EQ(service->obtainDevicesAsync(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {},
                                           {}, [&](const std::vector<RegisteredDeviceInformation>&) {}),
               false);
-    EXPECT_TRUE(service->m_responses.empty());
+    EXPECT_TRUE(service->m_deviceRegistrationResponses.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainDevicesNothingGotPushed)
@@ -385,7 +385,7 @@ TEST_F(RegistrationServiceTests, ObtainDevicesNothingGotPushed)
     ASSERT_EQ(
       service->obtainDevices(DEVICE_KEY, std::chrono::system_clock::now() - std::chrono::seconds(60), {}, {}, timeout),
       nullptr);
-    EXPECT_TRUE(service->m_responses.empty());
+    EXPECT_TRUE(service->m_deviceRegistrationResponses.empty());
     const auto duration = std::chrono::system_clock::now() - start;
     const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(duration);
     LOG(INFO) << "Execution time: " << duration.count() << "μs (" << durationMs.count()
