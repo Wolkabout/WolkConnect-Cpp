@@ -189,18 +189,6 @@ std::shared_ptr<std::vector<std::string>> RegistrationService::obtainChildren(co
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
             return nullptr;
         }
-        if (m_queries.find(deviceKey) == m_queries.cend())
-            m_queries.emplace(deviceKey, std::queue<std::function<void(std::vector<std::string>)>>{});
-        auto weakList = std::weak_ptr<std::vector<std::string>>{list};
-        m_queries[deviceKey].push([this, &called, weakList](const std::vector<std::string>& children) {
-            if (auto childrenList = weakList.lock())
-            {
-                for (const auto& child : children)
-                    childrenList->emplace_back(child);
-                called = true;
-                m_childrenSyncDevicesCV.notify_one();
-            }
-        });
     }
 
     // Wait for the condition variable to be invoked
@@ -246,9 +234,6 @@ bool RegistrationService::obtainChildrenAsync(const std::string& deviceKey,
             LOG(ERROR) << errorPrefix << " -> Failed to send the outgoing `ChildrenSynchronizationRequestMessage`.";
             return false;
         }
-        if (m_queries.find(deviceKey) == m_queries.cend())
-            m_queries.emplace(deviceKey, std::queue<std::function<void(std::vector<std::string>)>>{});
-        m_queries[deviceKey].push(callback);
         return true;
     }
 }

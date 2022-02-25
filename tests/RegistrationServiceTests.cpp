@@ -167,7 +167,6 @@ TEST_F(RegistrationServiceTests, ObtainChildrenAsyncNoCallback)
 {
     // Call the service (async)
     ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, nullptr), false);
-    EXPECT_TRUE(service->m_queries.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenFailedToFormMessage)
@@ -180,11 +179,9 @@ TEST_F(RegistrationServiceTests, ObtainChildrenFailedToFormMessage)
 
     // Call the service (sync)
     ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
-    EXPECT_TRUE(service->m_queries.empty());
 
     // Call the service (async)
     ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}), false);
-    EXPECT_TRUE(service->m_queries.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenFailedToPublish)
@@ -198,11 +195,9 @@ TEST_F(RegistrationServiceTests, ObtainChildrenFailedToPublish)
 
     // Call the service (sync)
     ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
-    EXPECT_TRUE(service->m_queries.empty());
 
     // Call the service (async)
     ASSERT_EQ(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}), false);
-    EXPECT_TRUE(service->m_queries.empty());
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenNotCalled)
@@ -248,19 +243,8 @@ TEST_F(RegistrationServiceTests, ObtainChildrenCallbackCalled)
       .WillOnce(Return(ByMove(std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}})));
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
-    // Schedule stop of service
-    const auto delay = std::chrono::milliseconds{50};
-    timer.start(delay, [&] { service->m_queries[DEVICE_KEY].front()({"C1", "C2"}); });
-
     // Check now
-    const auto start = std::chrono::system_clock::now();
-    auto list = std::shared_ptr<std::vector<std::string>>{};
-    ASSERT_NO_FATAL_FAILURE(list = service->obtainChildren(DEVICE_KEY, HUNDRED));
-    ASSERT_NE(list, nullptr);
-    const auto duration =
-      std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start);
-    EXPECT_LT(duration, HUNDRED);
-    ASSERT_EQ(list->size(), 2);
+    ASSERT_EQ(service->obtainChildren(DEVICE_KEY, HUNDRED), nullptr);
 }
 
 TEST_F(RegistrationServiceTests, ObtainChildrenAsyncSuccessful)
@@ -272,9 +256,7 @@ TEST_F(RegistrationServiceTests, ObtainChildrenAsyncSuccessful)
     EXPECT_CALL(*connectivityServiceMock, publish).WillOnce(Return(true));
 
     // Check now
-    ASSERT_TRUE(service->m_queries.find(DEVICE_KEY) == service->m_queries.cend());
     ASSERT_TRUE(service->obtainChildrenAsync(DEVICE_KEY, [](const std::vector<std::string>&) {}));
-    ASSERT_FALSE(service->m_queries[DEVICE_KEY].empty());
 }
 
 TEST_F(RegistrationServiceTests, DeviceRegistrationResponseNull)
