@@ -27,15 +27,15 @@ int main()
     std::condition_variable conditionVariable;
 
     APTPackageInstaller installer;
-    installer.installPackage("vim", [&](const std::string& debianPackagePath, InstallationResult result) {
-        conditionVariable.notify_one();
-        LOG(INFO) << "Received result for installation of '" << debianPackagePath << "' -> '" << toString(result)
-                  << "'.";
-    });
-
+    if (installer.installPackage("/home/astrihale/release-v5.0.0-prerelease/wolkgateway_5.0.0-prerelease_amd64.deb",
+                                 [&](const std::string& debianPackagePath, InstallationResult result) {
+                                     conditionVariable.notify_one();
+                                     LOG(INFO) << "Received result for installation of '" << debianPackagePath
+                                               << "' -> '" << toString(result) << "'.";
+                                 }))
     {
         std::unique_lock<std::mutex> lock{mutex};
-        conditionVariable.wait_for(lock, std::chrono::milliseconds{100});
+        conditionVariable.wait_for(lock, std::chrono::seconds{120});
     }
 
     return 0;

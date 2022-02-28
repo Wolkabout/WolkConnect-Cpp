@@ -26,10 +26,11 @@ const std::string APT_NAMESPACE = "org.debian.apt";
 const std::string APT_OBJECT = "/org/debian/apt";
 const std::string APT_INTERFACE = "org.debian.apt";
 const std::string APT_TRANSACTION_INTERFACE = "org.debian.apt.transaction";
-const std::string APT_INSTALL_METHOD = "InstallPackages";
+const std::string APT_INSTALL_METHOD = "InstallFile";
 const std::string APT_RUN_METHOD = "Run";
 const std::string APT_RESOLVE_CONFIG_CONFLICT_METHOD = "ResolveConfigFileConflict";
 const std::string APT_FINISHED_SIGNAL = "Finished";
+const std::string APT_PROPERTIES_SIGNAL = "PropertiesChanged";
 const std::string APT_CONFIG_CONFLICT_SIGNAL = "ConfigFileConflict";
 
 std::string toString(InstallationResult result)
@@ -65,9 +66,11 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath,
     auto transactionObjectName = std::string{};
     {
         // Create the payload that will serve as the arguments
-        const auto param = g_variant_new_string(absolutePath.c_str());
-        const auto array = g_variant_new_array(G_VARIANT_TYPE_STRING, &param, 1);
-        payload = g_variant_new_tuple(&array, 1);
+        const auto builder = g_variant_builder_new(G_VARIANT_TYPE_TUPLE);
+        g_variant_builder_add_value(builder, g_variant_new_string(absolutePath.c_str()));
+        g_variant_builder_add_value(builder, g_variant_new_boolean(true));
+        payload = g_variant_builder_end(builder);
+        g_variant_builder_unref(builder);
     }
     try
     {
@@ -112,6 +115,15 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath,
                   GVariant* value) { this->handleConfigFileConflict(objectPath, value); }) == 0)
         {
             LOG(WARN) << "Failed to subscribe to the transaction's '" << APT_CONFIG_CONFLICT_SIGNAL << "' signal.";
+        }
+        if (m_dbusConnection.subscribeToSignal(
+              APT_NAMESPACE, transactionObjectName, APT_TRANSACTION_INTERFACE, APT_PROPERTIES_SIGNAL,
+              [&](const std::string&, const std::string& objectPath, const std::string&, const std::string&,
+                  GVariant* value) {
+                  LOG(TRACE) << "Received '" << APT_PROPERTIES_SIGNAL << "' for '" << objectPath << "'.";
+              }) == 0)
+        {
+            LOG(WARN) << "Failed to subscribe to the transaction's '" << APT_PROPERTIES_SIGNAL << "' signal.";
         }
     }
     catch (const std::exception& exception)
