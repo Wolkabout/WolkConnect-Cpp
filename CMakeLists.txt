@@ -52,6 +52,9 @@ endif ()
 # Setup the option for optional Poco file downloader
 OPTION(BUILD_POCO_HTTP_DOWNLOADER "Build the optional `FileDownloader` implementation that uses Poco" ON)
 
+# Setup the option for optional apt/systemd firmware updaters
+OPTION(BUILD_APT_SYSTEMD_FIRMWARE_UPDATER "Build the optional apt/systemd firmware updaters" OFF)
+
 # Setup the options for the examples
 OPTION(BUILD_EXAMPLES "Build the examples/runtimes for testing" ON)
 
@@ -76,7 +79,37 @@ link_directories(${CMAKE_PREFIX_PATH}/lib)
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 
+# Usually we just need PThreads
 find_package(Threads REQUIRED)
+
+# But if we want the apt/systemd firmware updater, we need GLib
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    find_package(PkgConfig REQUIRED)
+    PKG_CHECK_MODULES(GLIB glib-2.0)
+    include_directories(${GLIB_INCLUDE_DIRS})
+    link_directories(${GLIB_LIBRARY_DIRS})
+    add_definitions(${GLIB_CFLAGS_OTHER})
+
+    # Stop if GLib is not found
+    if (NOT GLIB_FOUND)
+        message(FATAL_ERROR "CMake was not able to find GLib on your system.
+                         Install using `apt install libglib2.0-dev`.
+                         Stopping.")
+    endif ()
+
+    # Link in GIO
+    PKG_CHECK_MODULES(GIO gio-2.0)
+    include_directories(${GIO_INCLUDE_DIRS})
+    link_directories(${GIO_LIBRARY_DIRS})
+    add_definitions(${GIO_CFLAGS_OTHER})
+
+    # Stop if GIO is not found
+    if (NOT GIO_FOUND)
+        message(FATAL_ERROR "CMake was not able to find GIO on your system.
+                         Install using `apt install libglib2.0-dev`.
+                         Stopping.")
+    endif ()
+endif ()
 
 # WolkAbout c++ SDK
 option(BUILD_POCO "" ${BUILD_POCO_HTTP_DOWNLOADER})
@@ -137,6 +170,13 @@ if (${BUILD_POCO_HTTP_DOWNLOADER})
     file(COPY wolk/service/file_management/poco/HTTPFileDownloader.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/file_management/poco)
 endif ()
 
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/GenericDBusInterface.cpp wolk/service/firmware_update/debian/apt/APTPackageInstaller.cpp)
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/firmware_update/debian/GenericDBusInterface.h wolk/service/firmware_update/debian/apt/APTPackageInstaller.h)
+    file(COPY wolk/service/firmware_update/debian/GenericDBusInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/apt/APTPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+endif ()
+
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} WolkAboutCore Threads::Threads)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
@@ -147,6 +187,10 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_S
 if (${BUILD_POCO_HTTP_DOWNLOADER})
     target_link_libraries(${PROJECT_NAME} PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
     add_dependencies(${PROJECT_NAME} libpoco)
+endif ()
+
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    target_link_libraries(${PROJECT_NAME} ${GLIB_LIBRARIES} ${GIO_LIBRARIES})
 endif ()
 
 # Tests
@@ -223,6 +267,15 @@ if (${BUILD_EXAMPLES})
     add_executable(subdevices_example ${SUBDEVICES_EXAMPLE_SOURCE_FILES})
     target_link_libraries(subdevices_example ${PROJECT_NAME})
     set_target_properties(subdevices_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+
+    # Debian package installation example
+    if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+        set(DEBIAN_EXAMPLE_SOURCE_FILES examples/debian-package-installation/Application.cpp)
+
+        add_executable(debian_package_example ${DEBIAN_EXAMPLE_SOURCE_FILES})
+        target_link_libraries(debian_package_example ${PROJECT_NAME})
+        set_target_properties(debian_package_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    endif ()
 endif ()
 
 # Create the install rule
