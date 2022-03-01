@@ -84,9 +84,9 @@ public:
      * @return Whether the installation request has been successfully made. If this is not `Installing`, the callback
      * will never be called.
      */
-    InstallationResult installPackage(const std::string& absolutePath, InstallationCallback callback);
+    virtual InstallationResult installPackage(const std::string& absolutePath, InstallationCallback callback);
 
-private:
+protected:
     /**
      * This is an internal method that is used to handle the Finished signal being called.
      *

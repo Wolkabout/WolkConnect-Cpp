@@ -74,7 +74,7 @@ public:
      * @return Whether the installation request has been successfully made. If it is not `Successful`, it is not
      * successful.
      */
-    ServiceRestartResult restartService(const std::string& serviceObjectName);
+    virtual ServiceRestartResult restartService(const std::string& serviceObjectName);
 
     /**
      * This is the method that allows the user to obtain the object name of a service - if it exists.
@@ -82,9 +82,9 @@ public:
      * @param serviceName The name of the service the user is querying about.
      * @return The name of the object which represents the service. Empty if the service does not exist.
      */
-    std::string obtainObjectNameForService(std::string serviceName);
+    virtual std::string obtainObjectNameForService(std::string serviceName);
 
-private:
+protected:
     // The logger tag
     const std::string TAG = "[SystemdServiceInterface] -> ";
 

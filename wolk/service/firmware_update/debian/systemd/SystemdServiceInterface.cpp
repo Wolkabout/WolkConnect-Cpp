@@ -73,7 +73,7 @@ ServiceRestartResult SystemdServiceInterface::restartService(const std::string& 
     catch (const std::exception& exception)
     {
         LOG(ERROR) << TAG << "Failed to invoke the DBus method: '" << exception.what() << "'.";
-        return {};
+        return ServiceRestartResult::FailedToFindToDBus;
     }
 }
 
