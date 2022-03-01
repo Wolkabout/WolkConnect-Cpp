@@ -74,6 +74,7 @@ void APTPackageInstaller::stop()
     LOG(TRACE) << METHOD_INFO;
 
     // Disconnect
+    std::lock_guard<std::mutex> lockGuard{m_connectionMutex};
     m_dbusConnection.disconnect();
     m_dbusConnection.stopLoop();
     if (m_thread.joinable())
@@ -84,10 +85,8 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
 {
     LOG(TRACE) << METHOD_INFO;
 
-    // Open the connection to the system bus on the machine
-    std::lock_guard<std::mutex> lockGuard{m_connectionMutex};
-
     // Now call the method that will create a transaction
+    std::lock_guard<std::mutex> lockGuard{m_connectionMutex};
     GVariant* payload;
     auto transactionObjectName = std::string{};
     {
@@ -117,7 +116,7 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
     }
     catch (const std::exception& exception)
     {
-        LOG(ERROR) << "Failed to invoke the method to create a transaction -> '" << exception.what() << "'.";
+        LOG(ERROR) << TAG << "Failed to invoke the method to create a transaction -> '" << exception.what() << "'.";
         return false;
     }
 
@@ -131,7 +130,7 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
               GVariant* value) { this->handleFinishedSignal(objectPath, value); });
         if (signalSubscription == 0)
         {
-            LOG(ERROR) << "Failed to subscribe to the transaction's '" << APT_FINISHED_SIGNAL
+            LOG(ERROR) << TAG << "Failed to subscribe to the transaction's '" << APT_FINISHED_SIGNAL
                        << "' signal. Aborting...";
             return false;
         }
@@ -140,22 +139,23 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
               [&](const std::string&, const std::string& objectPath, const std::string&, const std::string&,
                   GVariant* value) { this->handleConfigFileConflict(objectPath, value); }) == 0)
         {
-            LOG(WARN) << "Failed to subscribe to the transaction's '" << APT_CONFIG_CONFLICT_SIGNAL << "' signal.";
+            LOG(WARN) << TAG << "Failed to subscribe to the transaction's '" << APT_CONFIG_CONFLICT_SIGNAL
+                      << "' signal.";
         }
         if (m_dbusConnection.subscribeToSignal(
               APT_NAMESPACE, transactionObjectName, APT_TRANSACTION_INTERFACE, APT_PROPERTIES_SIGNAL,
               [&](const std::string&, const std::string& objectPath, const std::string&, const std::string&,
-                  GVariant* value) {
+                  GVariant*) {
                   LOG(TRACE) << "Received '" << APT_PROPERTIES_SIGNAL << "' for '" << objectPath << "'.";
               }) == 0)
         {
-            LOG(WARN) << "Failed to subscribe to the transaction's '" << APT_PROPERTIES_SIGNAL << "' signal.";
+            LOG(WARN) << TAG << "Failed to subscribe to the transaction's '" << APT_PROPERTIES_SIGNAL << "' signal.";
         }
     }
     catch (const std::exception& exception)
     {
-        LOG(ERROR) << "Failed to invoke the subscribe to the signals of the subscription -> '" << exception.what()
-                   << "'.";
+        LOG(ERROR) << TAG << "Failed to invoke the subscribe to the signals of the subscription -> '"
+                   << exception.what() << "'.";
         return false;
     }
 
@@ -166,7 +166,7 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
     }
     catch (const std::exception& exception)
     {
-        LOG(ERROR) << "Failed to invoke the method to run the transaction -> '" << exception.what() << "'.";
+        LOG(ERROR) << TAG << "Failed to invoke the method to run the transaction -> '" << exception.what() << "'.";
         return false;
     }
 
@@ -212,6 +212,7 @@ void APTPackageInstaller::handleConfigFileConflict(const std::string& objectPath
     g_variant_builder_add_value(builder, g_variant_new_string("keep"));
     auto tuple = g_variant_builder_end(builder);
     g_variant_builder_unref(builder);
+    std::lock_guard<std::mutex> lockGuard{m_connectionMutex};
     m_dbusConnection.callMethod(APT_NAMESPACE, objectPath, APT_TRANSACTION_INTERFACE,
                                 APT_RESOLVE_CONFIG_CONFLICT_METHOD, tuple);
 }
