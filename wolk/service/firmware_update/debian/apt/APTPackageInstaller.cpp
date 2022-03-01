@@ -48,6 +48,11 @@ std::string toString(InstallationResult result)
     }
 }
 
+APTPackageInstaller::~APTPackageInstaller()
+{
+    stop();
+}
+
 void APTPackageInstaller::start()
 {
     LOG(TRACE) << METHOD_INFO;
@@ -75,8 +80,7 @@ void APTPackageInstaller::stop()
         m_thread.join();
 }
 
-bool APTPackageInstaller::installPackage(const std::string& absolutePath,
-                                         std::function<void(const std::string&, InstallationResult)> callback)
+bool APTPackageInstaller::installPackage(const std::string& absolutePath, InstallationCallback callback)
 {
     LOG(TRACE) << METHOD_INFO;
 

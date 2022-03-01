@@ -55,8 +55,21 @@ using InstallationCallback = std::function<void(const std::string&, Installation
 class APTPackageInstaller : public Service
 {
 public:
+    /**
+     * Overridden destructor that will close the connection and stop the main loop.
+     */
+    ~APTPackageInstaller() override;
+
+    /**
+     * Overridden method from the `wolkabout::Service` interface.
+     * This will establish the DBus connection and start the main loop.
+     */
     void start() override;
 
+    /**
+     * Overridden method from the `wolkabout::Service` interface.
+     * This will close the DBus connection and stop the main loop.
+     */
     void stop() override;
 
     /**
@@ -68,8 +81,7 @@ public:
      * @return Whether the installation request has been successfully made. If this is false, the callback will never be
      * called.
      */
-    bool installPackage(const std::string& absolutePath,
-                        std::function<void(const std::string&, InstallationResult)> callback);
+    bool installPackage(const std::string& absolutePath, InstallationCallback callback);
 
 private:
     /**
@@ -102,7 +114,7 @@ private:
 
     // Here we store the map of transactions
     std::unordered_map<std::string, std::string> m_transactions;
-    std::unordered_map<std::string, std::function<void(const std::string&, InstallationResult)>> m_callbacks;
+    std::unordered_map<std::string, InstallationCallback> m_callbacks;
 
     // And a command buffer where we execute callback
     CommandBuffer m_commandBuffer;
