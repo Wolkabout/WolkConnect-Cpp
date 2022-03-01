@@ -16,16 +16,16 @@
 
 #include "core/utilities/Logger.h"
 #include "wolk/service/firmware_update/debian/apt/APTPackageInstaller.h"
+#include "wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h"
 
 using namespace wolkabout;
 using namespace wolkabout::connect;
 
-int main()
-{
-    Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE);
-    std::mutex mutex;
-    std::condition_variable conditionVariable;
+std::mutex mutex;
+std::condition_variable conditionVariable;
 
+void installPackage()
+{
     APTPackageInstaller installer;
     installer.start();
     if (installer.installPackage("/home/astrihale/release-v5.0.0-prerelease/wolkgateway_5.0.0-prerelease_amd64.deb",
@@ -33,12 +33,25 @@ int main()
                                      conditionVariable.notify_one();
                                      LOG(INFO) << "Received result for installation of '" << debianPackagePath
                                                << "' -> '" << toString(result) << "'.";
-                                 }))
+                                 }) == wolkabout::connect::InstallationResult::Installing)
     {
         std::unique_lock<std::mutex> lock{mutex};
         conditionVariable.wait_for(lock, std::chrono::seconds{120});
     }
 
     installer.stop();
+}
+
+void restartService()
+{
+    SystemdServiceInterface serviceInterface;
+    serviceInterface.start();
+    serviceInterface.restartService(serviceInterface.obtainObjectNameForService("wolkgateway"));
+}
+
+int main()
+{
+    Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE);
+    restartService();
     return 0;
 }

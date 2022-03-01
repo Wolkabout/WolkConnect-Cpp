@@ -171,10 +171,15 @@ if (${BUILD_POCO_HTTP_DOWNLOADER})
 endif ()
 
 if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
-    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/GenericDBusInterface.cpp wolk/service/firmware_update/debian/apt/APTPackageInstaller.cpp)
-    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/firmware_update/debian/GenericDBusInterface.h wolk/service/firmware_update/debian/apt/APTPackageInstaller.h)
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/GenericDBusInterface.cpp
+            wolk/service/firmware_update/debian/apt/APTPackageInstaller.cpp
+            wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.cpp)
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/firmware_update/debian/GenericDBusInterface.h
+            wolk/service/firmware_update/debian/apt/APTPackageInstaller.h
+            wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h)
     file(COPY wolk/service/firmware_update/debian/GenericDBusInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
     file(COPY wolk/service/firmware_update/debian/apt/APTPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
 endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})

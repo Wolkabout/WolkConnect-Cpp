@@ -81,7 +81,7 @@ void APTPackageInstaller::stop()
         m_thread.join();
 }
 
-bool APTPackageInstaller::installPackage(const std::string& absolutePath, InstallationCallback callback)
+InstallationResult APTPackageInstaller::installPackage(const std::string& absolutePath, InstallationCallback callback)
 {
     LOG(TRACE) << METHOD_INFO;
 
@@ -105,7 +105,7 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
         if (transactionVariant == nullptr)
         {
             LOG(ERROR) << TAG << "Invoked apt installation method, but received no response.";
-            return false;
+            return InstallationResult::FailedToConnectToAPT;
         }
 
         // Extract the transaction object name
@@ -117,7 +117,7 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
     catch (const std::exception& exception)
     {
         LOG(ERROR) << TAG << "Failed to invoke the method to create a transaction -> '" << exception.what() << "'.";
-        return false;
+        return InstallationResult::InvalidResponseReceived;
     }
 
     try
@@ -132,7 +132,7 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
         {
             LOG(ERROR) << TAG << "Failed to subscribe to the transaction's '" << APT_FINISHED_SIGNAL
                        << "' signal. Aborting...";
-            return false;
+            return InstallationResult::FailedToSubscribeToSignal;
         }
         if (m_dbusConnection.subscribeToSignal(
               APT_NAMESPACE, transactionObjectName, APT_TRANSACTION_INTERFACE, APT_CONFIG_CONFLICT_SIGNAL,
@@ -156,7 +156,7 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
     {
         LOG(ERROR) << TAG << "Failed to invoke the subscribe to the signals of the subscription -> '"
                    << exception.what() << "'.";
-        return false;
+        return InstallationResult::FailedToSubscribeToSignal;
     }
 
     try
@@ -167,14 +167,14 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath, Instal
     catch (const std::exception& exception)
     {
         LOG(ERROR) << TAG << "Failed to invoke the method to run the transaction -> '" << exception.what() << "'.";
-        return false;
+        return InstallationResult::FailedToConnectToAPT;
     }
 
     m_transactions.emplace(transactionObjectName, absolutePath);
     m_callbacks.emplace(transactionObjectName, std::move(callback));
 
     // Now interact with the transaction object
-    return true;
+    return InstallationResult::Installing;
 }
 
 void APTPackageInstaller::handleFinishedSignal(const std::string& objectPath, GVariant* value)

@@ -32,8 +32,11 @@ namespace connect
  */
 enum class InstallationResult
 {
+    Installing,
     Installed,
     FailedToConnectToAPT,
+    InvalidResponseReceived,
+    FailedToSubscribeToSignal,
     PackageNotFound,
 };
 
@@ -56,7 +59,7 @@ class APTPackageInstaller : public Service
 {
 public:
     /**
-     * Overridden destructor that will close the connection and stop the main loop.
+     * Default overridden destructor that will close the connection and stop the main loop.
      */
     ~APTPackageInstaller() override;
 
@@ -78,10 +81,10 @@ public:
      *
      * @param absolutePath The absolute path to the debian package that is supposed to be installed.
      * @param callback The callback that will be invoked once the installation is resolved.
-     * @return Whether the installation request has been successfully made. If this is false, the callback will never be
-     * called.
+     * @return Whether the installation request has been successfully made. If this is not `Installing`, the callback
+     * will never be called.
      */
-    bool installPackage(const std::string& absolutePath, InstallationCallback callback);
+    InstallationResult installPackage(const std::string& absolutePath, InstallationCallback callback);
 
 private:
     /**

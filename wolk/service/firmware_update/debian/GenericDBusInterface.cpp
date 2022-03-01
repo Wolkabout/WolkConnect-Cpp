@@ -77,7 +77,7 @@ void nameWatcher(GDBusConnection*, const gchar* name, const gchar* name_owner, g
     }
 }
 
-GenericDBusInterface::GenericDBusInterface() : m_dbusConnection(nullptr), m_mainLoop(nullptr) {}
+GenericDBusInterface::GenericDBusInterface() : m_dbusConnection{nullptr}, m_mainLoop{nullptr} {}
 
 GenericDBusInterface::~GenericDBusInterface()
 {
@@ -93,6 +93,7 @@ GenericDBusInterface::~GenericDBusInterface()
 
         // Call the internal disconnect method.
         disconnect();
+        m_dbusConnection = nullptr;
     }
 
     // Stop the main loop.
@@ -352,7 +353,7 @@ bool GenericDBusInterface::unsubscribeFromSignal(uint32_t subscriptionId)
             throw std::runtime_error("DBus connection is not open!");
         }
 
-        // We first need to check whether or not the subscription ID is in our recorded subscriptions
+        // We first need to check whether the subscription ID is in our recorded subscriptions
         const auto it = std::find_if(m_signalCallbacks.cbegin(), m_signalCallbacks.cend(),
                                      [&](const std::pair<SignalIdentification, SignalSubscription>& value) {
                                          return std::get<0>(value.second) == subscriptionId;
@@ -447,7 +448,7 @@ std::string GenericDBusInterface::getNameOwner(const std::string& namespaceName)
     {
         throw std::runtime_error("Received return for the method call is null!");
     }
-    return std::string(g_variant_get_string((g_variant_get_child_value(value, 0)), nullptr));
+    return {g_variant_get_string((g_variant_get_child_value(value, 0)), nullptr)};
 }
 
 void GenericDBusInterface::subscribeToName(const std::string& namespaceName)
@@ -460,6 +461,6 @@ void GenericDBusInterface::subscribeToName(const std::string& namespaceName)
     m_nameTracking.emplace(namespaceName, getNameOwner(namespaceName));
 }
 
-GenericDBusInterface::GenericDBusInterface(int) {}
+GenericDBusInterface::GenericDBusInterface(int) : m_dbusConnection{nullptr}, m_mainLoop{nullptr} {}
 }    // namespace connect
 }    // namespace wolkabout
