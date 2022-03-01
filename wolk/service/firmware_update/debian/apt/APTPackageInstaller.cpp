@@ -48,6 +48,33 @@ std::string toString(InstallationResult result)
     }
 }
 
+void APTPackageInstaller::start()
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Attempt to connect
+    std::lock_guard<std::mutex> lockGuard{m_connectionMutex};
+    if (!m_dbusConnection.connect("SYSTEM_BUS"))
+    {
+        LOG(ERROR) << TAG << "Failed to connect to DBUS/SYSTEM_BUS.";
+        return;
+    }
+
+    // Start the main loop
+    m_thread = std::thread{&APTPackageInstaller::runMainLoop, this};
+}
+
+void APTPackageInstaller::stop()
+{
+    LOG(TRACE) << METHOD_INFO;
+
+    // Disconnect
+    m_dbusConnection.disconnect();
+    m_dbusConnection.stopLoop();
+    if (m_thread.joinable())
+        m_thread.join();
+}
+
 bool APTPackageInstaller::installPackage(const std::string& absolutePath,
                                          std::function<void(const std::string&, InstallationResult)> callback)
 {
@@ -55,11 +82,6 @@ bool APTPackageInstaller::installPackage(const std::string& absolutePath,
 
     // Open the connection to the system bus on the machine
     std::lock_guard<std::mutex> lockGuard{m_connectionMutex};
-    if (!m_dbusConnection.connect("SYSTEM_BUS"))
-    {
-        LOG(ERROR) << TAG << "Failed to connect to DBUS/SYSTEM_BUS.";
-        return false;
-    }
 
     // Now call the method that will create a transaction
     GVariant* payload;
@@ -165,7 +187,7 @@ void APTPackageInstaller::handleFinishedSignal(const std::string& objectPath, GV
         const auto absolutePath = m_transactions[objectPath];
         m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([absolutePath, callback, result] {
             callback(absolutePath,
-                     result.empty() ? InstallationResult::Installed : InstallationResult::PackageNotFound);
+                     result == "exit-success" ? InstallationResult::Installed : InstallationResult::PackageNotFound);
         }));
         m_callbacks.erase(objectPath);
         m_transactions.erase(objectPath);
@@ -188,6 +210,11 @@ void APTPackageInstaller::handleConfigFileConflict(const std::string& objectPath
     g_variant_builder_unref(builder);
     m_dbusConnection.callMethod(APT_NAMESPACE, objectPath, APT_TRANSACTION_INTERFACE,
                                 APT_RESOLVE_CONFIG_CONFLICT_METHOD, tuple);
+}
+
+void APTPackageInstaller::runMainLoop()
+{
+    m_dbusConnection.startLoop();
 }
 }    // namespace connect
 }    // namespace wolkabout

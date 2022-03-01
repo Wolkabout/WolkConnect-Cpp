@@ -27,6 +27,7 @@ int main()
     std::condition_variable conditionVariable;
 
     APTPackageInstaller installer;
+    installer.start();
     if (installer.installPackage("/home/astrihale/release-v5.0.0-prerelease/wolkgateway_5.0.0-prerelease_amd64.deb",
                                  [&](const std::string& debianPackagePath, InstallationResult result) {
                                      conditionVariable.notify_one();
@@ -38,5 +39,6 @@ int main()
         conditionVariable.wait_for(lock, std::chrono::seconds{120});
     }
 
+    installer.stop();
     return 0;
 }

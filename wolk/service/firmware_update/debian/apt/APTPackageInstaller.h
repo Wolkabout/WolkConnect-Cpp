@@ -17,6 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_APTPACKAGEINSTALLER_H
 #define WOLKABOUTCONNECTOR_APTPACKAGEINSTALLER_H
 
+#include "core/utilities/Service.h"
 #include "wolk/service/firmware_update/debian/GenericDBusInterface.h"
 
 #include <string>
@@ -51,9 +52,13 @@ using InstallationCallback = std::function<void(const std::string&, Installation
  * This class implements a package installer for APT. This allows the software to install a package using a DBus
  * connection.
  */
-class APTPackageInstaller
+class APTPackageInstaller : public Service
 {
 public:
+    void start() override;
+
+    void stop() override;
+
     /**
      * This is the method that allows the user to install an debian package using APT.
      * This method is entirely asynchronous as the installation status will be reported to us.
@@ -83,6 +88,11 @@ private:
      */
     void handleConfigFileConflict(const std::string& objectPath, GVariant* value);
 
+    /**
+     * This is an internal method that is used to host the running of the GLib's main loop.
+     */
+    void runMainLoop();
+
     // The logger tag
     const std::string TAG = "[APTPackageInstaller] -> ";
 
@@ -96,6 +106,9 @@ private:
 
     // And a command buffer where we execute callback
     CommandBuffer m_commandBuffer;
+
+    // Thread where we run the main loop of the DBus connection
+    std::thread m_thread;
 };
 }    // namespace connect
 }    // namespace wolkabout
