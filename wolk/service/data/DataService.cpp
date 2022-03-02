@@ -488,14 +488,19 @@ bool DataService::checkIfSubscriptionIsWaiting(const ParametersUpdateMessage& pa
             }
 
             // Then we found the ones for the subscription!
-            const auto& callback = subscription.second.callback;
-            if (callback)
-                m_commandBuffer.pushCommand(
-                  std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
+            const auto callback = std::move(subscription.second.callback);
 
             // And we can clear the subscription
             m_parameterSubscriptions.erase(subscription.first);
-            return callback != nullptr;
+
+            // Invoke the subscription
+            if (callback)
+            {
+                m_commandBuffer.pushCommand(
+                  std::make_shared<std::function<void()>>([callback, values]() { callback(values); }));
+                return true;
+            }
+            return false;
         }
     }
     return false;
