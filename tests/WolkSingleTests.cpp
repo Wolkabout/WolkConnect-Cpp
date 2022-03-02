@@ -390,7 +390,7 @@ TEST_F(WolkSingleTests, NotifyConnectedFileManagement)
 TEST_F(WolkSingleTests, NotifyConnectedFirmwareUpdateInstaller)
 {
     auto firmwareUpdateService = std::unique_ptr<FirmwareUpdateServiceMock>{new NiceMock<FirmwareUpdateServiceMock>{
-      *service->m_connectivityService, *service->m_dataService,
+      *service->m_connectivityService, *service->m_dataService, service->m_fileManagementService,
       std::unique_ptr<FirmwareInstallerMock>{new NiceMock<FirmwareInstallerMock>()}, firmwareUpdateProtocolMock}};
     firmwareUpdateService->m_queue.push(std::make_shared<wolkabout::Message>("", ""));
     EXPECT_CALL(GetConnectivityServiceReference(), publish).Times(1);
@@ -401,7 +401,7 @@ TEST_F(WolkSingleTests, NotifyConnectedFirmwareUpdateInstaller)
 TEST_F(WolkSingleTests, NotifyConnectedFirmwareUpdateParameterListener)
 {
     auto firmwareUpdateService = std::unique_ptr<FirmwareUpdateServiceMock>{new NiceMock<FirmwareUpdateServiceMock>{
-      *service->m_connectivityService, *service->m_dataService,
+      *service->m_connectivityService, *service->m_dataService, service->m_fileManagementService,
       std::unique_ptr<FirmwareParametersListenerMock>{new NiceMock<FirmwareParametersListenerMock>()},
       firmwareUpdateProtocolMock}};
     EXPECT_CALL(*firmwareUpdateService, obtainParametersAndAnnounce).Times(1);

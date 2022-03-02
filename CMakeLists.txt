@@ -99,7 +99,6 @@ if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
 
     # Link in GIO
     PKG_CHECK_MODULES(GIO gio-2.0)
-    include_directories(${GIO_INCLUDE_DIRS})
     link_directories(${GIO_LIBRARY_DIRS})
     add_definitions(${GIO_CFLAGS_OTHER})
 
@@ -199,6 +198,7 @@ endif ()
 
 if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
     target_link_libraries(${PROJECT_NAME} PUBLIC ${GLIB_LIBRARIES} ${GIO_LIBRARIES})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${GLIB_INCLUDE_DIRS} ${GIO_INCLUDE_DIRS})
 endif ()
 
 # Tests

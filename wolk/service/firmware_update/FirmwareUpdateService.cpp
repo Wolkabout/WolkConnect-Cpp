@@ -214,31 +214,29 @@ void FirmwareUpdateService::onFirmwareInstall(const std::string& deviceKey, cons
         return message.getFile();
     }();
 
-    m_commandBuffer.pushCommand(std::make_shared<std::function<void()>>([=] {
-        // Trigger the installation
-        storeSessionFile(deviceKey, m_firmwareInstaller->getFirmwareVersion(deviceKey));
+    // Trigger the installation
+    storeSessionFile(deviceKey, m_firmwareInstaller->getFirmwareVersion(deviceKey));
+    sendStatusMessage(deviceKey, FirmwareUpdateStatus::INSTALLING);
+    auto status = m_firmwareInstaller->installFirmware(deviceKey, messagePath);
+    switch (status)
+    {
+    case InstallResponse::FAILED_TO_INSTALL:
+        sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
+        deleteSessionFile(deviceKey);
+        return;
+    case InstallResponse::NO_FILE:
+        sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN_FILE);
+        deleteSessionFile(deviceKey);
+        return;
+    case InstallResponse::WILL_INSTALL:
+        m_installation[deviceKey] = true;
         sendStatusMessage(deviceKey, FirmwareUpdateStatus::INSTALLING);
-        auto status = m_firmwareInstaller->installFirmware(deviceKey, messagePath);
-        switch (status)
-        {
-        case InstallResponse::FAILED_TO_INSTALL:
-            sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
-            deleteSessionFile(deviceKey);
-            return;
-        case InstallResponse::NO_FILE:
-            sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN_FILE);
-            deleteSessionFile(deviceKey);
-            return;
-        case InstallResponse::WILL_INSTALL:
-            m_installation[deviceKey] = true;
-            sendStatusMessage(deviceKey, FirmwareUpdateStatus::INSTALLING);
-            return;
-        case InstallResponse::INSTALLED:
-            sendStatusMessage(deviceKey, FirmwareUpdateStatus::SUCCESS);
-            deleteSessionFile(deviceKey);
-            break;
-        }
-    }));
+        return;
+    case InstallResponse::INSTALLED:
+        sendStatusMessage(deviceKey, FirmwareUpdateStatus::SUCCESS);
+        deleteSessionFile(deviceKey);
+        break;
+    }
 }
 
 void FirmwareUpdateService::onFirmwareAbort(const std::string& deviceKey,

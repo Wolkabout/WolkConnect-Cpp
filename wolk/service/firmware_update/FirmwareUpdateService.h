@@ -106,9 +106,6 @@ private:
 
     // This is where the protocol will be passed while the service is created.
     FirmwareUpdateProtocol& m_protocol;
-
-    // The command buffer where the installations will be executed.
-    CommandBuffer m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

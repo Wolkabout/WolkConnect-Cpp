@@ -86,7 +86,7 @@ public:
     {
         service->m_firmwareUpdateService =
           std::unique_ptr<FirmwareUpdateServiceMock>{new NiceMock<FirmwareUpdateServiceMock>{
-            *service->m_connectivityService, *service->m_dataService,
+            *service->m_connectivityService, *service->m_dataService, service->m_fileManagementService,
             std::unique_ptr<FirmwareInstallerMock>{new NiceMock<FirmwareInstallerMock>()}, firmwareUpdateProtocolMock}};
     }
 
@@ -94,7 +94,7 @@ public:
     {
         service->m_firmwareUpdateService =
           std::unique_ptr<FirmwareUpdateServiceMock>{new NiceMock<FirmwareUpdateServiceMock>{
-            *service->m_connectivityService, *service->m_dataService,
+            *service->m_connectivityService, *service->m_dataService, service->m_fileManagementService,
             std::unique_ptr<FirmwareParametersListenerMock>{new NiceMock<FirmwareParametersListenerMock>()},
             firmwareUpdateProtocolMock}};
     }
