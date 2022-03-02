@@ -411,7 +411,7 @@ TEST_F(WolkSingleTests, NotifyConnectedFirmwareUpdateParameterListener)
 
 TEST_F(WolkSingleTests, ConnectionToggles)
 {
-    std::atomic_bool called;
+    std::atomic_bool called{false};
     ASSERT_NO_FATAL_FAILURE(service->setConnectionStatusListener([&](bool status) {
         called = status;
         Notify();
