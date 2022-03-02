@@ -46,6 +46,11 @@ FileManagementService::FileManagementService(ConnectivityService& connectivitySe
         throw std::runtime_error("Failed to create 'FileManagementService' with both flags disabled.");
 }
 
+std::string FileManagementService::getDeviceFileFolder(const std::string& deviceKey) const
+{
+    return FileSystemUtils::composePath(deviceKey, m_fileLocation);
+}
+
 void FileManagementService::createFolder()
 {
     LOG(TRACE) << METHOD_INFO;

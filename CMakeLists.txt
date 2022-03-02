@@ -171,16 +171,16 @@ if (${BUILD_POCO_HTTP_DOWNLOADER})
 endif ()
 
 if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
-    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/DebianPackageInstallation.cpp
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/DebianPackageInstaller.cpp
             wolk/service/firmware_update/debian/GenericDBusInterface.cpp
             wolk/service/firmware_update/debian/apt/APTPackageInstaller.cpp
             wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.cpp)
-    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/firmware_update/debian/DebianPackageInstallation.h
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/firmware_update/debian/DebianPackageInstaller.h
             wolk/service/firmware_update/debian/GenericDBusInterface.h
             wolk/service/firmware_update/debian/apt/APTPackageInstaller.h
             wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h)
     file(COPY wolk/service/firmware_update/debian/GenericDBusInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
-    file(COPY wolk/service/firmware_update/debian/DebianPackageInstallation.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/DebianPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
     file(COPY wolk/service/firmware_update/debian/apt/APTPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
     file(COPY wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
 endif ()
@@ -246,6 +246,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
     target_link_libraries(full_example ${PROJECT_NAME})
+    target_include_directories(full_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(full_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Pull example
@@ -253,6 +254,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(pull_example ${PULL_EXAMPLE_SOURCE_FILES})
     target_link_libraries(pull_example ${PROJECT_NAME})
+    target_include_directories(pull_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(pull_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Register Feed and Attribute example
@@ -260,6 +262,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(register_example ${REGISTER_EXAMPLE_SOURCE_FILES})
     target_link_libraries(register_example ${PROJECT_NAME})
+    target_include_directories(register_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(register_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Simple example
@@ -267,6 +270,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
     target_link_libraries(simple_example ${PROJECT_NAME})
+    target_include_directories(simple_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Subdevices example
@@ -274,6 +278,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(subdevices_example ${SUBDEVICES_EXAMPLE_SOURCE_FILES})
     target_link_libraries(subdevices_example ${PROJECT_NAME})
+    target_include_directories(subdevices_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(subdevices_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Debian package installation example
@@ -282,6 +287,7 @@ if (${BUILD_EXAMPLES})
 
         add_executable(debian_package_example ${DEBIAN_EXAMPLE_SOURCE_FILES})
         target_link_libraries(debian_package_example ${PROJECT_NAME})
+        target_include_directories(debian_package_example PRIVATE ${PROJECT_SOURCE_DIR})
         set_target_properties(debian_package_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
     endif ()
 endif ()

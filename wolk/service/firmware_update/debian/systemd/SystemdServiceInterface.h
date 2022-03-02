@@ -32,6 +32,7 @@ namespace connect
 enum class ServiceRestartResult
 {
     FailedToFindToDBus,
+    FailedToFindService,
     Successful
 };
 

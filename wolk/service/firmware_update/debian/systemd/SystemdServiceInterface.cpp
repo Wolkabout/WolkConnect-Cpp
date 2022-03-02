@@ -64,10 +64,7 @@ ServiceRestartResult SystemdServiceInterface::restartService(const std::string& 
         // Invoke the method
         auto value = g_variant_new_string("replace");
         auto tuple = g_variant_new_tuple(&value, 1);
-        const auto response =
-          m_dbusConnection.callMethod(SYSTEMD_NAMESPACE, serviceObjectName, SYSTEMD_UNIT_INTERFACE, "Restart", tuple);
-        LOG(INFO) << "Received response for 'Restart' method: "
-                  << g_variant_get_string(g_variant_get_child_value(response, 0), nullptr) << "'.";
+        m_dbusConnection.callMethod(SYSTEMD_NAMESPACE, serviceObjectName, SYSTEMD_UNIT_INTERFACE, "Restart", tuple);
         return ServiceRestartResult::Successful;
     }
     catch (const std::exception& exception)

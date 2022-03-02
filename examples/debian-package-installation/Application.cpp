@@ -15,43 +15,53 @@
  */
 
 #include "core/utilities/Logger.h"
-#include "wolk/service/firmware_update/debian/apt/APTPackageInstaller.h"
-#include "wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h"
+#include "wolk/WolkBuilder.h"
+#include "wolk/WolkSingle.h"
+#include "wolk/service/firmware_update/debian/DebianPackageInstaller.h"
 
+/**
+ * This is the place where user input is required for running the example.
+ * In here, you can enter the device credentials to successfully identify the device on the platform.
+ * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
+ */
+const std::string DEVICE_KEY = "AWC";
+const std::string DEVICE_PASSWORD = "0ZY4R8VSSD";
+const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
+const std::string CA_CERT_PATH = "./ca.crt";
+const std::string FILE_MANAGEMENT_LOCATION = "./files";
+
+// Declare the namespaces we're going to use.
 using namespace wolkabout;
 using namespace wolkabout::connect;
-
-std::mutex mutex;
-std::condition_variable conditionVariable;
-
-void installPackage()
-{
-    APTPackageInstaller installer;
-    installer.start();
-    if (installer.installPackage("/home/astrihale/release-v5.0.0-prerelease/wolkgateway_5.0.0-prerelease_amd64.deb",
-                                 [&](const std::string& debianPackagePath, InstallationResult result) {
-                                     conditionVariable.notify_one();
-                                     LOG(INFO) << "Received result for installation of '" << debianPackagePath
-                                               << "' -> '" << toString(result) << "'.";
-                                 }) == wolkabout::connect::InstallationResult::Installing)
-    {
-        std::unique_lock<std::mutex> lock{mutex};
-        conditionVariable.wait_for(lock, std::chrono::seconds{120});
-    }
-
-    installer.stop();
-}
-
-void restartService()
-{
-    SystemdServiceInterface serviceInterface;
-    serviceInterface.start();
-    serviceInterface.restartService(serviceInterface.obtainObjectNameForService("wolkgateway"));
-}
 
 int main()
 {
     Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE);
-    restartService();
+
+    auto device = wolkabout::Device{DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH};
+
+    auto wolk = std::unique_ptr<WolkSingle>{};
+    {
+        // Create the debian package installer
+        auto installer = [&] {
+            auto aptInstaller = std::unique_ptr<APTPackageInstaller>{new APTPackageInstaller};
+            auto systemdManager = std::unique_ptr<SystemdServiceInterface>{new SystemdServiceInterface};
+            return std::unique_ptr<DebianPackageInstaller>{
+              new DebianPackageInstaller{"wolkgateway", std::move(aptInstaller), std::move(systemdManager)}};
+        }();
+        installer->start();
+
+        // Create a wolk instance
+        wolk = wolkabout::connect::WolkBuilder(device)
+                 .host(PLATFORM_HOST)
+                 .caCertPath(CA_CERT_PATH)
+                 .withFileTransfer(FILE_MANAGEMENT_LOCATION)
+                 .withFirmwareUpdate(std::move(installer))
+                 .buildWolkSingle();
+    }
+
+    wolk->connect();
+    while (true)
+        std::this_thread::sleep_for(std::chrono::seconds{1});
     return 0;
 }

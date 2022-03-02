@@ -354,14 +354,14 @@ std::unique_ptr<WolkInterface> WolkBuilder::build(WolkInterfaceType type)
         if (m_firmwareInstaller != nullptr)
         {
             wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-              *wolk->m_connectivityService, *wolk->m_dataService, std::move(m_firmwareInstaller),
-              *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
+              *wolk->m_connectivityService, *wolk->m_dataService, wolk->m_fileManagementService,
+              std::move(m_firmwareInstaller), *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
         }
         else if (m_firmwareParametersListener != nullptr)
         {
             wolk->m_firmwareUpdateService = std::make_shared<FirmwareUpdateService>(
-              *wolk->m_connectivityService, *wolk->m_dataService, std::move(m_firmwareParametersListener),
-              *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
+              *wolk->m_connectivityService, *wolk->m_dataService, wolk->m_fileManagementService,
+              std::move(m_firmwareParametersListener), *wolk->m_firmwareUpdateProtocol, m_workingDirectory);
         }
 
         // And set it all up
