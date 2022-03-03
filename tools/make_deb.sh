@@ -1,25 +1,23 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# Check what the current branch is
-if [ $# -eq 1 ]; then
-  branch=$1
-else
-  branch=$(git rev-parse --abbrev-ref HEAD)
-
-  if [ "$branch" == "" ]; then
-    echo "You must specify a branch as parameter to the script (if the script is not part of a repo)"
+if [ $(dpkg -l | grep -c devscripts) -lt 1 ]; then
+  if [ "$EUID" -ne 0 ]; then
+    echo "Please run as sudo since you're missing the package 'devscripts'. Install it with 'apt install devscripts' or rerun the script as sudo."
     exit
   fi
+
+  apt install -y devscripts
 fi
 
-# Get the git repository cloned
-rm -rf tmp
-mkdir -p tmp
-cd tmp || exit
-git clone --recurse-submodules https://github.com/Wolkabout/WolkConnect-Cpp -b "$branch"
+if [ $(dpkg -l | grep -c debhelper) -lt 1 ]; then
+  if [ "$EUID" -ne 0 ]; then
+    echo "Please run as sudo since you're missing the package 'debhelper'. Install it with 'apt install debhelper' or rerun the script as sudo."
+    exit
+  fi
 
-# Enter the repo, checkout to branch, update submodules
-cd WolkConnect-Cpp || exit
+  apt install -y debhelper
+fi
 
-# Run the build
-debuild -us -uc -b -j"$(nproc)"
+cd ./WolkGateway || exit
+
+debuild -us -uc -b -j$(nproc)
