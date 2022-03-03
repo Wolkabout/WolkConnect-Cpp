@@ -319,12 +319,12 @@ void FileManagementService::onFileUploadInit(const std::string& deviceKey, const
     }
 
     // Create a session for this file
-    m_sessions.emplace(deviceKey, std::unique_ptr<FileTransferSession>(new FileTransferSession(
-                                    deviceKey, message,
-                                    [this, deviceKey](FileTransferStatus status, FileTransferError error) {
-                                        this->onFileSessionStatus(deviceKey, status, error);
-                                    },
-                                    m_commandBuffer)));
+    m_sessions[deviceKey] = std::unique_ptr<FileTransferSession>{
+      new FileTransferSession{deviceKey, message,
+                              [this, deviceKey](FileTransferStatus status, FileTransferError error) {
+                                  this->onFileSessionStatus(deviceKey, status, error);
+                              },
+                              m_commandBuffer}};
 
     // Obtain the first message for the session
     auto firstMessage = m_sessions[deviceKey]->getNextChunkRequest();
