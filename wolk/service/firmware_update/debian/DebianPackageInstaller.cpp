@@ -129,6 +129,10 @@ InstallResponse DebianPackageInstaller::installFirmware(const std::string& devic
         std::unique_lock<std::mutex> lock{*mutex};
         conditionVariable->wait_for(lock, std::chrono::seconds{120});
     }
+    else
+    {
+        m_deviceInstallationResult[deviceKey] = InstallResponse::FAILED_TO_INSTALL;
+    }
     // Remove the values from the maps
     {
         std::lock_guard<std::mutex> lock{m_mapMutex};
