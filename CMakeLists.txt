@@ -294,6 +294,9 @@ endif ()
 
 # Create the install rule
 include(GNUInstallDirs)
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    install(FILES out/manage-units.pkla DESTINATION /etc/polkit-1/localauthority/50-local.d)
+endif ()
 install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
