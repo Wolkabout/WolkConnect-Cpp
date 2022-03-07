@@ -64,7 +64,10 @@ ServiceRestartResult SystemdServiceInterface::restartService(const std::string& 
         // Invoke the method
         auto value = g_variant_new_string("replace");
         auto tuple = g_variant_new_tuple(&value, 1);
-        m_dbusConnection.callMethod(SYSTEMD_NAMESPACE, serviceObjectName, SYSTEMD_UNIT_INTERFACE, "Restart", tuple);
+        const auto returnVariant =
+          m_dbusConnection.callMethod(SYSTEMD_NAMESPACE, serviceObjectName, SYSTEMD_UNIT_INTERFACE, "Restart", tuple);
+        if (returnVariant != nullptr)
+            g_variant_unref(returnVariant);
         return ServiceRestartResult::Successful;
     }
     catch (const std::exception& exception)
@@ -89,9 +92,13 @@ std::string SystemdServiceInterface::obtainObjectNameForService(std::string serv
         g_variant_builder_add_value(builder, g_variant_new_string(serviceName.c_str()));
         auto payload = g_variant_builder_end(builder);
         g_variant_builder_unref(builder);
-        const auto response = m_dbusConnection.callMethod(SYSTEMD_NAMESPACE, SYSTEMD_MANAGER_OBJECT,
-                                                          SYSTEMD_MANAGER_INTERFACE, SYSTEMD_LOAD_UNIT_METHOD, payload);
-        return {g_variant_get_string(g_variant_get_child_value(response, 0), nullptr)};
+        const auto value = m_dbusConnection.callMethod(SYSTEMD_NAMESPACE, SYSTEMD_MANAGER_OBJECT,
+                                                       SYSTEMD_MANAGER_INTERFACE, SYSTEMD_LOAD_UNIT_METHOD, payload);
+
+        // Extract the value
+        const auto variantChildValue = g_variant_get_child_value(value, 0);
+        g_variant_unref(value);
+        return {g_variant_get_string(variantChildValue, nullptr)};
     }
     catch (const std::exception& exception)
     {

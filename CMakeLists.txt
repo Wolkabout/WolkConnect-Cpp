@@ -118,8 +118,8 @@ add_subdirectory(WolkSDK-Cpp)
 
 # Define the version of the library
 set(WOLKCONNECT_VERSION_MAJOR 4)
-set(WOLKCONNECT_VERSION_MINOR 0)
-set(WOLKCONNECT_VERSION_PATCH 1)
+set(WOLKCONNECT_VERSION_MINOR 1)
+set(WOLKCONNECT_VERSION_PATCH 0)
 set(WOLKCONNECT_VERSION_SUFFIX prerelease)
 
 set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH}")
@@ -292,11 +292,14 @@ if (${BUILD_EXAMPLES})
     endif ()
 endif ()
 
+# Make the install permissions rule
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    add_custom_target(install-permissions)
+    add_custom_command(TARGET install-permissions COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/out/manage-units.pkla /etc/polkit-1/localauthority/50-local.d)
+endif ()
+
 # Create the install rule
 include(GNUInstallDirs)
-if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
-    install(FILES out/manage-units.pkla DESTINATION /etc/polkit-1/localauthority/50-local.d)
-endif ()
 install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
 install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

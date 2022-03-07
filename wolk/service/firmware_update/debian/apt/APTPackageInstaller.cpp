@@ -111,6 +111,7 @@ InstallationResult APTPackageInstaller::installPackage(const std::string& absolu
         // Extract the transaction object name
         char* transactionObjectNameCStr = nullptr;
         g_variant_get(transactionVariant, "(s)", &transactionObjectNameCStr);
+        g_variant_unref(transactionVariant);
         transactionObjectName = std::string(transactionObjectNameCStr);
         delete transactionObjectNameCStr;
     }
@@ -161,8 +162,9 @@ InstallationResult APTPackageInstaller::installPackage(const std::string& absolu
 
     try
     {
-        m_dbusConnection.callMethod(APT_NAMESPACE, transactionObjectName, APT_TRANSACTION_INTERFACE, APT_RUN_METHOD,
-                                    nullptr);
+        const auto returnVariant = m_dbusConnection.callMethod(APT_NAMESPACE, transactionObjectName,
+                                                               APT_TRANSACTION_INTERFACE, APT_RUN_METHOD, nullptr);
+        g_variant_unref(returnVariant);
     }
     catch (const std::exception& exception)
     {
@@ -213,8 +215,10 @@ void APTPackageInstaller::handleConfigFileConflict(const std::string& objectPath
     auto tuple = g_variant_builder_end(builder);
     g_variant_builder_unref(builder);
     std::lock_guard<std::mutex> lockGuard{m_connectionMutex};
-    m_dbusConnection.callMethod(APT_NAMESPACE, objectPath, APT_TRANSACTION_INTERFACE,
-                                APT_RESOLVE_CONFIG_CONFLICT_METHOD, tuple);
+    const auto returnVariant = m_dbusConnection.callMethod(APT_NAMESPACE, objectPath, APT_TRANSACTION_INTERFACE,
+                                                           APT_RESOLVE_CONFIG_CONFLICT_METHOD, tuple);
+    if (returnVariant != nullptr)
+        g_variant_unref(returnVariant);
 }
 
 void APTPackageInstaller::runMainLoop()

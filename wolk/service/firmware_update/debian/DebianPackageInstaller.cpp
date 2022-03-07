@@ -114,6 +114,7 @@ InstallResponse DebianPackageInstaller::installFirmware(const std::string& devic
         if (auto mutexValue = mutexWeakPtr.lock())
         {
             std::lock_guard<std::mutex> lockGuard{*mutexValue};
+            std::lock_guard<std::mutex> lockGuardMap{m_mapMutex};
             auto result = m_deviceInstallationResult.find(deviceKey);
             if (result != m_deviceInstallationResult.cend())
                 result->second = installation ? InstallResponse::INSTALLED : InstallResponse::FAILED_TO_INSTALL;
@@ -138,8 +139,8 @@ InstallResponse DebianPackageInstaller::installFirmware(const std::string& devic
         std::lock_guard<std::mutex> lock{m_mapMutex};
         m_devicesInstallingFiles.erase(deviceKey);
         m_conditionVariables.erase(fileName);
+        return m_deviceInstallationResult[deviceKey];
     }
-    return m_deviceInstallationResult[deviceKey];
 }
 
 void DebianPackageInstaller::abortFirmwareInstall(const std::string& deviceKey)
@@ -174,11 +175,9 @@ std::string DebianPackageInstaller::getFirmwareVersion(const std::string&)
 
     // Copy over the result into a string
     auto result = std::string{};
-    {
-        char buffer[128];
-        while (fgets(buffer, 128, exec.get()) != nullptr)
-            result += buffer;
-    }
+    char buffer[128];
+    while (fgets(buffer, 128, exec.get()) != nullptr)
+        result += buffer;
     while (result.find('\n') != std::string::npos)
         result.replace(result.find('\n'), 1, "");
     return result;

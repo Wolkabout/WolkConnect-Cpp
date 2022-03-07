@@ -93,7 +93,6 @@ GenericDBusInterface::~GenericDBusInterface()
 
         // Call the internal disconnect method.
         disconnect();
-        m_dbusConnection = nullptr;
     }
 
     // Stop the main loop.
@@ -448,7 +447,11 @@ std::string GenericDBusInterface::getNameOwner(const std::string& namespaceName)
     {
         throw std::runtime_error("Received return for the method call is null!");
     }
-    return {g_variant_get_string((g_variant_get_child_value(value, 0)), nullptr)};
+
+    // Extract the value
+    const auto variantChildValue = g_variant_get_child_value(value, 0);
+    g_variant_unref(value);
+    return {g_variant_get_string(variantChildValue, nullptr)};
 }
 
 void GenericDBusInterface::subscribeToName(const std::string& namespaceName)
