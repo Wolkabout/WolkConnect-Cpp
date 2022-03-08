@@ -23,6 +23,7 @@
 #include "wolk/api/FirmwareInstaller.h"
 #include "wolk/api/FirmwareParametersListener.h"
 #include "wolk/service/data/DataService.h"
+#include "wolk/service/file_management/FileManagementService.h"
 
 #include <queue>
 
@@ -34,10 +35,12 @@ class FirmwareUpdateService : public MessageListener
 {
 public:
     FirmwareUpdateService(ConnectivityService& connectivityService, DataService& dataService,
+                          std::shared_ptr<FileManagementService> fileManagementService,
                           std::unique_ptr<FirmwareInstaller> firmwareInstaller, FirmwareUpdateProtocol& protocol,
                           const std::string& workingDirectory = "./");
 
     FirmwareUpdateService(ConnectivityService& connectivityService, DataService& dataService,
+                          std::shared_ptr<FileManagementService> fileManagementService,
                           std::unique_ptr<FirmwareParametersListener> firmwareParametersListener,
                           FirmwareUpdateProtocol& protocol, const std::string& workingDirectory = "./");
 
@@ -88,6 +91,7 @@ private:
     // This is where we store the message sender
     ConnectivityService& m_connectivityService;
     DataService& m_dataService;
+    std::shared_ptr<FileManagementService> m_fileManagementService;
     std::string m_sessionFile;
 
     // Here we store the info if a session is ongoing

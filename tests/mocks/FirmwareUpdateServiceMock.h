@@ -28,16 +28,19 @@ class FirmwareUpdateServiceMock : public FirmwareUpdateService
 {
 public:
     FirmwareUpdateServiceMock(ConnectivityService& connectivityService, DataService& dataService,
+                              std::shared_ptr<FileManagementService> fileManagementService,
                               std::unique_ptr<FirmwareInstaller> firmwareInstaller, FirmwareUpdateProtocol& protocol,
                               const std::string& workingDirectory = "./")
-    : FirmwareUpdateService(connectivityService, dataService, std::move(firmwareInstaller), protocol, workingDirectory)
+    : FirmwareUpdateService(connectivityService, dataService, std::move(fileManagementService),
+                            std::move(firmwareInstaller), protocol, workingDirectory)
     {
     }
     FirmwareUpdateServiceMock(ConnectivityService& connectivityService, DataService& dataService,
+                              std::shared_ptr<FileManagementService> fileManagementService,
                               std::unique_ptr<FirmwareParametersListener> firmwareParametersListener,
                               FirmwareUpdateProtocol& protocol, const std::string& workingDirectory = "./")
-    : FirmwareUpdateService(connectivityService, dataService, std::move(firmwareParametersListener), protocol,
-                            workingDirectory)
+    : FirmwareUpdateService(connectivityService, dataService, std::move(fileManagementService),
+                            std::move(firmwareParametersListener), protocol, workingDirectory)
     {
     }
     MOCK_METHOD(void, loadState, (const std::string&));

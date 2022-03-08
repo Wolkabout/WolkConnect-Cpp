@@ -202,7 +202,7 @@ TEST_F(DataServiceTests, CheckIfCallbackNoCallbacks)
 
 TEST_F(DataServiceTests, CheckIfCallbackFinallyACallback)
 {
-    std::atomic_bool called;
+    std::atomic_bool called{false};
     std::mutex mutex;
     std::condition_variable conditionVariable;
     ASSERT_NO_FATAL_FAILURE(

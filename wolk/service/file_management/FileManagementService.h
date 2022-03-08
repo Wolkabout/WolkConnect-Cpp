@@ -41,6 +41,8 @@ public:
                           bool fileTransferUrlEnabled = true, std::shared_ptr<FileDownloader> fileDownloader = nullptr,
                           std::shared_ptr<FileListener> fileListener = nullptr);
 
+    std::string getDeviceFileFolder(const std::string& deviceKey) const;
+
     const Protocol& getProtocol() override;
 
     bool isFileTransferEnabled() const;

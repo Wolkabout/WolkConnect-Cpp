@@ -28,6 +28,8 @@
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/DataProtocolMock.h"
 #include "tests/mocks/DataServiceMock.h"
+#include "tests/mocks/FileManagementProtocolMock.h"
+#include "tests/mocks/FileManagementServiceMock.h"
 #include "tests/mocks/FirmwareInstallerMock.h"
 #include "tests/mocks/FirmwareParametersListenerMock.h"
 #include "tests/mocks/FirmwareUpdateProtocolMock.h"
@@ -48,6 +50,8 @@ class FirmwareUpdateServiceTests : public ::testing::Test
 public:
     void SetUp() override
     {
+        fileManagementServiceMock = std::make_shared<FileManagementServiceMock>(
+          connectivityServiceMock, dataServiceMock, fileManagementProtocolMock, "");
         firmwareInstallerMock = std::unique_ptr<FirmwareInstallerMock>{new NiceMock<FirmwareInstallerMock>};
         firmwareParametersListenerMock =
           std::unique_ptr<FirmwareParametersListenerMock>{new NiceMock<FirmwareParametersListenerMock>};
@@ -63,15 +67,15 @@ public:
     void CreateServiceWithInstaller(const std::string& destination = "./")
     {
         service = std::unique_ptr<FirmwareUpdateService>{
-          new FirmwareUpdateService{connectivityServiceMock, dataServiceMock, std::move(firmwareInstallerMock),
-                                    firmwareUpdateProtocolMock, destination}};
+          new FirmwareUpdateService{connectivityServiceMock, dataServiceMock, fileManagementServiceMock,
+                                    std::move(firmwareInstallerMock), firmwareUpdateProtocolMock, destination}};
     }
 
     void CreateServiceWithParameterListener(const std::string& destination = "./")
     {
-        service = std::unique_ptr<FirmwareUpdateService>{
-          new FirmwareUpdateService{connectivityServiceMock, dataServiceMock, std::move(firmwareParametersListenerMock),
-                                    firmwareUpdateProtocolMock, destination}};
+        service = std::unique_ptr<FirmwareUpdateService>{new FirmwareUpdateService{
+          connectivityServiceMock, dataServiceMock, fileManagementServiceMock,
+          std::move(firmwareParametersListenerMock), firmwareUpdateProtocolMock, destination}};
     }
 
     static bool CreateSessionFile(const std::string& deviceKey, const std::string& version)
@@ -114,6 +118,10 @@ public:
 
     DataServiceMock dataServiceMock{
       dataProtocolMock, persistenceMock, connectivityServiceMock, outboundRetryMessageHandler, {}, {}, {}};
+
+    FileManagementProtocolMock fileManagementProtocolMock;
+
+    std::shared_ptr<FileManagementServiceMock> fileManagementServiceMock;
 
     FirmwareUpdateProtocolMock firmwareUpdateProtocolMock;
 
@@ -272,7 +280,9 @@ TEST_F(FirmwareUpdateServiceTests, OnFirmwareInstallOtherStatuses)
     for (const auto& status : statuses)
     {
         EXPECT_CALL(GetFirmwareInstallReference(), installFirmware).WillOnce(Return(status));
-        EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage).WillOnce(Return(ByMove(nullptr)));
+        EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage)
+          .WillOnce(Return(ByMove(nullptr)))
+          .WillOnce(Return(ByMove(nullptr)));
         ASSERT_NO_FATAL_FAILURE(service->onFirmwareInstall(DEVICE_KEY, FirmwareUpdateInstallMessage{TEST_FILE}));
     }
 }
@@ -281,7 +291,9 @@ TEST_F(FirmwareUpdateServiceTests, OnFirmwareInstallWillInstallFailsToStoreSessi
 {
     CreateServiceWithInstaller("./non-existing-dir/");
     EXPECT_CALL(GetFirmwareInstallReference(), installFirmware).WillOnce(Return(InstallResponse::WILL_INSTALL));
-    EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage).WillOnce(Return(ByMove(nullptr)));
+    EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage)
+      .WillOnce(Return(ByMove(nullptr)))
+      .WillOnce(Return(ByMove(nullptr)));
     ASSERT_NO_FATAL_FAILURE(service->onFirmwareInstall(DEVICE_KEY, FirmwareUpdateInstallMessage{TEST_FILE}));
 }
 
@@ -290,7 +302,9 @@ TEST_F(FirmwareUpdateServiceTests, OnFirmwareInstallWillInstallStoresSessionFile
     CreateServiceWithInstaller();
     ASSERT_FALSE(FileSystemUtils::isFilePresent("./.fw-session_" + DEVICE_KEY));
     EXPECT_CALL(GetFirmwareInstallReference(), installFirmware).WillOnce(Return(InstallResponse::WILL_INSTALL));
-    EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage).WillOnce(Return(ByMove(nullptr)));
+    EXPECT_CALL(firmwareUpdateProtocolMock, makeOutboundMessage)
+      .WillOnce(Return(ByMove(nullptr)))
+      .WillOnce(Return(ByMove(nullptr)));
     ASSERT_NO_FATAL_FAILURE(service->onFirmwareInstall(DEVICE_KEY, FirmwareUpdateInstallMessage{TEST_FILE}));
     ASSERT_TRUE(FileSystemUtils::isFilePresent("./.fw-session_" + DEVICE_KEY));
 }

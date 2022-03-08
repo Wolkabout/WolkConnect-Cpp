@@ -52,6 +52,9 @@ endif ()
 # Setup the option for optional Poco file downloader
 OPTION(BUILD_POCO_HTTP_DOWNLOADER "Build the optional `FileDownloader` implementation that uses Poco" ON)
 
+# Setup the option for optional apt/systemd firmware updaters
+OPTION(BUILD_APT_SYSTEMD_FIRMWARE_UPDATER "Build the optional apt/systemd firmware updaters" OFF)
+
 # Setup the options for the examples
 OPTION(BUILD_EXAMPLES "Build the examples/runtimes for testing" ON)
 
@@ -76,7 +79,36 @@ link_directories(${CMAKE_PREFIX_PATH}/lib)
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 
+# Usually we just need PThreads
 find_package(Threads REQUIRED)
+
+# But if we want the apt/systemd firmware updater, we need GLib
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    find_package(PkgConfig REQUIRED)
+    PKG_CHECK_MODULES(GLIB glib-2.0)
+    include_directories(${GLIB_INCLUDE_DIRS})
+    link_directories(${GLIB_LIBRARY_DIRS})
+    add_definitions(${GLIB_CFLAGS_OTHER})
+
+    # Stop if GLib is not found
+    if (NOT GLIB_FOUND)
+        message(FATAL_ERROR "CMake was not able to find GLib on your system.
+                         Install using `apt install libglib2.0-dev`.
+                         Stopping.")
+    endif ()
+
+    # Link in GIO
+    PKG_CHECK_MODULES(GIO gio-2.0)
+    link_directories(${GIO_LIBRARY_DIRS})
+    add_definitions(${GIO_CFLAGS_OTHER})
+
+    # Stop if GIO is not found
+    if (NOT GIO_FOUND)
+        message(FATAL_ERROR "CMake was not able to find GIO on your system.
+                         Install using `apt install libglib2.0-dev`.
+                         Stopping.")
+    endif ()
+endif ()
 
 # WolkAbout c++ SDK
 option(BUILD_POCO "" ${BUILD_POCO_HTTP_DOWNLOADER})
@@ -86,7 +118,7 @@ add_subdirectory(WolkSDK-Cpp)
 
 # Define the version of the library
 set(WOLKCONNECT_VERSION_MAJOR 4)
-set(WOLKCONNECT_VERSION_MINOR 0)
+set(WOLKCONNECT_VERSION_MINOR 1)
 set(WOLKCONNECT_VERSION_PATCH 0)
 set(WOLKCONNECT_VERSION_SUFFIX prerelease)
 
@@ -137,16 +169,36 @@ if (${BUILD_POCO_HTTP_DOWNLOADER})
     file(COPY wolk/service/file_management/poco/HTTPFileDownloader.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/file_management/poco)
 endif ()
 
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/DebianPackageInstaller.cpp
+            wolk/service/firmware_update/debian/GenericDBusInterface.cpp
+            wolk/service/firmware_update/debian/apt/APTPackageInstaller.cpp
+            wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.cpp)
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/firmware_update/debian/DebianPackageInstaller.h
+            wolk/service/firmware_update/debian/GenericDBusInterface.h
+            wolk/service/firmware_update/debian/apt/APTPackageInstaller.h
+            wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h)
+    file(COPY wolk/service/firmware_update/debian/GenericDBusInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/DebianPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/apt/APTPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+endif ()
+
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore Threads::Threads)
+target_link_libraries(${PROJECT_NAME} PUBLIC WolkAboutCore Threads::Threads)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_STRING} SOVERSION ${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH})
 
 if (${BUILD_POCO_HTTP_DOWNLOADER})
-    target_link_libraries(${PROJECT_NAME} PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
+    target_link_libraries(${PROJECT_NAME} PUBLIC PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
     add_dependencies(${PROJECT_NAME} libpoco)
+endif ()
+
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${GLIB_LIBRARIES} ${GIO_LIBRARIES})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${GLIB_INCLUDE_DIRS} ${GIO_INCLUDE_DIRS})
 endif ()
 
 # Tests
@@ -194,6 +246,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
     target_link_libraries(full_example ${PROJECT_NAME})
+    target_include_directories(full_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(full_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Pull example
@@ -201,6 +254,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(pull_example ${PULL_EXAMPLE_SOURCE_FILES})
     target_link_libraries(pull_example ${PROJECT_NAME})
+    target_include_directories(pull_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(pull_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Register Feed and Attribute example
@@ -208,6 +262,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(register_example ${REGISTER_EXAMPLE_SOURCE_FILES})
     target_link_libraries(register_example ${PROJECT_NAME})
+    target_include_directories(register_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(register_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Simple example
@@ -215,6 +270,7 @@ if (${BUILD_EXAMPLES})
 
     add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
     target_link_libraries(simple_example ${PROJECT_NAME})
+    target_include_directories(simple_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
     # Subdevices example
@@ -222,7 +278,24 @@ if (${BUILD_EXAMPLES})
 
     add_executable(subdevices_example ${SUBDEVICES_EXAMPLE_SOURCE_FILES})
     target_link_libraries(subdevices_example ${PROJECT_NAME})
+    target_include_directories(subdevices_example PRIVATE ${PROJECT_SOURCE_DIR})
     set_target_properties(subdevices_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+
+    # Debian package installation example
+    if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+        set(DEBIAN_EXAMPLE_SOURCE_FILES examples/debian-package-installation/Application.cpp)
+
+        add_executable(debian_package_example ${DEBIAN_EXAMPLE_SOURCE_FILES})
+        target_link_libraries(debian_package_example ${PROJECT_NAME})
+        target_include_directories(debian_package_example PRIVATE ${PROJECT_SOURCE_DIR})
+        set_target_properties(debian_package_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    endif ()
+endif ()
+
+# Make the install permissions rule
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    add_custom_target(install-permissions)
+    add_custom_command(TARGET install-permissions COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/out/manage-units.pkla /etc/polkit-1/localauthority/50-local.d)
 endif ()
 
 # Create the install rule

@@ -28,10 +28,12 @@ namespace connect
 const std::string SESSION_FILE = ".fw-session";
 
 FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivityService, DataService& dataService,
+                                             std::shared_ptr<FileManagementService> fileManagementService,
                                              std::unique_ptr<FirmwareInstaller> firmwareInstaller,
                                              FirmwareUpdateProtocol& protocol, const std::string& workingDirectory)
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
+, m_fileManagementService(std::move(fileManagementService))
 , m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
 , m_firmwareInstaller(std::move(firmwareInstaller))
 , m_protocol(protocol)
@@ -39,10 +41,12 @@ FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivitySe
 }
 
 FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivityService, DataService& dataService,
+                                             std::shared_ptr<FileManagementService> fileManagementService,
                                              std::unique_ptr<FirmwareParametersListener> firmwareParametersListener,
                                              FirmwareUpdateProtocol& protocol, const std::string& workingDirectory)
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
+, m_fileManagementService(std::move(fileManagementService))
 , m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
 , m_firmwareParametersListener(std::move(firmwareParametersListener))
 , m_protocol(protocol)
@@ -202,27 +206,35 @@ void FirmwareUpdateService::onFirmwareInstall(const std::string& deviceKey, cons
     }
 
     // Check with the installer
-    auto status = m_firmwareInstaller->installFirmware(deviceKey, message.getFile());
+    const auto messagePath = [&] {
+        if (m_fileManagementService != nullptr)
+            return FileSystemUtils::composePath(
+              message.getFile(),
+              FileSystemUtils::absolutePath(m_fileManagementService->getDeviceFileFolder(deviceKey)));
+        return message.getFile();
+    }();
+
+    // Trigger the installation
+    storeSessionFile(deviceKey, m_firmwareInstaller->getFirmwareVersion(deviceKey));
+    sendStatusMessage(deviceKey, FirmwareUpdateStatus::INSTALLING);
+    auto status = m_firmwareInstaller->installFirmware(deviceKey, messagePath);
     switch (status)
     {
     case InstallResponse::FAILED_TO_INSTALL:
         sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
+        deleteSessionFile(deviceKey);
         return;
     case InstallResponse::NO_FILE:
         sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN_FILE);
+        deleteSessionFile(deviceKey);
         return;
     case InstallResponse::WILL_INSTALL:
-        if (!storeSessionFile(deviceKey, m_firmwareInstaller->getFirmwareVersion(deviceKey)))
-        {
-            LOG(ERROR) << "Failed to store session file.";
-            sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
-            return;
-        }
         m_installation[deviceKey] = true;
         sendStatusMessage(deviceKey, FirmwareUpdateStatus::INSTALLING);
         return;
     case InstallResponse::INSTALLED:
         sendStatusMessage(deviceKey, FirmwareUpdateStatus::SUCCESS);
+        deleteSessionFile(deviceKey);
         break;
     }
 }
