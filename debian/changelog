@@ -1,5 +1,6 @@
 wolkconnect-cpp (4.1.0-prerelease) stable; urgency=medium
 
     * Added the `DebianPackageInstaller` that allows the user to attach it to allow Firmware Update to update .deb/systemd applications.
+    * Implemented JSON schemas for processing incoming payloads and filtering out invalid payloads.
   
  -- Wolkabout ELab <elab@wolkabout.com>  Mon, 07 Mar 2022 00:00:00 +0100
