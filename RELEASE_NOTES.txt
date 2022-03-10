@@ -7,6 +7,7 @@ WolkAbout C++11 Connector library for connecting devices to WolkAbout IoT Platfo
 
 **Version 4.1.0-prerelease**
 	- [IMPROVEMENT] - Added the `DebianPackageInstaller` that allows the user to attach it to allow Firmware Update to update .deb/systemd applications.
+	- [IMPROVEMENT] - Implemented JSON schemas for processing incoming payloads and filtering out invalid payloads.
 
 **Version 4.0.0-prerelease**
     - [IMPROVEMENT] - Adding support for Wolkabout IoT Platform 22.GA - The Digital Twin update
