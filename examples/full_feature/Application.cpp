@@ -17,7 +17,6 @@
 #include "core/persistence/inmemory/InMemoryPersistence.h"
 #include "core/utilities/FileSystemUtils.h"
 #include "core/utilities/Logger.h"
-#include "core/utilities/nlohmann/json.hpp"
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 
