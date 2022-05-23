@@ -14,7 +14,7 @@
                                                                           ╚═════╝╚═╝     ╚═╝     
 ```
 ----
-WolkAbout C++11 Connector library for connecting devices to [WolkAbout IoT Platform](https://demo.wolkabout.com/#/login).
+WolkAbout C++11 Connector library for connecting devices to WolkAbout IoT platform instance.
 
 Supported protocol(s):
 * WolkAbout protocol

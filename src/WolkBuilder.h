@@ -224,8 +224,8 @@ private:
 
     bool m_keepAliveEnabled;
 
-    static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
-    static const constexpr char* TRUST_STORE = "ca.crt";
+    static const constexpr char* WOLK_DEMO_HOST = "ssl://INSERT_HOSTNAME:PORT";
+    static const constexpr char* TRUST_STORE = "INSERT/PATH/TO/YOUR/CA.CRT/FILE";
     static const constexpr char* DATABASE = "fileRepository.db";
 };
 }    // namespace wolkabout
