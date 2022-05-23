@@ -27,7 +27,7 @@
  */
 const std::string DEVICE_KEY = "<DEVICE_KEY>";
 const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
-const std::string PLATFORM_HOST = "tcp://demo.wolkabout.com:2883";
+const std::string PLATFORM_HOST = "tcp://INSERT_HOSTNAME:PORT";
 
 /**
  * This is a function that will generate a random Temperature value for us.

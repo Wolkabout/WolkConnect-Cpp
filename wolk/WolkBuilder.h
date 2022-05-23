@@ -287,8 +287,8 @@ private:
     std::shared_ptr<PlatformStatusListener> m_platformStatusListener;
 
     // These are the default values that are going to be used for the connection parameters
-    static const constexpr char* WOLK_DEMO_HOST = "ssl://api-demo.wolkabout.com:8883";
-    static const constexpr char* TRUST_STORE = "ca.crt";
+    static const constexpr char* WOLK_DEMO_HOST = "ssl://INSERT_HOSTNAME:PORT";
+    static const constexpr char* TRUST_STORE = "/INSERT/PATH/TO/YOUR/CA.CRT/FILE";
 };
 }    // namespace connect
 }    // namespace wolkabout
