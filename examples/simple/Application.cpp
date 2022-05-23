@@ -26,7 +26,7 @@ int main(int /* argc */, char** /* argv */)
     wolkabout::Device device("device_key", "some_password");
 
     std::unique_ptr<wolkabout::Wolk> wolk =
-      wolkabout::Wolk::newBuilder(device).host("ssl://api-demo.wolkabout.com:8883").build();
+      wolkabout::Wolk::newBuilder(device).host("ssl://INSERT_HOSTNAME:PORT").build();
 
     wolk->connect();
 

@@ -288,7 +288,7 @@ int main(int /* argc */, char** /* argv */)
         .configurationProvider(deviceConfiguration)
         .withFileManagement("files", 1024 * 1024)
         .withFirmwareUpdate(installer, provider)
-        .host("ssl://api-demo.wolkabout.com:8883")
+        .host("ssl://INSERT_HOSTNAME:PORT")
         .ca_cert_path("ca.crt")
         .build();
 
