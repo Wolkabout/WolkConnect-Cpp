@@ -27,7 +27,7 @@
 const std::string DEVICE_KEY = "AWC";
 const std::string DEVICE_PASSWORD = "0ZY4R8VSSD";
 const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
-const std::string CA_CERT_PATH = "./ca.crt";
+const std::string CA_CERT_PATH = "/INSERT/PATH/TO/YOUR/CA.CRT/FILE";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
 
 // Declare the namespaces we're going to use.

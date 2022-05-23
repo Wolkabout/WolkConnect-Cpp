@@ -26,8 +26,8 @@
  */
 const std::string DEVICE_KEY = "<DEVICE_KEY>";
 const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
-const std::string PLATFORM_HOST = "ssl://demo.wolkabout.com:8883";
-const std::string CA_CERT_PATH = "./ca.crt";
+const std::string PLATFORM_HOST = "ssl://INSERT_HOSTNAME:PORT";
+const std::string CA_CERT_PATH = "/INSERT/PATH/TO/YOUR/CA.CRT/FILE";
 
 /**
  * This is a structure definition that is a collection of all information/feeds the device will have.
