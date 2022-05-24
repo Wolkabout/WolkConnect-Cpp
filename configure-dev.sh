@@ -23,5 +23,5 @@ chmod +x .git/hooks/pre-commit
 
 # Enter the directory and start the CMake build
 pushd out || exit
-cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DBUILD_GTEST=OFF -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=OFF ..
+cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DBUILD_GTEST=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON ..
 popd || exit
