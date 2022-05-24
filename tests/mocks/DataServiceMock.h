@@ -1,5 +1,5 @@
-/*
- * Copyright 2020 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 Wolkabout s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,34 +13,51 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef WOLKABOUTCONNECTOR_DATASERVICEMOCK_H
 #define WOLKABOUTCONNECTOR_DATASERVICEMOCK_H
 
-#include "service/data/DataService.h"
+#include "wolk/service/data/DataService.h"
 
 #include <gmock/gmock.h>
 
-class DataServiceMock : public wolkabout::DataService
+using namespace wolkabout;
+using namespace wolkabout::connect;
+
+class DataServiceMock : public DataService
 {
 public:
-    DataServiceMock(const std::string& deviceKey, wolkabout::DataProtocol& protocol,
-                    wolkabout::Persistence& persistence, wolkabout::ConnectivityService& connectivityService)
-    : DataService(deviceKey, protocol, persistence, connectivityService, nullptr, nullptr, nullptr, nullptr)
+    DataServiceMock(DataProtocol& protocol, Persistence& persistence, ConnectivityService& connectivityService,
+                    OutboundRetryMessageHandler& outboundRetryMessageHandler,
+                    const FeedUpdateSetHandler& feedUpdateHandler, const ParameterSyncHandler& parameterSyncHandler,
+                    const DetailsSyncHandler& detailsSyncHandler)
+    : DataService(protocol, persistence, connectivityService, outboundRetryMessageHandler, feedUpdateHandler,
+                  parameterSyncHandler, detailsSyncHandler)
     {
     }
-
-    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::string&, unsigned long long int), (override));
-    MOCK_METHOD(void, addSensorReading, (const std::string&, const std::vector<std::string>&, unsigned long long int),
-                (override));
-    MOCK_METHOD(void, addActuatorStatus, (const std::string&, const std::string&, wolkabout::ActuatorStatus::State),
-                (override));
-    MOCK_METHOD(void, addAlarm, (const std::string&, bool, unsigned long long int), (override));
-    MOCK_METHOD(void, addConfiguration, (const std::vector<wolkabout::ConfigurationItem>&), (override));
-
-    MOCK_METHOD(void, publishSensorReadings, (), (override));
-    MOCK_METHOD(void, publishActuatorStatuses, (), (override));
-    MOCK_METHOD(void, publishAlarms, (), (override));
-    MOCK_METHOD(void, publishConfiguration, (), (override));
+    MOCK_METHOD(void, addReading, (const std::string&, const std::string&, const std::string&, std::uint64_t));
+    MOCK_METHOD(void, addReading,
+                (const std::string&, const std::string&, const std::vector<std::string>&, std::uint64_t));
+    MOCK_METHOD(void, addReading, (const std::string&, const Reading&));
+    MOCK_METHOD(void, addReadings, (const std::string&, const std::vector<Reading>&));
+    MOCK_METHOD(void, addAttribute, (const std::string&, const Attribute&));
+    MOCK_METHOD(void, updateParameter, (const std::string&, const Parameter&));
+    MOCK_METHOD(void, registerFeed, (const std::string&, Feed));
+    MOCK_METHOD(void, registerFeeds, (const std::string&, std::vector<Feed>));
+    MOCK_METHOD(void, removeFeed, (const std::string&, std::string));
+    MOCK_METHOD(void, removeFeeds, (const std::string&, std::vector<std::string>));
+    MOCK_METHOD(void, pullFeedValues, (const std::string&));
+    MOCK_METHOD(void, pullParameters, (const std::string&));
+    MOCK_METHOD(bool, synchronizeParameters,
+                (const std::string&, const std::vector<ParameterName>&, std::function<void(std::vector<Parameter>)>));
+    MOCK_METHOD(bool, detailsSynchronizationAsync,
+                (const std::string&, std::function<void(std::vector<std::string>, std::vector<std::string>)>));
+    MOCK_METHOD(void, publishReadings, ());
+    MOCK_METHOD(void, publishReadings, (const std::string&));
+    MOCK_METHOD(void, publishAttributes, ());
+    MOCK_METHOD(void, publishAttributes, (const std::string&));
+    MOCK_METHOD(void, publishParameters, ());
+    MOCK_METHOD(void, publishParameters, (const std::string&));
 };
 
 #endif    // WOLKABOUTCONNECTOR_DATASERVICEMOCK_H
