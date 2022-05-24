@@ -1,5 +1,5 @@
-/*
- * Copyright 2018 WolkAbout Technology s.r.o.
+/**
+ * Copyright 2021 WolkAbout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,33 +14,55 @@
  * limitations under the License.
  */
 
-#include "Wolk.h"
+#include "core/utilities/Logger.h"
+#include "wolk/WolkBuilder.h"
+#include "wolk/WolkSingle.h"
 
-#include <chrono>
-#include <memory>
 #include <random>
-#include <thread>
+
+/**
+ * This is the place where user input is required for running the example.
+ * In here, you can enter the device credentials to successfully identify the device on the platform.
+ * And also, the target platform path.
+ */
+const std::string DEVICE_KEY = "<DEVICE_KEY>";
+const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
+const std::string PLATFORM_HOST = "tcp://INSERT_HOSTNAME:PORT";
+
+/**
+ * This is a function that will generate a random Temperature value for us.
+ *
+ * @return A new Temperature value, in the range of -20 to 80.
+ */
+std::uint64_t generateRandomValue()
+{
+    // Here we will create the random engine and distribution
+    static auto engine =
+      std::mt19937(static_cast<std::uint32_t>(std::chrono::system_clock::now().time_since_epoch().count()));
+    static auto distribution = std::uniform_real_distribution<>(-20, 80);
+
+    // And generate a random value
+    return static_cast<std::uint64_t>(distribution(engine));
+}
 
 int main(int /* argc */, char** /* argv */)
 {
-    wolkabout::Device device("device_key", "some_password");
+    // This is the logger setup. Here you can set up the level of logging you would like enabled.
+    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
 
-    std::unique_ptr<wolkabout::Wolk> wolk =
-      wolkabout::Wolk::newBuilder(device).host("ssl://INSERT_HOSTNAME:PORT").build();
+    // Here we create the device that we are presenting as on the platform.
+    auto device = wolkabout::Device(DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH);
 
+    // And here we create the wolk session
+    auto wolk = wolkabout::connect::WolkSingle::newBuilder(device).host(PLATFORM_HOST).buildWolkSingle();
     wolk->connect();
 
-    std::default_random_engine engine;
-    std::uniform_real_distribution<> distribution(-20, 80);
-
+    // And now we will periodically (and endlessly) send a random temperature value.
     while (true)
     {
-        wolk->addSensorReading("T", distribution(engine));
-
+        wolk->addReading("T", generateRandomValue());
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         wolk->publish();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
-
     return 0;
 }

@@ -1,4 +1,4 @@
-# Copyright 2020 WolkAbout Technology s.r.o.
+# Copyright 2021 WolkAbout Technology s.r.o.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +15,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(WolkAboutConnector C CXX)
 
-set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
-
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic                                                    \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}     -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
                                             -Wdisabled-optimization                                                    \
@@ -35,68 +32,275 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS}    -Wall -Wextra -pedantic             
                                             -Wstrict-aliasing=2                                                        \
                                             -Wunreachable-code -Wno-unused                                             \
                                             -Wvariadic-macros                                                          \
-                                            -Wwrite-strings                                                            \
-                                            -fprofile-arcs -ftest-coverage -g")
+                                            -Wwrite-strings")
 
-# library output
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/build)
-set(CMAKE_LIBRARY_INCLUDE_DIRECTORY ${CMAKE_PREFIX_PATH}/include)
-link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+# Setup the options for tests
+OPTION(BUILD_GTEST "Build the library with gtest" ON)
+OPTION(BUILD_TESTS "Build the unit tests for the library" ON)
+if (${BUILD_TESTS})
+    if (NOT ${BUILD_GTEST})
+        message(FATAL "Cannot Build Tests with BUILD_GTEST set to false.")
+    endif ()
+
+    # Setup test coverage if it is necessary
+    OPTION(TEST_COVERAGE "Build the library for test coverage" ON)
+    if (${TEST_COVERAGE})
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -g")
+    endif ()
+endif ()
+
+# Setup the option for optional Poco file downloader
+OPTION(BUILD_POCO_HTTP_DOWNLOADER "Build the optional `FileDownloader` implementation that uses Poco" ON)
+
+# Setup the option for optional apt/systemd firmware updaters
+OPTION(BUILD_APT_SYSTEMD_FIRMWARE_UPDATER "Build the optional apt/systemd firmware updaters" OFF)
+
+# Setup the options for the examples
+OPTION(BUILD_EXAMPLES "Build the examples/runtimes for testing" ON)
+
+# Check if the paths for output are set, if not, we can set them ourselves
+if (NOT DEFINED CMAKE_LIBRARY_OUTPUT_DIRECTORY)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+endif ()
+
+if (NOT DEFINED CMAKE_LIBRARY_INCLUDE_DIRECTORY)
+    set(CMAKE_LIBRARY_INCLUDE_DIRECTORY "${CMAKE_BINARY_DIR}/include")
+endif ()
+
+if (NOT DEFINED CMAKE_RUNTIME_OUTPUT_DIRECTORY)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+endif ()
+
+if (NOT DEFINED CMAKE_PREFIX_PATH)
+    set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_BINARY_DIR}/build")
+endif ()
+
 link_directories(${CMAKE_PREFIX_PATH}/lib)
+link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 
+# Usually we just need PThreads
 find_package(Threads REQUIRED)
 
+# But if we want the apt/systemd firmware updater, we need GLib
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    find_package(PkgConfig REQUIRED)
+    PKG_CHECK_MODULES(GLIB glib-2.0)
+    include_directories(${GLIB_INCLUDE_DIRS})
+    link_directories(${GLIB_LIBRARY_DIRS})
+    add_definitions(${GLIB_CFLAGS_OTHER})
+
+    # Stop if GLib is not found
+    if (NOT GLIB_FOUND)
+        message(FATAL_ERROR "CMake was not able to find GLib on your system.
+                         Install using `apt install libglib2.0-dev`.
+                         Stopping.")
+    endif ()
+
+    # Link in GIO
+    PKG_CHECK_MODULES(GIO gio-2.0)
+    link_directories(${GIO_LIBRARY_DIRS})
+    add_definitions(${GIO_CFLAGS_OTHER})
+
+    # Stop if GIO is not found
+    if (NOT GIO_FOUND)
+        message(FATAL_ERROR "CMake was not able to find GIO on your system.
+                         Install using `apt install libglib2.0-dev`.
+                         Stopping.")
+    endif ()
+endif ()
+
 # WolkAbout c++ SDK
-option(POCO_BUILD_DATA "" ON)
-option(POCO_BUILD_NET "" ON)
+option(BUILD_POCO "" ${BUILD_POCO_HTTP_DOWNLOADER})
+option(POCO_BUILD_NET "" ${BUILD_POCO_HTTP_DOWNLOADER})
+option(BUILD_AWS_LOG_UPLOADER "" OFF)
 add_subdirectory(WolkSDK-Cpp)
 
+# Define the version of the library
+set(WOLKCONNECT_VERSION_MAJOR 4)
+set(WOLKCONNECT_VERSION_MINOR 1)
+set(WOLKCONNECT_VERSION_PATCH 0)
+set(WOLKCONNECT_VERSION_SUFFIX prerelease)
+
+set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH}")
+if (NOT "${WOLKCONNECT_VERSION_SUFFIX}" STREQUAL "")
+    set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_STRING}-${WOLKCONNECT_VERSION_SUFFIX}")
+endif ()
+
 # WolkAbout c++ Connector
-file(GLOB_RECURSE LIB_HEADER_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.h" "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp")
-file(GLOB_RECURSE LIB_SOURCE_FILES "${CMAKE_CURRENT_LIST_DIR}/src/*.c" "${CMAKE_CURRENT_LIST_DIR}/src/*.cpp")
+set(LIB_SOURCE_FILES wolk/api/FirmwareInstaller.cpp
+        wolk/service/data/DataService.cpp
+        wolk/service/error/ErrorService.cpp
+        wolk/service/file_management/FileManagementService.cpp
+        wolk/service/file_management/FileTransferSession.cpp
+        wolk/service/firmware_update/FirmwareUpdateService.cpp
+        wolk/service/platform_status/PlatformStatusService.cpp
+        wolk/service/registration_service/RegistrationService.cpp
+        wolk/WolkBuilder.cpp
+        wolk/WolkInterface.cpp
+        wolk/WolkMulti.cpp
+        wolk/WolkSingle.cpp)
+set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
+        wolk/api/FileListener.h
+        wolk/api/FirmwareInstaller.h
+        wolk/api/FirmwareParametersListener.h
+        wolk/api/ParameterHandler.h
+        wolk/api/PlatformStatusListener.h
+        wolk/service/data/DataService.h
+        wolk/service/error/ErrorService.h
+        wolk/service/file_management/FileDownloader.h
+        wolk/service/file_management/FileManagementService.h
+        wolk/service/file_management/FileTransferSession.h
+        wolk/service/firmware_update/FirmwareUpdateService.h
+        wolk/service/platform_status/PlatformStatusService.h
+        wolk/service/registration_service/RegistrationService.h
+        wolk/Version.h
+        wolk/WolkBuilder.h
+        wolk/WolkInterface.h
+        wolk/WolkInterfaceType.h
+        wolk/WolkMulti.h
+        wolk/WolkSingle.h)
+
+file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE PATTERN "poco/HTTPFileDownloader.h" EXCLUDE)
+
+if (${BUILD_POCO_HTTP_DOWNLOADER})
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/file_management/poco/HTTPFileDownloader.cpp)
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/file_management/poco/HTTPFileDownloader.h)
+    file(COPY wolk/service/file_management/poco/HTTPFileDownloader.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/file_management/poco)
+endif ()
+
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/DebianPackageInstaller.cpp
+            wolk/service/firmware_update/debian/GenericDBusInterface.cpp
+            wolk/service/firmware_update/debian/apt/APTPackageInstaller.cpp
+            wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.cpp)
+    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/firmware_update/debian/DebianPackageInstaller.h
+            wolk/service/firmware_update/debian/GenericDBusInterface.h
+            wolk/service/firmware_update/debian/apt/APTPackageInstaller.h
+            wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h)
+    file(COPY wolk/service/firmware_update/debian/GenericDBusInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/DebianPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/apt/APTPackageInstaller.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+    file(COPY wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/firmware_update/apt)
+endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} WolkAboutCore z PocoUtil PocoCrypto PocoData PocoDataSQLite PocoFoundation Threads::Threads)
-target_include_directories(${PROJECT_NAME} PUBLIC "src")
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_LIBRARY_INCLUDE_DIRECTORY})
+target_link_libraries(${PROJECT_NAME} PUBLIC WolkAboutCore Threads::Threads)
+target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
-add_dependencies(${PROJECT_NAME} libpoco)
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_STRING} SOVERSION ${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH})
 
-target_include_directories(${PROJECT_NAME} PUBLIC "${CMAKE_CURRENT_LIST_DIR}/src")
+if (${BUILD_POCO_HTTP_DOWNLOADER})
+    target_link_libraries(${PROJECT_NAME} PUBLIC PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
+    add_dependencies(${PROJECT_NAME} libpoco)
+endif ()
+
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    target_link_libraries(${PROJECT_NAME} PUBLIC ${GLIB_LIBRARIES} ${GIO_LIBRARIES})
+    target_include_directories(${PROJECT_NAME} PUBLIC ${GLIB_INCLUDE_DIRS} ${GIO_INCLUDE_DIRS})
+endif ()
 
 # Tests
-include_directories("tests")
+if (${BUILD_TESTS})
+    set(TEST_SOURCE_FILES
+            tests/DataServiceTests.cpp
+            tests/ErrorServiceTests.cpp
+            tests/FileManagementServiceTests.cpp
+            tests/FileTransferSessionTests.cpp
+            tests/FirmwareUpdateServiceTests.cpp
+            tests/InboundPlatformMessageHandlerTests.cpp
+            tests/PlatformStatusServiceTests.cpp
+            tests/RegistrationServiceTests.cpp
+            tests/WolkBuilderTests.cpp
+            tests/WolkMultiTests.cpp
+            tests/WolkSingleTests.cpp)
+    set(TEST_HEADER_FILES
+            tests/mocks/DataServiceMock.h
+            tests/mocks/ErrorServiceMock.h
+            tests/mocks/FeedUpdateHandlerMock.h
+            tests/mocks/FileDownloaderMock.h
+            tests/mocks/FileListenerMock.h
+            tests/mocks/FileManagementServiceMock.h
+            tests/mocks/FileTransferSessionMock.h
+            tests/mocks/FirmwareInstallerMock.h
+            tests/mocks/FirmwareParametersListenerMock.h
+            tests/mocks/FirmwareUpdateServiceMock.h
+            tests/mocks/ParameterHandlerMock.h
+            tests/mocks/PlatformStatusListenerMock.h
+            tests/mocks/RegistrationServiceMock.h)
 
-file(GLOB_RECURSE TEST_HEADER_FILES "tests/*.h" "tests/*.hpp")
-file(GLOB_RECURSE TEST_SOURCE_FILES "tests/*.c" "tests/*.cpp")
+    enable_testing()
+    add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
+    target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
+    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include WolkSDK-Cpp)
+    set_target_properties(${PROJECT_NAME}Tests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    add_dependencies(${PROJECT_NAME}Tests ${PROJECT_NAME} libgtest)
 
-add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
-target_include_directories(${PROJECT_NAME}Tests SYSTEM PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY})
-set_target_properties(${PROJECT_NAME}Tests PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
-set_target_properties(${PROJECT_NAME}Tests PROPERTIES EXCLUDE_FROM_ALL TRUE)
-add_dependencies(${PROJECT_NAME}Tests ${PROJECT_NAME} libgtest)
+    add_test(NAME "WolkConnect-Cpp_Tests" COMMAND ${PROJECT_NAME}Tests)
+endif ()
 
-add_custom_target(tests ${PROJECT_NAME}Tests)
-add_test(gtest ${PROJECT_NAME}Tests)
+if (${BUILD_EXAMPLES})
+    # Full example
+    set(FULL_EXAMPLE_SOURCE_FILES examples/full_feature/Application.cpp)
 
-# Examples
+    add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
+    target_link_libraries(full_example ${PROJECT_NAME})
+    target_include_directories(full_example PRIVATE ${PROJECT_SOURCE_DIR})
+    set_target_properties(full_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
-# Full example
-file(GLOB_RECURSE FULL_EXAMPLE_HEADER_FILES "examples/full_feature_set/*.h")
-file(GLOB_RECURSE FULL_EXAMPLE_SOURCE_FILES "examples/full_feature_set/*.cpp")
+    # Pull example
+    set(PULL_EXAMPLE_SOURCE_FILES examples/pull/Application.cpp)
 
-add_executable(full_example ${FULL_EXAMPLE_SOURCE_FILES})
-target_link_libraries(full_example ${PROJECT_NAME})
-set_target_properties(full_example PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+    add_executable(pull_example ${PULL_EXAMPLE_SOURCE_FILES})
+    target_link_libraries(pull_example ${PROJECT_NAME})
+    target_include_directories(pull_example PRIVATE ${PROJECT_SOURCE_DIR})
+    set_target_properties(pull_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
-# Simple example
-file(GLOB_RECURSE SIMPLE_EXAMPLE_HEADER_FILES "examples/simple/*.h")
-file(GLOB_RECURSE SIMPLE_EXAMPLE_SOURCE_FILES "examples/simple/*.cpp")
+    # Register Feed and Attribute example
+    set(REGISTER_EXAMPLE_SOURCE_FILES examples/register_feed_and_attribute/Application.cpp)
 
-add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
-target_link_libraries(simple_example ${PROJECT_NAME})
-set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/lib")
+    add_executable(register_example ${REGISTER_EXAMPLE_SOURCE_FILES})
+    target_link_libraries(register_example ${PROJECT_NAME})
+    target_include_directories(register_example PRIVATE ${PROJECT_SOURCE_DIR})
+    set_target_properties(register_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
 
-add_subdirectory(cmake)
+    # Simple example
+    set(SIMPLE_EXAMPLE_SOURCE_FILES examples/simple/Application.cpp)
+
+    add_executable(simple_example ${SIMPLE_EXAMPLE_SOURCE_FILES})
+    target_link_libraries(simple_example ${PROJECT_NAME})
+    target_include_directories(simple_example PRIVATE ${PROJECT_SOURCE_DIR})
+    set_target_properties(simple_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+
+    # Subdevices example
+    set(SUBDEVICES_EXAMPLE_SOURCE_FILES examples/subdevices/Application.cpp)
+
+    add_executable(subdevices_example ${SUBDEVICES_EXAMPLE_SOURCE_FILES})
+    target_link_libraries(subdevices_example ${PROJECT_NAME})
+    target_include_directories(subdevices_example PRIVATE ${PROJECT_SOURCE_DIR})
+    set_target_properties(subdevices_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+
+    # Debian package installation example
+    if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+        set(DEBIAN_EXAMPLE_SOURCE_FILES examples/debian-package-installation/Application.cpp)
+
+        add_executable(debian_package_example ${DEBIAN_EXAMPLE_SOURCE_FILES})
+        target_link_libraries(debian_package_example ${PROJECT_NAME})
+        target_include_directories(debian_package_example PRIVATE ${PROJECT_SOURCE_DIR})
+        set_target_properties(debian_package_example PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    endif ()
+endif ()
+
+# Make the install permissions rule
+if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
+    add_custom_target(install-permissions)
+    add_custom_command(TARGET install-permissions COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/out/manage-units.pkla /etc/polkit-1/localauthority/50-local.d)
+endif ()
+
+# Create the install rule
+include(GNUInstallDirs)
+install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
+install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
+install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
