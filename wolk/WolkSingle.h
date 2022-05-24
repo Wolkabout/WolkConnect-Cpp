@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 WolkAbout Technology s.r.o.
+ * Copyright 2022 Wolkabout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,14 +42,14 @@ class WolkSingle : public WolkInterface
 
 public:
     /**
-     * @brief Initiates wolkabout::WolkBuilder that configures device to connect to WolkAbout IoT Cloud
+     * @brief Initiates wolkabout::WolkBuilder that configures device to connect to Wolkabout IoT Cloud
      * @param device wolkabout::Device
      * @return wolkabout::WolkBuilder instance
      */
     static WolkBuilder newBuilder(Device device);
 
     /**
-     * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
+     * @brief Publishes sensor reading to Wolkabout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param reference Sensor reference
      * @param value Sensor value<br>
@@ -72,7 +72,7 @@ public:
     template <typename T> void addReading(const std::string& reference, T value, std::uint64_t rtc = 0);
 
     /**
-     * @brief Publishes sensor reading to WolkAbout IoT Cloud<br>
+     * @brief Publishes sensor reading to Wolkabout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param reference Sensor reference
      * @param value Sensor value
@@ -82,7 +82,7 @@ public:
     void addReading(const std::string& reference, std::string value, std::uint64_t rtc = 0);
 
     /**
-     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
+     * @brief Publishes multi-value sensor reading to Wolkabout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param reference Sensor reference
      * @param values Multi-value sensor values<br>
@@ -106,7 +106,7 @@ public:
     void addReading(const std::string& reference, const std::vector<T>& values, std::uint64_t rtc = 0);
 
     /**
-     * @brief Publishes multi-value sensor reading to WolkAbout IoT Cloud<br>
+     * @brief Publishes multi-value sensor reading to Wolkabout IoT Cloud<br>
      *        This method is thread safe, and can be called from multiple thread simultaneously
      * @param reference Sensor reference
      * @param values Multi-value sensor values

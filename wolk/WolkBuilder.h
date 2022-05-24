@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 WolkAbout Technology s.r.o.
+ * Copyright 2022 Wolkabout Technology s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,14 +80,14 @@ public:
     std::vector<Device>& getDevices();
 
     /**
-     * @brief Allows passing of URI to custom WolkAbout IoT platform instance
+     * @brief Allows passing of URI to custom Wolkabout IoT platform instance
      * @param host Server URI
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
     WolkBuilder& host(const std::string& host);
 
     /**
-     * @brief Allows passing of custom CA’s public certificate file to custom WolkAbout IoT platform instance
+     * @brief Allows passing of custom CA’s public certificate file to custom Wolkabout IoT platform instance
      * @param caCertPath ca.crt file system path
      * @return Reference to current wolkabout::WolkBuilder instance (Provides fluent interface)
      */
