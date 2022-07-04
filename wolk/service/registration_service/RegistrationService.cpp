@@ -110,7 +110,7 @@ bool RegistrationService::registerDevices(
         }
         deviceNames.emplace_back(device.key);
     }
-    std::sort_heap(deviceNames.begin(), deviceNames.end());
+    std::sort(deviceNames.begin(), deviceNames.end());
 
     // Make the message that will be sent out
     const auto message =
