@@ -15,9 +15,10 @@
 cmake_minimum_required(VERSION 3.5)
 project(WolkAboutConnector C CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}     -Wall -Wextra -Wcast-align                                                 \
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}     -Wall -Wextra -pedantic                                                    \
+                                            -pedantic-errors -Wcast-align                                              \
                                             -Wcast-qual -Wconversion                                                   \
                                             -Wdisabled-optimization                                                    \
                                             -Wfloat-equal -Wformat=2                                                   \
@@ -184,7 +185,7 @@ endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} PUBLIC WolkAboutCore Threads::Threads)
-target_include_directories(${PROJECT_NAME} PRIVATE $<BUILD_INTERFACE:${CMAKE_PREFIX_PATH}/include>)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_PREFIX_PATH}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_STRING} SOVERSION ${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH})
