@@ -50,7 +50,8 @@ FileTransferSession::FileTransferSession(std::string deviceKey, const FileUpload
 
 FileTransferSession::FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
                                          std::function<void(FileTransferStatus, FileTransferError)> callback,
-                                         legacy::CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader)
+                                         legacy::CommandBuffer& commandBuffer,
+                                         std::shared_ptr<FileDownloader> fileDownloader)
 : m_deviceKey(std::move(deviceKey))
 , m_url(message.getPath())
 , m_retryCount(0)
@@ -254,19 +255,19 @@ bool FileTransferSession::triggerDownload()
     }
 
     // Now that we have adequate information, setup everything
-    m_downloader->downloadFile(m_url,
-                               [this](FileTransferStatus status, FileTransferError error, const std::string& fileName) {
-                                   // Set the name if a name value is sent out
-                                   if (!fileName.empty())
-                                       this->m_name = fileName;
+    m_downloader->downloadFile(
+      m_url, [this](FileTransferStatus status, FileTransferError error, const std::string& fileName) {
+          // Set the name if a name value is sent out
+          if (!fileName.empty())
+              this->m_name = fileName;
 
-                                   // Announce the status
-                                   changeStatusAndError(status, error);
-                                   if (status == FileTransferStatus::FILE_READY || status == FileTransferStatus::ERROR_TRANSFER)
-                                   {
-                                       m_done = true;
-                                   }
-                               });
+          // Announce the status
+          changeStatusAndError(status, error);
+          if (status == FileTransferStatus::FILE_READY || status == FileTransferStatus::ERROR_TRANSFER)
+          {
+              m_done = true;
+          }
+      });
     return true;
 }
 

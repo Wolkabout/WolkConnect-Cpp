@@ -1,5 +1,5 @@
 wolkconnect-cpp (4.2.0) stable; urgency=medium
 
     * Modernized CMake a little bit to with the `target_include_directories`.
-  
+
  -- Wolkabout ELab <elab@wolkabout.com>  Fri, 9 Jun 2023 00:00:00 +0100

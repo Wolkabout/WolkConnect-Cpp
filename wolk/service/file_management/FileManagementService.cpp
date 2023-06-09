@@ -552,7 +552,8 @@ FileInformation FileManagementService::obtainFileInformation(const std::string& 
     // Load up all the content of the file quickly
     auto binaryContent = ByteArray{};
     if (!legacy::FileSystemUtils::readBinaryFileContent(
-          legacy::FileSystemUtils::composePath(fileName, legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation)),
+          legacy::FileSystemUtils::composePath(fileName,
+                                               legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation)),
           binaryContent))
     {
         LOG(ERROR) << "Failed to obtain FileInformation for file '" << fileName
@@ -576,8 +577,8 @@ void FileManagementService::reportTransferProtocolDisabled(const std::string& de
     LOG(TRACE) << METHOD_INFO;
 
     // Form the message
-    auto status =
-      FileUploadStatusMessage{fileName, FileTransferStatus::ERROR_TRANSFER, FileTransferError::TRANSFER_PROTOCOL_DISABLED};
+    auto status = FileUploadStatusMessage{fileName, FileTransferStatus::ERROR_TRANSFER,
+                                          FileTransferError::TRANSFER_PROTOCOL_DISABLED};
     auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, status));
     if (message == nullptr)
     {
@@ -592,8 +593,8 @@ void FileManagementService::reportUrlTransferProtocolDisabled(const std::string&
     LOG(TRACE) << METHOD_INFO;
 
     // Form the message
-    auto status =
-      FileUrlDownloadStatusMessage{url, "", FileTransferStatus::ERROR_TRANSFER, FileTransferError::TRANSFER_PROTOCOL_DISABLED};
+    auto status = FileUrlDownloadStatusMessage{url, "", FileTransferStatus::ERROR_TRANSFER,
+                                               FileTransferError::TRANSFER_PROTOCOL_DISABLED};
     auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, status));
     if (message == nullptr)
     {
