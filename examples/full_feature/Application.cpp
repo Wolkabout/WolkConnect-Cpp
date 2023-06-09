@@ -28,6 +28,8 @@
 #include <string>
 #include <utility>
 
+using namespace wolkabout::legacy;
+
 /**
  * This is the place where user input is required for running the example.
  * In here, you can enter the device credentials to successfully identify the device on the platform.
@@ -141,7 +143,7 @@ public:
                                                         const std::string& fileName) override
     {
         // Compose the path
-        auto path = wolkabout::FileSystemUtils::composePath(fileName, m_fileLocation);
+        auto path = wolkabout::legacy::FileSystemUtils::composePath(fileName, m_fileLocation);
         LOG(INFO) << "Installation for file '" << path << "' on device '" << deviceKey << "' requested.";
         return wolkabout::connect::InstallResponse::WILL_INSTALL;
     }
@@ -235,7 +237,7 @@ int main(int /* argc */, char** /* argv */)
      * Logging to file could also be added here, by adding the type `Logger::Type::FILE` and passing a file path as
      * third argument.
      */
-    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
+    wolkabout::legacy::Logger::init(wolkabout::legacy::LogLevel::INFO, wolkabout::legacy::Logger::Type::CONSOLE);
 
     /**
      * Now we can create the device using the user provided device credentials.

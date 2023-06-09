@@ -45,7 +45,9 @@
 #include <gtest/gtest.h>
 
 using namespace wolkabout;
+using namespace wolkabout::legacy;
 using namespace wolkabout::connect;
+using namespace wolkabout::legacy;
 using namespace ::testing;
 
 class WolkMultiTests : public ::testing::Test
@@ -174,10 +176,12 @@ TEST_F(WolkMultiTests, AddReadingStringValue)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), addReading(devices.front().getKey(), _, A<const std::string&>(), _))
-      .WillOnce([&](const std::string&, const std::string&, const std::string&, std::uint64_t) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const std::string&, const std::string&, std::uint64_t)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->addReading(devices.front().getKey(), "T", "TestValue"));
@@ -192,10 +196,12 @@ TEST_F(WolkMultiTests, AddReadingStringValues)
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(),
                 addReading(devices.front().getKey(), _, A<const std::vector<std::string>&>(), _))
-      .WillOnce([&](const std::string&, const std::string&, const std::vector<std::string>&, std::uint64_t) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const std::string&, const std::vector<std::string>&, std::uint64_t)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->addReading(devices.front().getKey(), "T", std::vector<std::string>{"TestValue"}));
@@ -209,10 +215,12 @@ TEST_F(WolkMultiTests, AddReadingSingleReading)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), addReading(devices.front().getKey(), A<const Reading&>()))
-      .WillOnce([&](const std::string&, const Reading&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const Reading&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->addReading(devices.front().getKey(), Reading{"T", std::string{"TestValue"}}));
@@ -226,10 +234,12 @@ TEST_F(WolkMultiTests, AddReadingMultipleReadings)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), addReadings(devices.front().getKey(), A<const std::vector<Reading>&>()))
-      .WillOnce([&](const std::string&, const std::vector<Reading>&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const std::vector<Reading>&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->addReadings(devices.front().getKey(), {Reading{"T", std::string{"TestValue"}}}));
@@ -249,10 +259,12 @@ TEST_F(WolkMultiTests, AddFeed)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), registerFeed(devices.front().getKey(), _))
-      .WillOnce([&](const std::string&, const Feed&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const Feed&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(
@@ -274,10 +286,12 @@ TEST_F(WolkMultiTests, AddFeeds)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), registerFeeds(devices.front().getKey(), _))
-      .WillOnce([&](const std::string&, const std::vector<Feed>&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const std::vector<Feed>&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(
@@ -298,10 +312,12 @@ TEST_F(WolkMultiTests, RemoveFeed)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), removeFeed(devices.front().getKey(), _))
-      .WillOnce([&](const std::string&, const std::string&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const std::string&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->removeFeed(devices.front().getKey(), "TestFeed"));
@@ -321,10 +337,12 @@ TEST_F(WolkMultiTests, RemoveFeeds)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), removeFeeds(devices.front().getKey(), _))
-      .WillOnce([&](const std::string&, const std::vector<std::string>&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const std::vector<std::string>&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->removeFeeds(devices.front().getKey(), {"TestFeed"}));
@@ -343,10 +361,13 @@ TEST_F(WolkMultiTests, PullFeedValues)
 {
     // Set up the DataService to be called
     std::atomic_bool called{false};
-    EXPECT_CALL(GetDataServiceReference(), pullFeedValues(devices.front().getKey())).WillOnce([&](const std::string&) {
-        called = true;
-        Notify();
-    });
+    EXPECT_CALL(GetDataServiceReference(), pullFeedValues(devices.front().getKey()))
+      .WillOnce(
+        [&](const std::string&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->pullFeedValues(devices.front().getKey()));
@@ -365,10 +386,13 @@ TEST_F(WolkMultiTests, PullParameters)
 {
     // Set up the DataService to be called
     std::atomic_bool called{false};
-    EXPECT_CALL(GetDataServiceReference(), pullParameters(devices.front().getKey())).WillOnce([&](const std::string&) {
-        called = true;
-        Notify();
-    });
+    EXPECT_CALL(GetDataServiceReference(), pullParameters(devices.front().getKey()))
+      .WillOnce(
+        [&](const std::string&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(service->pullParameters(devices.front().getKey()));
@@ -389,10 +413,12 @@ TEST_F(WolkMultiTests, AddAttribute)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), addAttribute(devices.front().getKey(), _))
-      .WillOnce([&](const std::string&, const Attribute&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const Attribute&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(
@@ -413,10 +439,12 @@ TEST_F(WolkMultiTests, UpdateParameter)
     // Set up the DataService to be called
     std::atomic_bool called{false};
     EXPECT_CALL(GetDataServiceReference(), updateParameter(devices.front().getKey(), _))
-      .WillOnce([&](const std::string&, const Parameter&) {
-          called = true;
-          Notify();
-      });
+      .WillOnce(
+        [&](const std::string&, const Parameter&)
+        {
+            called = true;
+            Notify();
+        });
 
     // Call the service
     ASSERT_NO_FATAL_FAILURE(
@@ -442,14 +470,16 @@ TEST_F(WolkMultiTests, RegisterDeviceHappyFlow)
 {
     std::atomic_bool called{false};
     EXPECT_CALL(GetRegistrationServiceReference(), registerDevices)
-      .WillOnce([&](const std::string&, const std::vector<DeviceRegistrationData>&,
-                    std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback) {
-          callback({"D1"}, {});
-          return true;
-      });
-    ASSERT_TRUE(service->registerDevice(
-      DeviceRegistrationData{"Device 1", "D1", {}, {}, {}, {}},
-      [&](const std::vector<std::string>&, const std::vector<std::string>&) { called = true; }));
+      .WillOnce(
+        [&](const std::string&, const std::vector<DeviceRegistrationData>&,
+            std::function<void(const std::vector<std::string>&, const std::vector<std::string>&)> callback)
+        {
+            callback({"D1"}, {});
+            return true;
+        });
+    ASSERT_TRUE(service->registerDevice(DeviceRegistrationData{"Device 1", "D1", {}, {}, {}, {}},
+                                        [&](const std::vector<std::string>&, const std::vector<std::string>&)
+                                        { called = true; }));
     EXPECT_TRUE(called);
 }
 

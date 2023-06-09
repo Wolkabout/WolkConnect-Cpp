@@ -111,7 +111,7 @@ private:
     ParameterSyncHandler m_parameterSyncHandler;
     DetailsSyncHandler m_detailsSyncHandler;
 
-    CommandBuffer m_commandBuffer;
+    legacy::CommandBuffer m_commandBuffer;
     struct ParameterSubscription
     {
         std::vector<ParameterName> parameters;

@@ -68,7 +68,7 @@ private:
     std::shared_ptr<PlatformStatusListener> m_listener;
 
     // Here we have the command buffer that will execute external calls.
-    CommandBuffer m_commandBuffer;
+    legacy::CommandBuffer m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

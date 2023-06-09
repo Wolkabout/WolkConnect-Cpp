@@ -153,7 +153,7 @@ protected:
 
 template <typename T> void WolkSingle::addReading(const std::string& reference, T value, std::uint64_t rtc)
 {
-    addReading(reference, StringUtils::toString(value), rtc);
+    addReading(reference, legacy::StringUtils::toString(value), rtc);
 }
 
 template <typename T>
@@ -164,7 +164,7 @@ void WolkSingle::addReading(const std::string& reference, const std::vector<T>& 
 
     std::vector<std::string> stringifiedValues(values.size());
     std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
-                   [&](const T& value) -> std::string { return StringUtils::toString(value); });
+                   [&](const T& value) -> std::string { return legacy::StringUtils::toString(value); });
 
     addReading(reference, stringifiedValues, rtc);
 }

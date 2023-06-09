@@ -152,7 +152,7 @@ private:
 template <typename T>
 void WolkMulti::addReading(const std::string& deviceKey, const std::string& reference, T value, std::uint64_t rtc)
 {
-    addReading(deviceKey, reference, StringUtils::toString(value), rtc);
+    addReading(deviceKey, reference, legacy::StringUtils::toString(value), rtc);
 }
 
 template <typename T>
@@ -164,7 +164,7 @@ void WolkMulti::addReading(const std::string& deviceKey, const std::string& refe
 
     std::vector<std::string> stringifiedValues(values.size());
     std::transform(values.cbegin(), values.cend(), stringifiedValues.begin(),
-                   [&](const T& value) -> std::string { return StringUtils::toString(value); });
+                   [&](const T& value) -> std::string { return legacy::StringUtils::toString(value); });
 
     addReading(deviceKey, reference, stringifiedValues, rtc);
 }

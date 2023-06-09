@@ -19,6 +19,8 @@
 #include "wolk/WolkSingle.h"
 #include "wolk/service/firmware_update/debian/DebianPackageInstaller.h"
 
+using namespace wolkabout::legacy;
+
 /**
  * This is the place where user input is required for running the example.
  * In here, you can enter the device credentials to successfully identify the device on the platform.

@@ -84,7 +84,7 @@ public:
  * This is the service that is responsible for registering/removing devices, and also obtaining information about
  * devices.
  */
-class RegistrationService : public MessageListener, public Service
+class RegistrationService : public MessageListener, public legacy::Service
 {
 public:
     /**
@@ -259,7 +259,7 @@ private:
       m_deviceRegistrationResponses;
 
     // Have a command buffer for calling some callbacks
-    CommandBuffer m_commandBuffer;
+    legacy::CommandBuffer m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

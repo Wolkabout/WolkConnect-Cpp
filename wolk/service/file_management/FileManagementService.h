@@ -189,7 +189,7 @@ private:
 
     // Make place for the listener pointer
     std::weak_ptr<FileListener> m_fileListener;
-    CommandBuffer m_commandBuffer;
+    legacy::CommandBuffer m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

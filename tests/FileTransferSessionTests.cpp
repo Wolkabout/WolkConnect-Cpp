@@ -34,6 +34,7 @@
 #include <gtest/gtest.h>
 
 using namespace wolkabout;
+using namespace wolkabout::legacy;
 using namespace wolkabout::connect;
 
 class FileTransferSessionTests : public ::testing::Test
@@ -51,13 +52,13 @@ public:
 
     const std::string FILE_NAME = "test.file";
 
-    CommandBuffer commandBuffer;
+    legacy::CommandBuffer commandBuffer;
 
     std::mutex mutex;
 
     std::condition_variable conditionVariable;
 
-    Timer timer;
+    legacy::Timer timer;
 };
 
 std::shared_ptr<FileDownloaderMock> FileTransferSessionTests::fileDownloaderMock;
@@ -263,7 +264,7 @@ TEST_F(FileTransferSessionTests, PushCurrentChunkHashToLimits)
 
     // Check the values
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR_TRANSFER);
     EXPECT_EQ(session->getError(), FileTransferError::RETRY_COUNT_EXCEEDED);
 }
 
@@ -324,7 +325,7 @@ TEST_F(FileTransferSessionTests, SecondChunkRepeatedlyGetsThePreviousHashWrong)
     ASSERT_EQ(session->pushChunk(FileBinaryResponseMessage{ByteUtils::toString(secondMessage)}),
               FileTransferError::RETRY_COUNT_EXCEEDED);
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR_TRANSFER);
     EXPECT_EQ(session->getError(), FileTransferError::RETRY_COUNT_EXCEEDED);
 }
 
@@ -379,7 +380,7 @@ TEST_F(FileTransferSessionTests, MultiChunkFinalHashIsNotRight)
 
     // Check the values
     ASSERT_TRUE(session->isDone());
-    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR);
+    EXPECT_EQ(session->getStatus(), FileTransferStatus::ERROR_TRANSFER);
     EXPECT_EQ(session->getError(), FileTransferError::FILE_HASH_MISMATCH);
 }
 

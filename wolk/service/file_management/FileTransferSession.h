@@ -40,7 +40,7 @@ namespace connect
 struct FileChunk
 {
     std::string previousHash;
-    ByteArray bytes;
+    legacy::ByteArray bytes;
     std::string hash;
 };
 
@@ -61,7 +61,7 @@ public:
      */
     FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
                         std::function<void(FileTransferStatus, FileTransferError)> callback,
-                        CommandBuffer& commandBuffer);
+                        legacy::CommandBuffer& commandBuffer);
 
     /**
      * Default constructor for the FileTransferSession in case of a url download transfer.
@@ -74,7 +74,7 @@ public:
      */
     FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
                         std::function<void(FileTransferStatus, FileTransferError)> callback,
-                        CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader);
+                        legacy::CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader);
 
     /**
      * Default virtual destructor.
@@ -210,7 +210,7 @@ private:
     FileTransferStatus m_status;
     FileTransferError m_error;
     std::function<void(FileTransferStatus, FileTransferError)> m_callback;
-    CommandBuffer& m_commandBuffer;
+    legacy::CommandBuffer& m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

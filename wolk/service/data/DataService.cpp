@@ -30,6 +30,8 @@
 #include <cassert>
 #include <utility>
 
+using namespace wolkabout::legacy;
+
 namespace
 {
 const std::uint16_t RETRY_COUNT = 3;

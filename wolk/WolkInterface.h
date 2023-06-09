@@ -173,7 +173,7 @@ protected:
     std::shared_ptr<RegistrationService> m_registrationService;
 
     // Here is the command buffer that should be used
-    std::unique_ptr<CommandBuffer> m_commandBuffer;
+    std::unique_ptr<legacy::CommandBuffer> m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

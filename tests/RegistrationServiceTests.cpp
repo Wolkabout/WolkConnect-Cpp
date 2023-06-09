@@ -35,6 +35,7 @@
 #include <chrono>
 
 using namespace wolkabout::connect;
+using namespace wolkabout::legacy;
 using namespace ::testing;
 
 class RegistrationServiceTests : public ::testing::Test

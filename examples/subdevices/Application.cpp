@@ -19,6 +19,7 @@
 #include "wolk/WolkMulti.h"
 
 using namespace wolkabout;
+using namespace wolkabout::legacy;
 
 class ExamplePlatformStatusListener : public wolkabout::connect::PlatformStatusListener
 {
@@ -33,7 +34,7 @@ public:
 int main(int /* argc */, char** /* argv */)
 {
     // This is the logger setup. Here you can set up the level of logging you would like enabled.
-    wolkabout::Logger::init(wolkabout::LogLevel::TRACE, wolkabout::Logger::Type::CONSOLE);
+    wolkabout::legacy::Logger::init(wolkabout::legacy::LogLevel::TRACE, wolkabout::legacy::Logger::Type::CONSOLE);
 
     // Here we will create some devices
     auto deviceOne = wolkabout::Device{"FirstDevice", "", wolkabout::OutboundDataMode::PUSH};

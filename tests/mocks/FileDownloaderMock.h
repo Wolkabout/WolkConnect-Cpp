@@ -29,7 +29,7 @@ class FileDownloaderMock : public FileDownloader
 public:
     MOCK_METHOD(FileTransferStatus, getStatus, (), (const));
     MOCK_METHOD(const std::string&, getName, (), (const));
-    MOCK_METHOD(const ByteArray&, getBytes, (), (const));
+    MOCK_METHOD(const legacy::ByteArray&, getBytes, (), (const));
     MOCK_METHOD(void, downloadFile,
                 (const std::string&, std::function<void(FileTransferStatus, FileTransferError, std::string)>));
     MOCK_METHOD(void, abortDownload, ());

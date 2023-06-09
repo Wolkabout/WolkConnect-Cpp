@@ -21,6 +21,8 @@
 
 #include <utility>
 
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace connect
@@ -34,7 +36,7 @@ FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivitySe
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
 , m_fileManagementService(std::move(fileManagementService))
-, m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
+, m_sessionFile(legacy::FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
 , m_firmwareInstaller(std::move(firmwareInstaller))
 , m_protocol(protocol)
 {
@@ -47,7 +49,7 @@ FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivitySe
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
 , m_fileManagementService(std::move(fileManagementService))
-, m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
+, m_sessionFile(legacy::FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
 , m_firmwareParametersListener(std::move(firmwareParametersListener))
 , m_protocol(protocol)
 {
@@ -90,7 +92,7 @@ void FirmwareUpdateService::loadState(const std::string& deviceKey)
     {
         LOG(WARN) << "Failed to read the content of the session file.";
         deleteSessionFile(deviceKey);
-        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN);
+        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR_UPDATE, FirmwareUpdateError::UNKNOWN);
         return;
     }
 
@@ -100,7 +102,7 @@ void FirmwareUpdateService::loadState(const std::string& deviceKey)
     {
         LOG(WARN) << "Detected a Firmware Update session but a firmware installer is missing now.";
         deleteSessionFile(deviceKey);
-        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN);
+        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR_UPDATE, FirmwareUpdateError::UNKNOWN);
         return;
     }
 
@@ -109,7 +111,7 @@ void FirmwareUpdateService::loadState(const std::string& deviceKey)
     if (success)
         queueStatusMessage(deviceKey, FirmwareUpdateStatus::SUCCESS);
     else
-        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
+        queueStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR_UPDATE, FirmwareUpdateError::INSTALLATION_FAILED);
     deleteSessionFile(deviceKey);
 }
 
@@ -221,11 +223,11 @@ void FirmwareUpdateService::onFirmwareInstall(const std::string& deviceKey, cons
     switch (status)
     {
     case InstallResponse::FAILED_TO_INSTALL:
-        sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::INSTALLATION_FAILED);
+        sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR_UPDATE, FirmwareUpdateError::INSTALLATION_FAILED);
         deleteSessionFile(deviceKey);
         return;
     case InstallResponse::NO_FILE:
-        sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR, FirmwareUpdateError::UNKNOWN_FILE);
+        sendStatusMessage(deviceKey, FirmwareUpdateStatus::ERROR_UPDATE, FirmwareUpdateError::UNKNOWN_FILE);
         deleteSessionFile(deviceKey);
         return;
     case InstallResponse::WILL_INSTALL:

@@ -32,6 +32,8 @@
 #include <iomanip>
 #include <regex>
 
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace connect
@@ -77,7 +79,7 @@ void HTTPFileDownloader::downloadFile(
     if (!std::regex_search(url, URL_REGEX))
     {
         LOG(ERROR) << "Rejected File Transfer - The URL is malformed, and does not pass the regex check.";
-        changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, "");
+        changeStatus(FileTransferStatus::ERROR_TRANSFER, FileTransferError::MALFORMED_URL, "");
         return;
     }
 
@@ -156,7 +158,7 @@ void HTTPFileDownloader::download(const std::string& url)
             // Check the code of the response
             if (response.getStatus() != Poco::Net::HTTPResponse::HTTP_OK)
             {
-                changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, "");
+                changeStatus(FileTransferStatus::ERROR_TRANSFER, FileTransferError::MALFORMED_URL, "");
                 return;
             }
 
@@ -188,12 +190,12 @@ void HTTPFileDownloader::download(const std::string& url)
     catch (const Poco::Exception& exception)
     {
         LOG(ERROR) << "An error has occurred while downloading the file -> '" << exception.message() << "'.";
-        changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, {});
+        changeStatus(FileTransferStatus::ERROR_TRANSFER, FileTransferError::MALFORMED_URL, {});
     }
     catch (const std::exception& exception)
     {
         LOG(ERROR) << "An error has occurred while downloading the file -> '" << exception.what() << "'.";
-        changeStatus(FileTransferStatus::ERROR, FileTransferError::MALFORMED_URL, {});
+        changeStatus(FileTransferStatus::ERROR_TRANSFER, FileTransferError::MALFORMED_URL, {});
     }
 }
 
