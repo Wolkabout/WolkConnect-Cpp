@@ -1,5 +1,5 @@
-wolkconnect-cpp (4.1.1) stable; urgency=medium
+wolkconnect-cpp (4.2.0) stable; urgency=medium
 
-    * Fixed the way keys are sorted in the registration callback maps.
+    * Modernized CMake a little bit to with the `target_include_directories`.
   
- -- Wolkabout ELab <elab@wolkabout.com>  Mon, 1 Jul 2022 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Fri, 9 Jun 2023 00:00:00 +0100
