@@ -43,6 +43,7 @@
 
 using namespace wolkabout;
 using namespace wolkabout::connect;
+using namespace wolkabout::legacy;
 using namespace ::testing;
 
 class FirmwareUpdateServiceTests : public ::testing::Test

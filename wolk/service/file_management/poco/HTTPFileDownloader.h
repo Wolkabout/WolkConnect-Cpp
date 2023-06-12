@@ -72,7 +72,7 @@ public:
      *
      * @return Vector containing all bytes once the file has been successfully downloaded.
      */
-    const ByteArray& getBytes() const override;
+    const legacy::ByteArray& getBytes() const override;
 
     /**
      * Overridden method from the `FileDownloader` interface that allows the user to initiate the download of the file.
@@ -142,9 +142,9 @@ private:
     std::mutex m_mutex;
     FileTransferStatus m_status;
     std::string m_name;
-    ByteArray m_bytes;
+    legacy::ByteArray m_bytes;
     std::function<void(FileTransferStatus, FileTransferError, std::string)> m_statusCallback;
-    CommandBuffer m_commandBuffer;
+    legacy::CommandBuffer m_commandBuffer;
 
     // Here we store the session so the session can be closed in case of abort
     std::mutex m_sessionMutex;

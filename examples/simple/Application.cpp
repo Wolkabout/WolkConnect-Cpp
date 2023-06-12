@@ -20,6 +20,8 @@
 
 #include <random>
 
+using namespace wolkabout::legacy;
+
 /**
  * This is the place where user input is required for running the example.
  * In here, you can enter the device credentials to successfully identify the device on the platform.
@@ -48,7 +50,7 @@ std::uint64_t generateRandomValue()
 int main(int /* argc */, char** /* argv */)
 {
     // This is the logger setup. Here you can set up the level of logging you would like enabled.
-    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
+    wolkabout::legacy::Logger::init(wolkabout::legacy::LogLevel::INFO, wolkabout::legacy::Logger::Type::CONSOLE);
 
     // Here we create the device that we are presenting as on the platform.
     auto device = wolkabout::Device(DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PUSH);

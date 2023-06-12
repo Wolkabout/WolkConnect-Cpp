@@ -39,6 +39,7 @@
 #include <gtest/gtest.h>
 
 using namespace wolkabout::connect;
+using namespace wolkabout::legacy;
 using namespace ::testing;
 
 class FileManagementServiceTests : public ::testing::Test
@@ -262,7 +263,7 @@ TEST_F(FileManagementServiceTests, ReportTransferDisabledValid)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUploadStatusMessage&>()))
       .WillOnce([&](const std::string&, const FileUploadStatusMessage& message) {
-          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
+          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR_TRANSFER);
           EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
           return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
       });
@@ -284,7 +285,7 @@ TEST_F(FileManagementServiceTests, ReportUrlDownloadDisabledValid)
     EXPECT_CALL(fileManagementProtocolMock,
                 makeOutboundMessage(A<const std::string&>(), A<const FileUrlDownloadStatusMessage&>()))
       .WillOnce([&](const std::string&, const FileUrlDownloadStatusMessage& message) {
-          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR);
+          EXPECT_EQ(message.getStatus(), FileTransferStatus::ERROR_TRANSFER);
           EXPECT_EQ(message.getError(), FileTransferError::TRANSFER_PROTOCOL_DISABLED);
           return std::unique_ptr<wolkabout::Message>{new wolkabout::Message{"", ""}};
       });
@@ -433,7 +434,7 @@ TEST_F(FileManagementServiceTests, OnSessionStatusError)
       .WillOnce(Return(ByMove(nullptr)));
 
     // Call session status
-    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::ERROR));
+    ASSERT_NO_FATAL_FAILURE(service->onFileSessionStatus(DEVICE_KEY, wolkabout::FileTransferStatus::ERROR_TRANSFER));
     std::this_thread::sleep_for(std::chrono::milliseconds{100});
 
     // Check that it was deleted

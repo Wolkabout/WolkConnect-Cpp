@@ -29,6 +29,8 @@
 #include "wolk/service/platform_status/PlatformStatusService.h"
 #include "wolk/service/registration_service/RegistrationService.h"
 
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace connect
@@ -67,7 +69,7 @@ void WolkInterface::publish()
     });
 }
 
-WolkInterface::WolkInterface() : m_connected(false), m_commandBuffer(new CommandBuffer) {}
+WolkInterface::WolkInterface() : m_connected(false), m_commandBuffer(new legacy::CommandBuffer) {}
 
 void WolkInterface::tryConnect(bool firstTime)
 {

@@ -24,6 +24,8 @@
 #include <iomanip>
 #include <utility>
 
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace connect
@@ -48,7 +50,7 @@ FileManagementService::FileManagementService(ConnectivityService& connectivitySe
 
 std::string FileManagementService::getDeviceFileFolder(const std::string& deviceKey) const
 {
-    return FileSystemUtils::composePath(deviceKey, m_fileLocation);
+    return legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation);
 }
 
 void FileManagementService::createFolder()
@@ -56,9 +58,9 @@ void FileManagementService::createFolder()
     LOG(TRACE) << METHOD_INFO;
 
     // Check if the folder by chance does not exist
-    if (!FileSystemUtils::isDirectoryPresent(m_fileLocation))
+    if (!legacy::FileSystemUtils::isDirectoryPresent(m_fileLocation))
     {
-        FileSystemUtils::createDirectory(m_fileLocation);
+        legacy::FileSystemUtils::createDirectory(m_fileLocation);
         LOG(DEBUG) << "Created FileManagement directory '" << m_fileLocation << "'.";
     }
 }
@@ -71,11 +73,11 @@ void FileManagementService::reportPresentFiles(const std::string& deviceKey)
     auto fileInformationVector = std::vector<FileInformation>{};
 
     // Find the folder for the device
-    auto deviceFolder = FileSystemUtils::composePath(deviceKey, m_fileLocation);
-    if (FileSystemUtils::isDirectoryPresent(deviceFolder))
+    auto deviceFolder = legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation);
+    if (legacy::FileSystemUtils::isDirectoryPresent(deviceFolder))
     {
         // We can read the files
-        auto folderContent = FileSystemUtils::listFiles(deviceFolder);
+        auto folderContent = legacy::FileSystemUtils::listFiles(deviceFolder);
 
         // Check if the map contains an entry for this device, if not, make one
         if (m_files.find(deviceKey) == m_files.cend())
@@ -406,10 +408,10 @@ void FileManagementService::onFileDelete(const std::string& deviceKey, const Fil
     LOG(TRACE) << METHOD_INFO;
 
     // Go through the list of files
-    const auto devicePath = FileSystemUtils::composePath(deviceKey, m_fileLocation);
+    const auto devicePath = legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation);
     for (const auto& file : message.getFiles())
     {
-        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, devicePath)))
+        if (legacy::FileSystemUtils::deleteFile(legacy::FileSystemUtils::composePath(file, devicePath)))
         {
             m_files.erase(file);
             notifyListenerRemovedFile(deviceKey, file);
@@ -425,10 +427,10 @@ void FileManagementService::onFilePurge(const std::string& deviceKey, const File
     LOG(TRACE) << METHOD_INFO;
 
     // Just delete all the contents of the file
-    const auto devicePath = FileSystemUtils::composePath(deviceKey, m_fileLocation);
-    for (const auto& file : FileSystemUtils::listFiles(devicePath))
+    const auto devicePath = legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation);
+    for (const auto& file : legacy::FileSystemUtils::listFiles(devicePath))
     {
-        if (FileSystemUtils::deleteFile(FileSystemUtils::composePath(file, devicePath)))
+        if (legacy::FileSystemUtils::deleteFile(legacy::FileSystemUtils::composePath(file, devicePath)))
         {
             m_files.erase(file);
             notifyListenerRemovedFile(deviceKey, file);
@@ -502,10 +504,10 @@ void FileManagementService::onFileSessionStatus(const std::string& deviceKey, Fi
         const auto& fileName = m_sessions[deviceKey]->getName();
 
         // Get the absolute path for the file
-        auto deviceFolder = FileSystemUtils::composePath(m_sessions[deviceKey]->getDeviceKey(), m_fileLocation);
-        if (!FileSystemUtils::isDirectoryPresent(deviceFolder))
-            FileSystemUtils::createDirectory(deviceFolder);
-        auto relativePath = FileSystemUtils::composePath(fileName, deviceFolder);
+        auto deviceFolder = legacy::FileSystemUtils::composePath(m_sessions[deviceKey]->getDeviceKey(), m_fileLocation);
+        if (!legacy::FileSystemUtils::isDirectoryPresent(deviceFolder))
+            legacy::FileSystemUtils::createDirectory(deviceFolder);
+        auto relativePath = legacy::FileSystemUtils::composePath(fileName, deviceFolder);
 
         // Collect all the bytes for the file
         auto content = ByteArray{};
@@ -521,17 +523,17 @@ void FileManagementService::onFileSessionStatus(const std::string& deviceKey, Fi
         }
 
         // Place the file in the folder
-        if (!FileSystemUtils::createBinaryFileWithContent(relativePath, content))
+        if (!legacy::FileSystemUtils::createBinaryFileWithContent(relativePath, content))
         {
             LOG(ERROR) << "Failed to store the '" << fileName << "' locally.";
-            reportStatus(deviceKey, FileTransferStatus::ERROR, FileTransferError::FILE_SYSTEM_ERROR);
+            reportStatus(deviceKey, FileTransferStatus::ERROR_TRANSFER, FileTransferError::FILE_SYSTEM_ERROR);
         }
         else
         {
             notifyListenerAddedFile(deviceKey, fileName, absolutePathOfFile(deviceKey, fileName));
         }
     }
-    case FileTransferStatus::ERROR:
+    case FileTransferStatus::ERROR_TRANSFER:
     case FileTransferStatus::ABORTED:
     {
         // Queue the session deletion
@@ -549,8 +551,9 @@ FileInformation FileManagementService::obtainFileInformation(const std::string& 
 
     // Load up all the content of the file quickly
     auto binaryContent = ByteArray{};
-    if (!FileSystemUtils::readBinaryFileContent(
-          FileSystemUtils::composePath(fileName, FileSystemUtils::composePath(deviceKey, m_fileLocation)),
+    if (!legacy::FileSystemUtils::readBinaryFileContent(
+          legacy::FileSystemUtils::composePath(fileName,
+                                               legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation)),
           binaryContent))
     {
         LOG(ERROR) << "Failed to obtain FileInformation for file '" << fileName
@@ -574,8 +577,8 @@ void FileManagementService::reportTransferProtocolDisabled(const std::string& de
     LOG(TRACE) << METHOD_INFO;
 
     // Form the message
-    auto status =
-      FileUploadStatusMessage{fileName, FileTransferStatus::ERROR, FileTransferError::TRANSFER_PROTOCOL_DISABLED};
+    auto status = FileUploadStatusMessage{fileName, FileTransferStatus::ERROR_TRANSFER,
+                                          FileTransferError::TRANSFER_PROTOCOL_DISABLED};
     auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, status));
     if (message == nullptr)
     {
@@ -590,8 +593,8 @@ void FileManagementService::reportUrlTransferProtocolDisabled(const std::string&
     LOG(TRACE) << METHOD_INFO;
 
     // Form the message
-    auto status =
-      FileUrlDownloadStatusMessage{url, "", FileTransferStatus::ERROR, FileTransferError::TRANSFER_PROTOCOL_DISABLED};
+    auto status = FileUrlDownloadStatusMessage{url, "", FileTransferStatus::ERROR_TRANSFER,
+                                               FileTransferError::TRANSFER_PROTOCOL_DISABLED};
     auto message = std::shared_ptr<Message>(m_protocol.makeOutboundMessage(deviceKey, status));
     if (message == nullptr)
     {
@@ -605,8 +608,8 @@ void FileManagementService::reportUrlTransferProtocolDisabled(const std::string&
 std::string FileManagementService::absolutePathOfFile(const std::string& deviceKey, const std::string& file)
 {
     LOG(TRACE) << METHOD_INFO;
-    return FileSystemUtils::absolutePath(
-      FileSystemUtils::composePath(file, FileSystemUtils::composePath(deviceKey, m_fileLocation)));
+    return legacy::FileSystemUtils::absolutePath(
+      legacy::FileSystemUtils::composePath(file, legacy::FileSystemUtils::composePath(deviceKey, m_fileLocation)));
 }
 
 void FileManagementService::notifyListenerAddedFile(const std::string& deviceKey, const std::string& fileName,

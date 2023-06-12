@@ -15,7 +15,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(WolkAboutConnector C CXX)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}     -Wall -Wextra -pedantic                                                    \
                                             -pedantic-errors -Wcast-align                                              \
@@ -77,7 +77,6 @@ endif ()
 
 link_directories(${CMAKE_PREFIX_PATH}/lib)
 link_directories(${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-include_directories(SYSTEM ${CMAKE_PREFIX_PATH}/include)
 
 # Usually we just need PThreads
 find_package(Threads REQUIRED)
@@ -118,8 +117,8 @@ add_subdirectory(WolkSDK-Cpp)
 
 # Define the version of the library
 set(WOLKCONNECT_VERSION_MAJOR 4)
-set(WOLKCONNECT_VERSION_MINOR 1)
-set(WOLKCONNECT_VERSION_PATCH 1)
+set(WOLKCONNECT_VERSION_MINOR 2)
+set(WOLKCONNECT_VERSION_PATCH 0)
 set(WOLKCONNECT_VERSION_SUFFIX)
 
 set(WOLKCONNECT_VERSION_STRING "${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH}")
@@ -186,8 +185,8 @@ endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} PUBLIC WolkAboutCore Threads::Threads)
-target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_PREFIX_PATH}/include)
+target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_STRING} SOVERSION ${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH})
 

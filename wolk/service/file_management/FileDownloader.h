@@ -57,7 +57,7 @@ public:
      *
      * @return The byte array containing all bytes of the downloaded file.
      */
-    virtual const ByteArray& getBytes() const = 0;
+    virtual const legacy::ByteArray& getBytes() const = 0;
 
     /**
      * This is the method by which the FileManagementService will notify the downloader it should start downloading a

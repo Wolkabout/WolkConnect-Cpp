@@ -43,7 +43,7 @@ using ErrorMessageCache = std::map<std::string, DeviceErrorMessages>;
  * error messages if necessary. This should be mostly used by other services that receive their errors through the error
  * topic.
  */
-class ErrorService : public MessageListener, public Service
+class ErrorService : public MessageListener, public legacy::Service
 {
 public:
     /**
@@ -143,7 +143,7 @@ private:
 
     // Here we store cached error messages
     bool m_working;
-    Timer m_timer;
+    legacy::Timer m_timer;
     std::chrono::milliseconds m_retainTime;
     std::mutex m_cacheMutex;
     ErrorMessageCache m_cached;

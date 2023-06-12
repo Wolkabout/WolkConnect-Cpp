@@ -18,6 +18,8 @@
 
 #include "core/utilities/Logger.h"
 
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace connect

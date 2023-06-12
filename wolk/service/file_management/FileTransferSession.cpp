@@ -26,13 +26,15 @@
 #include <iomanip>
 #include <utility>
 
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace connect
 {
 FileTransferSession::FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
                                          std::function<void(FileTransferStatus, FileTransferError)> callback,
-                                         CommandBuffer& commandBuffer)
+                                         legacy::CommandBuffer& commandBuffer)
 : m_deviceKey(std::move(deviceKey))
 , m_name(message.getName())
 , m_retryCount(0)
@@ -48,7 +50,8 @@ FileTransferSession::FileTransferSession(std::string deviceKey, const FileUpload
 
 FileTransferSession::FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
                                          std::function<void(FileTransferStatus, FileTransferError)> callback,
-                                         CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader)
+                                         legacy::CommandBuffer& commandBuffer,
+                                         std::shared_ptr<FileDownloader> fileDownloader)
 : m_deviceKey(std::move(deviceKey))
 , m_url(message.getPath())
 , m_retryCount(0)
@@ -148,7 +151,7 @@ FileTransferError FileTransferSession::pushChunk(const FileBinaryResponseMessage
             if (m_retryCount++ >= 3)
             {
                 m_done = true;
-                changeStatusAndError(FileTransferStatus::ERROR, FileTransferError::RETRY_COUNT_EXCEEDED);
+                changeStatusAndError(FileTransferStatus::ERROR_TRANSFER, FileTransferError::RETRY_COUNT_EXCEEDED);
                 return FileTransferError::RETRY_COUNT_EXCEEDED;
             }
             return FileTransferError::FILE_HASH_MISMATCH;
@@ -167,7 +170,7 @@ FileTransferError FileTransferSession::pushChunk(const FileBinaryResponseMessage
             if (m_retryCount++ >= 3)
             {
                 m_done = true;
-                changeStatusAndError(FileTransferStatus::ERROR, FileTransferError::RETRY_COUNT_EXCEEDED);
+                changeStatusAndError(FileTransferStatus::ERROR_TRANSFER, FileTransferError::RETRY_COUNT_EXCEEDED);
                 return FileTransferError::RETRY_COUNT_EXCEEDED;
             }
             return FileTransferError::FILE_HASH_MISMATCH;
@@ -194,7 +197,7 @@ FileTransferError FileTransferSession::pushChunk(const FileBinaryResponseMessage
         if (hash == m_hash)
             changeStatusAndError(FileTransferStatus::FILE_READY, FileTransferError::NONE);
         else
-            changeStatusAndError(FileTransferStatus::ERROR, FileTransferError::FILE_HASH_MISMATCH);
+            changeStatusAndError(FileTransferStatus::ERROR_TRANSFER, FileTransferError::FILE_HASH_MISMATCH);
     }
     return FileTransferError::NONE;
 }
@@ -252,19 +255,19 @@ bool FileTransferSession::triggerDownload()
     }
 
     // Now that we have adequate information, setup everything
-    m_downloader->downloadFile(m_url,
-                               [this](FileTransferStatus status, FileTransferError error, const std::string& fileName) {
-                                   // Set the name if a name value is sent out
-                                   if (!fileName.empty())
-                                       this->m_name = fileName;
+    m_downloader->downloadFile(
+      m_url, [this](FileTransferStatus status, FileTransferError error, const std::string& fileName) {
+          // Set the name if a name value is sent out
+          if (!fileName.empty())
+              this->m_name = fileName;
 
-                                   // Announce the status
-                                   changeStatusAndError(status, error);
-                                   if (status == FileTransferStatus::FILE_READY || status == FileTransferStatus::ERROR)
-                                   {
-                                       m_done = true;
-                                   }
-                               });
+          // Announce the status
+          changeStatusAndError(status, error);
+          if (status == FileTransferStatus::FILE_READY || status == FileTransferStatus::ERROR_TRANSFER)
+          {
+              m_done = true;
+          }
+      });
     return true;
 }
 

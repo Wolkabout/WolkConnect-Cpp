@@ -41,6 +41,7 @@
 #include <gmock/gmock.h>
 
 using namespace wolkabout::connect;
+using namespace wolkabout::legacy;
 using namespace ::testing;
 
 class WolkBuilderTests : public ::testing::Test

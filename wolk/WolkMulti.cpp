@@ -21,6 +21,8 @@
 #include <algorithm>
 #include <utility>
 
+using namespace wolkabout::legacy;
+
 namespace wolkabout
 {
 namespace connect
