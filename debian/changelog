@@ -1,5 +1,5 @@
-wolkconnect-cpp (4.2.0) stable; urgency=medium
+wolkconnect-cpp (4.3.0) stable; urgency=medium
 
-    * Modernized CMake a little bit to with the `target_include_directories`.
+    * Using new WolkSDK-Cpp version 3.4.0, the full restructure of the SDK library.
 
- -- Wolkabout ELab <elab@wolkabout.com>  Fri, 9 Jun 2023 00:00:00 +0100
+ -- Wolkabout ELab <elab@wolkabout.com>  Tue, 13 Jun 2023 00:00:00 +0100

@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_GENERICDBUSINTERFACE_H
 #define WOLKABOUTCONNECTOR_GENERICDBUSINTERFACE_H
 
-#include "core/utilities/CommandBuffer.h"
+#include "core/utility/CommandBuffer.h"
 
 #include <functional>
 #include <gio/gio.h>

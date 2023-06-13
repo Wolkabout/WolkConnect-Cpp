@@ -16,8 +16,8 @@
 
 #include "wolk/service/firmware_update/debian/DebianPackageInstaller.h"
 
-#include "core/utilities/FileSystemUtils.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/FileSystemUtils.h"
+#include "core/utility/Logger.h"
 
 #include <utility>
 

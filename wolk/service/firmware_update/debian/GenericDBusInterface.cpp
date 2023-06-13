@@ -16,7 +16,7 @@
 
 #include "wolk/service/firmware_update/debian/GenericDBusInterface.h"
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
 #include <algorithm>
 #include <utility>

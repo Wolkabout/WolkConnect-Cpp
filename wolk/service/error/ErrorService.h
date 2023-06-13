@@ -19,8 +19,8 @@
 
 #include "core/MessageListener.h"
 #include "core/protocol/ErrorProtocol.h"
-#include "core/utilities/Service.h"
-#include "core/utilities/Timer.h"
+#include "core/utility/Service.h"
+#include "core/utility/Timer.h"
 
 #include <atomic>
 #include <chrono>

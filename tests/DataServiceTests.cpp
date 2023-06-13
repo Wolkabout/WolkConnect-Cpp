@@ -26,7 +26,7 @@
 
 #include "core/Types.h"
 #include "core/model/Feed.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/DataProtocolMock.h"
 #include "tests/mocks/OutboundMessageHandlerMock.h"

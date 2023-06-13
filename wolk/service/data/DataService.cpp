@@ -24,7 +24,7 @@
 #include "core/model/Message.h"
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
 #include <algorithm>
 #include <cassert>

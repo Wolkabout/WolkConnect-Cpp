@@ -20,8 +20,8 @@
 #include "core/model/messages/FileBinaryResponseMessage.h"
 #include "core/model/messages/FileUploadInitiateMessage.h"
 #include "core/model/messages/FileUrlDownloadInitMessage.h"
-#include "core/utilities/FileSystemUtils.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/FileSystemUtils.h"
+#include "core/utility/Logger.h"
 
 #include <iomanip>
 #include <utility>

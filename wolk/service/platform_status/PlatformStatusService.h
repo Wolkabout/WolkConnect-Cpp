@@ -18,7 +18,7 @@
 #define WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 
 #include "core/MessageListener.h"
-#include "core/utilities/CommandBuffer.h"
+#include "core/utility/CommandBuffer.h"
 #include "wolk/api/PlatformStatusListener.h"
 
 #include <functional>

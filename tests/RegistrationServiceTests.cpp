@@ -23,8 +23,8 @@
 #undef private
 #undef protected
 
-#include "core/utilities/Logger.h"
-#include "core/utilities/Timer.h"
+#include "core/utility/Logger.h"
+#include "core/utility/Timer.h"
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/ErrorProtocolMock.h"
 #include "tests/mocks/ErrorServiceMock.h"

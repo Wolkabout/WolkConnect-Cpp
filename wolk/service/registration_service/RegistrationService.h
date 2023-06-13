@@ -23,8 +23,8 @@
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/protocol/RegistrationProtocol.h"
-#include "core/utilities/CommandBuffer.h"
-#include "core/utilities/Service.h"
+#include "core/utility/CommandBuffer.h"
+#include "core/utility/Service.h"
 #include "wolk/service/error/ErrorService.h"
 
 #include <unordered_map>

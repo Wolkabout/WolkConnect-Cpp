@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 #include "wolk/service/firmware_update/debian/DebianPackageInstaller.h"

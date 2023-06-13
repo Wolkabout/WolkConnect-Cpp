@@ -22,7 +22,7 @@
 #include "core/protocol/FirmwareUpdateProtocol.h"
 #include "core/protocol/PlatformStatusProtocol.h"
 #include "core/protocol/RegistrationProtocol.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"

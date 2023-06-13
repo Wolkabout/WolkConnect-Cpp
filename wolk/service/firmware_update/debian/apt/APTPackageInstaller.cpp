@@ -16,7 +16,7 @@
 
 #include "wolk/service/firmware_update/debian/apt/APTPackageInstaller.h"
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
 namespace wolkabout
 {

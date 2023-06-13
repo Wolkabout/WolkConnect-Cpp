@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_SYSTEMDSERVICEINTERFACE_H
 #define WOLKABOUTCONNECTOR_SYSTEMDSERVICEINTERFACE_H
 
-#include "core/utilities/Service.h"
+#include "core/utility/Service.h"
 #include "wolk/service/firmware_update/debian/GenericDBusInterface.h"
 
 #include <string>

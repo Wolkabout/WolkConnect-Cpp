@@ -15,8 +15,8 @@
  */
 
 #include "core/persistence/inmemory/InMemoryPersistence.h"
-#include "core/utilities/FileSystemUtils.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/FileSystemUtils.h"
+#include "core/utility/Logger.h"
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 

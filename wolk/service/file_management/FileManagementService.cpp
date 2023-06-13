@@ -17,8 +17,8 @@
 #include "wolk/service/file_management/FileManagementService.h"
 
 #include "core/model/Message.h"
-#include "core/utilities/FileSystemUtils.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/FileSystemUtils.h"
+#include "core/utility/Logger.h"
 
 #include <algorithm>
 #include <iomanip>

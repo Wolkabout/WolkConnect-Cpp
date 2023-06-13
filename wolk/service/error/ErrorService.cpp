@@ -16,7 +16,7 @@
 
 #include "wolk/service/error/ErrorService.h"
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
 using namespace wolkabout::legacy;
 

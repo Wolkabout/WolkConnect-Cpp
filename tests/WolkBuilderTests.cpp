@@ -25,7 +25,7 @@
 #undef private
 #undef protected
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 #include "tests/mocks/DataProtocolMock.h"
 #include "tests/mocks/ErrorProtocolMock.h"
 #include "tests/mocks/FeedUpdateHandlerMock.h"

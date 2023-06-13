@@ -49,9 +49,6 @@ if (${BUILD_TESTS})
     endif ()
 endif ()
 
-# Setup the option for optional Poco file downloader
-OPTION(BUILD_POCO_HTTP_DOWNLOADER "Build the optional `FileDownloader` implementation that uses Poco" ON)
-
 # Setup the option for optional apt/systemd firmware updaters
 OPTION(BUILD_APT_SYSTEMD_FIRMWARE_UPDATER "Build the optional apt/systemd firmware updaters" OFF)
 
@@ -117,7 +114,7 @@ add_subdirectory(WolkSDK-Cpp)
 
 # Define the version of the library
 set(WOLKCONNECT_VERSION_MAJOR 4)
-set(WOLKCONNECT_VERSION_MINOR 2)
+set(WOLKCONNECT_VERSION_MINOR 3)
 set(WOLKCONNECT_VERSION_PATCH 0)
 set(WOLKCONNECT_VERSION_SUFFIX)
 
@@ -162,12 +159,6 @@ set(LIB_HEADER_FILES wolk/api/FeedUpdateHandler.h
 
 file(COPY wolk/ DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk PATTERN *.cpp EXCLUDE PATTERN "poco/HTTPFileDownloader.h" EXCLUDE)
 
-if (${BUILD_POCO_HTTP_DOWNLOADER})
-    set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/file_management/poco/HTTPFileDownloader.cpp)
-    set(LIB_HEADER_FILES ${LIB_HEADER_FILES} wolk/service/file_management/poco/HTTPFileDownloader.h)
-    file(COPY wolk/service/file_management/poco/HTTPFileDownloader.h DESTINATION ${CMAKE_LIBRARY_INCLUDE_DIRECTORY}/wolk/service/file_management/poco)
-endif ()
-
 if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
     set(LIB_SOURCE_FILES ${LIB_SOURCE_FILES} wolk/service/firmware_update/debian/DebianPackageInstaller.cpp
             wolk/service/firmware_update/debian/GenericDBusInterface.cpp
@@ -184,16 +175,11 @@ if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
 endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} PUBLIC WolkAboutCore Threads::Threads)
-target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_PREFIX_PATH}/include)
+target_link_libraries(${PROJECT_NAME} PUBLIC SDKCore Threads::Threads)
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_BINARY_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${WOLKCONNECT_VERSION_STRING} SOVERSION ${WOLKCONNECT_VERSION_MAJOR}.${WOLKCONNECT_VERSION_MINOR}.${WOLKCONNECT_VERSION_PATCH})
-
-if (${BUILD_POCO_HTTP_DOWNLOADER})
-    target_link_libraries(${PROJECT_NAME} PUBLIC PocoFoundation PocoCrypto PocoJSON PocoNet PocoNetSSL PocoUtil)
-    add_dependencies(${PROJECT_NAME} libpoco)
-endif ()
 
 if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
     target_link_libraries(${PROJECT_NAME} PUBLIC ${GLIB_LIBRARIES} ${GIO_LIBRARIES})
@@ -232,9 +218,8 @@ if (${BUILD_TESTS})
     enable_testing()
     add_executable(${PROJECT_NAME}Tests ${TEST_SOURCE_FILES} ${TEST_HEADER_FILES})
     target_link_libraries(${PROJECT_NAME}Tests ${PROJECT_NAME} gtest_main gtest gmock_main gmock)
-    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_PREFIX_PATH}/include WolkSDK-Cpp)
+    target_include_directories(${PROJECT_NAME}Tests PRIVATE ${PROJECT_SOURCE_DIR} ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} ${CMAKE_BINARY_DIR}/include WolkSDK-Cpp)
     set_target_properties(${PROJECT_NAME}Tests PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
-    add_dependencies(${PROJECT_NAME}Tests ${PROJECT_NAME} libgtest)
 
     add_test(NAME "WolkConnect-Cpp_Tests" COMMAND ${PROJECT_NAME}Tests)
 endif ()
@@ -300,6 +285,6 @@ endif ()
 # Create the install rule
 include(GNUInstallDirs)
 install(DIRECTORY ${CMAKE_LIBRARY_INCLUDE_DIRECTORY} DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
-install(DIRECTORY ${CMAKE_PREFIX_PATH}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
-install(DIRECTORY ${CMAKE_PREFIX_PATH}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX} PATTERN *.h)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/lib/ DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

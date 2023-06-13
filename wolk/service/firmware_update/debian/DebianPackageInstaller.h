@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_DEBIANPACKAGEINSTALLER_H
 #define WOLKABOUTCONNECTOR_DEBIANPACKAGEINSTALLER_H
 
-#include "core/utilities/Service.h"
+#include "core/utility/Service.h"
 #include "wolk/api/FirmwareInstaller.h"
 #include "wolk/service/firmware_update/debian/apt/APTPackageInstaller.h"
 #include "wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h"

@@ -19,7 +19,7 @@
 
 #include "core/connectivity/ConnectivityService.h"
 #include "core/model/Device.h"
-#include "core/utilities/StringUtils.h"
+#include "core/utility/StringUtils.h"
 #include "wolk/WolkInterface.h"
 
 #include <algorithm>
