@@ -5,7 +5,7 @@
 
 WolkAbout C++11 Connector library for connecting devices to WolkAbout IoT Platform.
 
-**Version 4.3.0**
+**Version 4.3.0-DEV**
     - [IMPROVEMENT] - Using new WolkSDK-Cpp version 3.4.0, the full restructure of the SDK library.
 
 **Version 4.2.0**
