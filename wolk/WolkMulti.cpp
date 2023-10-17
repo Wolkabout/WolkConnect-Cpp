@@ -16,7 +16,7 @@
 
 #include "wolk/WolkMulti.h"
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
 #include <algorithm>
 #include <utility>

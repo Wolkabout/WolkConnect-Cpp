@@ -27,8 +27,8 @@
 #include "core/model/messages/FileBinaryResponseMessage.h"
 #include "core/model/messages/FileUploadInitiateMessage.h"
 #include "core/model/messages/FileUrlDownloadInitMessage.h"
-#include "core/utilities/Logger.h"
-#include "core/utilities/Timer.h"
+#include "core/utility/Logger.h"
+#include "core/utility/Timer.h"
 #include "tests/mocks/FileDownloaderMock.h"
 
 #include <gtest/gtest.h>
@@ -45,6 +45,8 @@ public:
         Logger::init(LogLevel::TRACE, Logger::Type::CONSOLE);
         fileDownloaderMock = std::make_shared<FileDownloaderMock>();
     }
+
+    static void TearDownTestCase() { fileDownloaderMock.reset(); }
 
     static std::shared_ptr<FileDownloaderMock> fileDownloaderMock;
 

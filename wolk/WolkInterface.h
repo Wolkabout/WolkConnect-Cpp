@@ -18,7 +18,7 @@
 #define WOLK_INTERFACE_H
 
 #include "core/model/Reading.h"
-#include "core/utilities/CommandBuffer.h"
+#include "core/utility/CommandBuffer.h"
 #include "wolk/WolkInterfaceType.h"
 #include "wolk/api/FeedUpdateHandler.h"
 #include "wolk/api/ParameterHandler.h"

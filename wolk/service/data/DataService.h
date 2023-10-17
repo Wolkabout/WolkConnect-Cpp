@@ -22,7 +22,7 @@
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/model/Reading.h"
-#include "core/utilities/CommandBuffer.h"
+#include "core/utility/CommandBuffer.h"
 
 #include <functional>
 #include <map>

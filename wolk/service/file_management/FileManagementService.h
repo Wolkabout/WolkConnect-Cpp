@@ -20,7 +20,7 @@
 #include "core/connectivity/ConnectivityService.h"
 #include "core/connectivity/InboundMessageHandler.h"
 #include "core/protocol/FileManagementProtocol.h"
-#include "core/utilities/CommandBuffer.h"
+#include "core/utility/CommandBuffer.h"
 #include "wolk/api/FileListener.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileDownloader.h"

@@ -17,14 +17,12 @@
 #ifndef WOLKABOUTCONNECTOR_SYSTEMDSERVICEINTERFACE_H
 #define WOLKABOUTCONNECTOR_SYSTEMDSERVICEINTERFACE_H
 
-#include "core/utilities/Service.h"
+#include "core/utility/Service.h"
 #include "wolk/service/firmware_update/debian/GenericDBusInterface.h"
 
 #include <string>
 
-namespace wolkabout
-{
-namespace connect
+namespace wolkabout::connect
 {
 /**
  * This enumeration is to represent the service restart status.
@@ -48,7 +46,7 @@ std::string toString(ServiceRestartResult result);
  * This class implements a systemd service manager. This allows the software to interact with systemd services using a
  * DBus connection.
  */
-class SystemdServiceInterface : public Service
+class SystemdServiceInterface : public legacy::Service
 {
 public:
     /**
@@ -93,7 +91,6 @@ protected:
     std::mutex m_connectionMutex;
     GenericDBusInterface m_dbusConnection;
 };
-}    // namespace connect
-}    // namespace wolkabout
+}    // namespace wolkabout::connect
 
 #endif    // WOLKABOUTCONNECTOR_SYSTEMDSERVICEINTERFACE_H

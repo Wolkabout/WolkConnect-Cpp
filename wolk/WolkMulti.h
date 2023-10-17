@@ -18,7 +18,7 @@
 #define WOLK_MULTI_H
 
 #include "core/connectivity/InboundPlatformMessageHandler.h"
-#include "core/utilities/StringUtils.h"
+#include "core/utility/StringUtils.h"
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkInterface.h"
 

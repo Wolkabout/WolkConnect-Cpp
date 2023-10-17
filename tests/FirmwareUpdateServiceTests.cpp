@@ -23,8 +23,8 @@
 #undef private
 #undef protected
 
-#include "core/utilities/FileSystemUtils.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/FileSystemUtils.h"
+#include "core/utility/Logger.h"
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/DataProtocolMock.h"
 #include "tests/mocks/DataServiceMock.h"

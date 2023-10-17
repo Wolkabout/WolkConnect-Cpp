@@ -17,7 +17,7 @@
 #include "wolk/service/platform_status/PlatformStatusService.h"
 
 #include "core/protocol/PlatformStatusProtocol.h"
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
 #include <utility>
 

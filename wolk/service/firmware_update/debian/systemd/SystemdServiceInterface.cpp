@@ -16,11 +16,11 @@
 
 #include "wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h"
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
-namespace wolkabout
-{
-namespace connect
+using namespace wolkabout::legacy;
+
+namespace wolkabout::connect
 {
 const std::string SYSTEMD_NAMESPACE = "org.freedesktop.systemd1";
 const std::string SYSTEMD_MANAGER_OBJECT = "/org/freedesktop/systemd1";
@@ -106,5 +106,4 @@ std::string SystemdServiceInterface::obtainObjectNameForService(std::string serv
         return {};
     }
 }
-}    // namespace connect
-}    // namespace wolkabout
+}    // namespace wolkabout::connect

@@ -18,7 +18,7 @@
 #define WOLKABOUTCONNECTOR_FILEDOWNLOADER_H
 
 #include "core/Types.h"
-#include "core/utilities/ByteUtils.h"
+#include "core/utility/ByteUtils.h"
 
 #include <functional>
 #include <string>

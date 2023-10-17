@@ -17,8 +17,8 @@
 #ifndef WOLKABOUTCONNECTOR_FILETRANSFERSESSION_H
 #define WOLKABOUTCONNECTOR_FILETRANSFERSESSION_H
 
-#include "core/utilities/ByteUtils.h"
-#include "core/utilities/CommandBuffer.h"
+#include "core/utility/ByteUtils.h"
+#include "core/utility/CommandBuffer.h"
 #include "wolk/service/file_management/FileDownloader.h"
 
 #include <memory>

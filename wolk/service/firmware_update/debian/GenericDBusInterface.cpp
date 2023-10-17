@@ -16,14 +16,14 @@
 
 #include "wolk/service/firmware_update/debian/GenericDBusInterface.h"
 
-#include "core/utilities/Logger.h"
+#include "core/utility/Logger.h"
 
 #include <algorithm>
 #include <utility>
 
-namespace wolkabout
-{
-namespace connect
+using namespace wolkabout::legacy;
+
+namespace wolkabout::connect
 {
 const std::string MAIN_NAMESPACE_NAME = "org.freedesktop.DBus";
 const std::string MAIN_NAMESPACE_DBUS_OBJECT_NAME = "/org/freedesktop/DBus";
@@ -465,5 +465,4 @@ void GenericDBusInterface::subscribeToName(const std::string& namespaceName)
 }
 
 GenericDBusInterface::GenericDBusInterface(int) : m_dbusConnection{nullptr}, m_mainLoop{nullptr} {}
-}    // namespace connect
-}    // namespace wolkabout
+}    // namespace wolkabout::connect
