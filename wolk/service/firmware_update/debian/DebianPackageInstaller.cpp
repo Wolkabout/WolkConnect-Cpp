@@ -21,9 +21,9 @@
 
 #include <utility>
 
-namespace wolkabout
-{
-namespace connect
+using namespace wolkabout::legacy;
+
+namespace wolkabout::connect
 {
 DebianPackageInstaller::DebianPackageInstaller(std::string serviceName,
                                                std::unique_ptr<APTPackageInstaller> aptPackageInstaller,
@@ -182,5 +182,4 @@ std::string DebianPackageInstaller::getFirmwareVersion(const std::string&)
         result.replace(result.find('\n'), 1, "");
     return result;
 }
-}    // namespace connect
-}    // namespace wolkabout
+}    // namespace wolkabout::connect

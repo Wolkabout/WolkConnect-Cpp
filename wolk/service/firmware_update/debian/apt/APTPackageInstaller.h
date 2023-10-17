@@ -23,9 +23,7 @@
 #include <string>
 #include <unordered_map>
 
-namespace wolkabout
-{
-namespace connect
+namespace wolkabout::connect
 {
 /**
  * This enumeration is used to represent the installation success status.
@@ -55,7 +53,7 @@ using InstallationCallback = std::function<void(const std::string&, Installation
  * This class implements a package installer for APT. This allows the software to install a package using a DBus
  * connection.
  */
-class APTPackageInstaller : public Service
+class APTPackageInstaller : public legacy::Service
 {
 public:
     /**
@@ -120,12 +118,11 @@ protected:
     std::unordered_map<std::string, InstallationCallback> m_callbacks;
 
     // And a command buffer where we execute callback
-    CommandBuffer m_commandBuffer;
+    legacy::CommandBuffer m_commandBuffer;
 
     // Thread where we run the main loop of the DBus connection
     std::thread m_thread;
 };
-}    // namespace connect
-}    // namespace wolkabout
+}    // namespace wolkabout::connect
 
 #endif    // WOLKABOUTCONNECTOR_APTPACKAGEINSTALLER_H

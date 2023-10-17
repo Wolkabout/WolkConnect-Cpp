@@ -18,9 +18,9 @@
 
 #include "core/utility/Logger.h"
 
-namespace wolkabout
-{
-namespace connect
+using namespace wolkabout::legacy;
+
+namespace wolkabout::connect
 {
 const std::string APT_NAMESPACE = "org.debian.apt";
 const std::string APT_OBJECT = "/org/debian/apt";
@@ -225,5 +225,4 @@ void APTPackageInstaller::runMainLoop()
 {
     m_dbusConnection.startLoop();
 }
-}    // namespace connect
-}    // namespace wolkabout
+}    // namespace wolkabout::connect
