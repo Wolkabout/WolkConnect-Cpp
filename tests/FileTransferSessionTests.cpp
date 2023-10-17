@@ -46,6 +46,8 @@ public:
         fileDownloaderMock = std::make_shared<FileDownloaderMock>();
     }
 
+    static void TearDownTestCase() { fileDownloaderMock.reset(); }
+
     static std::shared_ptr<FileDownloaderMock> fileDownloaderMock;
 
     const std::string DEVICE_KEY = "DEVICE_KEY";
