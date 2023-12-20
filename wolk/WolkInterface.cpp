@@ -82,7 +82,7 @@ void WolkInterface::tryConnect(bool firstTime)
             if (firstTime)
                 LOG(INFO) << "Failed to connect";
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			std::this_thread::sleep_for(std::chrono::milliseconds(20000));
             tryConnect(false);
             return;
         }
