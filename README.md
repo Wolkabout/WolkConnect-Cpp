@@ -60,7 +60,7 @@ Generated build system is located inside `out` directory
 ```shell
 cd out # Change the directory if you haven't
 make -j$(nproc) # Make the library
-make tests -j$(nproc) # Make and run the tests
+make WolkAboutConnectorTests -j$(nproc) # Make and run the tests
 make full_example/pull_example/register_example/simple_example -j$(nproc) # Make any of the examples
 ```
 
