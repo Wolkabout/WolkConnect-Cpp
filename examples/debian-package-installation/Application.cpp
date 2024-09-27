@@ -26,9 +26,9 @@ using namespace wolkabout::legacy;
  * In here, you can enter the device credentials to successfully identify the device on the platform.
  * And also, the target platform path, and the SSL certificate that is used to establish a secure connection.
  */
-const std::string DEVICE_KEY = "AWC";
-const std::string DEVICE_PASSWORD = "0ZY4R8VSSD";
-const std::string PLATFORM_HOST = "ssl://integration5.wolkabout.com:8883";
+const std::string DEVICE_KEY = "insert_key";
+const std::string DEVICE_PASSWORD = "insert_password";
+const std::string PLATFORM_HOST = "ssl://instance_url:port";
 const std::string CA_CERT_PATH = "/INSERT/PATH/TO/YOUR/CA.CRT/FILE";
 const std::string FILE_MANAGEMENT_LOCATION = "./files";
 
