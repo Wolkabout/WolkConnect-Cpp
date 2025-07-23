@@ -16,12 +16,12 @@
 
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"
 
-#include "core/utility/FileSystemUtils.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/FileSystemUtils.h"
+#include "core/utilities/Logger.h"
 
 #include <utility>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout
 {
@@ -36,7 +36,7 @@ FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivitySe
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
 , m_fileManagementService(std::move(fileManagementService))
-, m_sessionFile(legacy::FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
+, m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
 , m_firmwareInstaller(std::move(firmwareInstaller))
 , m_protocol(protocol)
 {
@@ -49,7 +49,7 @@ FirmwareUpdateService::FirmwareUpdateService(ConnectivityService& connectivitySe
 : m_connectivityService(connectivityService)
 , m_dataService(dataService)
 , m_fileManagementService(std::move(fileManagementService))
-, m_sessionFile(legacy::FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
+, m_sessionFile(FileSystemUtils::composePath(SESSION_FILE, workingDirectory))
 , m_firmwareParametersListener(std::move(firmwareParametersListener))
 , m_protocol(protocol)
 {

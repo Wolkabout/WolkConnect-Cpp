@@ -20,4 +20,4 @@ fi
 
 cd ./WolkGateway || exit
 
-debuild -us -uc -b -j$(nproc)
+debuild -us -uc -b #-j$(nproc)

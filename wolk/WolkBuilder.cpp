@@ -28,7 +28,7 @@
 #include "core/protocol/wolkabout/WolkaboutFirmwareUpdateProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutPlatformStatusProtocol.h"
 #include "core/protocol/wolkabout/WolkaboutRegistrationProtocol.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 #include "wolk/WolkMulti.h"
 #include "wolk/WolkSingle.h"
 #include "wolk/service/data/DataService.h"
@@ -38,7 +38,7 @@
 #include <stdexcept>
 #include <utility>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout
 {

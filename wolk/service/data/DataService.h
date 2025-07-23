@@ -22,7 +22,7 @@
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/model/Reading.h"
-#include "core/utility/CommandBuffer.h"
+#include "core/utilities/CommandBuffer.h"
 
 #include <functional>
 #include <map>
@@ -111,7 +111,7 @@ private:
     ParameterSyncHandler m_parameterSyncHandler;
     DetailsSyncHandler m_detailsSyncHandler;
 
-    legacy::CommandBuffer m_commandBuffer;
+    wolkabout::CommandBuffer m_commandBuffer;
     struct ParameterSubscription
     {
         std::vector<ParameterName> parameters;

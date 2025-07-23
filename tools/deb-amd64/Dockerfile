@@ -1,4 +1,4 @@
-FROM amd64/debian:buster
+FROM amd64/ubuntu:24.04
 
 WORKDIR /build
 

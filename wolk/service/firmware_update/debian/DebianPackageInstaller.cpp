@@ -16,12 +16,12 @@
 
 #include "wolk/service/firmware_update/debian/DebianPackageInstaller.h"
 
-#include "core/utility/FileSystemUtils.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/FileSystemUtils.h"
+#include "core/utilities/Logger.h"
 
 #include <utility>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout::connect
 {

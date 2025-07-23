@@ -17,11 +17,11 @@
 #include "wolk/service/platform_status/PlatformStatusService.h"
 
 #include "core/protocol/PlatformStatusProtocol.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 
 #include <utility>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout
 {

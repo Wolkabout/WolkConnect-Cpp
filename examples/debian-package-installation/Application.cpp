@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 #include "wolk/service/firmware_update/debian/DebianPackageInstaller.h"
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 /**
  * This is the place where user input is required for running the example.

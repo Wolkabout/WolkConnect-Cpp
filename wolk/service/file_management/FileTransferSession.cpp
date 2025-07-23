@@ -20,13 +20,13 @@
 #include "core/model/messages/FileBinaryResponseMessage.h"
 #include "core/model/messages/FileUploadInitiateMessage.h"
 #include "core/model/messages/FileUrlDownloadInitMessage.h"
-#include "core/utility/FileSystemUtils.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/FileSystemUtils.h"
+#include "core/utilities/Logger.h"
 
 #include <iomanip>
 #include <utility>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout
 {
@@ -34,7 +34,7 @@ namespace connect
 {
 FileTransferSession::FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
                                          std::function<void(FileTransferStatus, FileTransferError)> callback,
-                                         legacy::CommandBuffer& commandBuffer)
+                                         wolkabout::CommandBuffer& commandBuffer)
 : m_deviceKey(std::move(deviceKey))
 , m_name(message.getName())
 , m_retryCount(0)
@@ -50,7 +50,7 @@ FileTransferSession::FileTransferSession(std::string deviceKey, const FileUpload
 
 FileTransferSession::FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
                                          std::function<void(FileTransferStatus, FileTransferError)> callback,
-                                         legacy::CommandBuffer& commandBuffer,
+                                         wolkabout::CommandBuffer& commandBuffer,
                                          std::shared_ptr<FileDownloader> fileDownloader)
 : m_deviceKey(std::move(deviceKey))
 , m_url(message.getPath())

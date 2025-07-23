@@ -24,13 +24,13 @@
 #include "core/model/Message.h"
 #include "core/persistence/Persistence.h"
 #include "core/protocol/DataProtocol.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 
 #include <algorithm>
 #include <cassert>
 #include <utility>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace
 {
