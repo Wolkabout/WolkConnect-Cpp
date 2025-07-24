@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_DEBIANPACKAGEINSTALLER_H
 #define WOLKABOUTCONNECTOR_DEBIANPACKAGEINSTALLER_H
 
-#include "core/utility/Service.h"
+#include "core/utilities/Service.h"
 #include "wolk/api/FirmwareInstaller.h"
 #include "wolk/service/firmware_update/debian/apt/APTPackageInstaller.h"
 #include "wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h"
@@ -31,7 +31,7 @@ using UpdateCallback = std::function<void(const std::string&, bool)>;
 /**
  * This is the class that implements the entire Debian package update mechanism.
  */
-class DebianPackageInstaller : public FirmwareInstaller, public legacy::Service
+class DebianPackageInstaller : public FirmwareInstaller, public Service
 {
 public:
     /**
@@ -131,7 +131,7 @@ protected:
     std::unordered_map<std::string, UpdateCallback> m_callbacks;
 
     // And the command buffer where to execute the callbacks
-    legacy::CommandBuffer m_commandBuffer;
+    CommandBuffer m_commandBuffer;
     std::mutex m_mapMutex;
     std::map<std::string, std::string> m_devicesInstallingFiles;
     std::map<std::string, InstallResponse> m_deviceInstallationResult;

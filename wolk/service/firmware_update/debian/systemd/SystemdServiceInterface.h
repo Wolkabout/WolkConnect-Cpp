@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_SYSTEMDSERVICEINTERFACE_H
 #define WOLKABOUTCONNECTOR_SYSTEMDSERVICEINTERFACE_H
 
-#include "core/utility/Service.h"
+#include "core/utilities/Service.h"
 #include "wolk/service/firmware_update/debian/GenericDBusInterface.h"
 
 #include <string>
@@ -46,7 +46,7 @@ std::string toString(ServiceRestartResult result);
  * This class implements a systemd service manager. This allows the software to interact with systemd services using a
  * DBus connection.
  */
-class SystemdServiceInterface : public legacy::Service
+class SystemdServiceInterface : public Service
 {
 public:
     /**

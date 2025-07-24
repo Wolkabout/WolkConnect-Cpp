@@ -17,7 +17,7 @@
 #ifndef WOLKABOUTCONNECTOR_GENERICDBUSINTERFACE_H
 #define WOLKABOUTCONNECTOR_GENERICDBUSINTERFACE_H
 
-#include "core/utility/CommandBuffer.h"
+#include "core/utilities/CommandBuffer.h"
 
 #include <functional>
 #include <gio/gio.h>
@@ -245,7 +245,7 @@ protected:
      */
     GDBusConnection* m_dbusConnection;
     GMainLoop* m_mainLoop;
-    wolkabout::legacy::CommandBuffer m_commandBuffer;
+    wolkabout::CommandBuffer m_commandBuffer;
 
     /**
      * Signal subscriptions.

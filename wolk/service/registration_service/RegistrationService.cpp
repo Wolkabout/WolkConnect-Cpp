@@ -16,11 +16,11 @@
 
 #include "wolk/service/registration_service/RegistrationService.h"
 
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 
 #include <algorithm>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout
 {

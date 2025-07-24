@@ -18,7 +18,7 @@
 #define WOLKABOUTCONNECTOR_PLATFORMSTATUSSERVICE_H
 
 #include "core/MessageListener.h"
-#include "core/utility/CommandBuffer.h"
+#include "core/utilities/CommandBuffer.h"
 #include "wolk/api/PlatformStatusListener.h"
 
 #include <functional>
@@ -68,7 +68,7 @@ private:
     std::shared_ptr<PlatformStatusListener> m_listener;
 
     // Here we have the command buffer that will execute external calls.
-    legacy::CommandBuffer m_commandBuffer;
+    CommandBuffer m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

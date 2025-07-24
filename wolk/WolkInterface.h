@@ -18,7 +18,7 @@
 #define WOLK_INTERFACE_H
 
 #include "core/model/Reading.h"
-#include "core/utility/CommandBuffer.h"
+#include "core/utilities/CommandBuffer.h"
 #include "wolk/WolkInterfaceType.h"
 #include "wolk/api/FeedUpdateHandler.h"
 #include "wolk/api/ParameterHandler.h"
@@ -173,7 +173,7 @@ protected:
     std::shared_ptr<RegistrationService> m_registrationService;
 
     // Here is the command buffer that should be used
-    std::unique_ptr<legacy::CommandBuffer> m_commandBuffer;
+    std::unique_ptr<CommandBuffer> m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

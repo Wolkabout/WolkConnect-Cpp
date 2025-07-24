@@ -26,7 +26,7 @@
 
 #include "core/Types.h"
 #include "core/model/Feed.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 #include "tests/mocks/ConnectivityServiceMock.h"
 #include "tests/mocks/DataProtocolMock.h"
 #include "tests/mocks/OutboundMessageHandlerMock.h"
@@ -36,7 +36,7 @@
 #include <gtest/gtest.h>
 
 using namespace wolkabout::connect;
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 using namespace ::testing;
 
 class DataServiceTests : public ::testing::Test

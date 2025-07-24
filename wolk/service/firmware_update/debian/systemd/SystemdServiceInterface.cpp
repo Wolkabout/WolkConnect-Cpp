@@ -16,9 +16,9 @@
 
 #include "wolk/service/firmware_update/debian/systemd/SystemdServiceInterface.h"
 
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout::connect
 {

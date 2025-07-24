@@ -17,8 +17,8 @@
 #ifndef WOLKABOUTCONNECTOR_FILETRANSFERSESSION_H
 #define WOLKABOUTCONNECTOR_FILETRANSFERSESSION_H
 
-#include "core/utility/ByteUtils.h"
-#include "core/utility/CommandBuffer.h"
+#include "core/utilities/ByteUtils.h"
+#include "core/utilities/CommandBuffer.h"
 #include "wolk/service/file_management/FileDownloader.h"
 
 #include <memory>
@@ -40,7 +40,7 @@ namespace connect
 struct FileChunk
 {
     std::string previousHash;
-    legacy::ByteArray bytes;
+    wolkabout::ByteArray bytes;
     std::string hash;
 };
 
@@ -61,7 +61,7 @@ public:
      */
     FileTransferSession(std::string deviceKey, const FileUploadInitiateMessage& message,
                         std::function<void(FileTransferStatus, FileTransferError)> callback,
-                        legacy::CommandBuffer& commandBuffer);
+                        wolkabout::CommandBuffer& commandBuffer);
 
     /**
      * Default constructor for the FileTransferSession in case of a url download transfer.
@@ -74,7 +74,7 @@ public:
      */
     FileTransferSession(std::string deviceKey, const FileUrlDownloadInitMessage& message,
                         std::function<void(FileTransferStatus, FileTransferError)> callback,
-                        legacy::CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader);
+                        wolkabout::CommandBuffer& commandBuffer, std::shared_ptr<FileDownloader> fileDownloader);
 
     /**
      * Default virtual destructor.
@@ -210,7 +210,7 @@ private:
     FileTransferStatus m_status;
     FileTransferError m_error;
     std::function<void(FileTransferStatus, FileTransferError)> m_callback;
-    legacy::CommandBuffer& m_commandBuffer;
+    wolkabout::CommandBuffer& m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

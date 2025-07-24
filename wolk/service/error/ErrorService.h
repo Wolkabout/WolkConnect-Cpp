@@ -19,8 +19,8 @@
 
 #include "core/MessageListener.h"
 #include "core/protocol/ErrorProtocol.h"
-#include "core/utility/Service.h"
-#include "core/utility/Timer.h"
+#include "core/utilities/Service.h"
+#include "core/utilities/Timer.h"
 
 #include <atomic>
 #include <chrono>
@@ -43,7 +43,7 @@ using ErrorMessageCache = std::map<std::string, DeviceErrorMessages>;
  * error messages if necessary. This should be mostly used by other services that receive their errors through the error
  * topic.
  */
-class ErrorService : public MessageListener, public legacy::Service
+class ErrorService : public MessageListener, public Service
 {
 public:
     /**
@@ -143,7 +143,7 @@ private:
 
     // Here we store cached error messages
     bool m_working;
-    legacy::Timer m_timer;
+    Timer m_timer;
     std::chrono::milliseconds m_retainTime;
     std::mutex m_cacheMutex;
     ErrorMessageCache m_cached;

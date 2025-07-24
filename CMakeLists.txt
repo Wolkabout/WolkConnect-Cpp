@@ -175,7 +175,7 @@ if (${BUILD_APT_SYSTEMD_FIRMWARE_UPDATER})
 endif ()
 
 add_library(${PROJECT_NAME} SHARED ${LIB_SOURCE_FILES} ${LIB_HEADER_FILES})
-target_link_libraries(${PROJECT_NAME} SDKCore Threads::Threads)
+target_link_libraries(${PROJECT_NAME} WolkAboutCore Threads::Threads)
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${CMAKE_BINARY_DIR}/include)
 target_include_directories(${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}> $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")

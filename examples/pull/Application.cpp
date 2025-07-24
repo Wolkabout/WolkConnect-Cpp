@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 #include "wolk/WolkBuilder.h"
 #include "wolk/WolkSingle.h"
 #include "wolk/api/ParameterHandler.h"
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 /**
  * This is the place where user input is required for running the example.
@@ -121,7 +121,7 @@ public:
 int main(int /* argc */, char** /* argv */)
 {
     // This is the logger setup. Here you can set up the level of logging you would like enabled.
-    wolkabout::legacy::Logger::init(wolkabout::legacy::LogLevel::INFO, wolkabout::legacy::Logger::Type::CONSOLE);
+    wolkabout::Logger::init(wolkabout::LogLevel::INFO, wolkabout::Logger::Type::CONSOLE);
 
     // Here we create the device that we are presenting as on the platform.
     auto device = wolkabout::Device(DEVICE_KEY, DEVICE_PASSWORD, wolkabout::OutboundDataMode::PULL);

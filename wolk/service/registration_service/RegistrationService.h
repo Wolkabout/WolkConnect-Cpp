@@ -23,8 +23,8 @@
 #include "core/model/Attribute.h"
 #include "core/model/Feed.h"
 #include "core/protocol/RegistrationProtocol.h"
-#include "core/utility/CommandBuffer.h"
-#include "core/utility/Service.h"
+#include "core/utilities/CommandBuffer.h"
+#include "core/utilities/Service.h"
 #include "wolk/service/error/ErrorService.h"
 
 #include <unordered_map>
@@ -84,7 +84,7 @@ public:
  * This is the service that is responsible for registering/removing devices, and also obtaining information about
  * devices.
  */
-class RegistrationService : public MessageListener, public legacy::Service
+class RegistrationService : public MessageListener, public Service
 {
 public:
     /**
@@ -259,7 +259,7 @@ private:
       m_deviceRegistrationResponses;
 
     // Have a command buffer for calling some callbacks
-    legacy::CommandBuffer m_commandBuffer;
+    CommandBuffer m_commandBuffer;
 };
 }    // namespace connect
 }    // namespace wolkabout

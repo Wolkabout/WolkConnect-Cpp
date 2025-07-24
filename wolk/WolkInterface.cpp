@@ -22,14 +22,14 @@
 #include "core/protocol/FirmwareUpdateProtocol.h"
 #include "core/protocol/PlatformStatusProtocol.h"
 #include "core/protocol/RegistrationProtocol.h"
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 #include "wolk/service/data/DataService.h"
 #include "wolk/service/file_management/FileManagementService.h"
 #include "wolk/service/firmware_update/FirmwareUpdateService.h"
 #include "wolk/service/platform_status/PlatformStatusService.h"
 #include "wolk/service/registration_service/RegistrationService.h"
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout
 {
@@ -69,7 +69,7 @@ void WolkInterface::publish()
     });
 }
 
-WolkInterface::WolkInterface() : m_connected(false), m_commandBuffer(new legacy::CommandBuffer) {}
+WolkInterface::WolkInterface() : m_connected(false), m_commandBuffer(new CommandBuffer) {}
 
 void WolkInterface::tryConnect(bool firstTime)
 {

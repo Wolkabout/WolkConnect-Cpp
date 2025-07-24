@@ -23,7 +23,7 @@
 #undef private
 #undef protected
 
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 #include "tests/mocks/ErrorProtocolMock.h"
 
 #include <gtest/gtest.h>

@@ -16,12 +16,12 @@
 
 #include "wolk/service/firmware_update/debian/GenericDBusInterface.h"
 
-#include "core/utility/Logger.h"
+#include "core/utilities/Logger.h"
 
 #include <algorithm>
 #include <utility>
 
-using namespace wolkabout::legacy;
+using namespace wolkabout;
 
 namespace wolkabout::connect
 {

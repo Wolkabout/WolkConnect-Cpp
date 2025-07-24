@@ -1,0 +1,4 @@
+out/build/lib/* 											/opt/wolkabout/assignment/out/lib/
+out/lib/*   												/opt/wolkabout/assignment/out/lib/
+out/bin/simple            									/opt/wolkabout/assignment/out/bin/
+/configuration												/opt/wolkabout/assignment/

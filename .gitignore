@@ -1,6 +1,6 @@
 # Build dir
 out
-dependencies
+
 docs/
 cmake-build-debug
 cmake-build-release
