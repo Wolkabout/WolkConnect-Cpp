@@ -27,9 +27,9 @@ using namespace wolkabout;
  * In here, you can enter the device credentials to successfully identify the device on the platform.
  * And also, the target platform path.
  */
-const std::string DEVICE_KEY = "nbE";
-const std::string DEVICE_PASSWORD = "FRZ0RMDKC1";
-const std::string PLATFORM_HOST = "tcp://integration5.wolkabout.com:1883";
+const std::string DEVICE_KEY = "<DEVICE_KEY>";
+const std::string DEVICE_PASSWORD = "<DEVICE_PASSWORD>";
+const std::string PLATFORM_HOST = "ssl://INSERT_HOSTNAME:PORT";
 
 /**
  * This is a function that will generate a random Temperature value for us.

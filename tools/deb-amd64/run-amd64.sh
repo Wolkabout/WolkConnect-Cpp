@@ -34,7 +34,7 @@ docker container stop debuilder
 docker container rm debuilder
 
 mv ./build/*.deb .
-#rm -rf ./build/
+rm -rf ./build/
 
 rm *dbgsym*
 
